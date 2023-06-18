@@ -1,0 +1,81 @@
+[project]
+name = "fastblocks"
+version = "0.1.0"
+description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
+authors = [
+    { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
+]
+dependencies = [
+    "starlette>=0.28.0",
+    "asgi-htmx>=0.1.0",
+    "asgi-logger>=0.1.0",
+    "brotli-asgi>=1.4.0",
+    "secure>=0.3.0",
+    "sqlmodel>=0.0.8",
+    "starlette-async-jinja>=1.2.2",
+    "jinja2-async-environment>=0.1.7",
+    "cashews>=6.2.0",
+    "acb>=0.1.5",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+
+[project.license]
+text = "BSD-3-Clause"
+
+[project.optional-dependencies]
+sitemap = [
+    "asgi-sitemaps>=1.0.0",
+]
+firebase = [
+    "firebase-admin>=6.1.0",
+]
+
+[build-system]
+requires = [
+    "pdm-backend",
+]
+build-backend = "pdm.backend"
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "pre-commit>=3.3.2",
+    "crackerjack>=0.2.4",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+fix = true
+show-fixes = true
+show-source = true
+
+[tool.ruff.isort]
+force-single-line = true
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.black]
+target-version = [
+    "py311",
+]
+
+[tool.mypy]
+strict = false
+pretty = true
+ignore_missing_imports = false
+plugins = [
+    "pydantic.mypy",
+]
+
+[tool.refurb]
+enable_all = true
+
+[tool.pytype]
+inputs = [
+    "package_name",
+]
