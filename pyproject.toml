@@ -27,9 +27,6 @@ text = "BSD-3-Clause"
 sitemap = [
     "asgi-sitemaps>=1.0.0",
 ]
-firebase = [
-    "firebase-admin>=6.1.0",
-]
 
 [build-system]
 requires = [

@@ -22,7 +22,7 @@ rendered HTMX/Jinja template blocks.
 - [Asynchronous Component Base](https://github.com/lesleslie/acb)
 - Pydantic v2 / SQLModel support
 - Dependency injection
-- Firebase authentication
+
 
 ## Getting Started
 
