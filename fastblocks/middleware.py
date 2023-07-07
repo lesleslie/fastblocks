@@ -6,11 +6,12 @@ from acb.logger import logger
 
 from asgi_htmx import HtmxMiddleware
 from asgi_htmx import HtmxRequest as Request
-from asgi_logger import AccessLoggerMiddleware
+from asgi_logger.middleware import AccessLoggerMiddleware
 from brotli_asgi import BrotliMiddleware
-from cashews import Command
+from cashews.commands import Command
 from secure import Secure
 from starlette.middleware import Middleware
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import HTMLResponse as Response
 
@@ -60,16 +61,17 @@ class DisableCacheMiddleware(BaseHTTPMiddleware):
 
 
 middleware = [
-    Middleware(ProcessTimeHeaderMiddleware),
+    Middleware(HTTPSRedirectMiddleware),
     Middleware(DisableCacheMiddleware),
-    # Middleware(CSRFMiddleware, secret=ac.secrets.app_secret_key),
-    Middleware(HtmxMiddleware),
-    Middleware(SecureHeadersMiddleware),
     Middleware(FromCacheHeaderMiddleware),
+    # Middleware(CSRFMiddleware, secret=ac.secrets.app_secret_key),
+    Middleware(SecureHeadersMiddleware),
+    Middleware(HtmxMiddleware),
     Middleware(BrotliMiddleware, quality=3),
     Middleware(
         AccessLoggerMiddleware,
         logger=logger,
         format='{client_addr} - "{request_line}" {status_code}',
     ),
+    Middleware(ProcessTimeHeaderMiddleware),
 ]
