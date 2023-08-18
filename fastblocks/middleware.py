@@ -15,6 +15,8 @@ from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import HTMLResponse as Response
 
+# from starlette.responses import Response
+
 secure_headers = Secure()
 
 
@@ -60,7 +62,7 @@ class DisableCacheMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-middleware = [
+fastblocks_middleware = [
     Middleware(HTTPSRedirectMiddleware),
     Middleware(DisableCacheMiddleware),
     Middleware(FromCacheHeaderMiddleware),

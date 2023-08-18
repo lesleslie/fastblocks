@@ -20,7 +20,6 @@ fastblocks_env_configs = dict(
     line_statement_prefix="%",
     line_comment_prefix="##",
     extensions=[loopcontrols, i18n, jinja_debug],
-    # loader=TemplatesChoiceLoader,
     bytecode_cache=AsyncRedisBytecodeCache,
 )
 
@@ -42,3 +41,6 @@ class FastBlocksTemplates(AsyncJinja2Templates):
         env = AsyncEnvironment(**env_options)
         env.globals["url_for"] = url_for
         return env
+
+
+templates = FastBlocksTemplates(directory=AsyncPath("templates"))

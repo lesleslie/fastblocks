@@ -7,8 +7,9 @@
 /dist/
 /.mypy_cache/
 /.ruff_cache/
-/.fastblocks-config.yaml
 /.pyanalyze-report.json
 /.pyanalyze-report.md
 /.pdm-build/
 /tmp/
+/__pycache__/
+/*/__pycache__/
