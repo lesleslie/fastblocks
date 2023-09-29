@@ -13,13 +13,14 @@ rendered HTMX/Jinja template blocks.
 
 ## Features
 
+- [Asynchronous Component Base](https://github.com/lesleslie/acb)
 - Asynchronous
   [Jinja template loaders, environment](https://github.com/lesleslie/jinja2-async-environment) &
   [template rendering](https://github.com/lesleslie/starlette-async-jinja)
-- Integrated [Jinja Partials](https://github.com/mikeckennedy/jinja_partials)
+- Integrated asynchronous [Jinja Partials](https://github.com/mikeckennedy/jinja_partials)
   and [Jinja Fragments](https://github.com/sponsfreixes/jinja2-fragments)
+- HTMX support
 - Client-side Redis caching
-- [Asynchronous Component Base](https://github.com/lesleslie/acb)
 - Pydantic v2 / SQLModel support
 - Dependency injection
 
