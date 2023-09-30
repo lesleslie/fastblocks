@@ -4,7 +4,7 @@ from acb.config import Config
 from acb.depends import depends
 
 from asgi_htmx import HtmxRequest as Request
-from middleware import middlewares
+from .middleware import middlewares
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.errors import ServerErrorMiddleware
