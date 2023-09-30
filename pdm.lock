@@ -6,11 +6,11 @@ groups = ["default", "sitemap", "dev", "auth"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:a8cbd76d1e3ed935d8a6bc0a63c983cd82559a326302ce9e48fce8a20060a229"
+content_hash = "sha256:b6e0a45bd507f012042123ec40f1f95cb7c457217694bea4fc6c2a247eb8583e"
 
 [[package]]
 name = "acb"
-version = "0.2.4"
+version = "0.2.5"
 requires_python = ">=3.11"
 summary = "Asynchronous Code Base"
 dependencies = [
@@ -34,8 +34,8 @@ dependencies = [
     "sqlalchemy==2.0.11",
 ]
 files = [
-    {file = "acb-0.2.4-py3-none-any.whl", hash = "sha256:92a44a2d843e41f9b7cebcd6c4bfb46873d36e499f8c2fb01f6ee14632fd7bde"},
-    {file = "acb-0.2.4.tar.gz", hash = "sha256:400e2f9ffada95560595a41c63bcec213873d63ba721c918a7eb7d3c0d258f68"},
+    {file = "acb-0.2.5-py3-none-any.whl", hash = "sha256:20e04db583ba25e6f1d6b7102be572727474ae5424fbe56bb6a449bcca78466a"},
+    {file = "acb-0.2.5.tar.gz", hash = "sha256:c6eabe582f1fddc6b60dffde3eefecc47fb017156a89e6722184402c777058f3"},
 ]
 
 [[package]]
