@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.1.4"
+version = "0.1.5"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -13,10 +13,11 @@ dependencies = [
     "brotli-asgi>=1.4.0",
     "secure>=0.3.0",
     "starlette-csrf>=3.0.0",
-    "acb>=0.2.4",
     "starlette>=0.31.1",
     "starlette-async-jinja>=1.3.0",
     "cashews>=6.3.0",
+    "sqlalchemy-utils>=0.41.1",
+    "acb>=0.2.4",
 ]
 
 [project.optional-dependencies]

@@ -26,7 +26,7 @@ class Templates(AsyncJinja2Templates):
     def _create_env(
         self, directory: AsyncPath | t.Sequence[AsyncPath], **env_options: t.Any
     ) -> AsyncEnvironment:
-        @pass_context
+        @pass_context  # type: ignore
         def url_for(context: dict[str, t.Any], name: str, **path_params: t.Any) -> str:
             request = context["request"]
             return request.url_for(name, **path_params)
@@ -37,7 +37,7 @@ class Templates(AsyncJinja2Templates):
         env_options.setdefault("enable_async", True)
         env_options = jinja_env_configs | env_options
         env = AsyncEnvironment(**env_options)
-        env.globals["url_for"] = url_for
+        env.globals["url_for"] = url_for  # type: ignore
         return env
 
 

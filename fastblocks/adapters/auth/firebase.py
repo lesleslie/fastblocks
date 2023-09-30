@@ -3,43 +3,42 @@ from contextlib import suppress
 from datetime import timedelta
 from time import time
 
-from sqlmodel import select
-
 from acb.adapters.sql import Sql
-from acb.adapters.sql import SqlModel
 from acb.config import Config
 from acb.config import project
 from acb.debug import debug
 from acb.depends import depends
-from fastblocks.adapters.auth import AuthBase
-from fastblocks.adapters.auth import current_user
-from fastblocks.adapters.auth import User
+from sqlmodel import select  # type: ignore
+
 from firebase_admin import auth
 from firebase_admin import initialize_app
 from google.auth.transport import requests as google_requests
 from pydantic import SecretStr
-from pydantic import UUID4
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
+from ._base import AuthBase
+from ._user import AuthUser
+from ._user import current_user
+from ._user import User
 
-firebase_request_adapter = google_requests.Request()
-firebase_options = dict(projectId=project)
-firebase_app = initialize_app(options=firebase_options.copy())
+firebase_request_adapter: google_requests.Request = google_requests.Request()
+firebase_options: dict[str, str] = dict(projectId=project)
+firebase_app: t.Any = None
 
 
-class CurrentUser(User):
+class CurrentUser(AuthUser):
     user_data: t.Any = {}
 
     def has_role(self, role: str) -> str:
         return self.user_data.custom_claims.get(role)
 
-    def set_role(self, role: str) -> str | bool:
+    def set_role(self, role: str) -> str | bool | None:
         return auth.set_custom_user_claims(self.user_data["uid"], {role: True})
 
     @property
-    def identity(self) -> UUID4 | str | int:
-        return self.user_data.get("uid")
+    def identity(self) -> str | int | bool:
+        return self.user_data.get("uid", False)
 
     @property
     def display_name(self) -> str:
@@ -51,8 +50,8 @@ class CurrentUser(User):
 
     @depends.inject
     def is_authenticated(
-        self, request: Request = None, config: Config = depends()
-    ) -> bool:
+        self, request: Request | None, config: Config = depends()
+    ) -> bool | int | str:
         if request:
             with suppress(
                 auth.ExpiredIdTokenError,
@@ -77,7 +76,7 @@ class Auth(AuthBase):
     def __init__(
         self,
         secret_key: t.Optional[SecretStr] = None,
-        user_model: t.Optional[SqlModel] = None,
+        user_model: t.Optional[User] = None,
     ) -> None:
         self.secret_key = secret_key or self.config.app.secret_key
         self.middlewares = [
@@ -92,13 +91,15 @@ class Auth(AuthBase):
         self.user_model = user_model or User
 
     async def init(self) -> None:
-        ...
+        global firebase_app
+        firebase_app = initialize_app(options=firebase_options.copy())
 
     async def login(self, request: Request) -> bool:
         id_token = request.cookies.get(self.config.auth.token_id)
         if id_token:
             if current_user.get().is_authenticated(request):
                 return True
+            user_data = None
             with suppress(
                 auth.ExpiredIdTokenError,
                 auth.RevokedIdTokenError,
@@ -108,7 +109,7 @@ class Auth(AuthBase):
 
             if user_data:
                 async with self.sql.session() as session:
-                    user_query = select(self.user_model).where(
+                    user_query = select(self.user_model).where(  # type: ignore
                         self.user_model.email == user_data["email"]  # type: ignore
                         and self.user_model.is_active  # type: ignore
                     )

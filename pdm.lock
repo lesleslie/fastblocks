@@ -6,7 +6,7 @@ groups = ["default", "sitemap", "dev", "auth"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:29c8dc7352534a44546cbedf0f46f157a97f9c4cdccc89da1b8312ba7ec469c7"
+content_hash = "sha256:a8cbd76d1e3ed935d8a6bc0a63c983cd82559a326302ce9e48fce8a20060a229"
 
 [[package]]
 name = "acb"
@@ -1693,6 +1693,19 @@ files = [
     {file = "SQLAlchemy-2.0.11-cp311-cp311-win_amd64.whl", hash = "sha256:62835d8cd6713458c032466c38a43e56503e19ea6e54b0e73295c6ab281fc0b1"},
     {file = "SQLAlchemy-2.0.11-py3-none-any.whl", hash = "sha256:1d28e8278d943d9111d44720f92cc338282e956ed68849bfcee053c06bde4f39"},
     {file = "SQLAlchemy-2.0.11.tar.gz", hash = "sha256:c3cbff7cced3c42dbe71448ce6bf4202b4a2d305e78dd77e3f280ba6cd245138"},
+]
+
+[[package]]
+name = "sqlalchemy-utils"
+version = "0.41.1"
+requires_python = ">=3.6"
+summary = "Various utility functions for SQLAlchemy."
+dependencies = [
+    "SQLAlchemy>=1.3",
+]
+files = [
+    {file = "SQLAlchemy-Utils-0.41.1.tar.gz", hash = "sha256:a2181bff01eeb84479e38571d2c0718eb52042f9afd8c194d0d02877e84b7d74"},
+    {file = "SQLAlchemy_Utils-0.41.1-py3-none-any.whl", hash = "sha256:6c96b0768ea3f15c0dc56b363d386138c562752b84f647fb8d31a2223aaab801"},
 ]
 
 [[package]]

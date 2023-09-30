@@ -1,16 +1,16 @@
 import typing as t
 from time import perf_counter
 
-from cashews.commands import Command
-
 from acb.adapters.cache import Cache
-from acb.config import Config
 from acb.adapters.logger import Logger
+from acb.config import Config
 from acb.depends import depends
+
 from asgi_htmx import HtmxMiddleware
 from asgi_htmx import HtmxRequest as Request
 from asgi_logger.middleware import AccessLoggerMiddleware
 from brotli_asgi import BrotliMiddleware
+from cashews.commands import Command
 from secure import Secure
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -23,7 +23,9 @@ secure_headers = Secure()
 
 class SecureHeadersMiddleware(BaseHTTPMiddleware):
     @staticmethod
-    async def set_secure_headers(request: Request, call_next: t.Callable) -> Response:
+    async def set_secure_headers(
+        request: Request, call_next: t.Callable[[Request], t.Any]
+    ) -> Response:
         response = await call_next(request)
         secure_headers.framework.starlette(response)
         return response
@@ -33,7 +35,9 @@ class ProcessTimeHeaderMiddleware(BaseHTTPMiddleware):
     @staticmethod
     @depends.inject
     async def add_process_time_header(
-        request: Request, call_next: t.Callable, logger: Logger = depends()
+        request: Request,
+        call_next: t.Callable[[Request], t.Any],
+        logger: Logger = depends(),  # type: ignore
     ) -> Response:
         start_time = perf_counter()
         response = await call_next(request)
@@ -47,7 +51,9 @@ class FromCacheHeaderMiddleware(BaseHTTPMiddleware):
     @staticmethod
     @depends.inject
     async def add_from_cache_headers(
-        request: Request, call_next, cache: Cache = depends()
+        request: Request,
+        call_next: t.Callable[[Request], t.Any],
+        cache: Cache = (depends()),  # type: ignore
     ) -> Response:
         with cache.detect as detector:
             response = await call_next(request)
@@ -62,7 +68,9 @@ class DisableCacheMiddleware(BaseHTTPMiddleware):
     @staticmethod
     @depends.inject
     async def disable_middleware(
-        request: Request, call_next: t.Callable, cache: Cache = depends()
+        request: Request,
+        call_next: t.Callable[[Request], t.Any],
+        cache: Cache = depends(),  # type: ignore
     ) -> Response:
         if request.headers.get("X-No-Cache"):
             with cache.disabling(Command.GET):
@@ -72,8 +80,8 @@ class DisableCacheMiddleware(BaseHTTPMiddleware):
 
 @depends.inject
 def middlewares(
-    config: Config = depends(), logger: Logger = depends()
-) -> t.List[Middleware]:
+    config: Config = depends(), logger: Logger = depends()  # type: ignore
+) -> list[Middleware]:
     return [
         Middleware(HTTPSRedirectMiddleware),
         Middleware(DisableCacheMiddleware),
