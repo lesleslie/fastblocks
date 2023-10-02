@@ -5,7 +5,6 @@ from time import time
 
 from acb.adapters.sql import Sql
 from acb.config import Config
-from acb.config import project
 from acb.debug import debug
 from acb.depends import depends
 from sqlmodel import select  # type: ignore
@@ -18,16 +17,16 @@ from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from ._base import AuthBase
-from ._user import AuthUser
-from ._user import current_user
-from ._user import User
+from ._base import AuthBaseUser
+from ._base import current_user
+from ._model import UserModel
+
 
 firebase_request_adapter: google_requests.Request = google_requests.Request()
-firebase_options: dict[str, str] = dict(projectId=project)
 firebase_app: t.Any = None
 
 
-class CurrentUser(AuthUser):
+class CurrentUser(AuthBaseUser):
     user_data: t.Any = {}
 
     def has_role(self, role: str) -> str:
@@ -76,7 +75,7 @@ class Auth(AuthBase):
     def __init__(
         self,
         secret_key: t.Optional[SecretStr] = None,
-        user_model: t.Optional[User] = None,
+        user_model: t.Optional[UserModel] = None,
     ) -> None:
         self.secret_key = secret_key or self.config.app.secret_key
         self.middlewares = [
@@ -88,10 +87,11 @@ class Auth(AuthBase):
             )
         ]
         self.name = "firebase"
-        self.user_model = user_model or User
+        self.user_model = user_model or UserModel
 
     async def init(self) -> None:
         global firebase_app
+        firebase_options: dict[str, str] = dict(projectId=self.config.app.project)
         firebase_app = initialize_app(options=firebase_options.copy())
 
     async def login(self, request: Request) -> bool:

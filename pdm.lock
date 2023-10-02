@@ -6,17 +6,16 @@ groups = ["default", "sitemap", "dev", "auth"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:b6e0a45bd507f012042123ec40f1f95cb7c457217694bea4fc6c2a247eb8583e"
+content_hash = "sha256:d05107d467e48e28982b424d5477cb6154862823902c4f925e2f5ab5c30e7bb6"
 
 [[package]]
 name = "acb"
-version = "0.2.5"
+version = "0.2.6"
 requires_python = ">=3.11"
 summary = "Asynchronous Code Base"
 dependencies = [
     "aiopath>=0.6.11",
     "arrow>=1.2.3",
-    "async-lru>=2.0.4",
     "asyncio-atexit>=1.0.1",
     "bevy>=2.0.1",
     "blake3>=0.3.3",
@@ -34,8 +33,8 @@ dependencies = [
     "sqlalchemy==2.0.11",
 ]
 files = [
-    {file = "acb-0.2.5-py3-none-any.whl", hash = "sha256:20e04db583ba25e6f1d6b7102be572727474ae5424fbe56bb6a449bcca78466a"},
-    {file = "acb-0.2.5.tar.gz", hash = "sha256:c6eabe582f1fddc6b60dffde3eefecc47fb017156a89e6722184402c777058f3"},
+    {file = "acb-0.2.6-py3-none-any.whl", hash = "sha256:a243330c9f372086b8b29cd920241afad877223fbb8e5fc520987a23879653b9"},
+    {file = "acb-0.2.6.tar.gz", hash = "sha256:a72b948ee760d985428bca7e8c8833622def313b689a62ff1ac1fadfa18efffa"},
 ]
 
 [[package]]
@@ -165,16 +164,6 @@ dependencies = [
 files = [
     {file = "asttokens-2.4.0-py2.py3-none-any.whl", hash = "sha256:cf8fc9e61a86461aa9fb161a14a0841a03c405fa829ac6b202670b3495d2ce69"},
     {file = "asttokens-2.4.0.tar.gz", hash = "sha256:2e0171b991b2c959acc6c49318049236844a5da1d65ba2672c4880c1c894834e"},
-]
-
-[[package]]
-name = "async-lru"
-version = "2.0.4"
-requires_python = ">=3.8"
-summary = "Simple LRU cache for asyncio"
-files = [
-    {file = "async-lru-2.0.4.tar.gz", hash = "sha256:b8a59a5df60805ff63220b2a0c5b5393da5521b113cd5465a44eb037d81a5627"},
-    {file = "async_lru-2.0.4-py3-none-any.whl", hash = "sha256:ff02944ce3c288c5be660c42dbcca0742b32c3b279d6dceda655190240b99224"},
 ]
 
 [[package]]
@@ -451,7 +440,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.6.10"
+version = "0.6.11"
 requires_python = ">=3.11"
 summary = "Crackerjack code style"
 dependencies = [
@@ -467,8 +456,8 @@ dependencies = [
     "pytest>=7.4.2",
 ]
 files = [
-    {file = "crackerjack-0.6.10-py3-none-any.whl", hash = "sha256:cc4c2f3140c36d2267d23a2aed0b3ce2cf5069446f06e7d7bd9f4f1527f27a90"},
-    {file = "crackerjack-0.6.10.tar.gz", hash = "sha256:c62da97d2653cb8efa93ce30a682ece047c15db77ff9be6112019905bbb95f21"},
+    {file = "crackerjack-0.6.11-py3-none-any.whl", hash = "sha256:45a91e4c68cb2e75c1d770287f22342a3214b4d57cdce899581e5bd8601e5163"},
+    {file = "crackerjack-0.6.11.tar.gz", hash = "sha256:f8a5aa0485008d1c0cef741d79cee51444a92102ff9db796a46769a8ff14b0f8"},
 ]
 
 [[package]]
@@ -1718,6 +1707,35 @@ summary = "SQLModel, SQL databases in Python, designed for simplicity, compatibi
 dependencies = [
     "SQLAlchemy<=2.0.11,>=2.0.0",
     "pydantic[email]<=2.4,>=2.1.1",
+]
+
+[[package]]
+name = "starception"
+version = "1.2.1"
+requires_python = ">=3.8,<4.0"
+summary = "Beautiful debugging page for Starlette apps."
+dependencies = [
+    "Jinja2<4,>=3",
+    "MarkupSafe<3,>=2",
+    "typing-extensions<5.0,>=4.4",
+]
+files = [
+    {file = "starception-1.2.1-py3-none-any.whl", hash = "sha256:3d083c5ca655a33baf9dad4d2057c33530111168c1de7f765b3aa7727fc852aa"},
+    {file = "starception-1.2.1.tar.gz", hash = "sha256:b5a9a2b44b50ea795456018da3da98900001b9962ba68723715356bc59903797"},
+]
+
+[[package]]
+name = "starception"
+version = "1.2.1"
+extras = ["pygments"]
+requires_python = ">=3.8,<4.0"
+summary = "Beautiful debugging page for Starlette apps."
+dependencies = [
+    "starception==1.2.1",
+]
+files = [
+    {file = "starception-1.2.1-py3-none-any.whl", hash = "sha256:3d083c5ca655a33baf9dad4d2057c33530111168c1de7f765b3aa7727fc852aa"},
+    {file = "starception-1.2.1.tar.gz", hash = "sha256:b5a9a2b44b50ea795456018da3da98900001b9962ba68723715356bc59903797"},
 ]
 
 [[package]]

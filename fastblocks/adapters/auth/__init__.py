@@ -1,12 +1,12 @@
 from acb.config import import_adapter
-from ._user import User
-from ._user import current_user
+from ._model import UserModel
+from ._base import current_user
 
 
 __all__: list[str] = [
     "Auth",
     "AuthSettings",
-    "User",
+    "UserModel",
     "current_user",
 ]
 
