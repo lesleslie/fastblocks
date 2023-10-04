@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.1.9"
+version = "0.1.10"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },

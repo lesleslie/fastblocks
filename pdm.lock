@@ -1809,17 +1809,17 @@ files = [
 
 [[package]]
 name = "starlette-async-jinja"
-version = "1.3.1"
+version = "1.3.3"
 requires_python = ">=3.11"
 summary = ""
 dependencies = [
-    "jinja2-async-environment>=0.1.10",
+    "jinja2-async-environment>=0.2.1",
     "jinja2>=3.1.2",
     "starlette>=0.31.1",
 ]
 files = [
-    {file = "starlette_async_jinja-1.3.1-py3-none-any.whl", hash = "sha256:8b50beaa002339b89c19be3eb54d1057ffdc1b4309ab197a3f2c47b2f87d952e"},
-    {file = "starlette_async_jinja-1.3.1.tar.gz", hash = "sha256:e62ebb7e8f23de6ef05f9be0405345396037bbff220758fb027418777031def9"},
+    {file = "starlette_async_jinja-1.3.3-py3-none-any.whl", hash = "sha256:202b3f5659f045a40c18686d46fa30ee2cd200b104403d1cbc2a7fab2cf57204"},
+    {file = "starlette_async_jinja-1.3.3.tar.gz", hash = "sha256:12e350eebdec17b07af0fbb0981f0aeaee680e7182575c1ca38033b858b8c34a"},
 ]
 
 [[package]]
