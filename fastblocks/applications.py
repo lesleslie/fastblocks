@@ -1,13 +1,12 @@
 import logging
 import typing as t
+from pathlib import Path
 from platform import system
-import asyncio
 
-from acb.config import logger_registry
+from acb import logger_registry
+from acb import register_package
 from acb.config import Config
-from acb.config import register_package
 from acb.depends import depends
-
 from asgi_htmx import HtmxRequest as Request
 from starception import add_link_template
 from starception import install_error_handler
@@ -20,7 +19,7 @@ from starlette.responses import Response
 from starlette.types import ASGIApp
 from .middleware import middlewares
 
-asyncio.run(register_package())
+register_package()
 
 match system():
     case "Windows":
@@ -37,11 +36,12 @@ class FastBlocks(Starlette):
     config: Config = depends()
 
     def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__(**kwargs)
+        register_package(Path.cwd())
         set_editor("pycharm")
         install_error_handler()
         logging.getLogger("uvicorn").handlers.clear()
-        logger_registry.get().update(("uvicorn.access", "uvicorn.error"))
-        super().__init__(**kwargs)
+        logger_registry.get().update({"uvicorn": ("uvicorn.access", "uvicorn.error")})
         self.debug = not self.config.deployed or not self.config.debug.production
 
     def build_middleware_stack(self) -> ASGIApp:

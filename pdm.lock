@@ -6,17 +6,16 @@ groups = ["default", "dev", "sitemap", "auth"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:66c0d3dfbb041917864e0c84a3cb1afcba70b2c4e2642e2d094175194267e6e1"
+content_hash = "sha256:782c53d2857533218301f37c865a7aa09f9406cc13c63e5812400312610be052"
 
 [[package]]
 name = "acb"
-version = "0.2.9"
+version = "0.2.13"
 requires_python = ">=3.11"
 summary = "Asynchronous Code Base"
 dependencies = [
     "aiopath>=0.6.11",
     "arrow>=1.3.0",
-    "async-lru>=2.0.4",
     "asyncio-atexit>=1.0.1",
     "bevy>=2.0.1",
     "blake3>=0.3.3",
@@ -27,15 +26,14 @@ dependencies = [
     "loguru>=0.7.2",
     "msgspec[toml]>=0.18.3",
     "nest-asyncio>=1.5.8",
-    "pluginbase>=1.0.1",
     "pydantic-settings>=2.0.3",
     "pydantic>=2.4.0",
     "python-ulid>=2.2.0",
     "sqlalchemy>=2.0.11",
 ]
 files = [
-    {file = "acb-0.2.9-py3-none-any.whl", hash = "sha256:03b6652230448f9a3b995a54ebf5ca81fd6fbdd9bf53dfa117d71792c158e0ba"},
-    {file = "acb-0.2.9.tar.gz", hash = "sha256:662bf725da32528a8fdb86b82f51659e9c0078f827544c874795e2e27a9a37e0"},
+    {file = "acb-0.2.13-py3-none-any.whl", hash = "sha256:d6c37f4212ac8d5e3fc936716219664402423e2f72e3cdbbdde390446cae385d"},
+    {file = "acb-0.2.13.tar.gz", hash = "sha256:bf71a7f58452e76dad5184bb7a98f281f4091421b4dd7a0ae8c91d388b02114f"},
 ]
 
 [[package]]
@@ -166,16 +164,6 @@ dependencies = [
 files = [
     {file = "asttokens-2.4.0-py2.py3-none-any.whl", hash = "sha256:cf8fc9e61a86461aa9fb161a14a0841a03c405fa829ac6b202670b3495d2ce69"},
     {file = "asttokens-2.4.0.tar.gz", hash = "sha256:2e0171b991b2c959acc6c49318049236844a5da1d65ba2672c4880c1c894834e"},
-]
-
-[[package]]
-name = "async-lru"
-version = "2.0.4"
-requires_python = ">=3.8"
-summary = "Simple LRU cache for asyncio"
-files = [
-    {file = "async-lru-2.0.4.tar.gz", hash = "sha256:b8a59a5df60805ff63220b2a0c5b5393da5521b113cd5465a44eb037d81a5627"},
-    {file = "async_lru-2.0.4-py3-none-any.whl", hash = "sha256:ff02944ce3c288c5be660c42dbcca0742b32c3b279d6dceda655190240b99224"},
 ]
 
 [[package]]
@@ -874,6 +862,14 @@ files = [
 ]
 
 [[package]]
+name = "htmlmin"
+version = "0.1.12"
+summary = "An HTML Minifier"
+files = [
+    {file = "htmlmin-0.1.12.tar.gz", hash = "sha256:50c1ef4630374a5d723900096a961cff426dff46b48f34d194a81bbe14eca178"},
+]
+
+[[package]]
 name = "httplib2"
 version = "0.22.0"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
@@ -989,6 +985,14 @@ files = [
 ]
 
 [[package]]
+name = "jsmin"
+version = "3.0.1"
+summary = "JavaScript minifier."
+files = [
+    {file = "jsmin-3.0.1.tar.gz", hash = "sha256:c0959a121ef94542e807a674142606f7e90214a2b3d1eb17300244bbb5cc2bfc"},
+]
+
+[[package]]
 name = "libcst"
 version = "1.0.1"
 requires_python = ">=3.7"
@@ -1006,6 +1010,19 @@ files = [
     {file = "libcst-1.0.1-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ddd4e0eeec499d1c824ab545e62e957dbbd69a16bc4273208817638eb7d6b3c6"},
     {file = "libcst-1.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:414350df5e334ddf0db1732d63da44e81b734d45abe1c597b5e5c0dd46aa4156"},
     {file = "libcst-1.0.1.tar.gz", hash = "sha256:37187337f979ba426d8bfefc08008c3c1b09b9e9f9387050804ed2da88107570"},
+]
+
+[[package]]
+name = "libsass"
+version = "0.22.0"
+requires_python = ">=3.6"
+summary = "Sass for Python: A straightforward binding of libsass for Python."
+files = [
+    {file = "libsass-0.22.0-cp36-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:f1efc1b612299c88aec9e39d6ca0c266d360daa5b19d9430bdeaffffa86993f9"},
+    {file = "libsass-0.22.0-cp37-abi3-macosx_10_15_x86_64.whl", hash = "sha256:081e256ab3c5f3f09c7b8dea3bf3bf5e64a97c6995fd9eea880639b3f93a9f9a"},
+    {file = "libsass-0.22.0-cp37-abi3-win32.whl", hash = "sha256:89c5ce497fcf3aba1dd1b19aae93b99f68257e5f2026b731b00a872f13324c7f"},
+    {file = "libsass-0.22.0-cp37-abi3-win_amd64.whl", hash = "sha256:65455a2728b696b62100eb5932604aa13a29f4ac9a305d95773c14aaa7200aaf"},
+    {file = "libsass-0.22.0.tar.gz", hash = "sha256:3ab5ad18e47db560f4f0c09e3d28cf3bb1a44711257488ac2adad69f4f7f8425"},
 ]
 
 [[package]]
@@ -1263,14 +1280,6 @@ summary = "plugin and hook calling mechanisms for python"
 files = [
     {file = "pluggy-1.3.0-py3-none-any.whl", hash = "sha256:d89c696a773f8bd377d18e5ecda92b7a3793cbe66c87060a6fb58c7b6e1061f7"},
     {file = "pluggy-1.3.0.tar.gz", hash = "sha256:cf61ae8f126ac6f7c451172cf30e3e43d3ca77615509771b3a984a0730651e12"},
-]
-
-[[package]]
-name = "pluginbase"
-version = "1.0.1"
-summary = "PluginBase is a module for Python that enables the development of flexible plugin systems in Python."
-files = [
-    {file = "pluginbase-1.0.1.tar.gz", hash = "sha256:ff6c33a98fce232e9c73841d787a643de574937069f0d18147028d70d7dee287"},
 ]
 
 [[package]]
@@ -1809,7 +1818,7 @@ files = [
 
 [[package]]
 name = "starlette-async-jinja"
-version = "1.3.3"
+version = "1.3.4"
 requires_python = ">=3.11"
 summary = ""
 dependencies = [
@@ -1818,8 +1827,8 @@ dependencies = [
     "starlette>=0.31.1",
 ]
 files = [
-    {file = "starlette_async_jinja-1.3.3-py3-none-any.whl", hash = "sha256:202b3f5659f045a40c18686d46fa30ee2cd200b104403d1cbc2a7fab2cf57204"},
-    {file = "starlette_async_jinja-1.3.3.tar.gz", hash = "sha256:12e350eebdec17b07af0fbb0981f0aeaee680e7182575c1ca38033b858b8c34a"},
+    {file = "starlette_async_jinja-1.3.4-py3-none-any.whl", hash = "sha256:7dcc5fd47764d6c1ebdcf79788fa86fce9512e9f26ad0c7f1359059776ea79ba"},
+    {file = "starlette_async_jinja-1.3.4.tar.gz", hash = "sha256:66a4c88d9549ad84aac7ab00eda0174ee44cb67fb3c11309282584dc4e923e50"},
 ]
 
 [[package]]
@@ -1834,6 +1843,19 @@ dependencies = [
 files = [
     {file = "starlette_csrf-3.0.0-py3-none-any.whl", hash = "sha256:aac29b366e83621d3fc56be690866e16f3c56df91ab5e184b77950540a4e2761"},
     {file = "starlette_csrf-3.0.0.tar.gz", hash = "sha256:7afaca8c72cc3c726e5942778af53454607ca3e653fd86cd75ee35d8cd1cfa77"},
+]
+
+[[package]]
+name = "starlette-decorouter"
+version = "1.0.0"
+requires_python = ">=3.8, <4"
+summary = "FastAPI style decorators for starlette ASGI"
+dependencies = [
+    "starlette",
+]
+files = [
+    {file = "starlette_decoRouter-1.0.0-py3-none-any.whl", hash = "sha256:4e2febe81066b60576e419b33e2f59c6219ca57742994aa00c20450cdf516f57"},
+    {file = "starlette_decoRouter-1.0.0.tar.gz", hash = "sha256:a7c8738a12ea033cd8aad3e2d31fa1e16acfc977787c90d4685bd79d758bc885"},
 ]
 
 [[package]]

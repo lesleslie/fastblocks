@@ -1,4 +1,4 @@
-from acb.config import import_adapter
+from acb.config import load_adapter
 from ._model import UserModel
 from ._base import current_user
 
@@ -11,4 +11,4 @@ __all__: list[str] = [
 ]
 
 
-Auth, AuthSettings = import_adapter()
+Auth, AuthSettings = load_adapter()

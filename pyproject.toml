@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.1.10"
+version = "0.1.11"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -20,6 +20,10 @@ dependencies = [
     "starception>=1.2.1",
     "acb>=0.2.7",
     "pydantic>=2.4.0",
+    "htmlmin>=0.1.12",
+    "jsmin>=3.0.1",
+    "libsass>=0.22.0",
+    "starlette-decorouter>=1.0.0",
 ]
 
 [project.optional-dependencies]
