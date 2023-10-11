@@ -6,11 +6,11 @@ groups = ["default", "dev", "sitemap", "auth"]
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:bcec49ae17228cd1413729b3158bf53ae5b0977cbc8ef98f7e7e0cec50be3360"
+content_hash = "sha256:539384ab821560ecd3f6d336ceaa8cecb2ba965bc1ca05426d16dce01ea4b70d"
 
 [[package]]
 name = "acb"
-version = "0.2.14"
+version = "0.2.15"
 requires_python = ">=3.11"
 summary = "Asynchronous Code Base"
 dependencies = [
@@ -18,6 +18,7 @@ dependencies = [
     "arrow>=1.3.0",
     "bevy>=2.0.1",
     "blake3>=0.3.3",
+    "brotli>=1.1.0",
     "dill>=0.3.7",
     "google-crc32c>=1.5.0",
     "icecream>=2.1.3",
@@ -27,12 +28,12 @@ dependencies = [
     "nest-asyncio>=1.5.8",
     "pydantic-settings>=2.0.3",
     "pydantic>=2.4.0",
-    "python-ulid>=2.2.0",
     "sqlalchemy>=2.0.11",
+    "ulid-py>=1.1.0",
 ]
 files = [
-    {file = "acb-0.2.14-py3-none-any.whl", hash = "sha256:d48d6d278ccbd3ca295f3c5e445e4747512d7de062bcacca4e9738a4064ceb32"},
-    {file = "acb-0.2.14.tar.gz", hash = "sha256:212617af7b82c5f13bda378db58179d0900f07fdb9b930ea446720591043e29b"},
+    {file = "acb-0.2.15-py3-none-any.whl", hash = "sha256:14758bb6e43882bff6f87ac99854c47abf160c301fe93ab533dec57c910fab86"},
+    {file = "acb-0.2.15.tar.gz", hash = "sha256:020ad7ecc88ef2c201d4b5f5aec35cc05f5f0511c73f48643a690799b8ae04a8"},
 ]
 
 [[package]]
@@ -446,7 +447,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.6.19"
+version = "0.6.21"
 requires_python = ">=3.11"
 summary = "Crackerjack code style"
 dependencies = [
@@ -462,8 +463,8 @@ dependencies = [
     "pytest>=7.4.2",
 ]
 files = [
-    {file = "crackerjack-0.6.19-py3-none-any.whl", hash = "sha256:353d96f564d61c1cfe634ca09a381cbe363e4621af2aab161678b8a72d7925e7"},
-    {file = "crackerjack-0.6.19.tar.gz", hash = "sha256:44f0f1e1836fb928182b34c310b19e78aa0e27bf407a8a5e9fa1218f1136161a"},
+    {file = "crackerjack-0.6.21-py3-none-any.whl", hash = "sha256:c29e8f9e449bb5ec26797d4bdb15413ef1b6665df57828bd93f8fcb2c740c7e2"},
+    {file = "crackerjack-0.6.21.tar.gz", hash = "sha256:c00f048bf5f75da7ff22e0e3e7c2d87d62ff6315e66accdefa94b8a91518c758"},
 ]
 
 [[package]]
@@ -1576,16 +1577,6 @@ files = [
 ]
 
 [[package]]
-name = "python-ulid"
-version = "2.2.0"
-requires_python = ">=3.9"
-summary = "Universally unique lexicographically sortable identifier"
-files = [
-    {file = "python_ulid-2.2.0-py3-none-any.whl", hash = "sha256:ec2e69292c0b7c338a07df5e15b05270be6823675c103383e74d1d531945eab5"},
-    {file = "python_ulid-2.2.0.tar.gz", hash = "sha256:9ec777177d396880d94be49ac7eb4ae2cd4a7474448bfdbfe911537add970aeb"},
-]
-
-[[package]]
 name = "pyyaml"
 version = "6.0.1"
 requires_python = ">=3.6"
@@ -1916,8 +1907,17 @@ files = [
 ]
 
 [[package]]
+name = "ulid-py"
+version = "1.1.0"
+summary = "Universally Unique Lexicographically Sortable Identifier"
+files = [
+    {file = "ulid-py-1.1.0.tar.gz", hash = "sha256:dc6884be91558df077c3011b9fb0c87d1097cb8fc6534b11f310161afd5738f0"},
+    {file = "ulid_py-1.1.0-py2.py3-none-any.whl", hash = "sha256:b56a0f809ef90d6020b21b89a87a48edc7c03aea80e5ed5174172e82d76e3987"},
+]
+
+[[package]]
 name = "unearth"
-version = "0.11.0"
+version = "0.11.1"
 requires_python = ">=3.7"
 summary = "A utility to fetch and download python packages"
 dependencies = [
@@ -1925,8 +1925,8 @@ dependencies = [
     "requests>=2.25",
 ]
 files = [
-    {file = "unearth-0.11.0-py3-none-any.whl", hash = "sha256:81eae966dd66b23dd578ff14ca155a5387d3596fbe2b44212508090143c250a2"},
-    {file = "unearth-0.11.0.tar.gz", hash = "sha256:af20729b398d2f3b839251d745e4f40f23cb09bd6b797e0a6ff6eed46ca70422"},
+    {file = "unearth-0.11.1-py3-none-any.whl", hash = "sha256:b136c9938ba1a99c13f1ff880691ba51fdd8509eb12f85e20d66b87356912005"},
+    {file = "unearth-0.11.1.tar.gz", hash = "sha256:69b9d4d86173f6fbe8cf685c829c31a60d0c82e1bcd6c5b59af8fd564bf0dc1a"},
 ]
 
 [[package]]

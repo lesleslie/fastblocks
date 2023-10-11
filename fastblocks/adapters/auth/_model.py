@@ -1,6 +1,6 @@
 import typing as t
 
-from acb.adapters.sql._model import SqlModel
+from acb.adapters.models._sqlmodel import SqlModel
 from sqlmodel import Field
 
 from pydantic import EmailStr

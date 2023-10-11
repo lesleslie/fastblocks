@@ -81,7 +81,7 @@ class DisableCacheMiddleware(BaseHTTPMiddleware):
 @depends.inject
 def middlewares(
     config: Config = depends(), logger: Logger = depends()  # type: ignore
-) -> t.Sequence[Middleware]:
+) -> list[Middleware]:
     return [
         Middleware(HTTPSRedirectMiddleware),
         Middleware(DisableCacheMiddleware),

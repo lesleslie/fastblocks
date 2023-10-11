@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.1.12"
+version = "0.1.13"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -23,7 +23,7 @@ dependencies = [
     "jsmin>=3.0.1",
     "libsass>=0.22.0",
     "starlette-decorouter>=1.0.0",
-    "acb==0.2.14",
+    "acb>=0.2.15",
 ]
 
 [project.optional-dependencies]
@@ -46,7 +46,7 @@ config = [
 [tool.pdm.dev-dependencies]
 dev = [
     "-e git+https://github.com/honglei/sqlmodel.git#egg=sqlmodel",
-    "crackerjack>=0.6.19",
+    "crackerjack>=0.6.21",
 ]
 
 [tool.ruff]
@@ -76,13 +76,12 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
+    "pre-commit",
     "pdm-bump",
     "autotyping",
-    "python-ulid",
-    "pre-commit",
-    "pytest",
-    "libsass",
     "starlette-decorouter",
+    "libsass",
+    "pytest",
 ]
 
 [tool.refurb]
@@ -93,9 +92,9 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B113",
-    "B403",
     "B404",
+    "B403",
+    "B113",
     "B603",
 ]
 

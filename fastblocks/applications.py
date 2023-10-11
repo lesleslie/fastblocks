@@ -1,12 +1,13 @@
-import logging
 import typing as t
 from pathlib import Path
 from platform import system
 
-from acb import logger_registry
 from acb import register_package
+from acb.adapters.logger._base import ExternalLogger
+from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.depends import depends
+
 from asgi_htmx import HtmxRequest as Request
 from starception import add_link_template
 from starception import install_error_handler
@@ -34,14 +35,20 @@ match system():
 
 class FastBlocks(Starlette):
     config: Config = depends()
+    logger: Logger = depends()  # type: ignore
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         register_package(Path.cwd())
         set_editor("pycharm")
         install_error_handler()
-        logging.getLogger("uvicorn").handlers.clear()
-        logger_registry.get().update({"uvicorn": ("uvicorn.access", "uvicorn.error")})
+        loggers = ["uvicorn", "uvicorn.access", "uvicorn.error"]
+        self.logger.register_external_loggers(
+            [
+                ExternalLogger(name=name, package="fastblocks", module="main")
+                for name in loggers
+            ]
+        )
         self.debug = not self.config.deployed or not self.config.debug.production
 
     def build_middleware_stack(self) -> ASGIApp:
