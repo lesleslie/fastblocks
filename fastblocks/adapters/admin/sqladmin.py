@@ -44,17 +44,13 @@ class Admin(SqlAdmin):
     async def init(self, models: Models = depends()) -> None:  # type: ignore
         ...
 
-    @depends.inject
-    def init_templating_engine(
-        self, templates: Templates = depends()  # type: ignore
-    ) -> AsyncJinja2Templates:
-        tmpls = templates.admin
-        tmpls.env.globals["min"] = min
-        tmpls.env.globals["zip"] = zip
-        tmpls.env.globals["admin"] = self
-        tmpls.env.globals["is_list"] = lambda x: isinstance(x, list)  # type: ignore
-        tmpls.env.globals["get_object_identifier"] = get_object_identifier
-        return tmpls
+    def init_templating_engine(self) -> AsyncJinja2Templates:
+        self.templates.env.globals["min"] = min
+        self.templates.env.globals["zip"] = zip
+        self.templates.env.globals["admin"] = self
+        self.templates.env.globals["is_list"] = lambda x: isinstance(x, list)  # type:
+        self.templates.globals["get_object_identifier"] = get_object_identifier
+        return self.templates
 
     @override
     async def login(self, request: Request) -> (RedirectResponse | Response):
