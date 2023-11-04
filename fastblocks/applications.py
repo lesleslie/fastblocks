@@ -1,13 +1,10 @@
 import typing as t
-from pathlib import Path
 from platform import system
 
-from acb import register_package
-from acb.adapters.logger._base import ExternalLogger
 from acb.adapters.logger import Logger
+from acb.adapters.logger._base import ExternalLogger
 from acb.config import Config
 from acb.depends import depends
-
 from asgi_htmx import HtmxRequest as Request
 from starception import add_link_template
 from starception import install_error_handler
@@ -19,8 +16,6 @@ from starlette.middleware.exceptions import ExceptionMiddleware
 from starlette.responses import Response
 from starlette.types import ASGIApp
 from .middleware import middlewares
-
-register_package()
 
 match system():
     case "Windows":
@@ -39,7 +34,6 @@ class FastBlocks(Starlette):
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
-        register_package(Path.cwd())
         set_editor("pycharm")
         install_error_handler()
         loggers = ["uvicorn", "uvicorn.access", "uvicorn.error"]

@@ -4,8 +4,6 @@ from contextvars import ContextVar
 
 from acb.config import Config
 from acb.depends import depends
-
-
 from fastblocks.adapters.templates import Templates
 
 

@@ -1,21 +1,17 @@
 from contextlib import asynccontextmanager
 from time import time
 
-from acb import register_package
 from acb.adapters.cache import Cache
 from acb.adapters.logger import Logger
 from acb.adapters.storage import Storage
 from acb.config import Config
 from acb.depends import depends
-from fastblocks.routing import router_registry
-
 from fastblocks.adapters.templates import Templates
-from middleware import middlewares
 from fastblocks.applications import FastBlocks
+from fastblocks.routing import router_registry
+from middleware import middlewares
 from ._base import AppBase
 from ._base import AppBaseSettings
-
-register_package()
 
 main_start = time()
 

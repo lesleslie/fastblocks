@@ -155,4 +155,4 @@ class Auth(AuthBase):
         return await current_user.get().is_authenticated(request)
 
 
-depends.set(Auth, Auth())
+depends.set(Auth)
