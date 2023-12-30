@@ -2,25 +2,20 @@ from contextlib import asynccontextmanager
 from time import time
 
 from acb import adapter_registry
-from acb import register_package
 from acb.adapters.cache import Cache
 from acb.adapters.logger import Logger
-from acb.adapters.models import Models
+from acb.adapters.sql import SqlModels
 from acb.adapters.sql import Sql
 from acb.config import Config
 from acb.depends import depends
-from fastblocks.routing import router_registry
-
 from fastblocks.adapters.admin import Admin
 from fastblocks.adapters.auth import Auth
 from fastblocks.adapters.templates import Templates
-from middleware import middlewares
-from sqlalchemy.exc import IntegrityError
 from fastblocks.applications import FastBlocks
+from fastblocks.routing import router_registry
+from middleware import middlewares
 from ._base import AppBase
 from ._base import AppBaseSettings
-
-register_package()
 
 main_start = time()
 
@@ -74,7 +69,7 @@ class App(FastBlocks, AppBase):
         self,
         config: Config = depends(),  # type: ignore
         logger: Logger = depends(),  # type: ignore
-        models: Models = depends(),  # type: ignore
+        models: SqlModels = depends(),  # type: ignore
         cache: Cache = depends(),  # type: ignore
         sql: Sql = depends(),  # type: ignore
         auth: Auth = depends(),  # type: ignore
@@ -82,15 +77,15 @@ class App(FastBlocks, AppBase):
     ):
         logger.info("Application starting...")
         if next(a for a in adapter_registry.get() if a.name == "admin" and a.installed):
-            try:
-                logger.info("Creating admin superuser...")
-                await models.create_user(
-                    gmail=config.admin.gmail,
-                    email=config.admin.email,
-                    role="admin",
-                )
-            except IntegrityError:
-                logger.debug("Admin superuser exists")
+            # try:
+            #     logger.info("Creating admin superuser...")
+            #     await models.create_user(
+            #         gmail=config.admin.gmail,
+            #         email=config.admin.email,
+            #         role="admin",
+            #     )
+            # except IntegrityError:
+            #     logger.debug("Admin superuser exists")
             admin.__init__(
                 app=self,
                 engine=sql.engine,

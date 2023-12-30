@@ -9,7 +9,7 @@ from re import search
 
 from jinja_partials import register_starlette_extensions  # type: ignore
 
-from acb import adapters_path
+# from acb import adapters_path
 from acb import base_path
 from acb.adapters.cache import Cache
 from acb.adapters.logger import Logger
@@ -259,7 +259,7 @@ class TemplatesSettings(TemplatesBaseSettings):
     requires: t.Optional[list[str]] = ["cache", "storage"]
     app: t.Optional[EnvTemplatePaths] = EnvTemplatePaths(root=base_path)
     admin: t.Optional[EnvTemplatePaths] = EnvTemplatePaths(
-        root=adapters_path / "admin" / "_templates"
+        root=base_path.parent / "admin" / "_templates"
     )
     loader: t.Optional[str] = None
     extensions: list[Extension] = []

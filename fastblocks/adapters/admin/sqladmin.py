@@ -2,7 +2,7 @@ import typing as t
 from typing import override
 
 from acb.adapters.logger import Logger
-from acb.adapters.models import Models
+from acb.adapters.sql import SqlModels
 from acb.adapters.storage import Storage
 from acb.config import Config
 from acb.config import Settings
@@ -25,7 +25,7 @@ from ..templates import Templates
 
 
 class AdminSettings(Settings):
-    requires: list[str] = ["app", "storage", "sql", "auth"]
+    requires: t.Optional[list[str]] = ["app", "storage", "sql", "auth"]
     title: str = "Fastblocks Dashboard"
     roles: t.Optional[list[str]] = ["admin", "owner", "contributor", "viewer"]
 
@@ -41,14 +41,15 @@ class Admin(SqlAdmin):
         super().__init__(app, **kwargs)
 
     @depends.inject
-    async def init(self, models: Models = depends()) -> None:  # type: ignore
+    async def init(self, models: SqlModels = depends()) -> None:  # type: ignore
         ...
 
-    def init_templating_engine(self) -> AsyncJinja2Templates:
+    @override
+    def init_templating_engine(self) -> AsyncJinja2Templates:  # type: ignore
         self.templates.env.globals["min"] = min
         self.templates.env.globals["zip"] = zip
         self.templates.env.globals["admin"] = self
-        self.templates.env.globals["is_list"] = lambda x: isinstance(x, list)  # type:
+        self.templates.env.globals["is_list"] = lambda x: isinstance(x, list)  # type: ignore
         self.templates.globals["get_object_identifier"] = get_object_identifier
         return self.templates
 

@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.2.0"
+version = "0.2.1"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -41,20 +41,20 @@ dependencies = [
     "brotli-asgi>=1.4.0",
     "secure>=0.3.0",
     "starlette-csrf>=3.0.0",
-    "starlette-async-jinja>=1.4.0",
+    "starlette-async-jinja>=1.4.1",
     "cashews>=6.3.0",
     "starception>=1.2.1",
-    "pydantic>=2.4.0",
+    "pydantic>=2.5.3",
     "starlette-decorouter>=1.0.0",
     "pyfiglet>=1.0.2",
-    "jinja2-async-environment>=0.3.0",
-    "starlette>=0.31.1",
-    "uvicorn>=0.23.2",
+    "jinja2-async-environment>=0.4.0",
+    "starlette>=0.34.0",
+    "uvicorn>=0.25.0",
     "htmlmin>=0.1.12",
     "jsmin>=3.0.1",
     "libsass>=0.22.0",
-    "aiohttp>=3.9.0b0",
-    "acb[cache,requests,secrets,storage]>=0.3.5",
+    "aiohttp>=3.9.1",
+    "acb[cache,requests,secrets,sql,storage]>=0.4.1",
 ]
 
 [project.optional-dependencies]
@@ -62,14 +62,14 @@ sitemap = [
     "asgi-sitemaps>=1.0.0",
 ]
 auth = [
-    "firebase-admin>=6.2.0",
+    "firebase-admin>=6.3.0",
 ]
 style = [
     "beautifulsoup4>=4.12.2",
     "tinycss2>=1.2.1",
 ]
 admin = [
-    "sqladmin>=0.15.2",
+    "sqladmin>=0.16.0",
 ]
 
 [project.license]
@@ -83,7 +83,7 @@ config = [
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.7.4",
+    "crackerjack>=0.7.17",
 ]
 
 [tool.ruff]
@@ -113,14 +113,15 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest",
-    "pyfiglet",
-    "aiohttp",
-    "pre-commit",
-    "starlette-decorouter",
-    "libsass",
-    "pdm-bump",
     "autotyping",
+    "pdm",
+    "pre-commit",
+    "pdm-bump",
+    "aiohttp",
+    "starlette-decorouter",
+    "pyfiglet",
+    "pytest",
+    "libsass",
 ]
 
 [tool.refurb]
@@ -131,10 +132,10 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B403",
-    "B113",
-    "B603",
     "B404",
+    "B113",
+    "B403",
+    "B603",
 ]
 
 [tool.pyright]
@@ -155,6 +156,11 @@ reportUnknownArgumentType = false
 reportPrivateUsage = "warning"
 pythonVersion = "3.12"
 pythonPlatform = "Darwin"
+
+[tool.codespell]
+skip = "*/data/*"
+quiet-level = 3
+ignore-words-list = "crate,uptodate"
 
 [build-system]
 requires = [

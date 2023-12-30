@@ -15,4 +15,3 @@ __all__ = [
     "AsyncJinja2Templates",
     "Router",
 ]
-
