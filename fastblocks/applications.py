@@ -55,12 +55,20 @@ class FastBlocks(Starlette):
             else:
                 exception_handlers[key] = value  # type: ignore
         middleware = (
-            [Middleware(ServerErrorMiddleware, handler=error_handler, debug=debug)]
+            [
+                Middleware(
+                    ServerErrorMiddleware,  # type: ignore
+                    handler=error_handler,  # type: ignore
+                    debug=debug,
+                )
+            ]
             + self.user_middleware
             + middlewares()
             + [
                 Middleware(
-                    ExceptionMiddleware, handlers=exception_handlers, debug=debug
+                    ExceptionMiddleware,  # type: ignore
+                    handlers=exception_handlers,  # type: ignore
+                    debug=debug,
                 )
             ]
         )

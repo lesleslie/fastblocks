@@ -19,7 +19,7 @@ files = [
 
 [[package]]
 name = "acb"
-version = "0.4.3"
+version = "0.4.4"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 dependencies = [
@@ -44,18 +44,18 @@ dependencies = [
     "ulid-py>=1.1.0",
 ]
 files = [
-    {file = "acb-0.4.3-py3-none-any.whl", hash = "sha256:222942c1ff9b748a0cd0f235ffda47c83b434caeb7c736b87f90214d96d1afd0"},
-    {file = "acb-0.4.3.tar.gz", hash = "sha256:8d4a59d17961c9d65b5bc185945bc32f8b81105d860694da574398439aa51f3a"},
+    {file = "acb-0.4.4-py3-none-any.whl", hash = "sha256:d1d0eb9b4458ab963fa9f1db31dbee9874068b181650edfdb7a45075baea25bd"},
+    {file = "acb-0.4.4.tar.gz", hash = "sha256:42e9862fd97cbb6e73de6868f03798c33a5e0b008a043401fa8b053e36790a80"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.4.3"
+version = "0.4.4"
 extras = ["cache", "requests", "secrets", "sql", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 dependencies = [
-    "acb==0.4.3",
+    "acb==0.4.4",
     "adlfs>=2023.12.0",
     "asyncmy>=0.2.9",
     "cashews[redis]>=6.4.0",
@@ -70,8 +70,8 @@ dependencies = [
     "sqlmodel>=0.0.14",
 ]
 files = [
-    {file = "acb-0.4.3-py3-none-any.whl", hash = "sha256:222942c1ff9b748a0cd0f235ffda47c83b434caeb7c736b87f90214d96d1afd0"},
-    {file = "acb-0.4.3.tar.gz", hash = "sha256:8d4a59d17961c9d65b5bc185945bc32f8b81105d860694da574398439aa51f3a"},
+    {file = "acb-0.4.4-py3-none-any.whl", hash = "sha256:d1d0eb9b4458ab963fa9f1db31dbee9874068b181650edfdb7a45075baea25bd"},
+    {file = "acb-0.4.4.tar.gz", hash = "sha256:42e9862fd97cbb6e73de6868f03798c33a5e0b008a043401fa8b053e36790a80"},
 ]
 
 [[package]]
@@ -672,7 +672,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.19"
+version = "0.7.20"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
@@ -689,8 +689,8 @@ dependencies = [
     "pytest>=7.4.3",
 ]
 files = [
-    {file = "crackerjack-0.7.19-py3-none-any.whl", hash = "sha256:ac5be88880f5c5bd0a78d250a472f7456a4149e215a05529bf076839e051d1ac"},
-    {file = "crackerjack-0.7.19.tar.gz", hash = "sha256:fbdff29a3d5786813673cc0c61a8e6c0806117efb19ca8b151663d3ce82d8b25"},
+    {file = "crackerjack-0.7.20-py3-none-any.whl", hash = "sha256:afe5e3e31445bdd2a5a4298b2b8fdb069ac05213203e241e28444b83d0c36a0b"},
+    {file = "crackerjack-0.7.20.tar.gz", hash = "sha256:06e0341d5f8c748b09afc0ca3f7a3b96153417ecadb906ee7d64f123be217299"},
 ]
 
 [[package]]
@@ -2303,15 +2303,15 @@ files = [
 
 [[package]]
 name = "starlette"
-version = "0.34.0"
+version = "0.35.1"
 requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
 dependencies = [
     "anyio<5,>=3.4.0",
 ]
 files = [
-    {file = "starlette-0.34.0-py3-none-any.whl", hash = "sha256:2e14ee943f2df59eb8c141326240ce601643f1a97b577db44634f6d05d368c37"},
-    {file = "starlette-0.34.0.tar.gz", hash = "sha256:ed050aaf3896945bfaae93bdf337e53ef3f29115a9d9c153e402985115cd9c8e"},
+    {file = "starlette-0.35.1-py3-none-any.whl", hash = "sha256:50bbbda9baa098e361f398fda0928062abbaf1f54f4fadcbe17c092a01eb9a25"},
+    {file = "starlette-0.35.1.tar.gz", hash = "sha256:3e2639dac3520e4f58734ed22553f950d3f3cb1001cd2eaac4d57e8cdc5f66bc"},
 ]
 
 [[package]]

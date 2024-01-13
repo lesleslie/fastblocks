@@ -83,17 +83,20 @@ def middlewares(
     config: Config = depends(), logger: Logger = depends()  # type: ignore
 ) -> list[Middleware]:
     return [
-        Middleware(HTTPSRedirectMiddleware),
-        Middleware(DisableCacheMiddleware),
-        Middleware(FromCacheHeaderMiddleware),
-        Middleware(CSRFMiddleware, secret=config.app.secret_key.get_secret_value()),
-        Middleware(SecureHeadersMiddleware),
-        Middleware(HtmxMiddleware),
-        Middleware(BrotliMiddleware, quality=3),
+        Middleware(HTTPSRedirectMiddleware),  # type: ignore
+        Middleware(DisableCacheMiddleware),  # type: ignore
+        Middleware(FromCacheHeaderMiddleware),  # type: ignore
         Middleware(
-            AccessLoggerMiddleware,
-            logger=logger,
+            CSRFMiddleware,  # type: ignore
+            secret=config.app.secret_key.get_secret_value(),
+        ),
+        Middleware(SecureHeadersMiddleware),  # type: ignore
+        Middleware(HtmxMiddleware),  # type: ignore
+        Middleware(BrotliMiddleware, quality=3),  # type: ignore
+        Middleware(
+            AccessLoggerMiddleware,  # type: ignore
+            logger=logger,  # type: ignore
             format='{client_addr} - "{request_line}" {status_code}',
         ),
-        Middleware(ProcessTimeHeaderMiddleware),
+        Middleware(ProcessTimeHeaderMiddleware),  # type: ignore
     ]
