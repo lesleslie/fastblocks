@@ -5,6 +5,7 @@ from acb.adapters.logger import Logger
 from acb.adapters.logger._base import ExternalLogger
 from acb.config import Config
 from acb.depends import depends
+
 from asgi_htmx import HtmxRequest as Request
 from starception import add_link_template
 from starception import install_error_handler
@@ -13,9 +14,16 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
+from starlette.responses import PlainTextResponse
 from starlette.responses import Response
+from starlette.routing import Route
 from starlette.types import ASGIApp
+from starlette.types import ExceptionHandler
+from starlette.types import Lifespan
 from .middleware import middlewares
+from .routing import router_registry
+
+AppType = t.TypeVar("AppType", bound="FastBlocks")
 
 match system():
     case "Windows":
@@ -28,25 +36,49 @@ match system():
         ...
 
 
-class FastBlocks(Starlette):
-    config: Config = depends()
-    logger: Logger = depends()  # type: ignore
+# @staticmethod
+def index(request):
+    return PlainTextResponse("Hello, world!")
 
-    def __init__(self, **kwargs: t.Any) -> None:
-        super().__init__(**kwargs)
+
+routes = [
+    Route("/", index),
+]
+for router in router_registry.get():
+    routes.append(router)
+
+
+class FastBlocks(Starlette):
+    @depends.inject
+    def __init__(
+        self: AppType,
+        # debug: bool = False,
+        # routes: t.Sequence[BaseRoute] | None = None,
+        middleware: t.Sequence[Middleware] | None = None,
+        exception_handlers: t.Mapping[t.Any, ExceptionHandler] | None = None,
+        lifespan: t.Optional[Lifespan["AppType"]] = None,
+        config: Config = depends(),
+        logger: Logger = depends(),
+    ) -> None:
+        super().__init__(
+            debug=config.debug.app,
+            routes=routes,
+            middleware=middleware,
+            lifespan=lifespan,
+            exception_handlers=exception_handlers,
+        )
         set_editor("pycharm")
         install_error_handler()
-        loggers = ["uvicorn", "uvicorn.access", "uvicorn.error"]
-        self.logger.register_external_loggers(
-            [
-                ExternalLogger(name=name, package="fastblocks", module="main")
-                for name in loggers
-            ]
-        )
-        self.debug = not self.config.deployed or not self.config.debug.production
+        # loggers = ["uvicorn", "uvicorn.access", "uvicorn.error"]
+        # logger.register_external_loggers(
+        #     [
+        #         ExternalLogger(name=name, package="fastblocks", module="main")
+        #         for name in loggers
+        #     ]
+        # )
 
-    def build_middleware_stack(self) -> ASGIApp:
-        debug = self.debug
+    @depends.inject
+    def build_middleware_stack(self, logger: Logger = depends()) -> ASGIApp:
         error_handler = None
         exception_handlers: dict[t.Any, t.Callable[[Request, Exception], Response]] = {}
         for key, value in self.exception_handlers.items():
@@ -59,7 +91,7 @@ class FastBlocks(Starlette):
                 Middleware(
                     ServerErrorMiddleware,  # type: ignore
                     handler=error_handler,  # type: ignore
-                    debug=debug,
+                    debug=self.debug,
                 )
             ]
             + self.user_middleware
@@ -68,11 +100,13 @@ class FastBlocks(Starlette):
                 Middleware(
                     ExceptionMiddleware,  # type: ignore
                     handlers=exception_handlers,  # type: ignore
-                    debug=debug,
+                    debug=self.debug,
                 )
             ]
         )
         app = self.router
-        for cls, options in reversed(middleware):
-            app = cls(app=app, **options)
+        for cls, args, kwargs in reversed(middleware):
+            logger.debug(f"Adding middleware: {cls.__name__}")
+            app = cls(app=app, *args, **kwargs)
+        logger.info("Middleware stack built")
         return app

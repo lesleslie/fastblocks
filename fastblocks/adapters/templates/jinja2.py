@@ -5,9 +5,8 @@ from html.parser import HTMLParser
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
+from pprint import pprint
 from re import search
-
-from jinja_partials import register_starlette_extensions  # type: ignore
 
 # from acb import adapters_path
 from acb import base_path
@@ -17,14 +16,16 @@ from acb.adapters.storage import Storage
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
+
 from aiopath import AsyncPath
-from fastblocks import AsyncJinja2Templates
+from starlette_async_jinja import AsyncJinja2Templates
 from jinja2 import TemplateNotFound
 from jinja2.ext import debug as jinja_debug
 from jinja2.ext import Extension
 from jinja2.ext import i18n
 from jinja2.ext import loopcontrols
 from jinja2_async_environment.loaders import AsyncBaseLoader
+from jinja_partials import register_starlette_extensions  # type: ignore
 from pydantic import BaseModel
 from ._base import TemplatesBase
 from ._base import TemplatesBaseSettings
@@ -240,27 +241,21 @@ class ChoiceLoader(AsyncBaseLoader):
 
 class EnvTemplatePaths(BaseModel, arbitrary_types_allowed=True):
     root: AsyncPath
-    base: AsyncPath
-    style: AsyncPath
-    theme: AsyncPath
+    base: t.Optional[AsyncPath] = None
+    style: t.Optional[AsyncPath] = None
+    theme: t.Optional[AsyncPath] = None
 
     @depends.inject
-    def __init__(
-        self, root: AsyncPath, config: Config = depends(), **data: t.Any
-    ) -> None:
-        super().__init__(**data)
-        self.root = root / "templates"
+    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+        super().__init__(**values)
+        self.root = self.root / "templates"
         self.base = self.root / "base"
         self.style = self.root / config.app.style
         self.theme = self.style / config.app.theme
 
 
 class TemplatesSettings(TemplatesBaseSettings):
-    requires: t.Optional[list[str]] = ["cache", "storage"]
-    app: t.Optional[EnvTemplatePaths] = EnvTemplatePaths(root=base_path)
-    admin: t.Optional[EnvTemplatePaths] = EnvTemplatePaths(
-        root=base_path.parent / "admin" / "_templates"
-    )
+    # requires: t.Optional[list[str]] = ["cache", "storage"]
     loader: t.Optional[str] = None
     extensions: list[Extension] = []
     delimiters: t.Optional[dict[str, str]] = dict(
@@ -279,8 +274,9 @@ class Templates(TemplatesBase):
     admin: t.Optional[AsyncJinja2Templates] = None
     config: Config = depends()  # type: ignore
 
-    def get_loader(self, template_paths: EnvTemplatePaths):
-        print(template_paths)
+    def get_loader(
+        self, template_paths: EnvTemplatePaths, admin: bool = False
+    ) -> ChoiceLoader:
         loaders = [
             RedisLoader(template_paths.theme),
             RedisLoader(template_paths.style),
@@ -294,7 +290,7 @@ class Templates(TemplatesBase):
             FileSystemLoader(template_paths.style),
             FileSystemLoader(template_paths.base),
         ]
-        if template_paths.__name__ == "admin":
+        if admin:
             file_loaders.append(PackageLoader("sqladmin"))
         # if debug.toolbar and not deployed:
         #     file_loaders.append(PackageLoader("debug_toolbar"))
@@ -303,10 +299,12 @@ class Templates(TemplatesBase):
             jinja_loaders = file_loaders + loaders  # type: ignore[override]
         return ChoiceLoader(jinja_loaders, base_path)
 
-    def init_envs(self, template_paths: EnvTemplatePaths):
+    def init_envs(
+        self, template_paths: EnvTemplatePaths, admin: bool = False
+    ) -> AsyncJinja2Templates:
         env_configs = dict(extensions=[loopcontrols, i18n, jinja_debug])
         templates = AsyncJinja2Templates(template_paths.root, **env_configs)
-        templates.env.loader = self.get_loader(template_paths) or literal_eval(
+        templates.env.loader = self.get_loader(template_paths, admin) or literal_eval(
             self.config.templates.loader
         )
         for ext in [literal_eval(ext) for ext in self.config.templates.extensions]:
@@ -319,11 +317,12 @@ class Templates(TemplatesBase):
 
     @depends.inject
     async def init(self, logger: Logger = depends()) -> None:  # type: ignore
-        self.app = self.init_envs(self.config.templates.app)
-        self.admin = self.init_envs(self.config.templates.admin)
+        self.app = self.init_envs(EnvTemplatePaths(root=base_path))
+        self.admin = self.init_envs(
+            EnvTemplatePaths(root=base_path.parent / "admin" / "_templates"), admin=True
+        )
         for loader in self.admin.env.loader.loaders + self.app.env.loader.loaders:
-            name = loader.__class__.__name__
-            logger.debug(f"{name} ({loader.path}) initialized")
+            logger.debug(f"{loader.__class__.__name__} initialized")
 
     @staticmethod
     def get_attr(html: str, attr: str) -> str | None:

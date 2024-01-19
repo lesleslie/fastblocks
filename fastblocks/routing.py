@@ -1,15 +1,11 @@
 import typing as t
-from abc import ABC
 from contextvars import ContextVar
 
-from acb.config import Config
-from acb.depends import depends
-from fastblocks.adapters.templates import Templates
-
-
-class BaseRouter(ABC):
-    config: Config = depends()  # type: ignore
-    templates: Templates = depends()  # type: ignore
+# from acb.config import Config
+# from acb.depends import depends
+#
+# from starlette.routing import Route
+# from starlette.routing import Router
 
 
 router_registry: ContextVar[list[t.Any]] = ContextVar("routers", default=[])

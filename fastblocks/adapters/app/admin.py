@@ -57,9 +57,16 @@ class App(FastBlocks, AppBase):
             middleware=middlewares(),
             lifespan=self.lifespan,
         )
-        self.templates = self.templates.app
 
     async def init(self) -> None:
+        from fastblocks.adapters.templates import Templates
+
+        self.templates = depends.get(Templates).app
+
+        from fastblocks.adapters.admin import Admin
+
+        self.admin = depends.get(Admin)
+
         for router in router_registry.get():
             super().routes.append(router)
 

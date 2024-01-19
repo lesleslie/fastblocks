@@ -2,20 +2,20 @@ import typing as t
 from typing import override
 
 from acb.adapters.logger import Logger
-from acb.adapters.sql import SqlModels
 from acb.adapters.storage import Storage
 from acb.config import Config
-from acb.config import Settings
 from acb.depends import depends
-from sqladmin.helpers import get_object_identifier
 
 from fastblocks import AsyncJinja2Templates
 from fastblocks import RedirectResponse
 from fastblocks import Response
 from sqladmin import Admin as SqlAdmin
+from sqladmin.helpers import get_object_identifier
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
+from ._base import AdminBase
+from ._base import AdminBaseSettings
 from ..templates import Templates
 
 
@@ -24,13 +24,13 @@ from ..templates import Templates
 # from wtforms.fields.datetime import DateTimeField
 
 
-class AdminSettings(Settings):
-    requires: t.Optional[list[str]] = ["app", "storage", "sql", "auth"]
+class AdminSettings(AdminBaseSettings):
+    # requires: t.Optional[list[str]] = ["storage", "sql", "auth"]
     title: str = "Fastblocks Dashboard"
     roles: t.Optional[list[str]] = ["admin", "owner", "contributor", "viewer"]
 
 
-class Admin(SqlAdmin):
+class Admin(SqlAdmin, AdminBase):
     config: Config = depends()  # type: ignore
     logger: Logger = depends()  # type: ignore
     storage: Storage = depends()  # type: ignore
@@ -41,7 +41,7 @@ class Admin(SqlAdmin):
         super().__init__(app, **kwargs)
 
     @depends.inject
-    async def init(self, models: SqlModels = depends()) -> None:  # type: ignore
+    async def init(self) -> None:  # type: ignore
         ...
 
     @override
@@ -49,8 +49,10 @@ class Admin(SqlAdmin):
         self.templates.env.globals["min"] = min
         self.templates.env.globals["zip"] = zip
         self.templates.env.globals["admin"] = self
-        self.templates.env.globals["is_list"] = lambda x: isinstance(x, list)  # type: ignore
-        self.templates.globals["get_object_identifier"] = get_object_identifier
+        self.templates.env.globals["is_list"] = lambda x: isinstance(
+            x, list
+        )  # type: ignore
+        self.templates.env.globals["get_object_identifier"] = get_object_identifier
         return self.templates
 
     @override
@@ -76,3 +78,6 @@ class Admin(SqlAdmin):
             return await self.templates.render_template(
                 "error.html", context, status_code=exc.status_code
             )
+
+
+depends.set(Admin)

@@ -17,6 +17,7 @@ from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from ._base import AuthBase
+from ._base import AuthBaseSettings
 from ._base import AuthBaseUser
 from ._base import current_user
 from ._model import UserModel
@@ -24,6 +25,10 @@ from ._model import UserModel
 
 firebase_request_adapter: google_requests.Request = google_requests.Request()
 firebase_app: t.Any = None
+
+
+class AuthSettings(AuthBaseSettings):
+    ...
 
 
 class CurrentUser(AuthBaseUser):
@@ -80,10 +85,11 @@ class Auth(AuthBase):
         self.secret_key = secret_key or self.config.app.secret_key
         self.middlewares = [
             Middleware(
-                SessionMiddleware,
-                secret_key=secret_key.get_secret_value(),
-                session_cookie=self.config.auth.session_cookie,
-                https_only=True if self.config.app.is_deployed else False,
+                SessionMiddleware,  # type: ignore
+                secret_key=self.secret_key.get_secret_value(),
+                # session_cookie=self.config.auth.session_cookie,
+                session_cookie=None,
+                https_only=True if self.config.deployed else False,
             )
         ]
         self.name = "firebase"

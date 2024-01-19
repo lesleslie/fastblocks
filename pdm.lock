@@ -5,7 +5,7 @@
 groups = ["default", "dev", "style", "admin", "auth", "sitemap"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:2d86d6a10daf39a8b987553833a0cdeb16d9f077b90b2aad8937871ace0caed6"
+content_hash = "sha256:b37135d727feac6048d38c89fec62c6bcf5bd26b6ed88dbd4dc6139985c6c254"
 
 [[package]]
 name = "about-time"
@@ -21,6 +21,8 @@ files = [
 name = "acb"
 version = "0.4.4"
 requires_python = ">=3.12"
+editable = true
+path = "../acb"
 summary = "Asynchronous Component Base"
 dependencies = [
     "aiopath>=0.7.7",
@@ -38,14 +40,10 @@ dependencies = [
     "msgspec[toml]>=0.18.5",
     "nest-asyncio>=1.5.8",
     "pydantic-settings>=2.1.0",
-    "pydantic>=2.5.3",
+    "pydantic[email]>=2.5.3",
     "pyfiglet>=1.0.2",
     "pyyaml>=6.0.1",
     "ulid-py>=1.1.0",
-]
-files = [
-    {file = "acb-0.4.4-py3-none-any.whl", hash = "sha256:d1d0eb9b4458ab963fa9f1db31dbee9874068b181650edfdb7a45075baea25bd"},
-    {file = "acb-0.4.4.tar.gz", hash = "sha256:42e9862fd97cbb6e73de6868f03798c33a5e0b008a043401fa8b053e36790a80"},
 ]
 
 [[package]]
@@ -53,25 +51,47 @@ name = "acb"
 version = "0.4.4"
 extras = ["cache", "requests", "secrets", "sql", "storage"]
 requires_python = ">=3.12"
+editable = true
+path = "../acb"
 summary = "Asynchronous Component Base"
 dependencies = [
-    "acb==0.4.4",
+    "-e file:///${PROJECT_ROOT}/../acb#egg=acb",
+    "adlfs>=2023.12.0",
+    "adlfs>=2023.12.0",
     "adlfs>=2023.12.0",
     "asyncmy>=0.2.9",
+    "asyncmy>=0.2.9",
+    "asyncmy>=0.2.9",
+    "cashews[redis]>=6.4.0",
+    "cashews[redis]>=6.4.0",
     "cashews[redis]>=6.4.0",
     "gcsfs>=2023.12.2.post1",
+    "gcsfs>=2023.12.2.post1",
+    "gcsfs>=2023.12.2.post1",
+    "google-cloud-secret-manager>=2.17.0",
+    "google-cloud-secret-manager>=2.17.0",
     "google-cloud-secret-manager>=2.17.0",
     "hishel>=0.0.21",
+    "hishel>=0.0.21",
+    "hishel>=0.0.21",
+    "httpx[http2]>=0.26.0",
+    "httpx[http2]>=0.26.0",
     "httpx[http2]>=0.26.0",
     "mysqlclient>=2.2.1",
+    "mysqlclient>=2.2.1",
+    "mysqlclient>=2.2.1",
+    "s3fs>=2023.12.2",
+    "s3fs>=2023.12.2",
     "s3fs>=2023.12.2",
     "sqlalchemy-utils>=0.41.1",
+    "sqlalchemy-utils>=0.41.1",
+    "sqlalchemy-utils>=0.41.1",
+    "sqlalchemy>=2.0.25",
+    "sqlalchemy>=2.0.25",
     "sqlalchemy>=2.0.25",
     "sqlmodel>=0.0.14",
-]
-files = [
-    {file = "acb-0.4.4-py3-none-any.whl", hash = "sha256:d1d0eb9b4458ab963fa9f1db31dbee9874068b181650edfdb7a45075baea25bd"},
-    {file = "acb-0.4.4.tar.gz", hash = "sha256:42e9862fd97cbb6e73de6868f03798c33a5e0b008a043401fa8b053e36790a80"},
+    "sqlmodel>=0.0.14",
+    "sqlmodel>=0.0.14",
 ]
 
 [[package]]
@@ -94,18 +114,18 @@ files = [
 
 [[package]]
 name = "aiobotocore"
-version = "2.5.4"
-requires_python = ">=3.7"
+version = "2.9.0"
+requires_python = ">=3.8"
 summary = "Async client for aws services using botocore and aiohttp"
 dependencies = [
-    "aiohttp<4.0.0,>=3.3.1",
+    "aiohttp<4.0.0,>=3.7.4.post0",
     "aioitertools<1.0.0,>=0.5.1",
-    "botocore<1.31.18,>=1.31.17",
+    "botocore<1.33.14,>=1.33.2",
     "wrapt<2.0.0,>=1.10.10",
 ]
 files = [
-    {file = "aiobotocore-2.5.4-py3-none-any.whl", hash = "sha256:4b32218728ca3d0be83835b604603a0cd6c329066e884bb78149334267f92440"},
-    {file = "aiobotocore-2.5.4.tar.gz", hash = "sha256:60341f19eda77e41e1ab11eef171b5a98b5dbdb90804f5334b6f90e560e31fae"},
+    {file = "aiobotocore-2.9.0-py3-none-any.whl", hash = "sha256:acf5e49644e6e434b9ecc26284ae7e05d557effbdcdd8185e2eb08925f011853"},
+    {file = "aiobotocore-2.9.0.tar.gz", hash = "sha256:4dc1e20da4561ae662219ca95b20f923328c3106764a741bec00e98eb6680f7e"},
 ]
 
 [[package]]
@@ -352,17 +372,18 @@ files = [
 
 [[package]]
 name = "azure-core"
-version = "1.29.4"
+version = "1.29.6"
 requires_python = ">=3.7"
 summary = "Microsoft Azure Core Library for Python"
 dependencies = [
-    "requests>=2.18.4",
+    "anyio<5.0,>=3.0",
+    "requests>=2.21.0",
     "six>=1.11.0",
     "typing-extensions>=4.6.0",
 ]
 files = [
-    {file = "azure-core-1.29.4.tar.gz", hash = "sha256:500b3aa9bf2e90c5ccc88bb105d056114ca0ce7d0ce73afb8bc4d714b2fc7568"},
-    {file = "azure_core-1.29.4-py3-none-any.whl", hash = "sha256:b03261bcba22c0b9290faf9999cedd23e849ed2577feee90515694cea6bc74bf"},
+    {file = "azure-core-1.29.6.tar.gz", hash = "sha256:13b485252ecd9384ae624894fe51cfa6220966207264c360beada239f88b738a"},
+    {file = "azure_core-1.29.6-py3-none-any.whl", hash = "sha256:604a005bce6a49ba661bb7b2be84a9b169047e52fcfcd0a4e4770affab4178f7"},
 ]
 
 [[package]]
@@ -381,23 +402,23 @@ files = [
 
 [[package]]
 name = "azure-identity"
-version = "1.14.1"
+version = "1.15.0"
 requires_python = ">=3.7"
 summary = "Microsoft Azure Identity Library for Python"
 dependencies = [
-    "azure-core<2.0.0,>=1.11.0",
+    "azure-core<2.0.0,>=1.23.0",
     "cryptography>=2.5",
     "msal-extensions<2.0.0,>=0.3.0",
-    "msal<2.0.0,>=1.20.0",
+    "msal<2.0.0,>=1.24.0",
 ]
 files = [
-    {file = "azure-identity-1.14.1.zip", hash = "sha256:48e2a9dbdc59b4f095f841d867d9a8cbe4c1cdbbad8251e055561afd47b4a9b8"},
-    {file = "azure_identity-1.14.1-py3-none-any.whl", hash = "sha256:3a5bef8e9c3281e864e869739be8d67424bff616cddae96b546ca2a5168d863d"},
+    {file = "azure-identity-1.15.0.tar.gz", hash = "sha256:4c28fc246b7f9265610eb5261d65931183d019a23d4b0e99357facb2e6c227c8"},
+    {file = "azure_identity-1.15.0-py3-none-any.whl", hash = "sha256:a14b1f01c7036f11f148f22cd8c16e05035293d714458d6b44ddf534d93eb912"},
 ]
 
 [[package]]
 name = "azure-storage-blob"
-version = "12.18.3"
+version = "12.19.0"
 requires_python = ">=3.7"
 summary = "Microsoft Azure Blob Storage Client Library for Python"
 dependencies = [
@@ -407,8 +428,8 @@ dependencies = [
     "typing-extensions>=4.3.0",
 ]
 files = [
-    {file = "azure-storage-blob-12.18.3.tar.gz", hash = "sha256:d8ced0deee3367fa3d4f3d1a03cd9edadf4440c0a371f503d623fa6c807554ee"},
-    {file = "azure_storage_blob-12.18.3-py3-none-any.whl", hash = "sha256:c278dde2ac41857a68d615c9f2b36d894ba877a7e84d62795603c7e79d0bb5e9"},
+    {file = "azure-storage-blob-12.19.0.tar.gz", hash = "sha256:26c0a4320a34a3c2a1b74528ba6812ebcb632a04cd67b1c7377232c4b01a5897"},
+    {file = "azure_storage_blob-12.19.0-py3-none-any.whl", hash = "sha256:7bbc2c9c16678f7a420367fef6b172ba8730a7e66df7f4d7a55d5b3c8216615b"},
 ]
 
 [[package]]
@@ -459,17 +480,17 @@ files = [
 
 [[package]]
 name = "botocore"
-version = "1.31.17"
+version = "1.33.13"
 requires_python = ">= 3.7"
 summary = "Low-level, data-driven core of boto 3."
 dependencies = [
     "jmespath<2.0.0,>=0.7.1",
     "python-dateutil<3.0.0,>=2.1",
-    "urllib3<1.27,>=1.25.4",
+    "urllib3<2.1,>=1.25.4; python_version >= \"3.10\"",
 ]
 files = [
-    {file = "botocore-1.31.17-py3-none-any.whl", hash = "sha256:6ac34a1d34aa3750e78b77b8596617e2bab938964694d651939dba2cbde2c12b"},
-    {file = "botocore-1.31.17.tar.gz", hash = "sha256:396459065dba4339eb4da4ec8b4e6599728eb89b7caaceea199e26f7d824a41c"},
+    {file = "botocore-1.33.13-py3-none-any.whl", hash = "sha256:aeadccf4b7c674c7d47e713ef34671b834bc3e89723ef96d994409c9f54666e6"},
+    {file = "botocore-1.33.13.tar.gz", hash = "sha256:fb577f4cb175605527458b04571451db1bd1a2036976b626206036acd4496617"},
 ]
 
 [[package]]
@@ -770,6 +791,30 @@ files = [
 ]
 
 [[package]]
+name = "dnspython"
+version = "2.4.2"
+requires_python = ">=3.8,<4.0"
+summary = "DNS toolkit"
+files = [
+    {file = "dnspython-2.4.2-py3-none-any.whl", hash = "sha256:57c6fbaaeaaf39c891292012060beb141791735dbb4004798328fc2c467402d8"},
+    {file = "dnspython-2.4.2.tar.gz", hash = "sha256:8dcfae8c7460a2f84b4072e26f1c9f4101ca20c071649cb7c34e8b6a93d58984"},
+]
+
+[[package]]
+name = "email-validator"
+version = "2.1.0.post1"
+requires_python = ">=3.8"
+summary = "A robust email address syntax and deliverability validation library."
+dependencies = [
+    "dnspython>=2.0.0",
+    "idna>=2.0.0",
+]
+files = [
+    {file = "email_validator-2.1.0.post1-py3-none-any.whl", hash = "sha256:c973053efbeddfef924dc0bd93f6e77a1ea7ee0fce935aea7103c7a3d6d2d637"},
+    {file = "email_validator-2.1.0.post1.tar.gz", hash = "sha256:a4b0bd1cf55f073b924258d19321b1f3aa74b4b5a71a42c305575dba920e1a44"},
+]
+
+[[package]]
 name = "executing"
 version = "2.0.0"
 summary = "Get the currently executing AST node of a frame, and other information"
@@ -938,7 +983,7 @@ files = [
 
 [[package]]
 name = "google-auth-oauthlib"
-version = "1.1.0"
+version = "1.2.0"
 requires_python = ">=3.6"
 summary = "Google Authentication Library"
 dependencies = [
@@ -946,8 +991,8 @@ dependencies = [
     "requests-oauthlib>=0.7.0",
 ]
 files = [
-    {file = "google-auth-oauthlib-1.1.0.tar.gz", hash = "sha256:83ea8c3b0881e453790baff4448e8a6112ac8778d1de9da0b68010b843937afb"},
-    {file = "google_auth_oauthlib-1.1.0-py2.py3-none-any.whl", hash = "sha256:089c6e587d36f4803ac7e0720c045c6a8b1fd1790088b8424975b90d0ee61c12"},
+    {file = "google-auth-oauthlib-1.2.0.tar.gz", hash = "sha256:292d2d3783349f2b0734a0a0207b1e1e322ac193c2c09d8f7c613fb7cc501ea8"},
+    {file = "google_auth_oauthlib-1.2.0-py2.py3-none-any.whl", hash = "sha256:297c1ce4cb13a99b5834c74a1fe03252e1e499716718b190f56bcb9c4abc4faf"},
 ]
 
 [[package]]
@@ -1054,30 +1099,30 @@ files = [
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.61.0"
+version = "1.62.0"
 requires_python = ">=3.7"
 summary = "Common protobufs used in Google APIs"
 dependencies = [
     "protobuf!=3.20.0,!=3.20.1,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0.dev0,>=3.19.5",
 ]
 files = [
-    {file = "googleapis-common-protos-1.61.0.tar.gz", hash = "sha256:8a64866a97f6304a7179873a465d6eee97b7a24ec6cfd78e0f575e96b821240b"},
-    {file = "googleapis_common_protos-1.61.0-py2.py3-none-any.whl", hash = "sha256:22f1915393bb3245343f6efe87f6fe868532efc12aa26b391b15132e1279f1c0"},
+    {file = "googleapis-common-protos-1.62.0.tar.gz", hash = "sha256:83f0ece9f94e5672cced82f592d2a5edf527a96ed1794f0bab36d5735c996277"},
+    {file = "googleapis_common_protos-1.62.0-py2.py3-none-any.whl", hash = "sha256:4750113612205514f9f6aa4cb00d523a94f3e8c06c5ad2fee466387dc4875f07"},
 ]
 
 [[package]]
 name = "googleapis-common-protos"
-version = "1.61.0"
+version = "1.62.0"
 extras = ["grpc"]
 requires_python = ">=3.7"
 summary = "Common protobufs used in Google APIs"
 dependencies = [
-    "googleapis-common-protos==1.61.0",
+    "googleapis-common-protos==1.62.0",
     "grpcio<2.0.0.dev0,>=1.44.0",
 ]
 files = [
-    {file = "googleapis-common-protos-1.61.0.tar.gz", hash = "sha256:8a64866a97f6304a7179873a465d6eee97b7a24ec6cfd78e0f575e96b821240b"},
-    {file = "googleapis_common_protos-1.61.0-py2.py3-none-any.whl", hash = "sha256:22f1915393bb3245343f6efe87f6fe868532efc12aa26b391b15132e1279f1c0"},
+    {file = "googleapis-common-protos-1.62.0.tar.gz", hash = "sha256:83f0ece9f94e5672cced82f592d2a5edf527a96ed1794f0bab36d5735c996277"},
+    {file = "googleapis_common_protos-1.62.0-py2.py3-none-any.whl", hash = "sha256:4750113612205514f9f6aa4cb00d523a94f3e8c06c5ad2fee466387dc4875f07"},
 ]
 
 [[package]]
@@ -1109,7 +1154,7 @@ files = [
 
 [[package]]
 name = "grpc-google-iam-v1"
-version = "0.12.6"
+version = "0.13.0"
 requires_python = ">=3.7"
 summary = "IAM API client library"
 dependencies = [
@@ -1118,8 +1163,8 @@ dependencies = [
     "protobuf!=3.20.0,!=3.20.1,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<5.0.0dev,>=3.19.5",
 ]
 files = [
-    {file = "grpc-google-iam-v1-0.12.6.tar.gz", hash = "sha256:2bc4b8fdf22115a65d751c9317329322602c39b7c86a289c9b72d228d960ef5f"},
-    {file = "grpc_google_iam_v1-0.12.6-py2.py3-none-any.whl", hash = "sha256:5c10f3d8dc2d88678ab1a9b0cb5482735c5efee71e6c0cd59f872eef22913f5c"},
+    {file = "grpc-google-iam-v1-0.13.0.tar.gz", hash = "sha256:fad318608b9e093258fbf12529180f400d1c44453698a33509cc6ecf005b294e"},
+    {file = "grpc_google_iam_v1-0.13.0-py2.py3-none-any.whl", hash = "sha256:53902e2af7de8df8c1bd91373d9be55b0743ec267a7428ea638db3775becae89"},
 ]
 
 [[package]]
@@ -1367,6 +1412,18 @@ files = [
 ]
 
 [[package]]
+name = "jinja-partials"
+version = "0.1.1"
+summary = "Simple reuse of partial HTML page templates in the Jinja template language for Python web frameworks."
+dependencies = [
+    "jinja2",
+]
+files = [
+    {file = "jinja_partials-0.1.1-py3-none-any.whl", hash = "sha256:c927e0dd51cb299c41c96bd200e01be299f860466fc2d6bb6a67861acb08b498"},
+    {file = "jinja_partials-0.1.1.tar.gz", hash = "sha256:7afea85362f48c49b32c2134612edf52e5f3d5af6f2038fcdb758c53a50ee7af"},
+]
+
+[[package]]
 name = "jinja2"
 version = "3.1.2"
 requires_python = ">=3.7"
@@ -1503,31 +1560,33 @@ files = [
 
 [[package]]
 name = "msal"
-version = "1.24.1"
+version = "1.26.0"
 requires_python = ">=2.7"
-summary = "The Microsoft Authentication Library (MSAL) for Python library"
+summary = "The Microsoft Authentication Library (MSAL) for Python library enables your app to access the Microsoft Cloud by supporting authentication of users with Microsoft Azure Active Directory accounts (AAD) and Microsoft Accounts (MSA) using industry standard OAuth2 and OpenID Connect."
 dependencies = [
     "PyJWT[crypto]<3,>=1.0.0",
     "cryptography<44,>=0.6",
     "requests<3,>=2.0.0",
 ]
 files = [
-    {file = "msal-1.24.1-py2.py3-none-any.whl", hash = "sha256:ce4320688f95c301ee74a4d0e9dbcfe029a63663a8cc61756f40d0d0d36574ad"},
-    {file = "msal-1.24.1.tar.gz", hash = "sha256:aa0972884b3c6fdec53d9a0bd15c12e5bd7b71ac1b66d746f54d128709f3f8f8"},
+    {file = "msal-1.26.0-py2.py3-none-any.whl", hash = "sha256:be77ba6a8f49c9ff598bbcdc5dfcf1c9842f3044300109af738e8c3e371065b5"},
+    {file = "msal-1.26.0.tar.gz", hash = "sha256:224756079fe338be838737682b49f8ebc20a87c1c5eeaf590daae4532b83de15"},
 ]
 
 [[package]]
 name = "msal-extensions"
-version = "1.0.0"
+version = "1.1.0"
+requires_python = ">=3.7"
 summary = "Microsoft Authentication Library extensions (MSAL EX) provides a persistence API that can save your data on disk, encrypted on Windows, macOS and Linux. Concurrent data access will be coordinated by a file lock mechanism."
 dependencies = [
     "msal<2.0.0,>=0.4.1",
-    "portalocker<3,>=1.0; python_version >= \"3.5\" and platform_system != \"Windows\"",
-    "portalocker<3,>=1.6; python_version >= \"3.5\" and platform_system == \"Windows\"",
+    "packaging",
+    "portalocker<3,>=1.0; platform_system != \"Windows\"",
+    "portalocker<3,>=1.6; platform_system == \"Windows\"",
 ]
 files = [
-    {file = "msal-extensions-1.0.0.tar.gz", hash = "sha256:c676aba56b0cce3783de1b5c5ecfe828db998167875126ca4b47dc6436451354"},
-    {file = "msal_extensions-1.0.0-py2.py3-none-any.whl", hash = "sha256:91e3db9620b822d0ed2b4d1850056a0f133cba04455e62f11612e40f5502f2ee"},
+    {file = "msal-extensions-1.1.0.tar.gz", hash = "sha256:6ab357867062db7b253d0bd2df6d411c7891a0ee7308d54d1e4317c1d1c54252"},
+    {file = "msal_extensions-1.1.0-py3-none-any.whl", hash = "sha256:01be9711b4c0b1a151450068eeb2c4f0997df3bba085ac299de3a66f585e382f"},
 ]
 
 [[package]]
@@ -1902,6 +1961,21 @@ dependencies = [
 files = [
     {file = "pydantic_settings-2.1.0-py3-none-any.whl", hash = "sha256:7621c0cb5d90d1140d2f0ef557bdf03573aac7035948109adf2574770b77605a"},
     {file = "pydantic_settings-2.1.0.tar.gz", hash = "sha256:26b1492e0a24755626ac5e6d715e9077ab7ad4fb5f19a8b7ed7011d52f36141c"},
+]
+
+[[package]]
+name = "pydantic"
+version = "2.5.3"
+extras = ["email"]
+requires_python = ">=3.7"
+summary = "Data validation using Python type hints"
+dependencies = [
+    "email-validator>=2.0.0",
+    "pydantic==2.5.3",
+]
+files = [
+    {file = "pydantic-2.5.3-py3-none-any.whl", hash = "sha256:d0caf5954bee831b6bfe7e338c32b9e30c85dfe080c843680783ac2b631673b4"},
+    {file = "pydantic-2.5.3.tar.gz", hash = "sha256:b3ef57c62535b0941697cce638c08900d87fcb67e29cfa99e8a68f747f393f7a"},
 ]
 
 [[package]]
@@ -2476,7 +2550,7 @@ files = [
 
 [[package]]
 name = "uvicorn"
-version = "0.25.0"
+version = "0.26.0"
 requires_python = ">=3.8"
 summary = "The lightning-fast ASGI server."
 dependencies = [
@@ -2484,8 +2558,8 @@ dependencies = [
     "h11>=0.8",
 ]
 files = [
-    {file = "uvicorn-0.25.0-py3-none-any.whl", hash = "sha256:ce107f5d9bd02b4636001a77a4e74aab5e1e2b146868ebbad565237145af444c"},
-    {file = "uvicorn-0.25.0.tar.gz", hash = "sha256:6dddbad1d7ee0f5140aba5ec138ddc9612c5109399903828b4874c9937f009c2"},
+    {file = "uvicorn-0.26.0-py3-none-any.whl", hash = "sha256:cdb58ef6b8188c6c174994b2b1ba2150a9a8ae7ea5fb2f1b856b94a815d6071d"},
+    {file = "uvicorn-0.26.0.tar.gz", hash = "sha256:48bfd350fce3c5c57af5fb4995fded8fb50da3b4feb543eb18ad7e0d54589602"},
 ]
 
 [[package]]
@@ -2524,12 +2598,22 @@ files = [
 
 [[package]]
 name = "wrapt"
-version = "1.15.0"
-requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
+version = "1.16.0"
+requires_python = ">=3.6"
 summary = "Module for decorators, wrappers and monkey patching."
 files = [
-    {file = "wrapt-1.15.0-py3-none-any.whl", hash = "sha256:64b1df0f83706b4ef4cfb4fb0e4c2669100fd7ecacfb59e091fad300d4e04640"},
-    {file = "wrapt-1.15.0.tar.gz", hash = "sha256:d06730c6aed78cee4126234cf2d071e01b44b915e725a6cb439a879ec9754a3a"},
+    {file = "wrapt-1.16.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:5eb404d89131ec9b4f748fa5cfb5346802e5ee8836f57d516576e61f304f3b7b"},
+    {file = "wrapt-1.16.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:9090c9e676d5236a6948330e83cb89969f433b1943a558968f659ead07cb3b36"},
+    {file = "wrapt-1.16.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:94265b00870aa407bd0cbcfd536f17ecde43b94fb8d228560a1e9d3041462d73"},
+    {file = "wrapt-1.16.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f2058f813d4f2b5e3a9eb2eb3faf8f1d99b81c3e51aeda4b168406443e8ba809"},
+    {file = "wrapt-1.16.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:98b5e1f498a8ca1858a1cdbffb023bfd954da4e3fa2c0cb5853d40014557248b"},
+    {file = "wrapt-1.16.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:14d7dc606219cdd7405133c713f2c218d4252f2a469003f8c46bb92d5d095d81"},
+    {file = "wrapt-1.16.0-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:49aac49dc4782cb04f58986e81ea0b4768e4ff197b57324dcbd7699c5dfb40b9"},
+    {file = "wrapt-1.16.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:418abb18146475c310d7a6dc71143d6f7adec5b004ac9ce08dc7a34e2babdc5c"},
+    {file = "wrapt-1.16.0-cp312-cp312-win32.whl", hash = "sha256:685f568fa5e627e93f3b52fda002c7ed2fa1800b50ce51f6ed1d572d8ab3e7fc"},
+    {file = "wrapt-1.16.0-cp312-cp312-win_amd64.whl", hash = "sha256:dcdba5c86e368442528f7060039eda390cc4091bfd1dca41e8046af7c910dda8"},
+    {file = "wrapt-1.16.0-py3-none-any.whl", hash = "sha256:6906c4100a8fcbf2fa735f6059214bb13b97f75b1a61777fcf6432121ef12ef1"},
+    {file = "wrapt-1.16.0.tar.gz", hash = "sha256:5f370f952971e7d17c7d1ead40e49f32345a7f7a5373571ef44d800d06b1899d"},
 ]
 
 [[package]]

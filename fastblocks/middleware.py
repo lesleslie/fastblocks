@@ -5,7 +5,6 @@ from acb.adapters.cache import Cache
 from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.depends import depends
-
 from asgi_htmx import HtmxMiddleware
 from asgi_htmx import HtmxRequest
 from asgi_logger.middleware import AccessLoggerMiddleware
@@ -14,7 +13,6 @@ from cashews.commands import Command
 from secure import Secure
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
 from starlette.responses import HTMLResponse as Response
 from starlette_csrf.middleware import CSRFMiddleware
 
@@ -82,15 +80,13 @@ class DisableCacheMiddleware(BaseHTTPMiddleware):
 def middlewares(
     config: Config = depends(), logger: Logger = depends()  # type: ignore
 ) -> list[Middleware]:
-    return [
-        Middleware(HTTPSRedirectMiddleware),  # type: ignore
+    middleware = [
         Middleware(DisableCacheMiddleware),  # type: ignore
         Middleware(FromCacheHeaderMiddleware),  # type: ignore
         Middleware(
             CSRFMiddleware,  # type: ignore
             secret=config.app.secret_key.get_secret_value(),
         ),
-        Middleware(SecureHeadersMiddleware),  # type: ignore
         Middleware(HtmxMiddleware),  # type: ignore
         Middleware(BrotliMiddleware, quality=3),  # type: ignore
         Middleware(
@@ -100,3 +96,6 @@ def middlewares(
         ),
         Middleware(ProcessTimeHeaderMiddleware),  # type: ignore
     ]
+    if config.deployed:
+        middleware.append(Middleware(SecureHeadersMiddleware))  # type: ignore
+    return middleware
