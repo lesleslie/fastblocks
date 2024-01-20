@@ -239,9 +239,9 @@ class ChoiceLoader(AsyncBaseLoader):
 
 class EnvTemplatePaths(BaseModel, arbitrary_types_allowed=True):
     root: AsyncPath
-    # base: t.Optional[AsyncPath]
-    # style: t.Optional[AsyncPath]
-    # theme: t.Optional[AsyncPath]
+    base: AsyncPath = AsyncPath("templates/base")
+    style: AsyncPath = AsyncPath("templates/style")
+    theme: AsyncPath = AsyncPath("templates/theme")
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
