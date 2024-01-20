@@ -5,10 +5,8 @@ from html.parser import HTMLParser
 from importlib import import_module
 from importlib.util import find_spec
 from pathlib import Path
-from pprint import pprint
 from re import search
 
-# from acb import adapters_path
 from acb import base_path
 from acb.adapters.cache import Cache
 from acb.adapters.logger import Logger
@@ -18,7 +16,6 @@ from acb.debug import debug
 from acb.depends import depends
 
 from aiopath import AsyncPath
-from starlette_async_jinja import AsyncJinja2Templates
 from jinja2 import TemplateNotFound
 from jinja2.ext import debug as jinja_debug
 from jinja2.ext import Extension
@@ -27,6 +24,7 @@ from jinja2.ext import loopcontrols
 from jinja2_async_environment.loaders import AsyncBaseLoader
 from jinja_partials import register_starlette_extensions  # type: ignore
 from pydantic import BaseModel
+from starlette_async_jinja import AsyncJinja2Templates
 from ._base import TemplatesBase
 from ._base import TemplatesBaseSettings
 
@@ -224,7 +222,7 @@ class PackageLoader(AsyncBaseLoader):
 class ChoiceLoader(AsyncBaseLoader):
     def __init__(
         self,
-        loaders: list[RedisLoader | CloudLoader | AsyncBaseLoader],
+        loaders: list[AsyncBaseLoader],
         searchpath: AsyncPath | t.Sequence[AsyncPath],
     ) -> None:
         super().__init__(searchpath)
@@ -241,14 +239,14 @@ class ChoiceLoader(AsyncBaseLoader):
 
 class EnvTemplatePaths(BaseModel, arbitrary_types_allowed=True):
     root: AsyncPath
-    base: t.Optional[AsyncPath] = None
-    style: t.Optional[AsyncPath] = None
-    theme: t.Optional[AsyncPath] = None
+    # base: t.Optional[AsyncPath]
+    # style: t.Optional[AsyncPath]
+    # theme: t.Optional[AsyncPath]
 
     @depends.inject
     def __init__(self, config: Config = depends(), **values: t.Any) -> None:
         super().__init__(**values)
-        self.root = self.root / "templates"
+        self.root = base_path / "templates" / self.root
         self.base = self.root / "base"
         self.style = self.root / config.app.style
         self.theme = self.style / config.app.theme
@@ -277,18 +275,18 @@ class Templates(TemplatesBase):
     def get_loader(
         self, template_paths: EnvTemplatePaths, admin: bool = False
     ) -> ChoiceLoader:
-        loaders = [
-            RedisLoader(template_paths.theme),
-            RedisLoader(template_paths.style),
-            RedisLoader(template_paths.base),
-            CloudLoader(template_paths.theme),
-            CloudLoader(template_paths.style),
-            CloudLoader(template_paths.base),
+        loaders: list[AsyncBaseLoader] = [
+            RedisLoader(
+                [template_paths.theme, template_paths.style, template_paths.base]
+            ),
+            CloudLoader(
+                [template_paths.theme, template_paths.style, template_paths.base]
+            ),
         ]
         file_loaders: list[AsyncBaseLoader] = [
-            FileSystemLoader(template_paths.theme),
-            FileSystemLoader(template_paths.style),
-            FileSystemLoader(template_paths.base),
+            FileSystemLoader(
+                [template_paths.theme, template_paths.style, template_paths.base]
+            ),
         ]
         if admin:
             file_loaders.append(PackageLoader("sqladmin"))
@@ -317,9 +315,9 @@ class Templates(TemplatesBase):
 
     @depends.inject
     async def init(self, logger: Logger = depends()) -> None:  # type: ignore
-        self.app = self.init_envs(EnvTemplatePaths(root=base_path))
+        self.app = self.init_envs(EnvTemplatePaths(root=AsyncPath("app")))
         self.admin = self.init_envs(
-            EnvTemplatePaths(root=base_path.parent / "admin" / "_templates"), admin=True
+            EnvTemplatePaths(root=AsyncPath("admin")), admin=True
         )
         for loader in self.admin.env.loader.loaders + self.app.env.loader.loaders:
             logger.debug(f"{loader.__class__.__name__} initialized")

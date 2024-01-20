@@ -32,4 +32,4 @@ class Sitemap(AsgiSitemap):  # type: ignore
 #         yield row
 
 
-depends.set(Sitemap, Sitemap())
+depends.set(Sitemap)

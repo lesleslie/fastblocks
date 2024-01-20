@@ -88,7 +88,7 @@ class Auth(AuthBase):
                 SessionMiddleware,  # type: ignore
                 secret_key=self.secret_key.get_secret_value(),
                 # session_cookie=self.config.auth.session_cookie,
-                session_cookie=None,
+                # session_cookie=None,
                 https_only=True if self.config.deployed else False,
             )
         ]

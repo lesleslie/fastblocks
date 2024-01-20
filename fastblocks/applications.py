@@ -2,7 +2,6 @@ import typing as t
 from platform import system
 
 from acb.adapters.logger import Logger
-from acb.adapters.logger._base import ExternalLogger
 from acb.config import Config
 from acb.depends import depends
 
@@ -37,7 +36,7 @@ match system():
 
 
 # @staticmethod
-def index(request):
+def index(request: Request):
     return PlainTextResponse("Hello, world!")
 
 
@@ -58,7 +57,6 @@ class FastBlocks(Starlette):
         exception_handlers: t.Mapping[t.Any, ExceptionHandler] | None = None,
         lifespan: t.Optional[Lifespan["AppType"]] = None,
         config: Config = depends(),
-        logger: Logger = depends(),
     ) -> None:
         super().__init__(
             debug=config.debug.app,
@@ -78,7 +76,9 @@ class FastBlocks(Starlette):
         # )
 
     @depends.inject
-    def build_middleware_stack(self, logger: Logger = depends()) -> ASGIApp:
+    def build_middleware_stack(
+        self, logger: Logger = depends()  # type: ignore
+    ) -> ASGIApp:
         error_handler = None
         exception_handlers: dict[t.Any, t.Callable[[Request, Exception], Response]] = {}
         for key, value in self.exception_handlers.items():

@@ -14,7 +14,7 @@ class Fonts(FontsBase):
     ...
 
 
-depends.set(Fonts, Fonts())
+depends.set(Fonts)
 
 
 # @cache()

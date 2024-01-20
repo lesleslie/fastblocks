@@ -16,7 +16,7 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from ._base import AdminBase
 from ._base import AdminBaseSettings
-from ..templates import Templates
+from fastblocks.adapters.templates import Templates
 
 
 # from wtforms.fields import TextAreaField
@@ -49,9 +49,9 @@ class Admin(SqlAdmin, AdminBase):
         self.templates.env.globals["min"] = min
         self.templates.env.globals["zip"] = zip
         self.templates.env.globals["admin"] = self
-        self.templates.env.globals["is_list"] = lambda x: isinstance(
+        self.templates.env.globals["is_list"] = lambda x: isinstance(  # type: ignore
             x, list
-        )  # type: ignore
+        )
         self.templates.env.globals["get_object_identifier"] = get_object_identifier
         return self.templates
 

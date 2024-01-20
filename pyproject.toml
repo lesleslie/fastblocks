@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.2.4"
+version = "0.2.5"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -113,14 +113,14 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pyfiglet",
-    "pdm",
-    "starlette-decorouter",
-    "libsass",
-    "aiohttp",
-    "pre-commit",
     "pdm-bump",
+    "starlette-decorouter",
+    "pre-commit",
+    "pdm",
+    "libsass",
+    "pyfiglet",
     "pytest",
+    "aiohttp",
     "autotyping",
 ]
 

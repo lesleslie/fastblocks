@@ -19,7 +19,7 @@ files = [
 
 [[package]]
 name = "acb"
-version = "0.4.4"
+version = "0.4.5"
 requires_python = ">=3.12"
 editable = true
 path = "../acb"
@@ -38,7 +38,7 @@ dependencies = [
     "itsdangerous>=2.1.2",
     "loguru>=0.7.2",
     "msgspec[toml]>=0.18.5",
-    "nest-asyncio>=1.5.8",
+    "nest-asyncio>=1.5.9",
     "pydantic-settings>=2.1.0",
     "pydantic[email]>=2.5.3",
     "pyfiglet>=1.0.2",
@@ -48,7 +48,7 @@ dependencies = [
 
 [[package]]
 name = "acb"
-version = "0.4.4"
+version = "0.4.5"
 extras = ["cache", "requests", "secrets", "sql", "storage"]
 requires_python = ">=3.12"
 editable = true
@@ -434,15 +434,15 @@ files = [
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.12.2"
+version = "4.12.3"
 requires_python = ">=3.6.0"
 summary = "Screen-scraping library"
 dependencies = [
     "soupsieve>1.2",
 ]
 files = [
-    {file = "beautifulsoup4-4.12.2-py3-none-any.whl", hash = "sha256:bd2520ca0d9d7d12694a53d44ac482d181b4ec1888909b035a3dbf40d0f57d4a"},
-    {file = "beautifulsoup4-4.12.2.tar.gz", hash = "sha256:492bbc69dca35d12daac71c4db1bfff0c876c00ef4a2ffacce226d4638eb72da"},
+    {file = "beautifulsoup4-4.12.3-py3-none-any.whl", hash = "sha256:b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed"},
+    {file = "beautifulsoup4-4.12.3.tar.gz", hash = "sha256:74e3d1928edc070d21748185c46e3fb33490f22f52a3addee9aee0f4f7781051"},
 ]
 
 [[package]]
@@ -1680,12 +1680,12 @@ files = [
 
 [[package]]
 name = "nest-asyncio"
-version = "1.5.8"
+version = "1.5.9"
 requires_python = ">=3.5"
 summary = "Patch asyncio to allow nested event loops"
 files = [
-    {file = "nest_asyncio-1.5.8-py3-none-any.whl", hash = "sha256:accda7a339a70599cb08f9dd09a67e0c2ef8d8d6f4c07f96ab203f2ae254e48d"},
-    {file = "nest_asyncio-1.5.8.tar.gz", hash = "sha256:25aa2ca0d2a5b5531956b9e273b45cf664cae2b145101d73b86b199978d48fdb"},
+    {file = "nest_asyncio-1.5.9-py3-none-any.whl", hash = "sha256:61ec07ef052e72e3de22045b81b2cc7d71fceb04c568ba0b2e4b2f9f5231bec2"},
+    {file = "nest_asyncio-1.5.9.tar.gz", hash = "sha256:d1e1144e9c6e3e6392e0fcf5211cb1c8374b5648a98f1ebe48e5336006b41907"},
 ]
 
 [[package]]
