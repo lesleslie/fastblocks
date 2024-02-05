@@ -9,15 +9,15 @@ from acb.adapters.logger import Logger
 from acb.config import Config
 from acb.config import Settings
 from acb.debug import debug
-from aiopath import AsyncPath
-from fastblocks import Request
 from colour import web2hex  # type: ignore
+
+from aiopath import AsyncPath
+from asgi_htmx import HtmxRequest
 from fastblocks.actions.minify import minify
 from fastblocks.adapters.templates import Templates  # type: ignore
 
 
-class StyleBaseSettings(Settings):
-    ...
+class StyleBaseSettings(Settings): ...
 
 
 class StyleBase:
@@ -45,7 +45,7 @@ class StyleBase:
         # with suppress(IndexError):
         # inline = p.inlines[index]
         if self.config.debug.production or self.config.debug.style:
-            self.logger.debug(f"Request path: {Request.path_params}")
+            self.logger.debug(f"Request path: {HtmxRequest.path_params}")
             self.logger.debug(f"Remove unused css index: {index}")
             # self.logger.debug(f"CSS before: {len(inline.before.encode('utf-8'))}")
             # self.logger.debug(f"CSS after:  {len(inline.after.encode('utf-8'))}")
@@ -67,7 +67,7 @@ class StyleBase:
         return new_sass
 
     @cache(expire=config.cache.default_timeout)  # type: ignore
-    async def render_inline(self, path: AsyncPath, request: Request) -> str:
+    async def render_inline(self, path: AsyncPath, request: HtmxRequest) -> str:
         with closing(StringIO()) as res:
             if self.config.deployed:
                 default_yml = await self.templates.render_template(

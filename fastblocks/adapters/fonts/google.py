@@ -10,8 +10,7 @@ class FontsSettings(FontsBaseSettings):
     effects: dict[str, str] = {"primary": "3d-float"}
 
 
-class Fonts(FontsBase):
-    ...
+class Fonts(FontsBase): ...
 
 
 depends.set(Fonts)

@@ -7,8 +7,8 @@ from acb.config import Config
 from acb.depends import depends
 
 from fastblocks import AsyncJinja2Templates
-from fastblocks import RedirectResponse
-from fastblocks import Response
+from starlette.responses import RedirectResponse
+from starlette.responses import Response
 from sqladmin import Admin as SqlAdmin
 from sqladmin.helpers import get_object_identifier
 from starlette.applications import Starlette
@@ -56,7 +56,7 @@ class Admin(SqlAdmin, AdminBase):
         return self.templates
 
     @override
-    async def login(self, request: Request) -> (RedirectResponse | Response):
+    async def login(self, request: Request) -> RedirectResponse | Response:
         if self.authentication_backend:
             context = {"request": request, "error": ""}
             ok = await self.authentication_backend.login(request)

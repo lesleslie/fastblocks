@@ -9,8 +9,7 @@ from acb.config import Settings
 from acb.depends import depends
 
 
-class TemplatesBaseSettings(Settings):
-    ...
+class TemplatesBaseSettings(Settings): ...
 
 
 class TemplatesBase(ABC):

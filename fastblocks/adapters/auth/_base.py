@@ -3,21 +3,21 @@ from abc import ABC
 from abc import abstractmethod
 from contextvars import ContextVar
 
-from acb.config import Settings
+from acb.config import AppSettings
 
-from fastblocks import Request
+from asgi_htmx import HtmxRequest
 from pydantic import EmailStr
 from pydantic import SecretStr
 from pydantic import UUID4
+from sqlmodel import SQLModel
 from starlette.authentication import UnauthenticatedUser
-from ._model import UserModel
 
 current_user: ContextVar[t.Any] = ContextVar(
     "current_user", default=UnauthenticatedUser()
 )
 
 
-class AuthBaseSettings(Settings):
+class AuthBaseSettings(AppSettings):
     token_id: t.Optional[str] = None
     session_cookie: t.Optional[str] = None
 
@@ -25,11 +25,11 @@ class AuthBaseSettings(Settings):
 class AuthBase(ABC):
     @staticmethod
     @abstractmethod
-    async def authenticate(request: Request) -> bool:
+    async def authenticate(request: HtmxRequest) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    def __init__(self, secret_key: SecretStr, user_model: UserModel) -> None:
+    def __init__(self, secret_key: SecretStr, user_model: SQLModel) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -37,11 +37,11 @@ class AuthBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def login(self, request: Request) -> bool:
+    async def login(self, request: HtmxRequest) -> bool:
         raise NotImplementedError
 
     @abstractmethod
-    async def logout(self, request: Request) -> bool:
+    async def logout(self, request: HtmxRequest) -> bool:
         raise NotImplementedError
 
 
@@ -71,6 +71,6 @@ class AuthBaseUser(ABC):
 
     @abstractmethod
     def is_authenticated(
-        self, request: t.Optional[Request] = None, config: t.Any = None
+        self, request: t.Optional[HtmxRequest] = None, config: t.Any = None
     ) -> bool | int | str:
         raise NotImplementedError

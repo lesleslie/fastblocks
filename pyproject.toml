@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.2.6"
+version = "0.2.7"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -60,9 +60,6 @@ dependencies = [
 sitemap = [
     "asgi-sitemaps>=1.0.0",
 ]
-auth = [
-    "firebase-admin>=6.3.0",
-]
 style = [
     "beautifulsoup4>=4.12.2",
     "tinycss2>=1.2.1",
@@ -113,15 +110,16 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "aiohttp",
-    "pyfiglet",
-    "starlette-decorouter",
-    "pdm-bump",
-    "autotyping",
-    "pdm",
-    "pre-commit",
     "libsass",
+    "aiohttp",
+    "autotyping",
+    "pre-commit",
+    "pdm",
+    "starlette-decorouter",
     "pytest",
+    "pyfiglet",
+    "phonenumbers",
+    "pdm-bump",
 ]
 
 [tool.refurb]
@@ -132,10 +130,10 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B603",
     "B404",
     "B403",
     "B113",
+    "B603",
 ]
 
 [tool.pyright]

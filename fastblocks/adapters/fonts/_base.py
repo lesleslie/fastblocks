@@ -9,5 +9,4 @@ class FontsBaseSettings(Settings):
     fontawesome_kit: str = ""
 
 
-class FontsBase:
-    ...
+class FontsBase: ...
