@@ -1,8 +1,9 @@
+import logging
 import typing as t
 from platform import system
 
 from acb.adapters.logger import Logger
-from acb.adapters.logger._base import ExternalLogger
+from acb.adapters.logger.loguru import InterceptHandler
 from acb.config import Config
 from acb.depends import depends
 
@@ -42,7 +43,6 @@ class FastBlocks(Starlette):
         exception_handlers: t.Mapping[t.Any, ExceptionHandler] | None = None,
         lifespan: t.Optional[Lifespan["AppType"]] = None,
         config: Config = depends(),
-        logger: Logger = depends(),  # type: ignore
     ) -> None:
         routes = router_registry.get()
         self.debug = config.debug.app
@@ -57,13 +57,9 @@ class FastBlocks(Starlette):
         self.user_middleware = middleware or []
         set_editor("pycharm")
         install_error_handler()
-        loggers = ["uvicorn", "uvicorn.access", "uvicorn.error"]
-        logger.register_external_loggers(
-            [
-                ExternalLogger(name=name, package="fastblocks", module="main")
-                for name in loggers
-            ]
-        )
+        _logger = logging.getLogger("uvicorn")
+        _logger.handlers.clear()
+        _logger.handlers = [InterceptHandler()]
 
     @depends.inject
     def build_middleware_stack(

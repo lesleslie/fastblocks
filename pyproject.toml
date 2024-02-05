@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.2.7"
+version = "0.2.8"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -88,15 +88,15 @@ line-length = 88
 target-version = "py312"
 fix = true
 show-fixes = true
-show-source = true
+output-format = "full"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 force-single-line = true
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 10
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.black]
@@ -110,16 +110,16 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
+    "pytest",
     "libsass",
     "aiohttp",
-    "autotyping",
+    "pdm-bump",
+    "starlette-decorouter",
     "pre-commit",
     "pdm",
-    "starlette-decorouter",
-    "pytest",
     "pyfiglet",
     "phonenumbers",
-    "pdm-bump",
+    "autotyping",
 ]
 
 [tool.refurb]
@@ -130,10 +130,10 @@ target = [
     "fastblocks",
 ]
 skips = [
+    "B603",
     "B404",
     "B403",
     "B113",
-    "B603",
 ]
 
 [tool.pyright]
