@@ -20,7 +20,7 @@ from starlette.types import ASGIApp
 from starlette.types import ExceptionHandler
 from starlette.types import Lifespan
 from .middleware import middlewares
-from .routing import router_registry
+from .routing import route_registry
 
 AppType = t.TypeVar("AppType", bound="FastBlocks")
 
@@ -44,8 +44,9 @@ class FastBlocks(Starlette):
         lifespan: t.Optional[Lifespan["AppType"]] = None,
         config: Config = depends(),
     ) -> None:
-        routes = router_registry.get()
+        routes = route_registry.get()
         self.debug = config.debug.app
+        install_error_handler()
         super().__init__(
             debug=self.debug,
             routes=routes,
@@ -56,10 +57,10 @@ class FastBlocks(Starlette):
         self.exception_handlers = exception_handlers or {}
         self.user_middleware = middleware or []
         set_editor("pycharm")
-        install_error_handler()
-        _logger = logging.getLogger("uvicorn")
-        _logger.handlers.clear()
-        _logger.handlers = [InterceptHandler()]
+        for _logger in ("uvicorn", "uvicorn.access"):
+            _logger = logging.getLogger(_logger)
+            _logger.handlers.clear()
+            _logger.handlers = [InterceptHandler()]
 
     @depends.inject
     def build_middleware_stack(

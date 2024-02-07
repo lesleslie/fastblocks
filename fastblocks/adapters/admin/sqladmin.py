@@ -6,7 +6,7 @@ from acb.adapters.storage import Storage
 from acb.config import Config
 from acb.depends import depends
 
-from fastblocks import AsyncJinja2Templates
+from starlette_async_jinja import AsyncJinja2Templates
 from starlette.responses import RedirectResponse
 from starlette.responses import Response
 from sqladmin import Admin as SqlAdmin
@@ -25,7 +25,6 @@ from fastblocks.adapters.templates import Templates
 
 
 class AdminSettings(AdminBaseSettings):
-    # requires: t.Optional[list[str]] = ["storage", "sql", "auth"]
     title: str = "Fastblocks Dashboard"
     roles: t.Optional[list[str]] = ["admin", "owner", "contributor", "viewer"]
 

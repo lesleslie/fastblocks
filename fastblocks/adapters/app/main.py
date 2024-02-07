@@ -1,15 +1,17 @@
 from contextlib import asynccontextmanager
+from importlib import import_module
 from time import perf_counter
 
+from acb.adapters import get_adapter
 from acb.adapters.cache import Cache
-from acb.adapters.storage import Storage
-from acb.depends import depends
-from acb.config import Config
 from acb.adapters.logger import Logger
+from acb.adapters.storage import Storage
+from acb.config import Config
+from acb.debug import debug
+from acb.depends import depends
 
 from fastblocks.applications import FastBlocks
-from fastblocks.middleware import middlewares
-from fastblocks.routing import router_registry
+from fastblocks.routing import route_registry
 from ._base import AppBase
 from ._base import AppBaseSettings
 
@@ -21,24 +23,29 @@ class AppSettings(AppBaseSettings): ...
 
 class App(FastBlocks, AppBase):
     @depends.inject
-    def __init__(self, config: Config = depends()) -> None:
-        super().__init__(
-            debug=config.debug.app,
-            middleware=middlewares(),
-            lifespan=self.lifespan,
+    def __init__(self) -> None:  # type: ignore
+        super().__init__(lifespan=self.lifespan)
+        self.templates = None
+        self.auth = None
+        self.models = depends.get(
+            import_module(".".join(get_adapter("models").path.parts)).Models
         )
+        # for model in dir(self.models):
+        #     debug(model)
 
     async def init(self) -> None:
-        from fastblocks.adapters.templates import Templates
+        auth_cls = import_module(".".join(get_adapter("auth").path.parts)).Auth
+        self.auth = depends.get(auth_cls)
 
-        self.templates = depends.get(Templates).app
-
-        from fastblocks.adapters.admin import Admin
-
-        self.admin = depends.get(Admin)
-
-        for router in router_registry.get():
-            super().routes.append(router)
+        templates_cls = import_module(
+            ".".join(get_adapter("templates").path.parts)
+        ).Templates
+        self.templates = depends.get(templates_cls).app
+        routes_cls = import_module(".".join(get_adapter("routes").path.parts)).Routes
+        routes = depends.get(routes_cls).routes
+        route_registry.get().append(routes)
+        for route in routes:
+            debug(route)
 
     @depends.inject
     @asynccontextmanager
@@ -49,7 +56,24 @@ class App(FastBlocks, AppBase):
         cache: Cache = depends(),  # type: ignore
         storage: Storage = depends(),  # type: ignore
     ):
-        logger.info("Application starting...")
+        from acb.adapters.sql import Sql
+
+        sql = depends.get(Sql)
+
+        if get_adapter("admin").enabled:
+            admin_cls = import_module(".".join(get_adapter("admin").path.parts)).Admin
+
+            admin = depends.get(admin_cls)
+
+            admin.__init__(
+                app,
+                engine=sql.engine,
+                title=config.admin.title,
+                debug=config.debug.admin,
+                base_url=config.admin.url,
+                logo_url=config.admin.logo_url,
+                authentication_backend=self.auth,
+            )
 
         async def post_startup() -> None:
             if not config.deployed:
