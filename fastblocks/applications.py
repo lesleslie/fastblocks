@@ -1,8 +1,10 @@
 import logging
 import typing as t
+from contextvars import ContextVar
 from platform import system
 
-from acb.adapters.logger import Logger
+from acb.adapters import import_adapter
+from acb.adapters import register_adapters
 from acb.adapters.logger.loguru import InterceptHandler
 from acb.config import Config
 from acb.depends import depends
@@ -12,6 +14,7 @@ from starception import add_link_template
 from starception import install_error_handler
 from starception import set_editor
 from starlette.applications import Starlette
+from starlette.authentication import UnauthenticatedUser
 from starlette.middleware import Middleware
 from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
@@ -20,7 +23,14 @@ from starlette.types import ASGIApp
 from starlette.types import ExceptionHandler
 from starlette.types import Lifespan
 from .middleware import middlewares
-from .routing import route_registry
+
+register_adapters()
+
+Logger = import_adapter("logger")
+
+current_user: ContextVar[t.Any] = ContextVar(
+    "current_user", default=UnauthenticatedUser()
+)
 
 AppType = t.TypeVar("AppType", bound="FastBlocks")
 
@@ -44,18 +54,19 @@ class FastBlocks(Starlette):
         lifespan: t.Optional[Lifespan["AppType"]] = None,
         config: Config = depends(),
     ) -> None:
-        routes = route_registry.get()
         self.debug = config.debug.app
         install_error_handler()
         super().__init__(
             debug=self.debug,
-            routes=routes,
+            routes=[],
             middleware=middleware,
             lifespan=lifespan,
             exception_handlers=exception_handlers,
         )
         self.exception_handlers = exception_handlers or {}
         self.user_middleware = middleware or []
+        self.models = depends.get(import_adapter("models"))
+        self.templates = None
         set_editor("pycharm")
         for _logger in ("uvicorn", "uvicorn.access"):
             _logger = logging.getLogger(_logger)

@@ -1,7 +1,6 @@
 import typing as t
 from abc import ABC
 from abc import abstractmethod
-from contextvars import ContextVar
 
 from acb.config import AppSettings
 
@@ -9,12 +8,6 @@ from asgi_htmx import HtmxRequest
 from pydantic import EmailStr
 from pydantic import SecretStr
 from pydantic import UUID4
-from sqlmodel import SQLModel
-from starlette.authentication import UnauthenticatedUser
-
-current_user: ContextVar[t.Any] = ContextVar(
-    "current_user", default=UnauthenticatedUser()
-)
 
 
 class AuthBaseSettings(AppSettings):
@@ -29,7 +22,7 @@ class AuthBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def __init__(self, secret_key: SecretStr, user_model: SQLModel) -> None:
+    def __init__(self, secret_key: SecretStr, user_model: t.Any) -> None:
         raise NotImplementedError
 
     @abstractmethod

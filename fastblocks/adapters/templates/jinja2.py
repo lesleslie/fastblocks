@@ -8,12 +8,11 @@ from pathlib import Path
 from re import search
 
 from acb import base_path
-from acb.adapters.cache import Cache
-from acb.adapters.logger import Logger
-from acb.adapters.storage import Storage
+from acb.adapters import import_adapter
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
+from starlette_async_jinja import AsyncJinja2Templates
 
 from aiopath import AsyncPath
 from jinja2 import TemplateNotFound
@@ -24,9 +23,12 @@ from jinja2.ext import loopcontrols
 from jinja2_async_environment.loaders import AsyncBaseLoader
 from jinja_partials import register_starlette_extensions  # type: ignore
 from pydantic import BaseModel
-from starlette_async_jinja import AsyncJinja2Templates
 from ._base import TemplatesBase
 from ._base import TemplatesBaseSettings
+
+Logger = import_adapter("logger")
+Cache = import_adapter("cache")
+Storage = import_adapter("storage")
 
 
 class FileSystemLoader(AsyncBaseLoader):
@@ -44,8 +46,9 @@ class FileSystemLoader(AsyncBaseLoader):
                 debug(path)
                 break
         debug("File Loader")
+        storage_path = AsyncPath("/".join(path.parts[-3:]))
         fs_exists = await path.exists()
-        gc_exists = self.storage.theme.exists(path)
+        gc_exists = await self.storage.templates.exists(storage_path)
         debug(fs_exists)
         debug(gc_exists)
         local_mtime = 0
@@ -54,40 +57,41 @@ class FileSystemLoader(AsyncBaseLoader):
             local_mtime = int(local_stat.st_mtime)
             local_size = local_stat.st_size
             # local_hash = await hash.crc32c(path)
-            cloud_stat = self.storage.theme.stat(path)
-            cloud_mtime = cloud_stat.last_modified
-            cloud_size = cloud_stat.size
+            cloud_stat = await self.storage.templates.stat(storage_path)
+            cloud_mtime = int(round(cloud_stat.get("mtime").timestamp()))
+            cloud_size = cloud_stat.get("size")
             # cloud_hash = await hash.crc32c(resp)
             # debug(type(resp))
-            debug(cloud_stat)
+            for stat in cloud_stat:
+                debug(stat)
             debug(local_mtime, cloud_mtime)
             debug(local_size, cloud_size)
             # debug(local_hash, cloud_hash)
             # if local_hash != cloud_hash:
             # if local_size != cloud_size:
             if local_mtime < cloud_mtime and local_size != cloud_size:
-                resp = self.storage.theme.get(path)
-                if isinstance(resp, bytes):
-                    await path.write_bytes(resp)
-                else:
-                    await path.write_text(resp)
+                resp = self.storage.templates.open(storage_path)
+                # if isinstance(resp, bytes):
+                await storage_path.write_bytes(resp)
+                # else:
+                #     await storage_path.write_text(resp)
             else:
-                resp = await path.read_text()
+                resp = await path.read_bytes()
                 if local_size != cloud_size:
-                    self.storage.theme.save(path, resp)
+                    self.storage.templates.write(storage_path, resp)
         else:
             try:
-                resp = await path.read_text()
+                resp = await path.read_bytes()
                 if resp and not gc_exists:
-                    self.storage.theme.save(path, resp)
+                    await self.storage.templates.write(storage_path, resp)
             except FileNotFoundError:
                 raise TemplateNotFound(path.name)
-        await self.cache.set(path, resp)
+        await self.cache.set(path.name, resp)
 
         async def uptodate() -> bool:
             return int((await path.stat()).st_mtime) == local_mtime
 
-        return resp, path.name, uptodate
+        return resp.decode(), path.name, uptodate
 
 
 class CloudLoader(AsyncBaseLoader):
@@ -105,25 +109,24 @@ class CloudLoader(AsyncBaseLoader):
                 break
         debug("Cloud Loader")
         try:
-            resp = self.storage.theme.get(path)
+            resp = self.storage.templates.open(path)
             await self.cache.set(path, resp)
-            local_stat = self.storage.theme.stat(path)
-            local_mtime = local_stat.last_modified
+            local_stat = await self.storage.templates.stat(path)
+            local_mtime = int(round(local_stat.get("mtime").timestamp()))
 
             async def uptodate() -> bool:
                 debug("cloud uptodate")
                 debug(local_mtime)
-                stat = self.storage.theme.stat(path)
-                debug(stat.last_modified)
-                return stat.last_modified == local_mtime
+                cloud_stat = await self.storage.templates.stat(path)
+                return int(round(cloud_stat.get("mtime").timestamp())) == local_mtime
 
-            return resp, path.name, uptodate
+            return resp.decode(), path.name, uptodate
         except (FileNotFoundError, AttributeError):
             raise TemplateNotFound(path.name)
 
     async def list_templates(self) -> list[str]:
         found = set()
-        path = self.storage.theme.list(self.searchpath)
+        path = self.storage.templates.list(self.searchpath)
         found.update(
             [p.name async for p in await path.iterdir() if p.suffix == ".html"]
         )
@@ -143,14 +146,14 @@ class RedisLoader(AsyncBaseLoader):
             if await path.is_file():
                 break
         debug("Redis Loader")
-        resp = await self.cache.get(path)
+        resp = await self.cache.get(path.name)
         if not resp:
             raise TemplateNotFound(path.name)
 
         async def uptodate() -> bool:
             return True
 
-        return resp, None, uptodate
+        return resp.decode(), None, uptodate
 
     async def list_templates(self) -> list[str]:
         found = set()
@@ -270,7 +273,6 @@ class TemplatesSettings(TemplatesBaseSettings):
 class Templates(TemplatesBase):
     app: t.Optional[AsyncJinja2Templates] = None
     admin: t.Optional[AsyncJinja2Templates] = None
-    config: Config = depends()  # type: ignore
 
     def get_loader(
         self, template_paths: EnvTemplatePaths, admin: bool = False
@@ -293,20 +295,25 @@ class Templates(TemplatesBase):
         # if debug.toolbar and not deployed:
         #     file_loaders.append(PackageLoader("debug_toolbar"))
         jinja_loaders = loaders + file_loaders  # type: ignore[override]
-        if not self.config.deployed or not self.config.debug.production:
+        if not self.config.deployed and not self.config.debug.production:
             jinja_loaders = file_loaders + loaders  # type: ignore[override]
         return ChoiceLoader(jinja_loaders, base_path)
 
     def init_envs(
         self, template_paths: EnvTemplatePaths, admin: bool = False
     ) -> AsyncJinja2Templates:
-        env_configs = dict(extensions=[loopcontrols, i18n, jinja_debug])
+        env_configs = dict(
+            extensions=[loopcontrols, i18n, jinja_debug]
+            + self.config.templates.extensions,
+        )
         templates = AsyncJinja2Templates(template_paths.root, **env_configs)
         templates.env.loader = self.get_loader(template_paths, admin) or literal_eval(
             self.config.templates.loader
         )
-        for ext in [literal_eval(ext) for ext in self.config.templates.extensions]:
-            templates.env.add_extension(ext)
+        # for ext in [literal_eval(ext) for ext in self.config.templates.extensions]:
+        #     templates.env.add_extension(ext)
+        for delimiter, value in self.config.templates.delimiters.items():
+            setattr(templates.env, delimiter, value)
         templates.env.globals["config"] = self.config  # type: ignore
         for k, v in self.config.templates.globals.items():
             templates.env.globals[k] = v

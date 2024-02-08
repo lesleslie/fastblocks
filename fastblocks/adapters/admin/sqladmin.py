@@ -1,27 +1,28 @@
 import typing as t
 from typing import override
 
-from acb.adapters.logger import Logger
-from acb.adapters.storage import Storage
+from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
-
 from starlette_async_jinja import AsyncJinja2Templates
-from starlette.responses import RedirectResponse
-from starlette.responses import Response
+
 from sqladmin import Admin as SqlAdmin
 from sqladmin.helpers import get_object_identifier
 from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
+from starlette.responses import RedirectResponse
+from starlette.responses import Response
 from ._base import AdminBase
 from ._base import AdminBaseSettings
-from fastblocks.adapters.templates import Templates
-
 
 # from wtforms.fields import TextAreaField
 # from wtforms.widgets import TextArea
 # from wtforms.fields.datetime import DateTimeField
+
+Logger = import_adapter("logger")
+Storage = import_adapter("storage")
+Templates = import_adapter("templates")
 
 
 class AdminSettings(AdminBaseSettings):

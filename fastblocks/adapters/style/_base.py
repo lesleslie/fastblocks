@@ -4,8 +4,7 @@ from string import hexdigits
 
 from acb import depends
 from acb.actions.encode import load
-from acb.adapters.cache import Cache
-from acb.adapters.logger import Logger
+from acb.adapters import import_adapter
 from acb.config import Config
 from acb.config import Settings
 from acb.debug import debug
@@ -14,7 +13,11 @@ from colour import web2hex  # type: ignore
 from aiopath import AsyncPath
 from asgi_htmx import HtmxRequest
 from fastblocks.actions.minify import minify
-from fastblocks.adapters.templates import Templates  # type: ignore
+
+
+Logger = import_adapter("logger")
+Cache = import_adapter("cache")
+Templates = import_adapter("templates")
 
 
 class StyleBaseSettings(Settings): ...
