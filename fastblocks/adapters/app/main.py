@@ -4,6 +4,7 @@ from time import perf_counter
 
 from acb.adapters import get_adapter
 from acb.adapters import import_adapter
+from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
 
@@ -11,16 +12,21 @@ from fastblocks.applications import FastBlocks
 from ._base import AppBase
 from ._base import AppBaseSettings
 
-Logger = import_adapter("logger")
-Cache = import_adapter("cache")
-Storage = import_adapter("storage")
-Sql = import_adapter("sql")
-Auth = import_adapter("auth")
-
 main_start = perf_counter()
 
+Logger = import_adapter()
+Cache = import_adapter()
+Sql = import_adapter()
+Auth = import_adapter()
 
-class AppSettings(AppBaseSettings): ...
+
+class AppSettings(AppBaseSettings):
+    url: str = "http://localhost:8000"
+
+    @depends.inject
+    def __init__(self, config: Config = depends(), **data: t.Any) -> None:
+        super().__init__(**data)
+        self.url = self.url if not config.deployed else f"https://{self.domain}"
 
 
 class App(FastBlocks, AppBase):
@@ -31,10 +37,6 @@ class App(FastBlocks, AppBase):
     async def init(self) -> None:
         self.templates = depends.get(import_adapter("templates")).app
         self.routes.extend(depends.get(import_adapter("routes")).routes)
-        # for adapter in get_installed_adapters():
-        #     debug(f"**** {adapter.category.upper()} ****")
-        #     for k, v in vars(adapter).items():
-        #         debug(k, v)
         for route in self.routes:
             debug(route)
 

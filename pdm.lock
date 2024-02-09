@@ -5,7 +5,7 @@
 groups = ["default", "dev", "style", "admin", "auth", "sitemap"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:78bdec4804b379b6593d6352dd7eace43a1182ba6085be3468aec490b6f9b2a2"
+content_hash = "sha256:e1d1866d740cd7f125fc58ed08a9fab8976312a478b9b1bc13f3f00ea69f809d"
 
 [[package]]
 name = "about-time"
@@ -2203,19 +2203,6 @@ dependencies = [
 files = [
     {file = "starlette_csrf-3.0.0-py3-none-any.whl", hash = "sha256:aac29b366e83621d3fc56be690866e16f3c56df91ab5e184b77950540a4e2761"},
     {file = "starlette_csrf-3.0.0.tar.gz", hash = "sha256:7afaca8c72cc3c726e5942778af53454607ca3e653fd86cd75ee35d8cd1cfa77"},
-]
-
-[[package]]
-name = "starlette-decorouter"
-version = "1.0.0"
-requires_python = ">=3.8, <4"
-summary = "FastAPI style decorators for starlette ASGI"
-dependencies = [
-    "starlette",
-]
-files = [
-    {file = "starlette_decoRouter-1.0.0-py3-none-any.whl", hash = "sha256:4e2febe81066b60576e419b33e2f59c6219ca57742994aa00c20450cdf516f57"},
-    {file = "starlette_decoRouter-1.0.0.tar.gz", hash = "sha256:a7c8738a12ea033cd8aad3e2d31fa1e16acfc977787c90d4685bd79d758bc885"},
 ]
 
 [[package]]

@@ -20,9 +20,9 @@ from ._base import AdminBaseSettings
 # from wtforms.widgets import TextArea
 # from wtforms.fields.datetime import DateTimeField
 
-Logger = import_adapter("logger")
-Storage = import_adapter("storage")
-Templates = import_adapter("templates")
+Logger = import_adapter()
+Storage = import_adapter()
+Templates = import_adapter()
 
 
 class AdminSettings(AdminBaseSettings):

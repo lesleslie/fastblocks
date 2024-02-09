@@ -26,7 +26,7 @@ from .middleware import middlewares
 
 register_adapters()
 
-Logger = import_adapter("logger")
+Logger = import_adapter()
 
 current_user: ContextVar[t.Any] = ContextVar(
     "current_user", default=UnauthenticatedUser()

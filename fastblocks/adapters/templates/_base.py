@@ -7,7 +7,7 @@ from acb.config import Config
 from acb.config import Settings
 from acb.depends import depends
 
-Logger = import_adapter("logger")
+Logger = import_adapter()
 
 
 class TemplatesBaseSettings(Settings): ...

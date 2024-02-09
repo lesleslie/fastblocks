@@ -26,9 +26,9 @@ from pydantic import BaseModel
 from ._base import TemplatesBase
 from ._base import TemplatesBaseSettings
 
-Logger = import_adapter("logger")
-Cache = import_adapter("cache")
-Storage = import_adapter("storage")
+Logger = import_adapter()
+Cache = import_adapter()
+Storage = import_adapter()
 
 
 class FileSystemLoader(AsyncBaseLoader):
@@ -61,20 +61,13 @@ class FileSystemLoader(AsyncBaseLoader):
             cloud_mtime = int(round(cloud_stat.get("mtime").timestamp()))
             cloud_size = cloud_stat.get("size")
             # cloud_hash = await hash.crc32c(resp)
-            # debug(type(resp))
-            for stat in cloud_stat:
-                debug(stat)
             debug(local_mtime, cloud_mtime)
             debug(local_size, cloud_size)
             # debug(local_hash, cloud_hash)
             # if local_hash != cloud_hash:
-            # if local_size != cloud_size:
             if local_mtime < cloud_mtime and local_size != cloud_size:
                 resp = self.storage.templates.open(storage_path)
-                # if isinstance(resp, bytes):
                 await storage_path.write_bytes(resp)
-                # else:
-                #     await storage_path.write_text(resp)
             else:
                 resp = await path.read_bytes()
                 if local_size != cloud_size:
@@ -109,7 +102,7 @@ class CloudLoader(AsyncBaseLoader):
                 break
         debug("Cloud Loader")
         try:
-            resp = self.storage.templates.open(path)
+            resp = await self.storage.templates.open(path)
             await self.cache.set(path, resp)
             local_stat = await self.storage.templates.stat(path)
             local_mtime = int(round(local_stat.get("mtime").timestamp()))
@@ -194,7 +187,6 @@ class PackageLoader(AsyncBaseLoader):
         self, template: AsyncPath
     ) -> tuple[t.Any, t.Any, t.Callable[[], t.Coroutine[t.Any, t.Any, bool]]]:
         p = AsyncPath(self._template_root) / template
-        # uptodate: t.Optional[t.Callable[[], bool]]
         if not await p.is_file():
             raise TemplateNotFound(template.name)
         debug("Package Loader")
@@ -310,8 +302,6 @@ class Templates(TemplatesBase):
         templates.env.loader = self.get_loader(template_paths, admin) or literal_eval(
             self.config.templates.loader
         )
-        # for ext in [literal_eval(ext) for ext in self.config.templates.extensions]:
-        #     templates.env.add_extension(ext)
         for delimiter, value in self.config.templates.delimiters.items():
             setattr(templates.env, delimiter, value)
         templates.env.globals["config"] = self.config  # type: ignore

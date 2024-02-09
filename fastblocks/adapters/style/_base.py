@@ -15,9 +15,9 @@ from asgi_htmx import HtmxRequest
 from fastblocks.actions.minify import minify
 
 
-Logger = import_adapter("logger")
-Cache = import_adapter("cache")
-Templates = import_adapter("templates")
+Logger = import_adapter()
+Cache = import_adapter()
+Templates = import_adapter()
 
 
 class StyleBaseSettings(Settings): ...
