@@ -5,7 +5,7 @@
 groups = ["default", "dev", "style", "admin", "auth", "sitemap"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:b646437e477590efdc96e8e626a5f57d63b1e55230f541068f7f0eadc76066c2"
+content_hash = "sha256:e946ea725ffe921dd241f93223109f7096ad812658679b6cfea45766db174609"
 
 [[package]]
 name = "about-time"
@@ -19,7 +19,7 @@ files = [
 
 [[package]]
 name = "acb"
-version = "0.5.2"
+version = "0.5.3"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 dependencies = [
@@ -43,18 +43,18 @@ dependencies = [
     "pyyaml>=6.0.1",
 ]
 files = [
-    {file = "acb-0.5.2-py3-none-any.whl", hash = "sha256:c2a09b68e18e88747f106865b55a0bf394e27b60b690fb8bdd5c539e90770415"},
-    {file = "acb-0.5.2.tar.gz", hash = "sha256:6933c96da1283f3ea9728b4ea242b33e0eeacf8fc2ec8695e783425d55227bd6"},
+    {file = "acb-0.5.3-py3-none-any.whl", hash = "sha256:dfc8984996c20a7432a29a9b0d5fc0a7f5035f1c752e8866a02326ecebcafe59"},
+    {file = "acb-0.5.3.tar.gz", hash = "sha256:b5ad6568643f2bd1ac7f247614040dc6ee99d055ea078e7a448ccb7315afec99"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.5.2"
+version = "0.5.3"
 extras = ["cache", "requests", "secrets", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 dependencies = [
-    "acb==0.5.2",
+    "acb==0.5.3",
     "adlfs>=2023.12.0",
     "cashews[redis]>=6.4.0",
     "gcsfs>=2023.12.2.post1",
@@ -64,8 +64,8 @@ dependencies = [
     "s3fs>=2023.12.2",
 ]
 files = [
-    {file = "acb-0.5.2-py3-none-any.whl", hash = "sha256:c2a09b68e18e88747f106865b55a0bf394e27b60b690fb8bdd5c539e90770415"},
-    {file = "acb-0.5.2.tar.gz", hash = "sha256:6933c96da1283f3ea9728b4ea242b33e0eeacf8fc2ec8695e783425d55227bd6"},
+    {file = "acb-0.5.3-py3-none-any.whl", hash = "sha256:dfc8984996c20a7432a29a9b0d5fc0a7f5035f1c752e8866a02326ecebcafe59"},
+    {file = "acb-0.5.3.tar.gz", hash = "sha256:b5ad6568643f2bd1ac7f247614040dc6ee99d055ea078e7a448ccb7315afec99"},
 ]
 
 [[package]]
@@ -622,7 +622,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.24"
+version = "0.7.25"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 dependencies = [
@@ -639,8 +639,8 @@ dependencies = [
     "pytest>=7.4.3",
 ]
 files = [
-    {file = "crackerjack-0.7.24-py3-none-any.whl", hash = "sha256:f6c67fb0910a00ae53f48d9d9e8ee59eb40cfd69fa5212f48a6d59322d601721"},
-    {file = "crackerjack-0.7.24.tar.gz", hash = "sha256:9584ed41ddeab3bf3f8c7becf1ddcea615a222ed11608e3133a402f3b8f1b729"},
+    {file = "crackerjack-0.7.25-py3-none-any.whl", hash = "sha256:b5fcb79a29a01f6507754fea00b16a64c3d7dc2fff27b240a7c9fd279c888445"},
+    {file = "crackerjack-0.7.25.tar.gz", hash = "sha256:5b9da08558f7b8910c4d34fa4af600abb357808784019c9f22ca040a790040c6"},
 ]
 
 [[package]]
@@ -2175,20 +2175,20 @@ files = [
 
 [[package]]
 name = "starlette"
-version = "0.37.0"
+version = "0.37.1"
 requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
 dependencies = [
     "anyio<5,>=3.4.0",
 ]
 files = [
-    {file = "starlette-0.37.0-py3-none-any.whl", hash = "sha256:53a95037cf6a563fca942ea16ba0260edce10258c213cbd554adc263fad22dfc"},
-    {file = "starlette-0.37.0.tar.gz", hash = "sha256:d1ec71a84fd1f691b800361a6a64ecb0e9c17ab308507ccc7f911727888293c7"},
+    {file = "starlette-0.37.1-py3-none-any.whl", hash = "sha256:92a816002d4e8c552477b089520e3085bb632e854eb32cef99acb6f6f7830b69"},
+    {file = "starlette-0.37.1.tar.gz", hash = "sha256:345cfd562236b557e76a045715ac66fdc355a1e7e617b087834a76a87dcc6533"},
 ]
 
 [[package]]
 name = "starlette-async-jinja"
-version = "1.6.0"
+version = "1.6.1"
 requires_python = ">=3.12"
 summary = ""
 dependencies = [
@@ -2197,8 +2197,8 @@ dependencies = [
     "starlette>=0.34.0",
 ]
 files = [
-    {file = "starlette_async_jinja-1.6.0-py3-none-any.whl", hash = "sha256:85f32891e0f81fc752c9366c4d3c3ae4a6bd7124a35f4e88b04e0814aed816e3"},
-    {file = "starlette_async_jinja-1.6.0.tar.gz", hash = "sha256:dcbb0f5815f06a58571660150e8fc19a6a2218a812498e083441392ec4ef9d61"},
+    {file = "starlette_async_jinja-1.6.1-py3-none-any.whl", hash = "sha256:c953e47dc3e91a113c71a35f840aa5950ab230d5364eb148eed1d8eac0c41cb1"},
+    {file = "starlette_async_jinja-1.6.1.tar.gz", hash = "sha256:8c1459b30c7b3f8e4460fd3ace982edbd6907c901771c25ef287b3567a4fe659"},
 ]
 
 [[package]]
@@ -2316,7 +2316,7 @@ files = [
 
 [[package]]
 name = "uvicorn"
-version = "0.27.0.post1"
+version = "0.27.1"
 requires_python = ">=3.8"
 summary = "The lightning-fast ASGI server."
 dependencies = [
@@ -2324,8 +2324,8 @@ dependencies = [
     "h11>=0.8",
 ]
 files = [
-    {file = "uvicorn-0.27.0.post1-py3-none-any.whl", hash = "sha256:4b85ba02b8a20429b9b205d015cbeb788a12da527f731811b643fd739ef90d5f"},
-    {file = "uvicorn-0.27.0.post1.tar.gz", hash = "sha256:54898fcd80c13ff1cd28bf77b04ec9dbd8ff60c5259b499b4b12bb0917f22907"},
+    {file = "uvicorn-0.27.1-py3-none-any.whl", hash = "sha256:5c89da2f3895767472a35556e539fd59f7edbe9b1e9c0e1c99eebeadc61838e4"},
+    {file = "uvicorn-0.27.1.tar.gz", hash = "sha256:3d9a267296243532db80c83a959a3400502165ade2c1338dea4e67915fd4745a"},
 ]
 
 [[package]]
