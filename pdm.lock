@@ -5,7 +5,7 @@
 groups = ["default", "dev", "style", "admin", "auth", "sitemap"]
 strategy = ["cross_platform"]
 lock_version = "4.4.1"
-content_hash = "sha256:e946ea725ffe921dd241f93223109f7096ad812658679b6cfea45766db174609"
+content_hash = "sha256:b1122c432013e87a9e1793cf52a7f570636da253164a656dfafd6fc8e8d31d14"
 
 [[package]]
 name = "about-time"
@@ -55,13 +55,13 @@ requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 dependencies = [
     "acb==0.5.3",
-    "adlfs>=2023.12.0",
-    "cashews[redis]>=6.4.0",
-    "gcsfs>=2023.12.2.post1",
-    "google-cloud-secret-manager>=2.17.0",
-    "hishel>=0.0.21",
+    "adlfs>=2024.2.0",
+    "cashews[redis]>=7.0.0",
+    "gcsfs>=2024.2.0",
+    "google-cloud-secret-manager>=2.18.1",
+    "hishel>=0.0.24",
     "httpx[http2]>=0.26.0",
-    "s3fs>=2023.12.2",
+    "s3fs>=2024.2.0",
 ]
 files = [
     {file = "acb-0.5.3-py3-none-any.whl", hash = "sha256:dfc8984996c20a7432a29a9b0d5fc0a7f5035f1c752e8866a02326ecebcafe59"},
@@ -1100,7 +1100,7 @@ files = [
 
 [[package]]
 name = "hishel"
-version = "0.0.22"
+version = "0.0.24"
 requires_python = ">=3.8"
 summary = "Persistent cache implementation for httpx and httpcore"
 dependencies = [
@@ -1108,8 +1108,8 @@ dependencies = [
     "typing-extensions>=4.8.0",
 ]
 files = [
-    {file = "hishel-0.0.22-py3-none-any.whl", hash = "sha256:35a2fd67b5f04eeacf6f0ceb9b75d846dea1c6c971c79c7aab66822dfbc6cf80"},
-    {file = "hishel-0.0.22.tar.gz", hash = "sha256:ec7602f9cf64e3db8cd18289e5f93c710e8065998b5d5f8c3d5db6ff527fcdab"},
+    {file = "hishel-0.0.24-py3-none-any.whl", hash = "sha256:8b6e43481485e1938d78bd35c0bcb38646fe8f2e090fedb64b4dc1d6015ffe49"},
+    {file = "hishel-0.0.24.tar.gz", hash = "sha256:4ac494c6bfedc431e480ab85d3435d4710230b2ad6092766b6ccf82b1d7e4152"},
 ]
 
 [[package]]
@@ -1271,18 +1271,6 @@ summary = "Safely pass data to untrusted environments and back."
 files = [
     {file = "itsdangerous-2.1.2-py3-none-any.whl", hash = "sha256:2c2349112351b88699d8d4b6b075022c0808887cb7ad10069318a8b0bc88db44"},
     {file = "itsdangerous-2.1.2.tar.gz", hash = "sha256:5dbbc68b317e5e42f327f9021763545dc3fc3bfe22e6deb96aaf1fc38874156a"},
-]
-
-[[package]]
-name = "jinja-partials"
-version = "0.2.0"
-summary = "Simple reuse of partial HTML page templates in the Jinja template language for Python web frameworks."
-dependencies = [
-    "jinja2",
-]
-files = [
-    {file = "jinja_partials-0.2.0-py3-none-any.whl", hash = "sha256:a83ab16c02a03412eb6b5a49345900fb56ad666fad11d3be7fff09dbf9ecf8f3"},
-    {file = "jinja_partials-0.2.0.tar.gz", hash = "sha256:ada44c441fe175d0a5d5f594b5f4c3301a1d5974d212e83031fbd8886785dd69"},
 ]
 
 [[package]]

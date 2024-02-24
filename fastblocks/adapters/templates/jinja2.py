@@ -21,7 +21,6 @@ from jinja2.ext import Extension
 from jinja2.ext import i18n
 from jinja2.ext import loopcontrols
 from jinja2_async_environment.loaders import AsyncBaseLoader
-from jinja_partials import register_starlette_extensions  # type: ignore
 from pydantic import BaseModel
 from ._base import TemplatesBase
 from ._base import TemplatesBaseSettings
@@ -48,11 +47,11 @@ class FileSystemLoader(AsyncBaseLoader):
         debug("File Loader")
         storage_path = AsyncPath("/".join(path.parts[-3:]))
         fs_exists = await path.exists()
-        gc_exists = await self.storage.templates.exists(storage_path)
+        storage_exists = await self.storage.templates.exists(storage_path)
         debug(fs_exists)
-        debug(gc_exists)
+        debug(storage_exists)
         local_mtime = 0
-        if gc_exists and fs_exists and not self.config.deployed:
+        if storage_exists and fs_exists and not self.config.deployed:
             local_stat = await path.stat()
             local_mtime = int(local_stat.st_mtime)
             local_size = local_stat.st_size
@@ -66,16 +65,16 @@ class FileSystemLoader(AsyncBaseLoader):
             # debug(local_hash, cloud_hash)
             # if local_hash != cloud_hash:
             if local_mtime < cloud_mtime and local_size != cloud_size:
-                resp = self.storage.templates.open(storage_path)
+                resp = await self.storage.templates.open(storage_path)
                 await storage_path.write_bytes(resp)
             else:
                 resp = await path.read_bytes()
                 if local_size != cloud_size:
-                    self.storage.templates.write(storage_path, resp)
+                    await self.storage.templates.write(storage_path, resp)
         else:
             try:
                 resp = await path.read_bytes()
-                if resp and not gc_exists:
+                if resp and not storage_exists:
                     await self.storage.templates.write(storage_path, resp)
             except FileNotFoundError:
                 raise TemplateNotFound(path.name)
@@ -101,16 +100,18 @@ class CloudLoader(AsyncBaseLoader):
             if await path.is_file():
                 break
         debug("Cloud Loader")
+        storage_path = AsyncPath("/".join(path.parts[-3:]))
+        debug(await self.storage.templates.exists(storage_path))
         try:
-            resp = await self.storage.templates.open(path)
-            await self.cache.set(path, resp)
-            local_stat = await self.storage.templates.stat(path)
+            resp = await self.storage.templates.open(storage_path)
+            await self.cache.set(storage_path, resp)
+            local_stat = await self.storage.templates.stat(storage_path)
             local_mtime = int(round(local_stat.get("mtime").timestamp()))
 
             async def uptodate() -> bool:
                 debug("cloud uptodate")
                 debug(local_mtime)
-                cloud_stat = await self.storage.templates.stat(path)
+                cloud_stat = await self.storage.templates.stat(storage_path)
                 return int(round(cloud_stat.get("mtime").timestamp())) == local_mtime
 
             return resp.decode(), path.name, uptodate
@@ -248,7 +249,6 @@ class EnvTemplatePaths(BaseModel, arbitrary_types_allowed=True):
 
 
 class TemplatesSettings(TemplatesBaseSettings):
-    # requires: t.Optional[list[str]] = ["cache", "storage"]
     loader: t.Optional[str] = None
     extensions: list[Extension] = []
     delimiters: t.Optional[dict[str, str]] = dict(
@@ -307,7 +307,6 @@ class Templates(TemplatesBase):
         templates.env.globals["config"] = self.config  # type: ignore
         for k, v in self.config.templates.globals.items():
             templates.env.globals[k] = v
-        register_starlette_extensions(templates)  # type: ignore
         return templates
 
     @depends.inject
