@@ -4,6 +4,7 @@ from contextlib import suppress
 from html.parser import HTMLParser
 from importlib import import_module
 from importlib.util import find_spec
+from inspect import isclass
 from pathlib import Path
 from re import search
 
@@ -12,7 +13,6 @@ from acb.adapters import import_adapter
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
-from starlette_async_jinja import AsyncJinja2Templates
 
 from aiopath import AsyncPath
 from jinja2 import TemplateNotFound
@@ -22,12 +22,14 @@ from jinja2.ext import i18n
 from jinja2.ext import loopcontrols
 from jinja2_async_environment.loaders import AsyncBaseLoader
 from pydantic import BaseModel
+from starlette_async_jinja import AsyncJinja2Templates
 from ._base import TemplatesBase
 from ._base import TemplatesBaseSettings
 
 Logger = import_adapter()
 Cache = import_adapter()
 Storage = import_adapter()
+Models = import_adapter()
 
 
 class FileSystemLoader(AsyncBaseLoader):
@@ -45,7 +47,8 @@ class FileSystemLoader(AsyncBaseLoader):
                 debug(path)
                 break
         debug("File Loader")
-        storage_path = AsyncPath("/".join(path.parts[-3:]))
+        file_depth = -4 if path.parts[-3] == "blocks" else -3
+        storage_path = AsyncPath("/".join(path.parts[-file_depth:]))
         fs_exists = await path.exists()
         storage_exists = await self.storage.templates.exists(storage_path)
         debug(fs_exists)
@@ -250,7 +253,7 @@ class EnvTemplatePaths(BaseModel, arbitrary_types_allowed=True):
 
 class TemplatesSettings(TemplatesBaseSettings):
     loader: t.Optional[str] = None
-    extensions: list[Extension] = []
+    extensions: list[str] = []
     delimiters: t.Optional[dict[str, str]] = dict(
         block_start_string="[%",
         block_end_string="%]",
@@ -261,6 +264,13 @@ class TemplatesSettings(TemplatesBaseSettings):
     )
     globals: dict[str, t.Any] = {}
 
+    @depends.inject
+    def __init__(
+        self, models: Models = depends(), **data: t.Any  # type: ignore
+    ) -> None:
+        super().__init__(**data)
+        self.globals["models"] = models
+
 
 class Templates(TemplatesBase):
     app: t.Optional[AsyncJinja2Templates] = None
@@ -269,23 +279,16 @@ class Templates(TemplatesBase):
     def get_loader(
         self, template_paths: EnvTemplatePaths, admin: bool = False
     ) -> ChoiceLoader:
+        searchpaths = []
+        for path in (template_paths.theme, template_paths.style, template_paths.base):
+            searchpaths.extend([path, path / "blocks"])
         loaders: list[AsyncBaseLoader] = [
-            RedisLoader(
-                [template_paths.theme, template_paths.style, template_paths.base]
-            ),
-            CloudLoader(
-                [template_paths.theme, template_paths.style, template_paths.base]
-            ),
+            RedisLoader(searchpaths),
+            CloudLoader(searchpaths),
         ]
-        file_loaders: list[AsyncBaseLoader] = [
-            FileSystemLoader(
-                [template_paths.theme, template_paths.style, template_paths.base]
-            ),
-        ]
+        file_loaders: list[AsyncBaseLoader] = [FileSystemLoader(searchpaths)]
         if admin:
             file_loaders.append(PackageLoader("sqladmin"))
-        # if debug.toolbar and not deployed:
-        #     file_loaders.append(PackageLoader("debug_toolbar"))
         jinja_loaders = loaders + file_loaders  # type: ignore[override]
         if not self.config.deployed and not self.config.debug.production:
             jinja_loaders = file_loaders + loaders  # type: ignore[override]
@@ -294,14 +297,26 @@ class Templates(TemplatesBase):
     def init_envs(
         self, template_paths: EnvTemplatePaths, admin: bool = False
     ) -> AsyncJinja2Templates:
-        env_configs = dict(
-            extensions=[loopcontrols, i18n, jinja_debug]
-            + self.config.templates.extensions,
-        )
+        _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
+        _imported_extensions = [
+            import_module(e) for e in self.config.templates.extensions
+        ]
+        for e in _imported_extensions:
+            _extensions.extend(
+                [
+                    v
+                    for v in vars(e).values()
+                    if isclass(v)
+                    and v.__name__ != "Extension"
+                    and issubclass(v, Extension)
+                ]
+            )
+        env_configs = dict(extensions=_extensions)
         templates = AsyncJinja2Templates(template_paths.root, **env_configs)
         templates.env.loader = self.get_loader(template_paths, admin) or literal_eval(
             self.config.templates.loader
         )
+        debug(templates.env.extensions)
         for delimiter, value in self.config.templates.delimiters.items():
             setattr(templates.env, delimiter, value)
         templates.env.globals["config"] = self.config  # type: ignore

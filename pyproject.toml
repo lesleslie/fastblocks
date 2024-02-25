@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.3.3"
+version = "0.3.4"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -48,9 +48,9 @@ dependencies = [
     "jsmin>=3.0.1",
     "libsass>=0.23.0",
     "aiohttp>=3.9.3",
-    "acb[cache,requests,secrets,storage]>=0.5.3",
     "starlette-async-jinja>=1.6.1",
     "secure>=0.3.0",
+    "acb[cache,requests,secret,storage]>=0.5.5",
 ]
 
 [project.optional-dependencies]
@@ -106,15 +106,15 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "autotyping",
-    "pre-commit",
-    "pyfiglet",
-    "phonenumbers",
     "libsass",
+    "autotyping",
     "pdm-bump",
-    "aiohttp",
-    "pytest",
+    "phonenumbers",
+    "pre-commit",
     "pdm",
+    "aiohttp",
+    "pyfiglet",
+    "pytest",
 ]
 
 [tool.refurb]
@@ -125,10 +125,10 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B403",
-    "B404",
     "B113",
+    "B403",
     "B603",
+    "B404",
 ]
 
 [tool.pyright]
