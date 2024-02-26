@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.3.4"
+version = "0.3.5"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -50,7 +50,7 @@ dependencies = [
     "aiohttp>=3.9.3",
     "starlette-async-jinja>=1.6.1",
     "secure>=0.3.0",
-    "acb[cache,requests,secret,storage]>=0.5.5",
+    "acb[cache,requests,secret,storage]>=0.5.7",
 ]
 
 [project.optional-dependencies]
@@ -76,7 +76,7 @@ config = [
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.7.25",
+    "crackerjack>=0.7.26",
 ]
 
 [tool.ruff]
@@ -106,15 +106,15 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "libsass",
-    "autotyping",
     "pdm-bump",
-    "phonenumbers",
-    "pre-commit",
     "pdm",
+    "phonenumbers",
+    "autotyping",
+    "pytest",
+    "pre-commit",
     "aiohttp",
     "pyfiglet",
-    "pytest",
+    "libsass",
 ]
 
 [tool.refurb]
@@ -125,9 +125,9 @@ target = [
     "fastblocks",
 ]
 skips = [
+    "B603",
     "B113",
     "B403",
-    "B603",
     "B404",
 ]
 

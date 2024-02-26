@@ -292,7 +292,7 @@ class Templates(TemplatesBase):
         jinja_loaders = loaders + file_loaders  # type: ignore[override]
         if not self.config.deployed and not self.config.debug.production:
             jinja_loaders = file_loaders + loaders  # type: ignore[override]
-        return ChoiceLoader(jinja_loaders, base_path)
+        return ChoiceLoader(jinja_loaders, template_paths.style)
 
     def init_envs(
         self, template_paths: EnvTemplatePaths, admin: bool = False
