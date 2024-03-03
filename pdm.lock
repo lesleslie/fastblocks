@@ -20,7 +20,7 @@ files = [
 
 [[package]]
 name = "acb"
-version = "0.5.7"
+version = "0.5.8"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default", "dev"]
@@ -45,19 +45,19 @@ dependencies = [
     "pyyaml>=6.0.1",
 ]
 files = [
-    {file = "acb-0.5.7-py3-none-any.whl", hash = "sha256:c117a1b1deb3c88a8fa4463c4692919c53b1196e25944262859a80a6ee5f71c7"},
-    {file = "acb-0.5.7.tar.gz", hash = "sha256:77471b49bb27cf0a7ae56b61077582c039cbe3b59c67292bd6bc8af2bf2f6546"},
+    {file = "acb-0.5.8-py3-none-any.whl", hash = "sha256:72c7cc62a44dca2914280810496b78b0efdc7c9e6739668bd255b7e3f96dd765"},
+    {file = "acb-0.5.8.tar.gz", hash = "sha256:cf424143578fda39abce9db770ade68a3f9c78c19988677bc1e257155e8d845f"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.5.7"
+version = "0.5.8"
 extras = ["cache", "requests", "secret", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default"]
 dependencies = [
-    "acb==0.5.7",
+    "acb==0.5.8",
     "adlfs>=2024.2.0",
     "cashews[redis]>=7.0.0",
     "gcsfs>=2024.2.0",
@@ -67,8 +67,8 @@ dependencies = [
     "s3fs>=2024.2.0",
 ]
 files = [
-    {file = "acb-0.5.7-py3-none-any.whl", hash = "sha256:c117a1b1deb3c88a8fa4463c4692919c53b1196e25944262859a80a6ee5f71c7"},
-    {file = "acb-0.5.7.tar.gz", hash = "sha256:77471b49bb27cf0a7ae56b61077582c039cbe3b59c67292bd6bc8af2bf2f6546"},
+    {file = "acb-0.5.8-py3-none-any.whl", hash = "sha256:72c7cc62a44dca2914280810496b78b0efdc7c9e6739668bd255b7e3f96dd765"},
+    {file = "acb-0.5.8.tar.gz", hash = "sha256:cf424143578fda39abce9db770ade68a3f9c78c19988677bc1e257155e8d845f"},
 ]
 
 [[package]]
@@ -665,7 +665,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.26"
+version = "0.7.27"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 groups = ["dev"]
@@ -683,8 +683,8 @@ dependencies = [
     "pytest>=7.4.3",
 ]
 files = [
-    {file = "crackerjack-0.7.26-py3-none-any.whl", hash = "sha256:eda31913a8f44411837e48fe00e0763859eea35734361a45bc7079ecafbb4288"},
-    {file = "crackerjack-0.7.26.tar.gz", hash = "sha256:01cc013d988a2d2cadbd9b15b2a1f171669780c09b4ce6c2f38df7b52d1070d4"},
+    {file = "crackerjack-0.7.27-py3-none-any.whl", hash = "sha256:ef987103289594e6ad674d4892c58afab97360781bc32192c8c5af1997fa2cdd"},
+    {file = "crackerjack-0.7.27.tar.gz", hash = "sha256:b3d6914999c15c99c5c6df13dd3119f21fde694c09e8be77cae8c6cdff9e501e"},
 ]
 
 [[package]]
@@ -1873,7 +1873,7 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.6.2"
+version = "2.6.3"
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
 groups = ["default", "dev"]
@@ -1883,8 +1883,8 @@ dependencies = [
     "typing-extensions>=4.6.1",
 ]
 files = [
-    {file = "pydantic-2.6.2-py3-none-any.whl", hash = "sha256:37a5432e54b12fecaa1049c5195f3d860a10e01bdfd24f1840ef14bd0d3aeab3"},
-    {file = "pydantic-2.6.2.tar.gz", hash = "sha256:a09be1c3d28f3abe37f8a78af58284b236a92ce520105ddc91a6d29ea1176ba7"},
+    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
+    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
 ]
 
 [[package]]
@@ -1946,18 +1946,18 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.6.2"
+version = "2.6.3"
 extras = ["email"]
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
 groups = ["default", "dev"]
 dependencies = [
     "email-validator>=2.0.0",
-    "pydantic==2.6.2",
+    "pydantic==2.6.3",
 ]
 files = [
-    {file = "pydantic-2.6.2-py3-none-any.whl", hash = "sha256:37a5432e54b12fecaa1049c5195f3d860a10e01bdfd24f1840ef14bd0d3aeab3"},
-    {file = "pydantic-2.6.2.tar.gz", hash = "sha256:a09be1c3d28f3abe37f8a78af58284b236a92ce520105ddc91a6d29ea1176ba7"},
+    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
+    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
 ]
 
 [[package]]
@@ -2367,7 +2367,7 @@ files = [
 
 [[package]]
 name = "starlette-async-jinja"
-version = "1.6.3"
+version = "1.7.1"
 requires_python = ">=3.12"
 summary = ""
 groups = ["default"]
@@ -2377,8 +2377,8 @@ dependencies = [
     "starlette>=0.34.0",
 ]
 files = [
-    {file = "starlette_async_jinja-1.6.3-py3-none-any.whl", hash = "sha256:42f2a11082b949122fb1109205c35bf5992d730d5b1ab70ab285e73f3763bcfe"},
-    {file = "starlette_async_jinja-1.6.3.tar.gz", hash = "sha256:f80ad1f30d778b48563a6bf659aca973ac2424dd92ea5653bbc065702e5830e0"},
+    {file = "starlette_async_jinja-1.7.1-py3-none-any.whl", hash = "sha256:8888ff0e7e67c00a1dc1fb51ef0d653bc3da8f96f47ed2d9ad86ca4896004c51"},
+    {file = "starlette_async_jinja-1.7.1.tar.gz", hash = "sha256:29dba1c7078d72c13ef9435327495f3c1fc0cea1fd896b154cb4bddd5c6af23c"},
 ]
 
 [[package]]
