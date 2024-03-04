@@ -117,10 +117,10 @@ class CloudLoader(AsyncBaseLoader):
         storage_path = None
         for searchpath in self.searchpath:  # type: ignore
             path = searchpath / template
-            debug(path)
             storage_path = get_storage_path(path)
             debug(await self.storage.templates.exists(storage_path))
             if await self.storage.templates.exists(storage_path):
+                debug(path)
                 break
         try:
             resp = await self.storage.templates.open(storage_path)
@@ -160,10 +160,10 @@ class RedisLoader(AsyncBaseLoader):
         cache_key = None
         for searchpath in self.searchpath:  # type: ignore
             path = searchpath / template if searchpath else template
-            debug(path)
             storage_path = get_storage_path(path)
             cache_key = get_cache_key(storage_path)
             if await self.cache.exists(cache_key):
+                debug(path)
                 break
         resp = await self.cache.get(cache_key)
         if not resp:
@@ -311,7 +311,6 @@ class Templates(TemplatesBase):
         searchpaths = []
         for path in (template_paths.theme, template_paths.style, template_paths.base):
             searchpaths.extend([path, path / "blocks"])
-        debug(searchpaths)
         loaders: list[AsyncBaseLoader] = [
             RedisLoader(searchpaths),
             CloudLoader(searchpaths),

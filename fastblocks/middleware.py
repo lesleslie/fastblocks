@@ -10,6 +10,7 @@ from secure import Secure
 from starlette.applications import Starlette
 from starlette.datastructures import MutableHeaders
 from starlette.middleware import Middleware
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.types import Message
 from starlette.types import Receive
 from starlette.types import Scope
@@ -76,6 +77,14 @@ def middlewares(config: Config = depends()) -> list[Middleware]:  # type: ignore
         Middleware(
             CSRFMiddleware,  # type: ignore
             secret=config.app.secret_key.get_secret_value(),
+            cookie_name=f"{config.auth.token_id or config.app.name}_csrf",
+            cookie_secure=config.deployed,
+        ),
+        Middleware(
+            SessionMiddleware,  # type: ignore
+            secret_key=config.app.secret_key.get_secret_value(),
+            session_cookie=f"{config.auth.token_id or config.app.name}_app",
+            https_only=config.deployed,
         ),
         Middleware(HtmxMiddleware),  # type: ignore
         Middleware(BrotliMiddleware, quality=3),  # type: ignore
