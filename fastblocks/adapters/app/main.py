@@ -77,6 +77,7 @@ class App(FastBlocks, AppBase):
         yield
         await cache.close()
         self.logger.error("Application shut down")
+        self.logger.complete()
 
 
 depends.set(App)

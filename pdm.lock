@@ -20,7 +20,7 @@ files = [
 
 [[package]]
 name = "acb"
-version = "0.5.8"
+version = "0.5.12"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default", "dev"]
@@ -31,6 +31,7 @@ dependencies = [
     "bevy>=2.0.2",
     "blake3>=0.4.1",
     "brotli>=1.1.0",
+    "devtools>=0.12.2",
     "dill>=0.3.8",
     "google-crc32c>=1.5.0",
     "icecream>=2.1.3",
@@ -45,19 +46,19 @@ dependencies = [
     "pyyaml>=6.0.1",
 ]
 files = [
-    {file = "acb-0.5.8-py3-none-any.whl", hash = "sha256:72c7cc62a44dca2914280810496b78b0efdc7c9e6739668bd255b7e3f96dd765"},
-    {file = "acb-0.5.8.tar.gz", hash = "sha256:cf424143578fda39abce9db770ade68a3f9c78c19988677bc1e257155e8d845f"},
+    {file = "acb-0.5.12-py3-none-any.whl", hash = "sha256:00923264904ed78b8521f823972670f9d7f0ab0e488e9727ddde31a95db8337a"},
+    {file = "acb-0.5.12.tar.gz", hash = "sha256:eaef1a11ed7460d04bc2f83ef3a8fd6a88b58a90e16a149751bcd64c83b296cd"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.5.8"
+version = "0.5.12"
 extras = ["cache", "requests", "secret", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default"]
 dependencies = [
-    "acb==0.5.8",
+    "acb==0.5.12",
     "adlfs>=2024.2.0",
     "cashews[redis]>=7.0.0",
     "gcsfs>=2024.2.0",
@@ -67,8 +68,8 @@ dependencies = [
     "s3fs>=2024.2.0",
 ]
 files = [
-    {file = "acb-0.5.8-py3-none-any.whl", hash = "sha256:72c7cc62a44dca2914280810496b78b0efdc7c9e6739668bd255b7e3f96dd765"},
-    {file = "acb-0.5.8.tar.gz", hash = "sha256:cf424143578fda39abce9db770ade68a3f9c78c19988677bc1e257155e8d845f"},
+    {file = "acb-0.5.12-py3-none-any.whl", hash = "sha256:00923264904ed78b8521f823972670f9d7f0ab0e488e9727ddde31a95db8337a"},
+    {file = "acb-0.5.12.tar.gz", hash = "sha256:eaef1a11ed7460d04bc2f83ef3a8fd6a88b58a90e16a149751bcd64c83b296cd"},
 ]
 
 [[package]]
@@ -665,7 +666,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.7.27"
+version = "0.7.30"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 groups = ["dev"]
@@ -683,8 +684,8 @@ dependencies = [
     "pytest>=7.4.3",
 ]
 files = [
-    {file = "crackerjack-0.7.27-py3-none-any.whl", hash = "sha256:ef987103289594e6ad674d4892c58afab97360781bc32192c8c5af1997fa2cdd"},
-    {file = "crackerjack-0.7.27.tar.gz", hash = "sha256:b3d6914999c15c99c5c6df13dd3119f21fde694c09e8be77cae8c6cdff9e501e"},
+    {file = "crackerjack-0.7.30-py3-none-any.whl", hash = "sha256:f5fc2fb71096ec16e71729ba76a35c68bd1268ebd2ce9754218524e231cd801d"},
+    {file = "crackerjack-0.7.30.tar.gz", hash = "sha256:d98e92615f2b98faa3e5c9d1d43a100dde391a782f40d6f8288536c06aedeba5"},
 ]
 
 [[package]]
@@ -754,6 +755,22 @@ dependencies = [
 files = [
     {file = "dep_logic-0.2.0-py3-none-any.whl", hash = "sha256:af439c2acaf7522dd321a71f30e0c4fd59b7553eb99967af07d53320902cde39"},
     {file = "dep_logic-0.2.0.tar.gz", hash = "sha256:cff502b515aff2d413d19d6afc70174fc67da19e821be4a9b68460ccee2514c9"},
+]
+
+[[package]]
+name = "devtools"
+version = "0.12.2"
+requires_python = ">=3.7"
+summary = "Python's missing debug print command, and more."
+groups = ["default", "dev"]
+dependencies = [
+    "asttokens<3.0.0,>=2.0.0",
+    "executing>=1.1.1",
+    "pygments>=2.15.0",
+]
+files = [
+    {file = "devtools-0.12.2-py3-none-any.whl", hash = "sha256:c366e3de1df4cdd635f1ad8cbcd3af01a384d7abda71900e68d43b04eb6aaca7"},
+    {file = "devtools-0.12.2.tar.gz", hash = "sha256:efceab184cb35e3a11fa8e602cc4fadacaa2e859e920fc6f87bf130b69885507"},
 ]
 
 [[package]]
@@ -1873,7 +1890,7 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.6.3"
+version = "2.6.4"
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
 groups = ["default", "dev"]
@@ -1883,8 +1900,8 @@ dependencies = [
     "typing-extensions>=4.6.1",
 ]
 files = [
-    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
-    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
+    {file = "pydantic-2.6.4-py3-none-any.whl", hash = "sha256:cc46fce86607580867bdc3361ad462bab9c222ef042d3da86f2fb333e1d916c5"},
+    {file = "pydantic-2.6.4.tar.gz", hash = "sha256:b1704e0847db01817624a6b86766967f552dd9dbf3afba4004409f908dcc84e6"},
 ]
 
 [[package]]
@@ -1946,18 +1963,18 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.6.3"
+version = "2.6.4"
 extras = ["email"]
 requires_python = ">=3.8"
 summary = "Data validation using Python type hints"
 groups = ["default", "dev"]
 dependencies = [
     "email-validator>=2.0.0",
-    "pydantic==2.6.3",
+    "pydantic==2.6.4",
 ]
 files = [
-    {file = "pydantic-2.6.3-py3-none-any.whl", hash = "sha256:72c6034df47f46ccdf81869fddb81aade68056003900a8724a4f160700016a2a"},
-    {file = "pydantic-2.6.3.tar.gz", hash = "sha256:e07805c4c7f5c6826e33a1d4c9d47950d7eaf34868e2690f8594d2e30241f11f"},
+    {file = "pydantic-2.6.4-py3-none-any.whl", hash = "sha256:cc46fce86607580867bdc3361ad462bab9c222ef042d3da86f2fb333e1d916c5"},
+    {file = "pydantic-2.6.4.tar.gz", hash = "sha256:b1704e0847db01817624a6b86766967f552dd9dbf3afba4004409f908dcc84e6"},
 ]
 
 [[package]]
@@ -2353,7 +2370,7 @@ files = [
 
 [[package]]
 name = "starlette"
-version = "0.37.1"
+version = "0.37.2"
 requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
 groups = ["admin", "default"]
@@ -2361,13 +2378,13 @@ dependencies = [
     "anyio<5,>=3.4.0",
 ]
 files = [
-    {file = "starlette-0.37.1-py3-none-any.whl", hash = "sha256:92a816002d4e8c552477b089520e3085bb632e854eb32cef99acb6f6f7830b69"},
-    {file = "starlette-0.37.1.tar.gz", hash = "sha256:345cfd562236b557e76a045715ac66fdc355a1e7e617b087834a76a87dcc6533"},
+    {file = "starlette-0.37.2-py3-none-any.whl", hash = "sha256:6fe59f29268538e5d0d182f2791a479a0c64638e6935d1c6989e63fb2699c6ee"},
+    {file = "starlette-0.37.2.tar.gz", hash = "sha256:9af890290133b79fc3db55474ade20f6220a364a0402e0b556e7cd5e1e093823"},
 ]
 
 [[package]]
 name = "starlette-async-jinja"
-version = "1.7.1"
+version = "1.7.2"
 requires_python = ">=3.12"
 summary = ""
 groups = ["default"]
@@ -2377,8 +2394,8 @@ dependencies = [
     "starlette>=0.34.0",
 ]
 files = [
-    {file = "starlette_async_jinja-1.7.1-py3-none-any.whl", hash = "sha256:8888ff0e7e67c00a1dc1fb51ef0d653bc3da8f96f47ed2d9ad86ca4896004c51"},
-    {file = "starlette_async_jinja-1.7.1.tar.gz", hash = "sha256:29dba1c7078d72c13ef9435327495f3c1fc0cea1fd896b154cb4bddd5c6af23c"},
+    {file = "starlette_async_jinja-1.7.2-py3-none-any.whl", hash = "sha256:2bd64320fd1b08342214e547911ab67aac091576beb86bb9415b3bdffcbf6345"},
+    {file = "starlette_async_jinja-1.7.2.tar.gz", hash = "sha256:1e985a84af7bc0a80d26d3066c8a62c89a7c2997c40763cab080dbf37c656d1e"},
 ]
 
 [[package]]
@@ -2508,7 +2525,7 @@ files = [
 
 [[package]]
 name = "uvicorn"
-version = "0.27.1"
+version = "0.29.0"
 requires_python = ">=3.8"
 summary = "The lightning-fast ASGI server."
 groups = ["default"]
@@ -2517,8 +2534,8 @@ dependencies = [
     "h11>=0.8",
 ]
 files = [
-    {file = "uvicorn-0.27.1-py3-none-any.whl", hash = "sha256:5c89da2f3895767472a35556e539fd59f7edbe9b1e9c0e1c99eebeadc61838e4"},
-    {file = "uvicorn-0.27.1.tar.gz", hash = "sha256:3d9a267296243532db80c83a959a3400502165ade2c1338dea4e67915fd4745a"},
+    {file = "uvicorn-0.29.0-py3-none-any.whl", hash = "sha256:2c2aac7ff4f4365c206fd773a39bf4ebd1047c238f8b8268ad996829323473de"},
+    {file = "uvicorn-0.29.0.tar.gz", hash = "sha256:6a69214c0b6a087462412670b3ef21224fa48cae0e452b5883e8e8bdfdd11dd0"},
 ]
 
 [[package]]

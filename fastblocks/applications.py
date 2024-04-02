@@ -8,7 +8,6 @@ from acb.adapters import register_adapters
 from acb.adapters.logger.loguru import InterceptHandler
 from acb.config import Config
 from acb.depends import depends
-
 from asgi_htmx import HtmxRequest
 from starception import add_link_template
 from starception import install_error_handler
@@ -28,9 +27,14 @@ register_adapters()
 
 Logger = import_adapter()
 
-current_user: ContextVar[t.Any] = ContextVar(
+_current_user: ContextVar[t.Any] = ContextVar(
     "current_user", default=UnauthenticatedUser()
 )
+
+
+def current_user() -> t.Any:
+    return _current_user.get()
+
 
 AppType = t.TypeVar("AppType", bound="FastBlocks")
 

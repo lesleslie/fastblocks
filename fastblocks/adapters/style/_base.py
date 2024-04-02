@@ -2,10 +2,10 @@ from contextlib import closing
 from io import StringIO
 from string import hexdigits
 
-from acb import depends
+from acb.depends import depends
 from acb.actions.encode import load
+from acb.adapters import AdapterBase
 from acb.adapters import import_adapter
-from acb.config import Config
 from acb.config import Settings
 from acb.debug import debug
 from colour import web2hex  # type: ignore
@@ -15,7 +15,6 @@ from asgi_htmx import HtmxRequest
 from fastblocks.actions.minify import minify
 
 
-Logger = import_adapter()
 Cache = import_adapter()
 Templates = import_adapter()
 
@@ -23,10 +22,8 @@ Templates = import_adapter()
 class StyleBaseSettings(Settings): ...
 
 
-class StyleBase:
+class StyleBase(AdapterBase):
     cache: Cache = depends()  # type: ignore
-    logger: Logger = depends()  # type: ignore
-    config: Config = depends()  # type: ignore
     templates: Templates = depends()  # type: ignore
 
     @staticmethod
@@ -69,7 +66,7 @@ class StyleBase:
             del new_sass[r]
         return new_sass
 
-    @cache(expire=config.cache.default_timeout)  # type: ignore
+    @cache()  # type: ignore
     async def render_inline(self, path: AsyncPath, request: HtmxRequest) -> str:
         with closing(StringIO()) as res:
             if self.config.deployed:
@@ -101,6 +98,6 @@ class StyleBase:
             res = res.getvalue()
         if self.config.debug.css:
             self.logger.debug(f"Style for {path.parent.parent}:\n{res}")
-        # if not site.is_deployed or debug.production:
+        # if not self.config.deployed or self.config.debug.production:
         res = minify.scss(res)
         return res
