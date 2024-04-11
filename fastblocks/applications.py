@@ -1,6 +1,5 @@
 import logging
 import typing as t
-from contextvars import ContextVar
 from platform import system
 
 from acb.adapters import import_adapter
@@ -13,7 +12,6 @@ from starception import add_link_template
 from starception import install_error_handler
 from starception import set_editor
 from starlette.applications import Starlette
-from starlette.authentication import UnauthenticatedUser
 from starlette.middleware import Middleware
 from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
@@ -26,15 +24,6 @@ from .middleware import middlewares
 register_adapters()
 
 Logger = import_adapter()
-
-_current_user: ContextVar[t.Any] = ContextVar(
-    "current_user", default=UnauthenticatedUser()
-)
-
-
-def current_user() -> t.Any:
-    return _current_user.get()
-
 
 AppType = t.TypeVar("AppType", bound="FastBlocks")
 

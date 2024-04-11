@@ -1,13 +1,14 @@
 import typing as t
 from abc import ABC
 from abc import abstractmethod
+from contextvars import ContextVar
 
 from acb.config import AppSettings
-
 from asgi_htmx import HtmxRequest
 from pydantic import EmailStr
 from pydantic import SecretStr
 from pydantic import UUID4
+from starlette.authentication import UnauthenticatedUser
 
 
 class AuthBaseSettings(AppSettings):
@@ -16,6 +17,14 @@ class AuthBaseSettings(AppSettings):
 
 
 class AuthBase(ABC):
+    _current_user: ContextVar[t.Any] = ContextVar(
+        "current_user", default=UnauthenticatedUser()
+    )
+
+    @property
+    def current_user(self) -> t.Any:
+        return self._current_user.get()
+
     @staticmethod
     @abstractmethod
     async def authenticate(request: HtmxRequest) -> bool:
