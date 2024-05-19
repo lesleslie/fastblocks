@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.4.0"
+version = "0.4.1"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -40,17 +40,17 @@ dependencies = [
     "brotli-asgi>=1.4.0",
     "starlette-csrf>=3.0.0",
     "starception>=1.2.1",
-    "pydantic>=2.6.1",
+    "pydantic>=2.7.1",
     "pyfiglet>=1.0.2",
-    "starlette>=0.37.1",
-    "uvicorn>=0.27.1",
+    "starlette>=0.37.2",
+    "uvicorn>=0.29.0",
     "htmlmin>=0.1.12",
     "jsmin>=3.0.1",
     "libsass>=0.23.0",
-    "aiohttp>=3.9.3",
-    "starlette-async-jinja>=1.6.1",
+    "aiohttp>=3.9.5",
+    "starlette-async-jinja>=1.7.5",
     "secure>=0.3.0",
-    "acb[cache,requests,secret,storage]>=0.5.7",
+    "acb[cache,requests,secret,storage]>=0.6.1",
 ]
 
 [project.optional-dependencies]
@@ -59,10 +59,10 @@ sitemap = [
 ]
 style = [
     "beautifulsoup4>=4.12.3",
-    "tinycss2>=1.2.1",
+    "tinycss2>=1.3.0",
 ]
 admin = [
-    "sqladmin>=0.16.0",
+    "sqladmin>=0.17.0",
 ]
 
 [project.license]
@@ -76,7 +76,7 @@ config = [
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.7.26",
+    "crackerjack>=0.7.34",
 ]
 
 [tool.ruff]
@@ -111,15 +111,15 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pre-commit",
     "pyfiglet",
-    "libsass",
-    "phonenumbers",
     "pdm-bump",
-    "pdm",
-    "aiohttp",
     "autotyping",
     "pytest",
+    "pre-commit",
+    "aiohttp",
+    "phonenumbers",
+    "pdm",
+    "libsass",
 ]
 
 [tool.refurb]
@@ -131,9 +131,9 @@ target = [
 ]
 skips = [
     "B113",
+    "B603",
     "B404",
     "B403",
-    "B603",
 ]
 
 [tool.pyright]

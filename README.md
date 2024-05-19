@@ -30,6 +30,8 @@ rendered HTMX/Jinja template blocks.
 
 ## Acknowledgements
 
+ACB "blocks" logo used by permission from <a href="https://andycoeband.com">Andy Coe Band</a>
+
 
 ## License
 
