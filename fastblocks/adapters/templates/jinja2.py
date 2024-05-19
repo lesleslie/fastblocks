@@ -282,6 +282,7 @@ class EnvTemplatePaths(BaseModel, arbitrary_types_allowed=True):
 
 class TemplatesSettings(TemplatesBaseSettings):
     loader: t.Optional[str] = None
+    cache_db: t.Optional[int] = 0
     extensions: list[str] = []
     delimiters: t.Optional[dict[str, str]] = dict(
         block_start_string="[%",
@@ -345,7 +346,7 @@ class Templates(TemplatesBase):
             password=self.config.cache.password.get_secret_value(),
             host=self.config.cache.host.get_secret_value(),
             port=self.config.cache.port,
-            db=0,
+            db=self.config.templates.cache_db,
         )
         env_configs = dict(extensions=_extensions, bytecode_cache=bytecode_cache)
         templates = AsyncJinja2Templates(template_paths.root, **env_configs)

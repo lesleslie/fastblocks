@@ -1,0 +1,10 @@
+
+<div class="navbar-nav">
+  [% for item in menu.items %]
+  [% if item.type_ == "View" %]
+  [[ render_block('menu_item.html', menu=item, request=request) ]]
+  [% elif item.type_ == "Category" %]
+  [[ render_block('menu_category.html', menu=item, request=request) ]]
+  [% endif %]
+  [% endfor %]
+</div>

@@ -1,0 +1,11 @@
+
+[% if menu.is_visible(request) and menu.is_accessible(request) %]
+<li class="nav-item">
+  <a class="nav-link [% if menu.is_active(request) %]active[% endif %]" href="[[ menu.url(request) ]]">
+    <span class="nav-link-icon d-md-none d-lg-inline-block">
+      [% if menu.icon %]<i class="[[ menu.icon ]]"></i>[% endif %]
+    </span>
+    <span class="nav-link-title">[[ menu.display_name ]]</span>
+  </a>
+</li>
+[% endif %]

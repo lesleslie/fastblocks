@@ -5,9 +5,7 @@ from time import perf_counter
 from acb.adapters import get_adapter
 from acb.adapters import import_adapter
 from acb.config import Config
-from acb.debug import debug
 from acb.depends import depends
-
 from fastblocks.applications import FastBlocks
 from ._base import AppBase
 from ._base import AppBaseSettings
@@ -16,8 +14,8 @@ main_start = perf_counter()
 
 Logger = import_adapter()
 Cache = import_adapter()
-Sql = import_adapter()
 Auth = import_adapter()
+Models = import_adapter()
 
 
 class AppSettings(AppBaseSettings):
@@ -33,12 +31,9 @@ class App(FastBlocks, AppBase):
     def __init__(self) -> None:
         super().__init__(lifespan=self.lifespan)
 
-    @depends.inject
     async def init(self) -> None:
         self.templates = depends.get(import_adapter("templates")).app
         self.routes.extend(depends.get(import_adapter("routes")).routes)
-        for route in self.routes:
-            debug(route)
 
     @asynccontextmanager
     @depends.inject
@@ -47,19 +42,26 @@ class App(FastBlocks, AppBase):
         app: FastBlocks,
         cache: Cache = depends(),  # type: ignore
         auth: Auth = depends(),  # type: ignore
-        sql: Sql = depends(),  # type: ignore
     ) -> t.AsyncGenerator[None, None]:
+        if (
+            not self.config.deployed
+            and self.config.debug.cache
+            and not self.config.debug.production
+        ):
+            await cache.delete_match("*")
+
         if get_adapter("admin").enabled:
             admin = depends.get(import_adapter("admin"))
             admin.__init__(
                 app,
-                engine=sql.engine,
+                engine=depends.get(import_adapter("sql")).engine,
                 title=self.config.admin.title,
                 debug=self.config.debug.admin,
                 base_url=self.config.admin.url,
                 logo_url=self.config.admin.logo_url,
                 authentication_backend=auth,
             )
+            self.router.routes.insert(0, self.router.routes.pop())
 
         async def post_startup() -> None:
             if not self.config.deployed:
@@ -77,7 +79,6 @@ class App(FastBlocks, AppBase):
         yield
         await cache.close()
         self.logger.error("Application shut down")
-        self.logger.complete()
 
 
 depends.set(App)

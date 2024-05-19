@@ -3,7 +3,8 @@ from abc import ABC
 from abc import abstractmethod
 from contextvars import ContextVar
 
-from acb.config import AppSettings
+from acb.adapters import AdapterBase
+from acb.config import Settings
 from asgi_htmx import HtmxRequest
 from pydantic import EmailStr
 from pydantic import SecretStr
@@ -11,12 +12,12 @@ from pydantic import UUID4
 from starlette.authentication import UnauthenticatedUser
 
 
-class AuthBaseSettings(AppSettings):
+class AuthBaseSettings(Settings):
     token_id: t.Optional[str] = None
     session_cookie: t.Optional[str] = None
 
 
-class AuthBase(ABC):
+class AuthBase(AdapterBase, ABC):
     _current_user: ContextVar[t.Any] = ContextVar(
         "current_user", default=UnauthenticatedUser()
     )
