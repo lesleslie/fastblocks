@@ -20,8 +20,8 @@ from jinja2.ext import debug as jinja_debug
 from jinja2.ext import Extension
 from jinja2.ext import i18n
 from jinja2.ext import loopcontrols
-from jinja2_async_environment.loaders import AsyncBaseLoader
 from jinja2_async_environment.bccache import AsyncRedisBytecodeCache
+from jinja2_async_environment.loaders import AsyncBaseLoader
 from pydantic import BaseModel
 from starlette_async_jinja import AsyncJinja2Templates
 from ._base import TemplatesBase
@@ -318,7 +318,7 @@ class Templates(TemplatesBase):
         ]
         file_loaders: list[AsyncBaseLoader] = [FileSystemLoader(searchpaths)]
         if admin:
-            file_loaders.append(PackageLoader("sqladmin"))
+            file_loaders.append(PackageLoader("sqladmin", "templates/sqladmin"))
         jinja_loaders = loaders + file_loaders  # type: ignore[override]
         if not self.config.deployed and not self.config.debug.production:
             jinja_loaders = file_loaders + loaders  # type: ignore[override]
