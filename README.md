@@ -23,6 +23,7 @@ rendered HTMX/Jinja template blocks.
 - Client-side Redis caching
 - Pydantic v2 / SQLModel support
 - Dependency injection
+- [SQLAlchemy Admin](https://aminalaee.dev/sqladmin/) support
 
 
 ## Getting Started

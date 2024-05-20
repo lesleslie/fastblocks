@@ -112,14 +112,14 @@ paths = [
 deps-file = "pyproject.toml"
 exclude-deps = [
     "pyfiglet",
-    "pdm-bump",
-    "autotyping",
-    "pytest",
-    "pre-commit",
-    "aiohttp",
-    "phonenumbers",
     "pdm",
     "libsass",
+    "aiohttp",
+    "phonenumbers",
+    "pre-commit",
+    "autotyping",
+    "pdm-bump",
+    "pytest",
 ]
 
 [tool.refurb]
@@ -131,8 +131,8 @@ target = [
 ]
 skips = [
     "B113",
-    "B603",
     "B404",
+    "B603",
     "B403",
 ]
 
