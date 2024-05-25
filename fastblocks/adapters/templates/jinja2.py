@@ -318,7 +318,7 @@ class Templates(TemplatesBase):
         ]
         file_loaders: list[AsyncBaseLoader] = [FileSystemLoader(searchpaths)]
         if admin:
-            file_loaders.append(PackageLoader("sqladmin", "templates/sqladmin"))
+            file_loaders.append(PackageLoader("sqladmin", "templates"))
         jinja_loaders = loaders + file_loaders  # type: ignore[override]
         if not self.config.deployed and not self.config.debug.production:
             jinja_loaders = file_loaders + loaders  # type: ignore[override]
