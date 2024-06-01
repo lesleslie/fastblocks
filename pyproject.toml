@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.4.5"
+version = "0.4.6"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -40,17 +40,17 @@ dependencies = [
     "brotli-asgi>=1.4.0",
     "starlette-csrf>=3.0.0",
     "starception>=1.2.1",
-    "pydantic>=2.7.1",
+    "pydantic>=2.7.2",
     "pyfiglet>=1.0.2",
     "starlette>=0.37.2",
-    "uvicorn>=0.29.0",
+    "uvicorn>=0.30.0",
     "htmlmin>=0.1.12",
     "jsmin>=3.0.1",
     "libsass>=0.23.0",
     "aiohttp>=3.9.5",
-    "starlette-async-jinja>=1.7.5",
+    "starlette-async-jinja>=1.7.7",
     "secure>=0.3.0",
-    "acb[cache,requests,secret,storage]>=0.6.1",
+    "acb[cache,requests,secret,storage]>=0.6.3",
 ]
 
 [project.optional-dependencies]
@@ -76,7 +76,7 @@ config = [
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.7.34",
+    "crackerjack>=0.8.3",
 ]
 
 [tool.ruff]
@@ -86,16 +86,35 @@ fix = true
 show-fixes = true
 output-format = "full"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
 ignore = [
     "F821",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+]
+extend-select = [
+    "I",
+    "C901",
+    "D",
 ]
 
 [tool.ruff.lint.isort]
-force-single-line = true
+no-lines-before = [
+    "first-party",
+    "local-folder",
+]
 
 [tool.ruff.lint.mccabe]
-max-complexity = 10
+max-complexity = 11
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -111,15 +130,15 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest",
-    "autotyping",
-    "libsass",
-    "pdm",
     "pdm-bump",
+    "pyfiglet",
+    "pdm",
+    "libsass",
+    "autotyping",
+    "pytest",
+    "aiohttp",
     "phonenumbers",
     "pre-commit",
-    "pyfiglet",
-    "aiohttp",
 ]
 
 [tool.refurb]
@@ -130,10 +149,10 @@ target = [
     "fastblocks",
 ]
 skips = [
+    "B403",
+    "B603",
     "B113",
     "B404",
-    "B603",
-    "B403",
 ]
 
 [tool.pyright]

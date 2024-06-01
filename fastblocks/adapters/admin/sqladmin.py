@@ -2,13 +2,12 @@ import typing as t
 
 from acb.adapters import import_adapter
 from acb.depends import depends
-from fastblocks import FastBlocks
 from sqladmin import Admin as SqlAdmin
 from sqladmin.helpers import get_object_identifier
 from starlette.applications import Starlette
 from starlette_async_jinja import AsyncJinja2Templates
-from ._base import AdminBase
-from ._base import AdminBaseSettings
+from fastblocks import FastBlocks
+from ._base import AdminBase, AdminBaseSettings
 
 Templates = import_adapter()
 
@@ -27,7 +26,8 @@ class Admin(AdminBase, SqlAdmin):  # type: ignore
     @depends.inject
     @t.override
     def init_templating_engine(
-        self, templates: Templates = depends()  # type: ignore
+        self,
+        templates: Templates = depends(),  # type: ignore
     ) -> AsyncJinja2Templates:
         admin_templates = templates.admin
         admin_templates_env_globals = dict(

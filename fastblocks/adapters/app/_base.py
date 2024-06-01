@@ -1,5 +1,5 @@
-from acb.config import AppSettings as AppConfigSettings
 from acb.adapters import AdapterBase
+from acb.config import AppSettings as AppConfigSettings
 
 
 class AppBaseSettings(AppConfigSettings):

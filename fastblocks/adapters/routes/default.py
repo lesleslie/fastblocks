@@ -2,23 +2,16 @@ import typing as t
 from importlib import import_module
 
 from acb import base_path
-from acb.adapters import get_installed_adapters
-from acb.adapters import import_adapter
+from acb.adapters import get_installed_adapters, import_adapter
 from acb.debug import debug
 from acb.depends import depends
 from aiopath import AsyncPath
 from asgi_htmx import HtmxRequest
 from starlette.endpoints import HTTPEndpoint
-from starlette.responses import PlainTextResponse
-from starlette.responses import Response
-from starlette.routing import Host
-from starlette.routing import Mount
-from starlette.routing import Route
-from starlette.routing import Router
-from starlette.routing import WebSocketRoute
+from starlette.responses import PlainTextResponse, Response
+from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 from starlette_async_jinja import AsyncJinja2Templates
-from ._base import RoutesBase
-from ._base import RoutesBaseSettings
+from ._base import RoutesBase, RoutesBaseSettings
 
 Templates = import_adapter()
 
@@ -35,7 +28,8 @@ class Index(HTTPEndpoint):
         request.path_params["page"] = request.scope["path"].lstrip("/") or "home"
         debug(request.path_params.get("page"))
         return await self.templates.app.render_template(
-            request, "index.html"  # type: ignore
+            request,
+            "index.html",  # type: ignore
         )
 
 

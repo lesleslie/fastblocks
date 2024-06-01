@@ -1,7 +1,5 @@
 from acb.depends import depends
-
-from ._base import FontsBase
-from ._base import FontsBaseSettings
+from ._base import FontsBase, FontsBaseSettings
 
 
 class FontsSettings(FontsBaseSettings):

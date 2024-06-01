@@ -2,23 +2,18 @@ import logging
 import typing as t
 from platform import system
 
-from acb.adapters import import_adapter
-from acb.adapters import register_adapters
+from acb.adapters import import_adapter, register_adapters
 from acb.adapters.logger.loguru import InterceptHandler
 from acb.config import Config
 from acb.depends import depends
 from asgi_htmx import HtmxRequest
-from starception import add_link_template
-from starception import install_error_handler
-from starception import set_editor
+from starception import add_link_template, install_error_handler, set_editor
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
 from starlette.responses import Response
-from starlette.types import ASGIApp
-from starlette.types import ExceptionHandler
-from starlette.types import Lifespan
+from starlette.types import ASGIApp, ExceptionHandler, Lifespan
 from .middleware import middlewares
 
 register_adapters()
@@ -68,7 +63,8 @@ class FastBlocks(Starlette):
 
     @depends.inject
     def build_middleware_stack(
-        self, logger: Logger = depends()  # type: ignore
+        self,
+        logger: Logger = depends(),  # type: ignore
     ) -> ASGIApp:
         error_handler = None
         exception_handlers: dict[

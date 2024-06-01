@@ -2,7 +2,6 @@ from urllib.parse import quote_plus
 
 from acb.config import Config
 from acb.depends import depends
-
 from fastblocks.actions import minify
 
 

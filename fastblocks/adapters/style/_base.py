@@ -2,18 +2,15 @@ from contextlib import closing
 from io import StringIO
 from string import hexdigits
 
-from acb.depends import depends
 from acb.actions.encode import load
-from acb.adapters import AdapterBase
-from acb.adapters import import_adapter
+from acb.adapters import AdapterBase, import_adapter
 from acb.config import Settings
 from acb.debug import debug
-from colour import web2hex  # type: ignore
-
+from acb.depends import depends
 from aiopath import AsyncPath
 from asgi_htmx import HtmxRequest
+from colour import web2hex  # type: ignore
 from fastblocks.actions.minify import minify
-
 
 Cache = import_adapter()
 Templates = import_adapter()

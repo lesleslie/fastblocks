@@ -9,23 +9,19 @@ from pathlib import Path
 from re import search
 
 from acb import base_path
-from acb.adapters import get_adapter
-from acb.adapters import import_adapter
+from acb.adapters import get_adapter, import_adapter
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
 from aiopath import AsyncPath
 from jinja2 import TemplateNotFound
+from jinja2.ext import Extension, i18n, loopcontrols
 from jinja2.ext import debug as jinja_debug
-from jinja2.ext import Extension
-from jinja2.ext import i18n
-from jinja2.ext import loopcontrols
 from jinja2_async_environment.bccache import AsyncRedisBytecodeCache
 from jinja2_async_environment.loaders import AsyncBaseLoader
 from pydantic import BaseModel
 from starlette_async_jinja import AsyncJinja2Templates
-from ._base import TemplatesBase
-from ._base import TemplatesBaseSettings
+from ._base import TemplatesBase, TemplatesBaseSettings
 
 Logger = import_adapter()
 Cache = import_adapter()
@@ -296,7 +292,9 @@ class TemplatesSettings(TemplatesBaseSettings):
 
     @depends.inject
     def __init__(
-        self, models: Models = depends(), **data: t.Any  # type: ignore
+        self,
+        models: Models = depends(),  # type: ignore
+        **data: t.Any,  # type: ignore
     ) -> None:
         super().__init__(**data)
         self.globals["models"] = models
@@ -377,10 +375,10 @@ class Templates(TemplatesBase):
         parser = HTMLParser()
         parser.feed(html)
         soup = parser.get_starttag_text()
-        attr = f"{attr}="
+        _attr = f"{attr}="
         for s in soup.split():
-            if search(attr, s):
-                attr_value = s.replace(attr, "").strip('"')
+            if search(_attr, s):
+                attr_value = s.replace(_attr, "").strip('"')
                 return attr_value
 
     def filter(self, name: t.Optional[str] = None):

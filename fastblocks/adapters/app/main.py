@@ -2,13 +2,11 @@ import typing as t
 from contextlib import asynccontextmanager
 from time import perf_counter
 
-from acb.adapters import get_adapter
-from acb.adapters import import_adapter
+from acb.adapters import get_adapter, import_adapter
 from acb.config import Config
 from acb.depends import depends
 from fastblocks.applications import FastBlocks
-from ._base import AppBase
-from ._base import AppBaseSettings
+from ._base import AppBase, AppBaseSettings
 
 main_start = perf_counter()
 

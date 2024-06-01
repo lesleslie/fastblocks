@@ -3,7 +3,6 @@ from time import perf_counter
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
-
 from asgi_htmx import HtmxMiddleware
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
@@ -11,10 +10,7 @@ from starlette.applications import Starlette
 from starlette.datastructures import MutableHeaders
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.types import Message
-from starlette.types import Receive
-from starlette.types import Scope
-from starlette.types import Send
+from starlette.types import Message, Receive, Scope, Send
 from starlette_csrf.middleware import CSRFMiddleware
 
 Logger = import_adapter()

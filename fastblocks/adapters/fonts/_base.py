@@ -1,5 +1,5 @@
-from acb.config import Settings
 from acb.adapters import AdapterBase
+from acb.config import Settings
 
 
 class FontsBaseSettings(Settings):
