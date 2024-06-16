@@ -5,7 +5,7 @@
 groups = ["default", "sitemap", "dev", "admin", "style"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:574d0f616880df371d91c7f9fd5a84942b9560608804d2de57cf3b26d4286e45"
+content_hash = "sha256:e145ebb052730d956235832953cb86736147ff15be35956bd5a21ee0d63c932a"
 
 [[package]]
 name = "about-time"
