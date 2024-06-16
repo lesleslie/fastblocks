@@ -8,7 +8,6 @@ from inspect import isclass
 from pathlib import Path
 from re import search
 
-from acb import base_path
 from acb.adapters import get_adapter, import_adapter
 from acb.config import Config
 from acb.debug import debug
@@ -19,23 +18,13 @@ from jinja2.ext import Extension, i18n, loopcontrols
 from jinja2.ext import debug as jinja_debug
 from jinja2_async_environment.bccache import AsyncRedisBytecodeCache
 from jinja2_async_environment.loaders import AsyncBaseLoader
-from pydantic import BaseModel
 from starlette_async_jinja import AsyncJinja2Templates
-from ._base import TemplatesBase, TemplatesBaseSettings
+from ._base import TemplatePaths, TemplatesBase, TemplatesBaseSettings
 
 Logger = import_adapter()
 Cache = import_adapter()
 Storage = import_adapter()
 Models = import_adapter()
-
-
-def get_storage_path(path: AsyncPath) -> AsyncPath:
-    depth = path.parts.index("templates") + 1
-    return AsyncPath("/".join(path.parts[depth:]))
-
-
-def get_cache_key(path: AsyncPath) -> str:
-    return "-".join(path.parts)
 
 
 class FileSystemLoader(AsyncBaseLoader):
@@ -53,7 +42,7 @@ class FileSystemLoader(AsyncBaseLoader):
             if await path.is_file():
                 debug(path)
                 break
-        storage_path = get_storage_path(path)  # type: ignore
+        storage_path = Templates.get_storage_path(path)  # type: ignore
         fs_exists = await path.exists()
         storage_exists = await self.storage.templates.exists(storage_path)
         debug(fs_exists)
@@ -86,7 +75,7 @@ class FileSystemLoader(AsyncBaseLoader):
                     await self.storage.templates.write(storage_path, resp)
             except FileNotFoundError:
                 raise TemplateNotFound(path.name)
-        await self.cache.set(get_cache_key(storage_path), resp)
+        await self.cache.set(Templates.get_cache_key(storage_path), resp)
 
         async def uptodate() -> bool:
             return int((await path.stat()).st_mtime) == local_mtime
@@ -96,7 +85,7 @@ class FileSystemLoader(AsyncBaseLoader):
     async def list_templates(self) -> list[str]:
         found = set()
         for searchpath in self.searchpath:  # type: ignore
-            paths = searchpath.rglob("*.html")
+            paths = searchpath.rglob("*.html") + searchpath.rglob("*.css")
             found.update([str(p) async for p in paths])
         return sorted(found)
 
@@ -113,7 +102,7 @@ class CloudLoader(AsyncBaseLoader):
         storage_path = None
         for searchpath in self.searchpath:  # type: ignore
             path = searchpath / template
-            storage_path = get_storage_path(path)
+            storage_path = Templates.get_storage_path(path)
             debug(await self.storage.templates.exists(storage_path))
             if await self.storage.templates.exists(storage_path):
                 debug(path)
@@ -138,8 +127,12 @@ class CloudLoader(AsyncBaseLoader):
         found = []
         for searchpath in self.searchpath:  # type: ignore
             with suppress(FileNotFoundError):
-                paths = await self.storage.templates.list(get_storage_path(searchpath))
-                found.extend([p for p in paths if p.endswith(".html")])
+                paths = await self.storage.templates.list(
+                    Templates.get_storage_path(searchpath)
+                )
+                found.extend(
+                    [p for p in paths if p.endswith(".html") or p.endswith(".css")]
+                )
         found.sort()
         return found
 
@@ -156,8 +149,8 @@ class RedisLoader(AsyncBaseLoader):
         cache_key = None
         for searchpath in self.searchpath:  # type: ignore
             path = searchpath / template if searchpath else template
-            storage_path = get_storage_path(path)
-            cache_key = get_cache_key(storage_path)
+            storage_path = Templates.get_storage_path(path)
+            cache_key = Templates.get_cache_key(storage_path)
             if await self.cache.exists(cache_key):
                 debug(path)
                 break
@@ -172,7 +165,8 @@ class RedisLoader(AsyncBaseLoader):
 
     async def list_templates(self) -> list[str]:
         found = []
-        found.extend([k async for k in self.cache.scan("*.html")])
+        for ext in ("html", "css"):
+            found.extend([k async for k in self.cache.scan(f"*.{ext}")])
         found.sort()
         return found
 
@@ -227,9 +221,8 @@ class PackageLoader(AsyncBaseLoader):
         return source.decode(), p.name, uptodate
 
     async def list_templates(self) -> list[str]:
-        found = []
         paths = self._template_root.rglob("*.html")
-        found.extend([str(p) async for p in paths])
+        found = [str(p) async for p in paths]
         found.sort()
         return found
 
@@ -261,21 +254,6 @@ class ChoiceLoader(AsyncBaseLoader):
         return sorted(found)
 
 
-class EnvTemplatePaths(BaseModel, arbitrary_types_allowed=True):
-    root: AsyncPath
-    base: AsyncPath = AsyncPath("templates/base")
-    style: AsyncPath = AsyncPath("templates/style")
-    theme: AsyncPath = AsyncPath("templates/theme")
-
-    @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
-        super().__init__(**values)
-        self.root = base_path / "templates" / self.root
-        self.base = self.root / "base"
-        self.style = self.root / config.app.style
-        self.theme = self.style / config.app.theme
-
-
 class TemplatesSettings(TemplatesBaseSettings):
     loader: t.Optional[str] = None
     cache_db: t.Optional[int] = 0
@@ -305,11 +283,11 @@ class Templates(TemplatesBase):
     admin: t.Optional[AsyncJinja2Templates] = None
 
     def get_loader(
-        self, template_paths: EnvTemplatePaths, admin: bool = False
+        self, template_paths: TemplatePaths, admin: bool = False
     ) -> ChoiceLoader:
         searchpaths = []
         for path in (template_paths.theme, template_paths.style, template_paths.base):
-            searchpaths.extend([path, path / "blocks"])
+            searchpaths.extend([path, path / "blocks"])  # type: ignore
         loaders: list[AsyncBaseLoader] = [
             RedisLoader(searchpaths),
             CloudLoader(searchpaths),
@@ -317,13 +295,13 @@ class Templates(TemplatesBase):
         file_loaders: list[AsyncBaseLoader] = [FileSystemLoader(searchpaths)]
         if admin:
             file_loaders.append(PackageLoader("sqladmin", "templates"))
-        jinja_loaders = loaders + file_loaders  # type: ignore[override]
+        jinja_loaders = loaders + file_loaders  # type: ignore
         if not self.config.deployed and not self.config.debug.production:
-            jinja_loaders = file_loaders + loaders  # type: ignore[override]
-        return ChoiceLoader(jinja_loaders, template_paths.style)
+            jinja_loaders = file_loaders + loaders  # type: ignore
+        return ChoiceLoader(jinja_loaders, template_paths.style)  # type: ignore
 
     async def init_envs(
-        self, template_paths: EnvTemplatePaths, admin: bool = False
+        self, template_paths: TemplatePaths, admin: bool = False
     ) -> AsyncJinja2Templates:
         _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
         _imported_extensions = [
@@ -362,11 +340,13 @@ class Templates(TemplatesBase):
 
     @depends.inject
     async def init(self, logger: Logger = depends()) -> None:  # type: ignore
-        self.app = await self.init_envs(EnvTemplatePaths(root=AsyncPath("app")))
+        self.app = await self.init_envs(self.app_paths)  # type: ignore
         if get_adapter("admin").enabled:
             self.admin = await self.init_envs(
-                EnvTemplatePaths(root=AsyncPath("admin")), admin=True
+                self.admin_paths,  # type: ignore
+                admin=True,
             )
+        self.set_path_attrs()
         for loader in self.app.env.loader.loaders:
             logger.debug(f"{loader.__class__.__name__} initialized")
 

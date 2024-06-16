@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "bulma": "^1.0.1"
+  },
+  "scripts": {
+    "build-bulma": "sass --load-path=node_modules fb-bulma.scss fb-bulma.css"
+  }
+}
