@@ -20,7 +20,7 @@ files = [
 
 [[package]]
 name = "acb"
-version = "0.6.6"
+version = "0.6.7"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default", "dev"]
@@ -46,19 +46,19 @@ dependencies = [
     "pyyaml>=6.0.1",
 ]
 files = [
-    {file = "acb-0.6.6-py3-none-any.whl", hash = "sha256:cbdfec6d7af18d871321e9dfbd956ed41c360b92580cee7849ad0d0c60010a18"},
-    {file = "acb-0.6.6.tar.gz", hash = "sha256:2635c2d316f13cf371c01a5eb5898266441e00a5531cb77f32ed6510226ba811"},
+    {file = "acb-0.6.7-py3-none-any.whl", hash = "sha256:68f5da3ec91b435cbb4a0521e77bb6d33ca850aec7478d291062079b4cee33d3"},
+    {file = "acb-0.6.7.tar.gz", hash = "sha256:11bb901474cf0ab305264a1205c25ebb09544dd2a0a1ee21f3673f01b0a0dc10"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.6.6"
+version = "0.6.7"
 extras = ["cache", "requests", "secret", "sql", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default"]
 dependencies = [
-    "acb==0.6.6",
+    "acb==0.6.7",
     "adlfs>=2024.4.1",
     "aiomysql>=0.2.0",
     "babel>=2.15.0",
@@ -74,8 +74,8 @@ dependencies = [
     "sqlmodel>=0.0.18",
 ]
 files = [
-    {file = "acb-0.6.6-py3-none-any.whl", hash = "sha256:cbdfec6d7af18d871321e9dfbd956ed41c360b92580cee7849ad0d0c60010a18"},
-    {file = "acb-0.6.6.tar.gz", hash = "sha256:2635c2d316f13cf371c01a5eb5898266441e00a5531cb77f32ed6510226ba811"},
+    {file = "acb-0.6.7-py3-none-any.whl", hash = "sha256:68f5da3ec91b435cbb4a0521e77bb6d33ca850aec7478d291062079b4cee33d3"},
+    {file = "acb-0.6.7.tar.gz", hash = "sha256:11bb901474cf0ab305264a1205c25ebb09544dd2a0a1ee21f3673f01b0a0dc10"},
 ]
 
 [[package]]
