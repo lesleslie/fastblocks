@@ -80,4 +80,3 @@ class App(FastBlocks, AppBase):
 
 
 depends.set(App)
-app = depends.get(App)
