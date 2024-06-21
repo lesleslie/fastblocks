@@ -1,4 +1,5 @@
-import sass
+from subprocess import run
+
 from htmlmin import minify as min_html
 from jsmin import jsmin as min_js
 
@@ -14,7 +15,12 @@ class Minify:
 
     @staticmethod
     def scss(css: str) -> str:
-        return sass.compile(string=css, output_style="compressed")  # type: ignore
+        return str(
+            run(  # noqa
+                ["sass", "--no-source-map", "--style=compressed", "--stdin", css],
+                capture_output=True,
+            ).stdout
+        )
 
 
 minify = Minify()
