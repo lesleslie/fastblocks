@@ -5,7 +5,7 @@
 groups = ["default", "sitemap", "dev", "admin", "style"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:06fd4735f5c59fc6d82bd62d4f86e10255f1c296956ba409d39debdd2db6fe71"
+content_hash = "sha256:95338a7f5e66b94896accb31b8b29e25beb9e391ab551f6b6fe1e9a5c3eff3fe"
 
 [[package]]
 name = "about-time"
@@ -20,7 +20,7 @@ files = [
 
 [[package]]
 name = "acb"
-version = "0.6.10"
+version = "0.6.11"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default", "dev"]
@@ -46,19 +46,19 @@ dependencies = [
     "pyyaml>=6.0.1",
 ]
 files = [
-    {file = "acb-0.6.10-py3-none-any.whl", hash = "sha256:f1e4df199a5a438f87e48b71b2712965ce2ce605985ee1be8491a8d5932d7fb8"},
-    {file = "acb-0.6.10.tar.gz", hash = "sha256:e8aed2c77b9372b2e33681139ad20f0b7c1a9c8efe6aa23340c672a6dd662077"},
+    {file = "acb-0.6.11-py3-none-any.whl", hash = "sha256:019e9227817760072de01c2e56422984d0aff86f131d2b1387737634173989b9"},
+    {file = "acb-0.6.11.tar.gz", hash = "sha256:09fbd23d1fe68fa4a42c13fbe27b9030a4667dfe2bb932ffe47b84fc2691c9bb"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.6.10"
+version = "0.6.11"
 extras = ["cache", "requests", "secret", "sql", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default"]
 dependencies = [
-    "acb==0.6.10",
+    "acb==0.6.11",
     "adlfs>=2024.4.1",
     "aiomysql>=0.2.0",
     "babel>=2.15.0",
@@ -74,8 +74,8 @@ dependencies = [
     "sqlmodel>=0.0.18",
 ]
 files = [
-    {file = "acb-0.6.10-py3-none-any.whl", hash = "sha256:f1e4df199a5a438f87e48b71b2712965ce2ce605985ee1be8491a8d5932d7fb8"},
-    {file = "acb-0.6.10.tar.gz", hash = "sha256:e8aed2c77b9372b2e33681139ad20f0b7c1a9c8efe6aa23340c672a6dd662077"},
+    {file = "acb-0.6.11-py3-none-any.whl", hash = "sha256:019e9227817760072de01c2e56422984d0aff86f131d2b1387737634173989b9"},
+    {file = "acb-0.6.11.tar.gz", hash = "sha256:09fbd23d1fe68fa4a42c13fbe27b9030a4667dfe2bb932ffe47b84fc2691c9bb"},
 ]
 
 [[package]]
