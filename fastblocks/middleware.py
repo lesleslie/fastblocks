@@ -1,3 +1,4 @@
+from contextvars import ContextVar
 from time import perf_counter
 
 from acb.adapters import import_adapter
@@ -10,12 +11,35 @@ from starlette.applications import Starlette
 from starlette.datastructures import MutableHeaders
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.types import Message, Receive, Scope, Send
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from starlette_csrf.middleware import CSRFMiddleware
 
 Logger = import_adapter()
 
 secure_headers = Secure()
+
+_request_ctx_var: ContextVar[Scope | None] = ContextVar(
+    "request",
+    default=None,  # type: ignore
+)
+
+
+def get_request() -> Scope | None:
+    return _request_ctx_var.get()
+
+
+class CurrentRequestMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+        local_scope = _request_ctx_var.set(scope)
+        response = await self.app(scope, receive, send)
+        _request_ctx_var.reset(local_scope)
+        return response
 
 
 class SecureHeadersMiddleware:
@@ -83,6 +107,7 @@ def middlewares(config: Config = depends()) -> list[Middleware]:  # type: ignore
             https_only=config.deployed,
         ),
         Middleware(HtmxMiddleware),  # type: ignore
+        Middleware(CurrentRequestMiddleware),  # type: ignore
         Middleware(BrotliMiddleware, quality=3),  # type: ignore
     ]
     if config.deployed or config.debug.production:

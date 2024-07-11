@@ -73,7 +73,7 @@ class App(FastBlocks, AppBase):
 
         await post_startup()
         main_start_time = perf_counter() - main_start
-        self.logger.info(f"App started in {main_start_time} s")
+        self.logger.warning(f"App started in {main_start_time} s")
         yield
         await cache.close()
         self.logger.error("Application shut down")
