@@ -319,7 +319,7 @@ class Templates(TemplatesBase):
             )
         bytecode_cache = AsyncRedisBytecodeCache(
             prefix=self.config.app.name,
-            password=self.config.cache.password.get_secret_value(),
+            # password=self.config.cache.password.get_secret_value(),
             host=self.config.cache.host.get_secret_value(),
             port=self.config.cache.port,
             db=self.config.templates.cache_db,
