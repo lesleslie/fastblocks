@@ -5,7 +5,7 @@
 groups = ["default", "admin", "dev", "sitemap", "style"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:0fa55f8999756ae64316aaf24f759ca3d291b615680f20ac2fcaf4ee476a5cac"
+content_hash = "sha256:ab630146ab649ddedb6d29e106c56a4ac5f4750127d2ba426092ebd86f8d8518"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -23,7 +23,7 @@ files = [
 
 [[package]]
 name = "acb"
-version = "0.6.17"
+version = "0.6.18"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default", "dev"]
@@ -43,42 +43,42 @@ dependencies = [
     "loguru>=0.7.2",
     "msgspec[toml]>=0.18.6",
     "nest-asyncio>=1.6.0",
-    "pydantic-settings>=2.3.4",
+    "pydantic-settings>=2.4.0",
     "pydantic[email]>=2.8.2",
     "pyfiglet>=1.0.2",
-    "pyyaml>=6.0.1",
+    "pyyaml>=6.0.2",
 ]
 files = [
-    {file = "acb-0.6.17-py3-none-any.whl", hash = "sha256:68cd72a366b89433669e15f2eccb4fb74023ddbc1d286bd24a655c73396d49b9"},
-    {file = "acb-0.6.17.tar.gz", hash = "sha256:471044d0245452b0aaa9db29fffea2ed3bb363957141e8401d9e102ebb84cdd1"},
+    {file = "acb-0.6.18-py3-none-any.whl", hash = "sha256:71e73b5b7a7221fd6ff401c94ce67e05f0252ff715a84ad82142856c9d32fd73"},
+    {file = "acb-0.6.18.tar.gz", hash = "sha256:fd94cc8008196c2efebcd43a63c24fa29f26fb5b6079b18539718303ba4e3bfa"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.6.17"
+version = "0.6.18"
 extras = ["cache", "requests", "secret", "sql", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default"]
 dependencies = [
-    "acb==0.6.17",
-    "adlfs>=2024.4.1",
+    "acb==0.6.18",
+    "adlfs>=2024.7.0",
     "aiomysql>=0.2.0",
-    "babel>=2.15.0",
+    "babel>=2.16.0",
     "cashews[redis]>=7.1.0",
     "gcsfs>=2024.6.1",
-    "google-cloud-secret-manager>=2.20.1",
+    "google-cloud-secret-manager>=2.20.2",
     "hishel>=0.0.30",
     "httpx[http2]>=0.27.0",
     "pymysql>=1.1.1",
     "s3fs>=2024.6.1",
     "sqlalchemy-utils>=0.41.2",
-    "sqlalchemy>=2.0.31",
+    "sqlalchemy>=2.0.32",
     "sqlmodel>=0.0.21",
 ]
 files = [
-    {file = "acb-0.6.17-py3-none-any.whl", hash = "sha256:68cd72a366b89433669e15f2eccb4fb74023ddbc1d286bd24a655c73396d49b9"},
-    {file = "acb-0.6.17.tar.gz", hash = "sha256:471044d0245452b0aaa9db29fffea2ed3bb363957141e8401d9e102ebb84cdd1"},
+    {file = "acb-0.6.18-py3-none-any.whl", hash = "sha256:71e73b5b7a7221fd6ff401c94ce67e05f0252ff715a84ad82142856c9d32fd73"},
+    {file = "acb-0.6.18.tar.gz", hash = "sha256:fd94cc8008196c2efebcd43a63c24fa29f26fb5b6079b18539718303ba4e3bfa"},
 ]
 
 [[package]]
@@ -704,26 +704,26 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.8.11"
+version = "0.8.12"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 groups = ["dev"]
 dependencies = [
-    "acb>=0.6.11",
+    "acb>=0.6.17",
     "aioconsole>=0.7.1",
     "aiopath>=0.7.7",
     "autotyping>=24.3.0",
     "click>=8.1.7",
     "inflection>=0.5.1",
     "pdm-bump>=0.9.0",
-    "pdm>=2.17.1",
-    "pre-commit>=3.7.1",
+    "pdm>=2.17.3",
+    "pre-commit>=3.8.0",
     "pydantic>=2.8.2",
-    "pytest>=8.3.1",
+    "pytest>=8.3.2",
 ]
 files = [
-    {file = "crackerjack-0.8.11-py3-none-any.whl", hash = "sha256:85d7a83e06d7c2a1b655420155504b5915d048c9316096da58f9cff426e0e64f"},
-    {file = "crackerjack-0.8.11.tar.gz", hash = "sha256:57be6199c1113534f60355c44098fa2d5e3a3e3b18d3dbbe627694fd9f98db90"},
+    {file = "crackerjack-0.8.12-py3-none-any.whl", hash = "sha256:fbac3a63015c2f9cb8b572733460cafc2b2894fe6507b35602be6b7e0f4522bb"},
+    {file = "crackerjack-0.8.12.tar.gz", hash = "sha256:06d7cc25a3974a71a195c71c394bca27b1cd11f2f4ea0576f23e5da24edb7983"},
 ]
 
 [[package]]
