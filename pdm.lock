@@ -5,7 +5,7 @@
 groups = ["default", "admin", "dev", "sitemap", "style"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:ab630146ab649ddedb6d29e106c56a4ac5f4750127d2ba426092ebd86f8d8518"
+content_hash = "sha256:f095dd431aff2cbf6f9a9310ccbbb9f8fcefe73236875d54b72beedf3c030149"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -23,7 +23,7 @@ files = [
 
 [[package]]
 name = "acb"
-version = "0.6.18"
+version = "0.6.19"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default", "dev"]
@@ -49,19 +49,19 @@ dependencies = [
     "pyyaml>=6.0.2",
 ]
 files = [
-    {file = "acb-0.6.18-py3-none-any.whl", hash = "sha256:71e73b5b7a7221fd6ff401c94ce67e05f0252ff715a84ad82142856c9d32fd73"},
-    {file = "acb-0.6.18.tar.gz", hash = "sha256:fd94cc8008196c2efebcd43a63c24fa29f26fb5b6079b18539718303ba4e3bfa"},
+    {file = "acb-0.6.19-py3-none-any.whl", hash = "sha256:3242fab1d6ea861f5de98b4af4e0a1396fd0998f23bf8964c1b5f1b0d0ef817f"},
+    {file = "acb-0.6.19.tar.gz", hash = "sha256:754b5ff08ff4c15890627ff805c62ef8d1a606f7dce32f7044f1ec7f954866a9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.6.18"
+version = "0.6.19"
 extras = ["cache", "requests", "secret", "sql", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default"]
 dependencies = [
-    "acb==0.6.18",
+    "acb==0.6.19",
     "adlfs>=2024.7.0",
     "aiomysql>=0.2.0",
     "babel>=2.16.0",
@@ -77,8 +77,8 @@ dependencies = [
     "sqlmodel>=0.0.21",
 ]
 files = [
-    {file = "acb-0.6.18-py3-none-any.whl", hash = "sha256:71e73b5b7a7221fd6ff401c94ce67e05f0252ff715a84ad82142856c9d32fd73"},
-    {file = "acb-0.6.18.tar.gz", hash = "sha256:fd94cc8008196c2efebcd43a63c24fa29f26fb5b6079b18539718303ba4e3bfa"},
+    {file = "acb-0.6.19-py3-none-any.whl", hash = "sha256:3242fab1d6ea861f5de98b4af4e0a1396fd0998f23bf8964c1b5f1b0d0ef817f"},
+    {file = "acb-0.6.19.tar.gz", hash = "sha256:754b5ff08ff4c15890627ff805c62ef8d1a606f7dce32f7044f1ec7f954866a9"},
 ]
 
 [[package]]
