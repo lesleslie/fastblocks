@@ -29,7 +29,13 @@ class TemplatePaths(BaseModel, arbitrary_types_allowed=True):
         self.theme = self.style / "css"  # type: ignore
 
 
-class TemplatesBaseSettings(Settings): ...
+class TemplatesBaseSettings(Settings):
+    cache_timeout: int = 300
+
+    @depends.inject
+    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+        super().__init__(**values)
+        self.cache_timeout = self.cache_timeout if config.deployed else 1
 
 
 class TemplatesBase(AdapterBase, ABC):
@@ -53,4 +59,4 @@ class TemplatesBase(AdapterBase, ABC):
 
     @staticmethod
     def get_cache_key(path: AsyncPath) -> str:
-        return "-".join(path.parts)
+        return ":".join(path.parts)

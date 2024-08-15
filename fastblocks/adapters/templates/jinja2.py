@@ -288,6 +288,8 @@ class Templates(TemplatesBase):
         searchpaths = []
         for path in (template_paths.theme, template_paths.style, template_paths.base):
             searchpaths.extend([path, path / "blocks"])  # type: ignore
+            if admin:
+                searchpaths.extend([path / "sqladmin", path / "sqladmin/blocks"])  # type: ignore
         loaders: list[AsyncBaseLoader] = [
             RedisLoader(searchpaths),
             CloudLoader(searchpaths),
@@ -318,10 +320,10 @@ class Templates(TemplatesBase):
                 ]
             )
         bytecode_cache = AsyncRedisBytecodeCache(
-            prefix=self.config.app.name,
+            prefix=f"{self.config.app.name}:bccache",
             host=self.config.cache.host.get_secret_value(),
             port=self.config.cache.port,
-            db=self.config.templates.cache_db,
+            # db=self.config.templates.cache_db,
         )
         env_configs = dict(extensions=_extensions, bytecode_cache=bytecode_cache)
         templates = AsyncJinja2Templates(template_paths.root, **env_configs)
