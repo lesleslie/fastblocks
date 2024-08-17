@@ -2,34 +2,22 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "admin", "dev", "sitemap", "style"]
+groups = ["default", "admin", "dev", "sitemap"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:43b42ba9735151d2ebc860bf7641df602799372dfe5afb44441a94f054f75052"
+content_hash = "sha256:27132ee0b06af0c900936dc051f9e0824cd7b72eaf8f8c392a33b4b87e1bf19f"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
 
 [[package]]
-name = "about-time"
-version = "4.2.1"
-requires_python = ">=3.7, <4"
-summary = "Easily measure timing and throughput of code blocks, with beautiful human friendly representations."
-groups = ["default", "dev"]
-files = [
-    {file = "about-time-4.2.1.tar.gz", hash = "sha256:6a538862d33ce67d997429d14998310e1dbfda6cb7d9bbfbf799c4709847fece"},
-    {file = "about_time-4.2.1-py3-none-any.whl", hash = "sha256:8bbf4c75fe13cbd3d72f49a03b02c5c7dca32169b6d49117c257e7eb3eaee341"},
-]
-
-[[package]]
 name = "acb"
-version = "0.6.20"
+version = "0.6.21"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default", "dev"]
 dependencies = [
     "aiopath>=0.7.7",
-    "alive-progress>=3.1.5",
     "arrow>=1.3.0",
     "bevy>=2.0.2",
     "blake3>=0.4.1",
@@ -49,23 +37,23 @@ dependencies = [
     "pyyaml>=6.0.2",
 ]
 files = [
-    {file = "acb-0.6.20-py3-none-any.whl", hash = "sha256:433644447dcf5b50c311f0bfa23abd0b4981381cb1218bf29e86905ba4ffdb2e"},
-    {file = "acb-0.6.20.tar.gz", hash = "sha256:387a8f993ffee447ac3a40963ba65e8587657cc4a3aeb8135c52f95dd07e5bff"},
+    {file = "acb-0.6.21-py3-none-any.whl", hash = "sha256:a57f8cbda34765d24caa261319811f7860b706be16ee1efee3b073850d121130"},
+    {file = "acb-0.6.21.tar.gz", hash = "sha256:428c53dae128cd9d5cd07493bb454c74d55cdbecbccab003e577f7770081d47d"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.6.20"
+version = "0.6.21"
 extras = ["cache", "requests", "secret", "sql", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default"]
 dependencies = [
-    "acb==0.6.20",
+    "acb==0.6.21",
     "adlfs>=2024.7.0",
     "aiomysql>=0.2.0",
     "babel>=2.16.0",
-    "cashews[redis]>=7.1.0",
+    "cashews[dill,redis]>=7.2.0",
     "gcsfs>=2024.6.1",
     "google-cloud-secret-manager>=2.20.2",
     "hishel>=0.0.30",
@@ -77,8 +65,8 @@ dependencies = [
     "sqlmodel>=0.0.21",
 ]
 files = [
-    {file = "acb-0.6.20-py3-none-any.whl", hash = "sha256:433644447dcf5b50c311f0bfa23abd0b4981381cb1218bf29e86905ba4ffdb2e"},
-    {file = "acb-0.6.20.tar.gz", hash = "sha256:387a8f993ffee447ac3a40963ba65e8587657cc4a3aeb8135c52f95dd07e5bff"},
+    {file = "acb-0.6.21-py3-none-any.whl", hash = "sha256:a57f8cbda34765d24caa261319811f7860b706be16ee1efee3b073850d121130"},
+    {file = "acb-0.6.21.tar.gz", hash = "sha256:428c53dae128cd9d5cd07493bb454c74d55cdbecbccab003e577f7770081d47d"},
 ]
 
 [[package]]
@@ -144,13 +132,13 @@ files = [
 
 [[package]]
 name = "aiohappyeyeballs"
-version = "2.3.5"
+version = "2.3.6"
 requires_python = ">=3.8"
 summary = "Happy Eyeballs for asyncio"
 groups = ["default"]
 files = [
-    {file = "aiohappyeyeballs-2.3.5-py3-none-any.whl", hash = "sha256:4d6dea59215537dbc746e93e779caea8178c866856a721c9c660d7a5a7b8be03"},
-    {file = "aiohappyeyeballs-2.3.5.tar.gz", hash = "sha256:6fa48b9f1317254f122a07a131a86b71ca6946ca989ce6326fff54a99a920105"},
+    {file = "aiohappyeyeballs-2.3.6-py3-none-any.whl", hash = "sha256:15dca2611fa78442f1cb54cf07ffb998573f2b4fbeab45ca8554c045665c896b"},
+    {file = "aiohappyeyeballs-2.3.6.tar.gz", hash = "sha256:88211068d2a40e0436033956d7de3926ff36d54776f8b1022d6b21320cadae79"},
 ]
 
 [[package]]
@@ -243,21 +231,6 @@ dependencies = [
 files = [
     {file = "aiosignal-1.3.1-py3-none-any.whl", hash = "sha256:f8376fb07dd1e86a584e4fcdec80b36b7f81aac666ebc724e2c090300dd83b17"},
     {file = "aiosignal-1.3.1.tar.gz", hash = "sha256:54cd96e15e1649b75d6c87526a6ff0b6c1b0dd3459f43d9ca11d48c339b68cfc"},
-]
-
-[[package]]
-name = "alive-progress"
-version = "3.1.5"
-requires_python = ">=3.7, <4"
-summary = "A new kind of Progress Bar, with real-time throughput, ETA, and very cool animations!"
-groups = ["default", "dev"]
-dependencies = [
-    "about-time==4.2.1",
-    "grapheme==0.6.0",
-]
-files = [
-    {file = "alive-progress-3.1.5.tar.gz", hash = "sha256:42e399a66c8150dc507602dff7b7953f105ef11faf97ddaa6d27b1cbf45c4c98"},
-    {file = "alive_progress-3.1.5-py3-none-any.whl", hash = "sha256:347220c1858e3abe137fa0746895668c04df09c5261a13dc03f05795e8a29be5"},
 ]
 
 [[package]]
@@ -568,29 +541,30 @@ files = [
 
 [[package]]
 name = "cashews"
-version = "7.1.0"
+version = "7.2.0"
 requires_python = ">=3.8"
 summary = "cache tools with async power"
 groups = ["default"]
 files = [
-    {file = "cashews-7.1.0-py3-none-any.whl", hash = "sha256:b7c1ae4d49df6fdbff88e5025d3c1156515f58724c5b96fc9a9d081afada82a8"},
-    {file = "cashews-7.1.0.tar.gz", hash = "sha256:058df55a39cb15697d331e7e41c2882b58d0d323f5671316105cc78668af7705"},
+    {file = "cashews-7.2.0-py3-none-any.whl", hash = "sha256:31a203b30d6162ea671268fda9012ebc2053e669761a3112906aa7ec988f09eb"},
+    {file = "cashews-7.2.0.tar.gz", hash = "sha256:55be8f13845a17fc859c09b53d2105dd236340a5571610820b592e58835f62c2"},
 ]
 
 [[package]]
 name = "cashews"
-version = "7.1.0"
-extras = ["redis"]
+version = "7.2.0"
+extras = ["dill", "redis"]
 requires_python = ">=3.8"
 summary = "cache tools with async power"
 groups = ["default"]
 dependencies = [
-    "cashews==7.1.0",
+    "cashews==7.2.0",
+    "dill",
     "redis!=5.0.1,>=4.3.1",
 ]
 files = [
-    {file = "cashews-7.1.0-py3-none-any.whl", hash = "sha256:b7c1ae4d49df6fdbff88e5025d3c1156515f58724c5b96fc9a9d081afada82a8"},
-    {file = "cashews-7.1.0.tar.gz", hash = "sha256:058df55a39cb15697d331e7e41c2882b58d0d323f5671316105cc78668af7705"},
+    {file = "cashews-7.2.0-py3-none-any.whl", hash = "sha256:31a203b30d6162ea671268fda9012ebc2053e669761a3112906aa7ec988f09eb"},
+    {file = "cashews-7.2.0.tar.gz", hash = "sha256:55be8f13845a17fc859c09b53d2105dd236340a5571610820b592e58835f62c2"},
 ]
 
 [[package]]
@@ -704,26 +678,26 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.8.12"
+version = "0.8.15"
 requires_python = ">=3.12"
 summary = "Crackerjack code style"
 groups = ["dev"]
 dependencies = [
-    "acb>=0.6.17",
+    "acb>=0.6.20",
     "aioconsole>=0.7.1",
     "aiopath>=0.7.7",
     "autotyping>=24.3.0",
     "click>=8.1.7",
     "inflection>=0.5.1",
     "pdm-bump>=0.9.0",
-    "pdm>=2.17.3",
+    "pdm>=2.18.1",
     "pre-commit>=3.8.0",
     "pydantic>=2.8.2",
     "pytest>=8.3.2",
 ]
 files = [
-    {file = "crackerjack-0.8.12-py3-none-any.whl", hash = "sha256:fbac3a63015c2f9cb8b572733460cafc2b2894fe6507b35602be6b7e0f4522bb"},
-    {file = "crackerjack-0.8.12.tar.gz", hash = "sha256:06d7cc25a3974a71a195c71c394bca27b1cd11f2f4ea0576f23e5da24edb7983"},
+    {file = "crackerjack-0.8.15-py3-none-any.whl", hash = "sha256:c8afad263daecb3e96a7ded7666e4334db18250ab8658f50bb2024b8ea4775fe"},
+    {file = "crackerjack-0.8.15.tar.gz", hash = "sha256:5fe67dc77fa2767507e926688c06bad6f8f15b2d568005d645298ff22d01f150"},
 ]
 
 [[package]]
@@ -1114,15 +1088,6 @@ files = [
 ]
 
 [[package]]
-name = "grapheme"
-version = "0.6.0"
-summary = "Unicode grapheme helpers"
-groups = ["default", "dev"]
-files = [
-    {file = "grapheme-0.6.0.tar.gz", hash = "sha256:44c2b9f21bbe77cfb05835fec230bd435954275267fea1858013b102f8603cca"},
-]
-
-[[package]]
 name = "greenlet"
 version = "3.0.3"
 requires_python = ">=3.7"
@@ -1160,37 +1125,37 @@ files = [
 
 [[package]]
 name = "grpcio"
-version = "1.65.4"
+version = "1.65.5"
 requires_python = ">=3.8"
 summary = "HTTP/2-based RPC framework"
 groups = ["default"]
 files = [
-    {file = "grpcio-1.65.4-cp312-cp312-linux_armv7l.whl", hash = "sha256:926a0750a5e6fb002542e80f7fa6cab8b1a2ce5513a1c24641da33e088ca4c56"},
-    {file = "grpcio-1.65.4-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:2a1d4c84d9e657f72bfbab8bedf31bdfc6bfc4a1efb10b8f2d28241efabfaaf2"},
-    {file = "grpcio-1.65.4-cp312-cp312-manylinux_2_17_aarch64.whl", hash = "sha256:17de4fda50967679677712eec0a5c13e8904b76ec90ac845d83386b65da0ae1e"},
-    {file = "grpcio-1.65.4-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3dee50c1b69754a4228e933696408ea87f7e896e8d9797a3ed2aeed8dbd04b74"},
-    {file = "grpcio-1.65.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:74c34fc7562bdd169b77966068434a93040bfca990e235f7a67cdf26e1bd5c63"},
-    {file = "grpcio-1.65.4-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:24a2246e80a059b9eb981e4c2a6d8111b1b5e03a44421adbf2736cc1d4988a8a"},
-    {file = "grpcio-1.65.4-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:18c10f0d054d2dce34dd15855fcca7cc44ec3b811139437543226776730c0f28"},
-    {file = "grpcio-1.65.4-cp312-cp312-win32.whl", hash = "sha256:d72962788b6c22ddbcdb70b10c11fbb37d60ae598c51eb47ec019db66ccfdff0"},
-    {file = "grpcio-1.65.4-cp312-cp312-win_amd64.whl", hash = "sha256:7656376821fed8c89e68206a522522317787a3d9ed66fb5110b1dff736a5e416"},
-    {file = "grpcio-1.65.4.tar.gz", hash = "sha256:2a4f476209acffec056360d3e647ae0e14ae13dcf3dfb130c227ae1c594cbe39"},
+    {file = "grpcio-1.65.5-cp312-cp312-linux_armv7l.whl", hash = "sha256:ee6ed64a27588a2c94e8fa84fe8f3b5c89427d4d69c37690903d428ec61ca7e4"},
+    {file = "grpcio-1.65.5-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:76991b7a6fb98630a3328839755181ce7c1aa2b1842aa085fd4198f0e5198960"},
+    {file = "grpcio-1.65.5-cp312-cp312-manylinux_2_17_aarch64.whl", hash = "sha256:89c00a18801b1ed9cc441e29b521c354725d4af38c127981f2c950c796a09b6e"},
+    {file = "grpcio-1.65.5-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:078038e150a897e5e402ed3d57f1d31ebf604cbed80f595bd281b5da40762a92"},
+    {file = "grpcio-1.65.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c97962720489ef31b5ad8a916e22bc31bba3664e063fb9f6702dce056d4aa61b"},
+    {file = "grpcio-1.65.5-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:b8270b15b99781461b244f5c81d5c2bc9696ab9189fb5ff86c841417fb3b39fe"},
+    {file = "grpcio-1.65.5-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8e5c4c15ac3fe1eb68e46bc51e66ad29be887479f231f8237cf8416058bf0cc1"},
+    {file = "grpcio-1.65.5-cp312-cp312-win32.whl", hash = "sha256:f5b5970341359341d0e4c789da7568264b2a89cd976c05ea476036852b5950cd"},
+    {file = "grpcio-1.65.5-cp312-cp312-win_amd64.whl", hash = "sha256:238a625f391a1b9f5f069bdc5930f4fd71b74426bea52196fc7b83f51fa97d34"},
+    {file = "grpcio-1.65.5.tar.gz", hash = "sha256:ec6f219fb5d677a522b0deaf43cea6697b16f338cb68d009e30930c4aa0d2209"},
 ]
 
 [[package]]
 name = "grpcio-status"
-version = "1.65.4"
+version = "1.65.5"
 requires_python = ">=3.8"
 summary = "Status proto mapping for gRPC"
 groups = ["default"]
 dependencies = [
     "googleapis-common-protos>=1.5.5",
-    "grpcio>=1.65.4",
+    "grpcio>=1.65.5",
     "protobuf<6.0dev,>=5.26.1",
 ]
 files = [
-    {file = "grpcio_status-1.65.4-py3-none-any.whl", hash = "sha256:09dd3d84d1a3164940b1d8ed2177688cd8d25a423b1f5ad826b393653ea3de01"},
-    {file = "grpcio_status-1.65.4.tar.gz", hash = "sha256:1803968c4f14d81b4b156f6f2b54e6959bac4f40b0a6ca2bd4c169978438b9dc"},
+    {file = "grpcio_status-1.65.5-py3-none-any.whl", hash = "sha256:44a445ce55375545a913e005be36fbec7999a4cc320d7aecb7a4469d3d49366c"},
+    {file = "grpcio_status-1.65.5.tar.gz", hash = "sha256:2c9fa3af32efd26f01837d44305dce106973bc5357b9a9fc8bbd87bb8bf833d1"},
 ]
 
 [[package]]
@@ -1721,18 +1686,18 @@ files = [
 
 [[package]]
 name = "pbs-installer"
-version = "2024.8.9"
+version = "2024.8.14"
 requires_python = ">=3.8"
 summary = "Installer for Python Build Standalone"
 groups = ["dev"]
 files = [
-    {file = "pbs_installer-2024.8.9-py3-none-any.whl", hash = "sha256:5d32c0535d94fbeb5d364e9e6666ccbd4a622001593c309685f0a769169d3fb6"},
-    {file = "pbs_installer-2024.8.9.tar.gz", hash = "sha256:4e8d91bc9aca262c04bbf8e1a749bd6e10e2edd3190d0f37da6ce72c719127ba"},
+    {file = "pbs_installer-2024.8.14-py3-none-any.whl", hash = "sha256:9ec0c1e689fc956823d45952eb0879c303f411d8f9f315b06ef57138cc794285"},
+    {file = "pbs_installer-2024.8.14.tar.gz", hash = "sha256:40144b21f04e90c73f1b79601e139d56d540356630fe473842ea439a59dffaee"},
 ]
 
 [[package]]
 name = "pdm"
-version = "2.17.3"
+version = "2.18.1"
 requires_python = ">=3.8"
 summary = "A modern Python package and dependency manager supporting the latest PEP standards"
 groups = ["dev"]
@@ -1758,12 +1723,12 @@ dependencies = [
     "tomli>=1.1.0; python_version < \"3.11\"",
     "tomlkit<1,>=0.11.1",
     "truststore; python_version >= \"3.10\"",
-    "unearth>=0.16.0",
+    "unearth>=0.17.0",
     "virtualenv>=20",
 ]
 files = [
-    {file = "pdm-2.17.3-py3-none-any.whl", hash = "sha256:3cc0fab468d68ce9c52ce1f2f2270ecb5396b23f17be4ac048ca901be88b15f1"},
-    {file = "pdm-2.17.3.tar.gz", hash = "sha256:f49220f225ec71258cbf7148b14a76caeac612745bedab67f9062398ea56a7a5"},
+    {file = "pdm-2.18.1-py3-none-any.whl", hash = "sha256:6a86b9a6fbe071dc26f266006ac8d688e8d16e5115ee115135713af95a860c0a"},
+    {file = "pdm-2.18.1.tar.gz", hash = "sha256:acef692477a7190731ee7c1f626e97516eeb7473e4eeeeede4fef2bf0fb743ee"},
 ]
 
 [[package]]
@@ -2048,8 +2013,8 @@ requires_python = ">=3.8"
 summary = "JSON Web Token implementation in Python"
 groups = ["default"]
 dependencies = [
+    "PyJWT==2.9.0",
     "cryptography>=3.4.0",
-    "pyjwt==2.9.0",
 ]
 files = [
     {file = "PyJWT-2.9.0-py3-none-any.whl", hash = "sha256:3b02fb0f44517787776cf48f2ae25d8e14f300e6d7545a4315cee571a415e850"},
@@ -2493,13 +2458,13 @@ files = [
 
 [[package]]
 name = "tomlkit"
-version = "0.13.0"
+version = "0.13.2"
 requires_python = ">=3.8"
 summary = "Style preserving TOML library"
 groups = ["dev"]
 files = [
-    {file = "tomlkit-0.13.0-py3-none-any.whl", hash = "sha256:7075d3042d03b80f603482d69bf0c8f345c2b30e41699fd8883227f89972b264"},
-    {file = "tomlkit-0.13.0.tar.gz", hash = "sha256:08ad192699734149f5b97b45f1f18dad7eb1b6d16bc72ad0c2335772650d7b72"},
+    {file = "tomlkit-0.13.2-py3-none-any.whl", hash = "sha256:7a974427f6e119197f670fbbbeae7bef749a6c14e793db934baefc1b5f03efde"},
+    {file = "tomlkit-0.13.2.tar.gz", hash = "sha256:fff5fe59a87295b278abd31bec92c15d9bc4a06885ab12bcea52c71119392e79"},
 ]
 
 [[package]]
@@ -2508,6 +2473,7 @@ version = "0.9.1"
 requires_python = ">=3.10"
 summary = "Verify certificates using native system trust stores"
 groups = ["dev"]
+marker = "python_version >= \"3.10\""
 files = [
     {file = "truststore-0.9.1-py3-none-any.whl", hash = "sha256:7f5b447d68318d966428131fc1c00442cca3a2d581a3986143558f007efba0b4"},
     {file = "truststore-0.9.1.tar.gz", hash = "sha256:8f7312d70cc33e9003b748a80a04ead1fcb2ed856a7c6c9ca5a02482901a90be"},
@@ -2537,7 +2503,7 @@ files = [
 
 [[package]]
 name = "unearth"
-version = "0.16.1"
+version = "0.17.0"
 requires_python = ">=3.8"
 summary = "A utility to fetch and download python packages"
 groups = ["dev"]
@@ -2546,8 +2512,8 @@ dependencies = [
     "packaging>=20",
 ]
 files = [
-    {file = "unearth-0.16.1-py3-none-any.whl", hash = "sha256:5a598ac1a3f185144fadc9de47f1043bff805c36118ffc40f81ef98ff22e8e37"},
-    {file = "unearth-0.16.1.tar.gz", hash = "sha256:988a43418fa0b78aeb628a15f6a3b02152c1787f63fe6d254c7f4e2ccf8db0a7"},
+    {file = "unearth-0.17.0-py3-none-any.whl", hash = "sha256:81c2f1fad5bb0065371df221934c3cae22dc7526c9606ec83fb3405c3acfd5e6"},
+    {file = "unearth-0.17.0.tar.gz", hash = "sha256:771ca270fec8bea262774a0b1ce2752739056e65234434028eceaf466cbba0b6"},
 ]
 
 [[package]]

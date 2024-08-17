@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.4.25"
+version = "0.4.26"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -46,10 +46,9 @@ dependencies = [
     "uvicorn>=0.30.6",
     "htmlmin>=0.1.12",
     "jsmin>=3.0.1",
-    "aiohttp>=3.10.3",
     "starlette-async-jinja>=1.7.9",
     "secure>=0.3.0",
-    "acb[cache,requests,secret,sql,storage]>=0.6.20",
+    "acb[cache,requests,secret,sql,storage]>=0.6.21",
 ]
 
 [project.optional-dependencies]
@@ -65,7 +64,7 @@ text = "BSD-3-Clause"
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "crackerjack>=0.8.12",
+    "crackerjack>=0.8.15",
 ]
 
 [tool.ruff]
@@ -103,7 +102,7 @@ no-lines-before = [
 ]
 
 [tool.ruff.lint.mccabe]
-max-complexity = 11
+max-complexity = 12
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -119,15 +118,13 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "aiohttp",
-    "pdm",
-    "pdm-bump",
-    "autotyping",
-    "pre-commit",
-    "phonenumbers",
-    "libsass",
-    "pyfiglet",
     "pytest",
+    "autotyping",
+    "pdm-bump",
+    "pdm",
+    "pyfiglet",
+    "pre-commit",
+    "pyyaml",
 ]
 
 [tool.refurb]
@@ -138,11 +135,13 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B404",
-    "B113",
-    "B607",
-    "B603",
+    "B311",
+    "B301",
+    "B602",
     "B403",
+    "B404",
+    "B603",
+    "B607",
 ]
 
 [tool.pyright]
