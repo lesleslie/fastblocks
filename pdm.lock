@@ -5,7 +5,7 @@
 groups = ["default", "admin", "dev", "sitemap"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:ddacbf8e8b3fc9f4699736ac3387856785d11ac725d74df39b035ea6076fac19"
+content_hash = "sha256:1fe69a7e1e05bc6bf04c2019ce6a28b186ed6e6bf45dabd6372a67680cdeb18b"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -1459,17 +1459,17 @@ files = [
 
 [[package]]
 name = "jinja2-async-environment"
-version = "0.7.8"
+version = "0.8.0"
 requires_python = ">=3.12"
 summary = ""
 groups = ["default"]
 dependencies = [
     "jinja2>=3.1.4",
-    "redis>=5.0.7",
+    "redis>=5.0.8",
 ]
 files = [
-    {file = "jinja2_async_environment-0.7.8-py3-none-any.whl", hash = "sha256:ffe6deed8eec1b2462db443abd6a90847a4262b02e82b5c04ff4229971f99258"},
-    {file = "jinja2_async_environment-0.7.8.tar.gz", hash = "sha256:b8f30e6a500ffd6dc3c14e1e904550e4895ba11a6d88f34b6699595baedfb171"},
+    {file = "jinja2_async_environment-0.8.0-py3-none-any.whl", hash = "sha256:d41eff295c4fc3e6dcd2c77fd900962aa582df7e4cf8f354f81e079628178fd1"},
+    {file = "jinja2_async_environment-0.8.0.tar.gz", hash = "sha256:8d2eb9e8387f4ae56cf947efc36d72b733bfe6f449571e40360e2c5cb56b92f2"},
 ]
 
 [[package]]
@@ -2478,18 +2478,18 @@ files = [
 
 [[package]]
 name = "starlette-async-jinja"
-version = "1.7.9"
+version = "1.7.10"
 requires_python = ">=3.12"
 summary = ""
 groups = ["default"]
 dependencies = [
-    "jinja2-async-environment>=0.7.8",
+    "jinja2-async-environment>=0.8.0",
     "jinja2>=3.1.4",
-    "starlette>=0.38.0",
+    "starlette>=0.38.2",
 ]
 files = [
-    {file = "starlette_async_jinja-1.7.9-py3-none-any.whl", hash = "sha256:c30227e8e5f357eb635b4025527ca21c6d5fbc230e765ba1261324a2bf662232"},
-    {file = "starlette_async_jinja-1.7.9.tar.gz", hash = "sha256:a39ed9d2828388c4aff862de52c82953c94ffe54c4309cc7f3e8d6732ed9a11e"},
+    {file = "starlette_async_jinja-1.7.10-py3-none-any.whl", hash = "sha256:0e7a91cd146868db82a8137d538d3cc01af31f7cdaffc535204e61ddbc7ca5ed"},
+    {file = "starlette_async_jinja-1.7.10.tar.gz", hash = "sha256:5b3f6c78bc8c3662ce91b4659094187db528d0c1e9fc3a87e312ca88bd38eb0c"},
 ]
 
 [[package]]

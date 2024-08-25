@@ -302,8 +302,12 @@ class Templates(TemplatesBase):
             jinja_loaders = file_loaders + loaders  # type: ignore
         return ChoiceLoader(jinja_loaders, template_paths.style)  # type: ignore
 
+    @depends.inject
     async def init_envs(
-        self, template_paths: TemplatePaths, admin: bool = False
+        self,
+        template_paths: TemplatePaths,
+        admin: bool = False,
+        cache: Cache = depends(),  # type: ignore
     ) -> AsyncJinja2Templates:
         _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
         _imported_extensions = [
@@ -321,9 +325,7 @@ class Templates(TemplatesBase):
             )
         bytecode_cache = AsyncRedisBytecodeCache(
             prefix=f"{self.config.app.name}:bccache",
-            host=self.config.cache.host.get_secret_value(),
-            port=self.config.cache.port,
-            # db=self.config.templates.cache_db,
+            client=cache,
         )
         env_configs = dict(extensions=_extensions, bytecode_cache=bytecode_cache)
         templates = AsyncJinja2Templates(template_paths.root, **env_configs)
