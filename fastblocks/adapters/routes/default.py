@@ -25,11 +25,16 @@ class Index(HTTPEndpoint):
     templates: Templates = depends()  # type: ignore
 
     async def get(self, request: HtmxRequest) -> Response:
-        request.path_params["page"] = request.scope["path"].lstrip("/") or "home"
-        debug(request.path_params.get("page"))
+        debug(request)
+        page = request.path_params.get("page").lstrip("/") or "home"
+        template = "index.html"
+        headers = dict(vary="hx-request")
+        if htmx := request.scope["htmx"]:
+            debug(htmx)
+            template = f"{page}.html"
+            headers["hx-push-url"] = "/" if page == ("home") else f"/{page}"
         return await self.templates.app.render_template(
-            request,
-            "index.html",  # type: ignore
+            request, template, headers=headers, context=dict(page=page)
         )
 
 
@@ -70,16 +75,14 @@ class Routes(RoutesBase):
 
     @depends.inject
     async def init(self, templates: Templates = depends()) -> None:  # type: ignore
-        self.templates = templates.app
         self.routes.extend(
             [
                 Route("/favicon.ico", endpoint=self.favicon, methods=["GET"]),
                 Route("/", Index, methods=["GET"]),
+                Route("/{page}", Index, methods=["GET"]),
                 Route("/block/{block}", Block, methods=["GET"]),
             ]
         )
-        async for page in self.templates.env.loader.searchpath[-1].glob("*.html"):
-            self.routes.append(Route(f"/{page.stem}", Index, methods=["GET"]))
         for adapter in get_installed_adapters():
             _routes_path = adapter.path / "_routes.py"
             if await _routes_path.exists():
@@ -87,6 +90,7 @@ class Routes(RoutesBase):
         for _routes_path in base_routes_paths:
             if await _routes_path.exists():
                 await self.gather_routes(_routes_path)
+        debug(self.routes)
 
 
 depends.set(Routes)

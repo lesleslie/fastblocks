@@ -2,7 +2,7 @@ import logging
 import typing as t
 from platform import system
 
-from acb.adapters import import_adapter, register_adapters
+from acb.adapters import get_installed_adapters, import_adapter, register_adapters
 from acb.adapters.logger.loguru import InterceptHandler
 from acb.config import Config
 from acb.depends import depends
@@ -60,6 +60,10 @@ class FastBlocks(Starlette):
             _logger = logging.getLogger(_logger)
             _logger.handlers.clear()
             _logger.handlers = [InterceptHandler()]
+        if "logfire" in [a.name for a in get_installed_adapters()]:
+            from logfire import instrument_starlette
+
+            instrument_starlette(self)
 
     @depends.inject
     def build_middleware_stack(

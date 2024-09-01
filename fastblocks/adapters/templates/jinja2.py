@@ -19,7 +19,7 @@ from jinja2.ext import debug as jinja_debug
 from jinja2_async_environment.bccache import AsyncRedisBytecodeCache
 from jinja2_async_environment.loaders import AsyncBaseLoader
 from starlette_async_jinja import AsyncJinja2Templates
-from ._base import TemplatePaths, TemplatesBase, TemplatesBaseSettings
+from ._base import TemplatesBase, TemplatesBaseSettings
 
 Logger = import_adapter()
 Cache = import_adapter()
@@ -172,6 +172,8 @@ class RedisLoader(AsyncBaseLoader):
 
 
 class PackageLoader(AsyncBaseLoader):
+    config: Config = depends()
+
     def __init__(self, package_name: str, path: "str" = "templates") -> None:
         self.package_path = Path(package_name)
         self.path = self.package_path / path
@@ -213,7 +215,9 @@ class PackageLoader(AsyncBaseLoader):
         async def uptodate() -> bool:
             return await p.is_file() and (await p.stat()).st_mtime == mtime
 
-        replace = (("{{", "[["), ("}}", "]]"), ("{%", "[%"), ("%}", "%]"))
+        replace = [("{{", "[["), ("}}", "]]"), ("{%", "[%"), ("%}", "%]")]
+        if self.config.deployed:
+            replace.append(("http://", "https://"))
         for r in replace:
             source = source.replace(
                 bytes(r[0], encoding="utf8"), bytes(r[1], encoding="utf8")
@@ -256,7 +260,6 @@ class ChoiceLoader(AsyncBaseLoader):
 
 class TemplatesSettings(TemplatesBaseSettings):
     loader: t.Optional[str] = None
-    cache_db: t.Optional[int] = 0
     extensions: list[str] = []
     delimiters: t.Optional[dict[str, str]] = dict(
         block_start_string="[%",
@@ -281,31 +284,32 @@ class TemplatesSettings(TemplatesBaseSettings):
 class Templates(TemplatesBase):
     app: t.Optional[AsyncJinja2Templates] = None
     admin: t.Optional[AsyncJinja2Templates] = None
+    enabled_admin: t.Any = get_adapter("admin")
+    enabled_app: t.Any = get_adapter("app")
 
     def get_loader(
-        self, template_paths: TemplatePaths, admin: bool = False
+        self, template_paths: list[AsyncPath], admin: bool = False
     ) -> ChoiceLoader:
         searchpaths = []
-        for path in (template_paths.theme, template_paths.style, template_paths.base):
+        for path in template_paths:
             searchpaths.extend([path, path / "blocks"])  # type: ignore
-            if admin:
-                searchpaths.extend([path / "sqladmin", path / "sqladmin/blocks"])  # type: ignore
         loaders: list[AsyncBaseLoader] = [
             RedisLoader(searchpaths),
             CloudLoader(searchpaths),
         ]
+        debug(searchpaths)
         file_loaders: list[AsyncBaseLoader] = [FileSystemLoader(searchpaths)]
         if admin:
-            file_loaders.append(PackageLoader("sqladmin", "templates"))
+            file_loaders.append(PackageLoader(self.enabled_admin.name, "templates"))
         jinja_loaders = loaders + file_loaders  # type: ignore
         if not self.config.deployed and not self.config.debug.production:
             jinja_loaders = file_loaders + loaders  # type: ignore
-        return ChoiceLoader(jinja_loaders, template_paths.style)  # type: ignore
+        return ChoiceLoader(jinja_loaders, "templates")  # type: ignore
 
     @depends.inject
     async def init_envs(
         self,
-        template_paths: TemplatePaths,
+        template_paths: list[AsyncPath],
         admin: bool = False,
         cache: Cache = depends(),  # type: ignore
     ) -> AsyncJinja2Templates:
@@ -328,7 +332,7 @@ class Templates(TemplatesBase):
             client=cache,
         )
         env_configs = dict(extensions=_extensions, bytecode_cache=bytecode_cache)
-        templates = AsyncJinja2Templates(template_paths.root, **env_configs)
+        templates = AsyncJinja2Templates(AsyncPath("templates"), **env_configs)
         templates.env.loader = self.get_loader(
             template_paths, admin=admin
         ) or literal_eval(self.config.templates.loader)
@@ -343,13 +347,14 @@ class Templates(TemplatesBase):
 
     @depends.inject
     async def init(self, logger: Logger = depends()) -> None:  # type: ignore
-        self.app = await self.init_envs(self.app_paths)  # type: ignore
-        if get_adapter("admin").enabled:
-            self.admin = await self.init_envs(
-                self.admin_paths,  # type: ignore
-                admin=True,
-            )
-        self.set_path_attrs()
+        self.app_searchpaths = self.get_searchpaths(
+            style=self.config.app.style
+        ) + self.get_searchpaths(
+            root=self.enabled_app.path.parent,
+            name="_templates",
+            style=self.config.app.style,
+        )
+        self.app = await self.init_envs(self.app_searchpaths)
         for loader in self.app.env.loader.loaders:
             logger.debug(f"{loader.__class__.__name__} initialized")
 

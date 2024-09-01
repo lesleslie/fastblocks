@@ -5,28 +5,8 @@ from acb.adapters import AdapterBase, base_path, import_adapter
 from acb.config import Config, Settings
 from acb.depends import depends
 from aiopath import AsyncPath
-from pydantic import BaseModel
 
 Logger = import_adapter()
-
-
-class TemplatePaths(BaseModel, arbitrary_types_allowed=True):
-    root: AsyncPath
-    base: AsyncPath = AsyncPath("templates/base")
-    style: t.Optional[AsyncPath] = AsyncPath("templates/style")
-    theme: t.Optional[AsyncPath] = AsyncPath("templates/style/css")
-
-    @depends.inject
-    def __init__(
-        self,
-        config: Config = depends(),  # type: ignore
-        **values: t.Any,
-    ) -> None:
-        super().__init__(**values)
-        self.root = base_path / "templates" / self.root
-        self.base = self.root / "base"
-        self.style = self.root / config.app.style
-        self.theme = self.style / "css"  # type: ignore
 
 
 class TemplatesBaseSettings(Settings):
@@ -41,20 +21,28 @@ class TemplatesBaseSettings(Settings):
 class TemplatesBase(AdapterBase, ABC):
     app: t.Optional[t.Any] = None
     admin: t.Optional[t.Any] = None
-    app_paths: t.Optional[TemplatePaths] = TemplatePaths(root=AsyncPath("app"))
-    admin_paths: t.Optional[TemplatePaths] = TemplatePaths(root=AsyncPath("admin"))
+    app_searchpaths: t.Optional[list[AsyncPath]] = None
+    admin_searchpaths: t.Optional[list[AsyncPath]] = None
 
-    def set_path_attrs(self) -> None:
-        for attr in ((self.app, self.app_paths), (self.admin, self.admin_paths)):
-            if attr[0] is not None:
-                for name, path in {
-                    n: p for n, p in vars(attr[1]).items() if isinstance(p, AsyncPath)
-                }.items():
-                    setattr(attr[0], name, path)
+    @staticmethod
+    def get_searchpaths(
+        root: AsyncPath = base_path,
+        name: str = "templates",
+        adapter: str = "app",
+        style: str = "bulma",
+    ) -> list[AsyncPath]:
+        adapter_path = root / name / adapter
+        base_path = adapter_path / "base"
+        style_path = adapter_path / style
+        # theme_path = style_path / "css"
+        return [style_path, base_path]
 
     @staticmethod
     def get_storage_path(path: AsyncPath) -> AsyncPath:
-        depth = path.parts.index("templates") + 1
+        templates_path_name = "templates"
+        if templates_path_name not in path.parts:
+            templates_path_name = "_templates"
+        depth = path.parts.index(templates_path_name) + 1
         return AsyncPath("/".join(path.parts[depth:]))
 
     @staticmethod
