@@ -26,15 +26,16 @@ class Index(HTTPEndpoint):
 
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)
-        page = request.path_params.get("page").lstrip("/") or "home"
+        page = request.path_params.get("page") or "home"
         template = "index.html"
         headers = dict(vary="hx-request")
         if htmx := request.scope["htmx"]:
             debug(htmx)
-            template = f"{page}.html"
-            headers["hx-push-url"] = "/" if page == ("home") else f"/{page}"
+            template = f"{page.lstrip('/')}.html"
+            headers["hx-push-url"] = "/" if page == "home" else page
+        debug(page, template)
         return await self.templates.app.render_template(
-            request, template, headers=headers, context=dict(page=page)
+            request, template, headers=headers, context=dict(page=page.lstrip("/"))
         )
 
 
@@ -90,6 +91,10 @@ class Routes(RoutesBase):
         for _routes_path in base_routes_paths:
             if await _routes_path.exists():
                 await self.gather_routes(_routes_path)
+        # if self.config.debug.routes:
+        #     cache.clear(namespace=f"{self.config.app.name}:index")
+        #     cache.clear(namespace=f"{self.config.app.name}:block")
+        #     self.logger.warning("Routes cache cleared")
         debug(self.routes)
 
 
