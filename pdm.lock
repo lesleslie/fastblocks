@@ -5,14 +5,14 @@
 groups = ["default", "admin", "dev", "monitoring", "sitemap"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:e23f2fe3ef530c721847f336ccf2a69cc5cd7a46abcc5d2dc2287c9583e6ed61"
+content_hash = "sha256:107defe562886fd96737875d3fba16d6cfe2df1324008eaac031ac8cd8b7cbe3"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
 
 [[package]]
 name = "acb"
-version = "0.6.27"
+version = "0.6.28"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default", "dev"]
@@ -37,19 +37,19 @@ dependencies = [
     "pyyaml>=6.0.2",
 ]
 files = [
-    {file = "acb-0.6.27-py3-none-any.whl", hash = "sha256:406cdbc591159b7fc2957416bff34c022833a9c3c7994054d0de3a17bebccee9"},
-    {file = "acb-0.6.27.tar.gz", hash = "sha256:3ffe8a2c68b1b00a7087144048cabce7ff107f44a23a56930adc779b31ddfeb8"},
+    {file = "acb-0.6.28-py3-none-any.whl", hash = "sha256:8d0b33737750f1c923edcd9914b05ce7aa9da098ca49e983fadc11318d03ffc5"},
+    {file = "acb-0.6.28.tar.gz", hash = "sha256:c4157a0114d9b619274fd5d46e5c6689cf76457cf04d7bd74c6332154590ba5d"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.6.27"
+version = "0.6.28"
 extras = ["cache", "requests", "secret", "sql", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default"]
 dependencies = [
-    "acb==0.6.27",
+    "acb==0.6.28",
     "adlfs>=2024.7.0",
     "aiocache[redis]>=0.12.2",
     "aiomysql>=0.2.0",
@@ -71,8 +71,8 @@ dependencies = [
     "sqlmodel>=0.0.22",
 ]
 files = [
-    {file = "acb-0.6.27-py3-none-any.whl", hash = "sha256:406cdbc591159b7fc2957416bff34c022833a9c3c7994054d0de3a17bebccee9"},
-    {file = "acb-0.6.27.tar.gz", hash = "sha256:3ffe8a2c68b1b00a7087144048cabce7ff107f44a23a56930adc779b31ddfeb8"},
+    {file = "acb-0.6.28-py3-none-any.whl", hash = "sha256:8d0b33737750f1c923edcd9914b05ce7aa9da098ca49e983fadc11318d03ffc5"},
+    {file = "acb-0.6.28.tar.gz", hash = "sha256:c4157a0114d9b619274fd5d46e5c6689cf76457cf04d7bd74c6332154590ba5d"},
 ]
 
 [[package]]

@@ -2,8 +2,7 @@ import typing as t
 from abc import ABC, abstractmethod
 from contextvars import ContextVar
 
-from acb.adapters import AdapterBase
-from acb.config import Settings
+from acb.config import AdapterBase, Settings
 from asgi_htmx import HtmxRequest
 from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import UnauthenticatedUser

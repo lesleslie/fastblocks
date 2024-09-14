@@ -2,7 +2,8 @@ import logging
 import typing as t
 from platform import system
 
-from acb.adapters import get_installed_adapters, import_adapter, register_adapters
+from acb import register_pkg
+from acb.adapters import get_installed_adapters, import_adapter
 from acb.adapters.logger.loguru import InterceptHandler
 from acb.config import Config
 from acb.depends import depends
@@ -16,7 +17,7 @@ from starlette.responses import Response
 from starlette.types import ASGIApp, ExceptionHandler, Lifespan
 from .middleware import middlewares
 
-register_adapters()
+register_pkg()
 
 Logger = import_adapter()
 

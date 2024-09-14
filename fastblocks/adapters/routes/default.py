@@ -1,8 +1,7 @@
 import typing as t
 from importlib import import_module
 
-from acb import base_path
-from acb.adapters import get_installed_adapters, import_adapter
+from acb.adapters import get_installed_adapters, import_adapter, root_path
 from acb.debug import debug
 from acb.depends import depends
 from aiopath import AsyncPath
@@ -15,7 +14,7 @@ from ._base import RoutesBase, RoutesBaseSettings
 
 Templates = import_adapter()
 
-base_routes_paths = [AsyncPath(base_path / "routes.py")]
+base_routes_paths = [AsyncPath(root_path / "routes.py")]
 
 
 class RoutesSettings(RoutesBaseSettings): ...
