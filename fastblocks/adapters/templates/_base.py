@@ -2,12 +2,10 @@ import typing as t
 from abc import ABC
 
 from acb import Adapter
-from acb.adapters import get_enabled_adapters, import_adapter, root_path
+from acb.adapters import get_enabled_adapters, root_path
 from acb.config import AdapterBase, Config, Settings
 from acb.depends import depends
 from aiopath import AsyncPath
-
-Logger = import_adapter()
 
 
 class TemplatesBaseSettings(Settings):
@@ -29,7 +27,7 @@ class TemplatesBase(AdapterBase, ABC):
     def get_searchpath(self, adapter: Adapter, path: AsyncPath) -> list[AsyncPath]:
         style = getattr(self.config, adapter.category).style
         base_path = path / "base"
-        base_adapter_path = root_path / adapter.name
+        base_adapter_path = base_path / adapter.name
         style_path = path / style
         style_adapter_path = path / style / adapter.name
         theme_path = style_path / "theme"
@@ -64,7 +62,11 @@ class TemplatesBase(AdapterBase, ABC):
         templates_path_name = "templates"
         if templates_path_name not in path.parts:
             templates_path_name = "_templates"
-        depth = path.parts.index(templates_path_name) + 1
+            depth = path.parts.index(templates_path_name) - 1
+            _path = list(path.parts[depth:])
+            _path.insert(1, _path.pop(0))
+            return AsyncPath("/".join(_path))
+        depth = path.parts.index(templates_path_name)
         return AsyncPath("/".join(path.parts[depth:]))
 
     @staticmethod

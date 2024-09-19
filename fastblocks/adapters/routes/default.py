@@ -90,10 +90,6 @@ class Routes(RoutesBase):
         for _routes_path in base_routes_paths:
             if await _routes_path.exists():
                 await self.gather_routes(_routes_path)
-        # if self.config.debug.routes:
-        #     cache.clear(namespace=f"{self.config.app.name}:index")
-        #     cache.clear(namespace=f"{self.config.app.name}:block")
-        #     self.logger.warning("Routes cache cleared")
         debug(self.routes)
 
 

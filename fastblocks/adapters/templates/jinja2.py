@@ -106,7 +106,7 @@ class CloudLoader(AsyncBaseLoader):
                 break
         try:
             resp = await self.storage.templates.open(storage_path)
-            await self.cache.set(get_cache_key(storage_path), resp)  # type: ignore
+            await self.cache.set(Templates.get_cache_key(storage_path), resp)  # type: ignore
             local_stat = await self.storage.templates.stat(storage_path)
             local_mtime = int(round(local_stat.get("mtime").timestamp()))
 
@@ -148,6 +148,7 @@ class RedisLoader(AsyncBaseLoader):
             path = searchpath / template if searchpath else template
             storage_path = Templates.get_storage_path(path)
             cache_key = Templates.get_cache_key(storage_path)
+            debug(storage_path)
             debug(cache_key)
             if await self.cache.exists(cache_key):
                 debug(path)
@@ -171,8 +172,11 @@ class RedisLoader(AsyncBaseLoader):
 
 class PackageLoader(AsyncBaseLoader):
     config: Config = depends()
+    cache: Cache = depends()  # type: ignore
 
-    def __init__(self, package_name: str, path: "str" = "templates") -> None:
+    def __init__(
+        self, package_name: str, path: str = "templates", adapter: str = "admin"
+    ) -> None:
         self.package_path = Path(package_name)
         self.path = self.package_path / path
         super().__init__(AsyncPath(self.path))
@@ -199,20 +203,22 @@ class PackageLoader(AsyncBaseLoader):
                 " way that PackageLoader understands."
             )
         self._template_root = AsyncPath(template_root)
+        self._adapter = adapter
 
     async def get_source(
         self, template: AsyncPath
     ) -> tuple[t.Any, t.Any, t.Callable[[], t.Coroutine[t.Any, t.Any, bool]]]:
-        p = self._template_root / template
-        if not await p.is_file():
-            raise TemplateNotFound(template.name)
         debug("Package Loader")
-        debug(p)
-        source = await p.read_bytes()
-        mtime = (await p.stat()).st_mtime
+        path = self._template_root / template
+        if not await path.is_file():
+            raise TemplateNotFound(template.name)
+
+        debug(path)
+        source = await path.read_bytes()
+        mtime = (await path.stat()).st_mtime
 
         async def uptodate() -> bool:
-            return await p.is_file() and (await p.stat()).st_mtime == mtime
+            return await path.is_file() and (await path.stat()).st_mtime == mtime
 
         replace = [("{{", "[["), ("}}", "]]"), ("{%", "[%"), ("%}", "%]")]
         if self.config.deployed:
@@ -221,7 +227,16 @@ class PackageLoader(AsyncBaseLoader):
             source = source.replace(
                 bytes(r[0], encoding="utf8"), bytes(r[1], encoding="utf8")
             )
-        return source.decode(), p.name, uptodate
+        storage_path = Templates.get_storage_path(path)
+        _storage_path = list(storage_path.parts)
+        _storage_path[0] = "_templates"
+        _storage_path.insert(1, self._adapter)
+        _storage_path.insert(2, getattr(self.config, self._adapter).style)
+        storage_path = AsyncPath("/".join(_storage_path))
+        cache_key = Templates.get_cache_key((storage_path))
+        debug(cache_key)
+        await self.cache.set(cache_key, source)
+        return source.decode(), path.name, uptodate
 
     async def list_templates(self) -> list[str]:
         paths = self._template_root.rglob("*.html")
@@ -296,11 +311,11 @@ class Templates(TemplatesBase):
         ]
         debug(searchpaths)
         file_loaders: list[AsyncBaseLoader] = [FileSystemLoader(searchpaths)]
-        if self.enabled_admin and template_paths == self.admin_searchpaths:
-            file_loaders.append(PackageLoader(self.enabled_admin.name, "templates"))
         jinja_loaders = loaders + file_loaders  # type: ignore
         if not self.config.deployed and not self.config.debug.production:
             jinja_loaders = file_loaders + loaders  # type: ignore
+        if self.enabled_admin and template_paths == self.admin_searchpaths:
+            jinja_loaders.append(PackageLoader(self.enabled_admin.name, "templates"))
         debug(jinja_loaders)
         return ChoiceLoader(jinja_loaders, "templates")  # type: ignore
 
@@ -341,13 +356,17 @@ class Templates(TemplatesBase):
         return templates
 
     @depends.inject
-    async def init(self, logger: Logger = depends()) -> None:  # type: ignore
+    async def init(self, cache: Cache = depends()) -> None:  # type: ignore
         self.app_searchpaths = await self.get_searchpaths(self.enabled_app)
         self.app = await self.init_envs(self.app_searchpaths)
         for loader in self.app.env.loader.loaders:
-            logger.debug(f"{loader.__class__.__name__} initialized")
+            self.logger.debug(f"{loader.__class__.__name__} initialized")
         for ext in self.app.env.extensions:
             self.logger.debug(f"{ext.split('.')[-1]} loaded")
+        if self.config.debug.templates and self.config.debug.cache:
+            for namespace in ("templates", "_templates", "bccache"):
+                await cache.clear(namespace)
+            self.logger.debug("Templates cache cleared")
 
     @staticmethod
     def get_attr(html: str, attr: str) -> str | None:
