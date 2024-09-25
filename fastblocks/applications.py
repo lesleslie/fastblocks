@@ -15,6 +15,7 @@ from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
 from starlette.responses import Response
 from starlette.types import ASGIApp, ExceptionHandler, Lifespan
+from .exceptions import handle_exception
 from .middleware import middlewares
 
 register_pkg()
@@ -43,8 +44,9 @@ class FastBlocks(Starlette):
         lifespan: t.Optional[Lifespan["AppType"]] = None,
         config: Config = depends(),
     ) -> None:
-        self.debug = config.debug.app
-        install_error_handler()
+        self.debug = config.debug.fastblocks
+        if self.debug or not config.deployed or not config.debug.production:
+            install_error_handler()
         super().__init__(
             debug=self.debug,
             routes=[],
@@ -52,7 +54,10 @@ class FastBlocks(Starlette):
             lifespan=lifespan,
             exception_handlers=exception_handlers,
         )
-        self.exception_handlers = exception_handlers or {}
+        self.exception_handlers = exception_handlers or {
+            404: handle_exception,
+            500: handle_exception,
+        }
         self.user_middleware = middleware or []
         self.models = depends.get(import_adapter("models"))
         self.templates = None

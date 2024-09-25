@@ -2,11 +2,15 @@ import typing as t
 from importlib import import_module
 
 from acb.adapters import get_installed_adapters, import_adapter, root_path
+from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
 from aiopath import AsyncPath
 from asgi_htmx import HtmxRequest
+from jinja2.exceptions import TemplateNotFound
 from starlette.endpoints import HTTPEndpoint
+from starlette.exceptions import HTTPException
+from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
 from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 from starlette_async_jinja import AsyncJinja2Templates
@@ -21,6 +25,7 @@ class RoutesSettings(RoutesBaseSettings): ...
 
 
 class Index(HTTPEndpoint):
+    config: Config = depends()
     templates: Templates = depends()  # type: ignore
 
     async def get(self, request: HtmxRequest) -> Response:
@@ -33,9 +38,12 @@ class Index(HTTPEndpoint):
             template = f"{page.lstrip('/')}.html"
             headers["hx-push-url"] = "/" if page == "home" else page
         debug(page, template)
-        return await self.templates.app.render_template(
-            request, template, headers=headers, context=dict(page=page.lstrip("/"))
-        )
+        try:
+            return await self.templates.app.render_template(
+                request, template, headers=headers, context=dict(page=page.lstrip("/"))
+            )
+        except TemplateNotFound:
+            raise HTTPException(status_code=404)
 
 
 class Block(HTTPEndpoint):
@@ -44,7 +52,10 @@ class Block(HTTPEndpoint):
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)
         block = f"blocks/{request.path_params['block']}.html"
-        return await self.templates.app.render_template(request, block)
+        try:
+            return await self.templates.app.render_template(request, block)
+        except TemplateNotFound:
+            raise HTTPException(status_code=404)
 
 
 class Routes(RoutesBase):
@@ -70,7 +81,11 @@ class Routes(RoutesBase):
             )
 
     @staticmethod
-    async def favicon(request: HtmxRequest) -> Response:
+    async def favicon(request: Request) -> Response:
+        return PlainTextResponse("", 200)
+
+    @staticmethod
+    async def robots(request: Request) -> Response:
         return PlainTextResponse("", 200)
 
     @depends.inject
@@ -78,6 +93,7 @@ class Routes(RoutesBase):
         self.routes.extend(
             [
                 Route("/favicon.ico", endpoint=self.favicon, methods=["GET"]),
+                Route("/robots.txt", endpoint=self.robots, methods=["GET"]),
                 Route("/", Index, methods=["GET"]),
                 Route("/{page}", Index, methods=["GET"]),
                 Route("/block/{block}", Block, methods=["GET"]),
