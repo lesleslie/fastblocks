@@ -60,7 +60,7 @@ class SecureHeadersMiddleware:
         async def send_with_secure_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = MutableHeaders(scope=message)
-                for k, v in secure_headers.headers().items():
+                for k, v in secure_headers.headers.items():
                     headers.append(k, v)
             await send(message)
 

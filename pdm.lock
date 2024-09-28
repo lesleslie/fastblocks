@@ -5,14 +5,14 @@
 groups = ["default", "admin", "dev", "monitoring", "sitemap"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:f76f10e23c52d7ba70d4afdf93a69cf362392321b79b8ef58895f2c7ca258555"
+content_hash = "sha256:61ed86cb35eb106a799daca77a2198b94c8a99052a0697bdae207f5a2a509b7d"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
 
 [[package]]
 name = "acb"
-version = "0.6.30"
+version = "0.6.31"
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default", "dev"]
@@ -38,19 +38,19 @@ dependencies = [
     "typer>=0.12.5",
 ]
 files = [
-    {file = "acb-0.6.30-py3-none-any.whl", hash = "sha256:e48bce408b7d46969f1f1824410d68ff04ad6c736196a0e210eab6e18d576487"},
-    {file = "acb-0.6.30.tar.gz", hash = "sha256:1c868becdde72d3bc78dca685622947b73b36e7df139f87c29c7e281cf090e96"},
+    {file = "acb-0.6.31-py3-none-any.whl", hash = "sha256:2b96355c6436b9657998546367acc86c8ccad84b490d4aa04fd357194f4b33a8"},
+    {file = "acb-0.6.31.tar.gz", hash = "sha256:c858d0a0fe280a92a22fc59e5c7fd31b70fd3b4a4f85684e926f3543295ab3c1"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.6.30"
+version = "0.6.31"
 extras = ["cache", "requests", "secret", "sql", "storage"]
 requires_python = ">=3.12"
 summary = "Asynchronous Component Base"
 groups = ["default"]
 dependencies = [
-    "acb==0.6.30",
+    "acb==0.6.31",
     "adlfs>=2024.7.0",
     "aiocache[redis]>=0.12.2",
     "aiomysql>=0.2.0",
@@ -72,8 +72,8 @@ dependencies = [
     "sqlmodel>=0.0.22",
 ]
 files = [
-    {file = "acb-0.6.30-py3-none-any.whl", hash = "sha256:e48bce408b7d46969f1f1824410d68ff04ad6c736196a0e210eab6e18d576487"},
-    {file = "acb-0.6.30.tar.gz", hash = "sha256:1c868becdde72d3bc78dca685622947b73b36e7df139f87c29c7e281cf090e96"},
+    {file = "acb-0.6.31-py3-none-any.whl", hash = "sha256:2b96355c6436b9657998546367acc86c8ccad84b490d4aa04fd357194f4b33a8"},
+    {file = "acb-0.6.31.tar.gz", hash = "sha256:c858d0a0fe280a92a22fc59e5c7fd31b70fd3b4a4f85684e926f3543295ab3c1"},
 ]
 
 [[package]]
@@ -1572,7 +1572,7 @@ files = [
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "0.55.0"
 summary = "The best Python observability tool! 🪵🔥"
 groups = ["default", "monitoring"]
 dependencies = [
@@ -1586,68 +1586,68 @@ dependencies = [
     "typing-extensions>=4.1.0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-0.55.0-py2.py3-none-any.whl", hash = "sha256:de115f51751d35023f4925a491d52d2fb67a83e317f1d7f21855f9c47e5a4bfc"},
+    {file = "logfire-0.55.0.tar.gz", hash = "sha256:67c9261800b24bef63050361455393febbe11c0c3e4333f92c1a890f5cb2fb8c"},
 ]
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "0.55.0"
 extras = ["httpx"]
 summary = "The best Python observability tool! 🪵🔥"
 groups = ["default"]
 dependencies = [
-    "logfire==0.53.0",
+    "logfire==0.55.0",
     "opentelemetry-instrumentation-httpx>=0.42b0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-0.55.0-py2.py3-none-any.whl", hash = "sha256:de115f51751d35023f4925a491d52d2fb67a83e317f1d7f21855f9c47e5a4bfc"},
+    {file = "logfire-0.55.0.tar.gz", hash = "sha256:67c9261800b24bef63050361455393febbe11c0c3e4333f92c1a890f5cb2fb8c"},
 ]
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "0.55.0"
 extras = ["redis"]
 summary = "The best Python observability tool! 🪵🔥"
 groups = ["default"]
 dependencies = [
-    "logfire==0.53.0",
+    "logfire==0.55.0",
     "opentelemetry-instrumentation-redis>=0.42b0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-0.55.0-py2.py3-none-any.whl", hash = "sha256:de115f51751d35023f4925a491d52d2fb67a83e317f1d7f21855f9c47e5a4bfc"},
+    {file = "logfire-0.55.0.tar.gz", hash = "sha256:67c9261800b24bef63050361455393febbe11c0c3e4333f92c1a890f5cb2fb8c"},
 ]
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "0.55.0"
 extras = ["sqlalchemy"]
 summary = "The best Python observability tool! 🪵🔥"
 groups = ["default"]
 dependencies = [
-    "logfire==0.53.0",
+    "logfire==0.55.0",
     "opentelemetry-instrumentation-sqlalchemy>=0.42b0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-0.55.0-py2.py3-none-any.whl", hash = "sha256:de115f51751d35023f4925a491d52d2fb67a83e317f1d7f21855f9c47e5a4bfc"},
+    {file = "logfire-0.55.0.tar.gz", hash = "sha256:67c9261800b24bef63050361455393febbe11c0c3e4333f92c1a890f5cb2fb8c"},
 ]
 
 [[package]]
 name = "logfire"
-version = "0.53.0"
+version = "0.55.0"
 extras = ["starlette"]
 summary = "The best Python observability tool! 🪵🔥"
 groups = ["monitoring"]
 dependencies = [
-    "logfire==0.53.0",
+    "logfire==0.55.0",
     "opentelemetry-instrumentation-starlette>=0.42b0",
 ]
 files = [
-    {file = "logfire-0.53.0-py2.py3-none-any.whl", hash = "sha256:82c98bae477d52bdb814b4c2fff9bf5b8b6b0b65e3cd73045efbf650bc999928"},
-    {file = "logfire-0.53.0.tar.gz", hash = "sha256:eb48a4bcdcd28292c159b5b7644591471532da5ad0a449ca8d36388be4810976"},
+    {file = "logfire-0.55.0-py2.py3-none-any.whl", hash = "sha256:de115f51751d35023f4925a491d52d2fb67a83e317f1d7f21855f9c47e5a4bfc"},
+    {file = "logfire-0.55.0.tar.gz", hash = "sha256:67c9261800b24bef63050361455393febbe11c0c3e4333f92c1a890f5cb2fb8c"},
 ]
 
 [[package]]
@@ -2668,13 +2668,13 @@ files = [
 
 [[package]]
 name = "secure"
-version = "0.3.0"
-requires_python = ">=3.6"
+version = "1.0.0"
+requires_python = ">=3.10"
 summary = "A lightweight package that adds security headers for Python web frameworks."
 groups = ["default"]
 files = [
-    {file = "secure-0.3.0-py3-none-any.whl", hash = "sha256:a93b720c7614809c131ca80e477263140107c6c212829d0a6e1f7bc8d859c608"},
-    {file = "secure-0.3.0.tar.gz", hash = "sha256:6e30939d8f95bf3b8effb8a36ebb5ed57f265daeeae905e3aa9677ea538ab64e"},
+    {file = "secure-1.0.0-py3-none-any.whl", hash = "sha256:a82f57d23186a8d64ef6729d510a9e95ab0c4500f2d6bbf5cfc7f7675ca32564"},
+    {file = "secure-1.0.0.tar.gz", hash = "sha256:f9bf274681bc22b8b37df0ee8985d9972ee96409899d60560d373aa39c43b23c"},
 ]
 
 [[package]]
@@ -2885,7 +2885,7 @@ files = [
 
 [[package]]
 name = "starlette"
-version = "0.39.0"
+version = "0.39.1"
 requires_python = ">=3.8"
 summary = "The little ASGI library that shines."
 groups = ["default", "admin", "monitoring"]
@@ -2894,8 +2894,8 @@ dependencies = [
     "typing-extensions>=3.10.0; python_version < \"3.10\"",
 ]
 files = [
-    {file = "starlette-0.39.0-py3-none-any.whl", hash = "sha256:57164a38948018134537d31367fb46ef9be6050a8e955fb4990235960ed03f92"},
-    {file = "starlette-0.39.0.tar.gz", hash = "sha256:b35acedae74e95967dd9c0a47b45f5803dcd8973d0d95c18c1abb184845ba42c"},
+    {file = "starlette-0.39.1-py3-none-any.whl", hash = "sha256:0d31c90dacae588734e91b98cb4469fd37848ef23d2dd34355c5542bc827c02a"},
+    {file = "starlette-0.39.1.tar.gz", hash = "sha256:33c5a94f64d3ab2c799b2715b45f254a3752f229d334f1562a3aaf78c23eab95"},
 ]
 
 [[package]]
@@ -3030,7 +3030,7 @@ files = [
 
 [[package]]
 name = "uvicorn"
-version = "0.30.6"
+version = "0.31.0"
 requires_python = ">=3.8"
 summary = "The lightning-fast ASGI server."
 groups = ["default"]
@@ -3040,8 +3040,8 @@ dependencies = [
     "typing-extensions>=4.0; python_version < \"3.11\"",
 ]
 files = [
-    {file = "uvicorn-0.30.6-py3-none-any.whl", hash = "sha256:65fd46fe3fda5bdc1b03b94eb634923ff18cd35b2f084813ea79d1f103f711b5"},
-    {file = "uvicorn-0.30.6.tar.gz", hash = "sha256:4b15decdda1e72be08209e860a1e10e92439ad5b97cf44cc945fcbee66fc5788"},
+    {file = "uvicorn-0.31.0-py3-none-any.whl", hash = "sha256:cac7be4dd4d891c363cd942160a7b02e69150dcbc7a36be04d5f4af4b17c8ced"},
+    {file = "uvicorn-0.31.0.tar.gz", hash = "sha256:13bc21373d103859f68fe739608e2eb054a816dea79189bc3ca08ea89a275906"},
 ]
 
 [[package]]

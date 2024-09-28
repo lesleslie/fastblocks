@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.6.7"
+version = "0.6.8"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -42,13 +42,13 @@ dependencies = [
     "starception>=1.2.1",
     "pydantic>=2.9.2",
     "pyfiglet>=1.0.2",
-    "starlette>=0.39.0",
-    "uvicorn>=0.30.6",
+    "starlette>=0.39.1",
+    "uvicorn>=0.31.0",
     "htmlmin>=0.1.12",
     "jsmin>=3.0.1",
     "starlette-async-jinja>=1.7.10",
-    "secure>=0.3.0",
-    "acb[cache,requests,secret,sql,storage]>=0.6.30",
+    "secure>=1.0.0",
+    "acb[cache,requests,secret,sql,storage]>=0.6.31",
 ]
 
 [project.optional-dependencies]
@@ -60,7 +60,7 @@ admin = [
 ]
 monitoring = [
     "sentry-sdk[starlette]>=2.14.0",
-    "logfire[starlette]>=0.53.0",
+    "logfire[starlette]>=0.55.0",
 ]
 
 [project.license]
@@ -122,12 +122,12 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
+    "pyfiglet",
+    "pdm-bump",
+    "autotyping",
+    "pytest",
     "pyyaml",
     "pdm",
-    "pytest",
-    "pyfiglet",
-    "autotyping",
-    "pdm-bump",
     "pre-commit",
 ]
 
@@ -139,13 +139,13 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B301",
     "B602",
     "B404",
+    "B311",
     "B603",
     "B607",
+    "B301",
     "B403",
-    "B311",
 ]
 
 [tool.pyright]
