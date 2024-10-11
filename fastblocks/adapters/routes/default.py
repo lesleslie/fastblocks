@@ -86,7 +86,8 @@ class Routes(RoutesBase):
 
     @staticmethod
     async def robots(request: Request) -> Response:
-        return PlainTextResponse("", 200)
+        txt = "User-agent: *\nDisallow: /dashboard/\nDisallow: /blocks/"
+        return PlainTextResponse(txt, 200)
 
     @depends.inject
     async def init(self, templates: Templates = depends()) -> None:  # type: ignore
