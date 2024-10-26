@@ -28,7 +28,7 @@ class AuthBase(AdapterBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def __init__(self, secret_key: SecretStr, user_model: t.Any) -> None:
+    def __init__(self, secret_key: SecretStr, user_model: t.Any) -> None:  # noqa: F841
         raise NotImplementedError
 
     @abstractmethod
@@ -46,11 +46,11 @@ class AuthBase(AdapterBase, ABC):
 
 class AuthBaseUser(ABC):
     @abstractmethod
-    def has_role(self, role: str) -> str:
+    def has_role(self, role: str) -> str:  # noqa: F841
         raise NotImplementedError
 
     @abstractmethod
-    def set_role(self, role: str) -> str | bool | None:
+    def set_role(self, role: str) -> str | bool | None:  # noqa: F841
         raise NotImplementedError
 
     @property
