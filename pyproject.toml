@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.7.0"
+version = "0.7.1"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -8,7 +8,7 @@ authors = [
 maintainers = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 keywords = [
     "starlette",
     "htmx",
@@ -23,7 +23,7 @@ keywords = [
 ]
 classifiers = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
     "Operating System :: OS Independent",
@@ -42,13 +42,14 @@ dependencies = [
     "starception>=1.2.1",
     "pydantic>=2.9.2",
     "pyfiglet>=1.0.2",
-    "starlette>=0.41.0",
+    "starlette>=0.41.2",
     "uvicorn>=0.32.0",
-    "htmlmin>=0.1.12",
-    "jsmin>=3.0.1",
-    "starlette-async-jinja>=1.7.11",
+    "starlette-async-jinja>=1.8.0",
     "secure>=1.0.1",
-    "acb[cache,requests,secret,sql,storage]>=0.7.0",
+    "acb[cache,requests,secret,sql,storage]",
+    "minify-html>=0.15.0",
+    "rcssmin>=1.1.3",
+    "rjsmin>=1.2.3",
 ]
 
 [project.optional-dependencies]
@@ -56,24 +57,24 @@ sitemap = [
     "asgi-sitemaps>=1.0.0",
 ]
 admin = [
-    "sqladmin>=0.20.0",
+    "sqladmin>=0.20.1",
 ]
 monitoring = [
-    "sentry-sdk[starlette]>=2.17.0",
-    "logfire[starlette]>=1.3.0",
+    "sentry-sdk[starlette]>=2.18.0",
+    "logfire[starlette]>=2.1.2",
 ]
 
 [project.license]
 text = "BSD-3-Clause"
 
-[tool.pdm.dev-dependencies]
+[dependency-groups]
 dev = [
-    "crackerjack>=0.9.1",
+    "crackerjack>=0.10.4",
 ]
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
+target-version = "py313"
 fix = true
 show-fixes = true
 output-format = "full"
@@ -111,24 +112,21 @@ max-complexity = 12
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.black]
-target-version = [
-    "py312",
-]
-
 [tool.creosote]
 paths = [
     "fastblocks",
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pyyaml",
-    "pdm-bump",
-    "pyfiglet",
-    "autotyping",
     "pdm",
-    "pytest",
+    "pyfiglet",
+    "pdm-bump",
+    "tomli-w",
     "pre-commit",
+    "uv",
+    "pyyaml",
+    "autotyping",
+    "pytest",
 ]
 
 [tool.refurb]
@@ -139,13 +137,13 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B403",
-    "B404",
     "B607",
-    "B311",
-    "B603",
     "B602",
     "B301",
+    "B404",
+    "B603",
+    "B311",
+    "B403",
 ]
 
 [tool.pyright]
@@ -157,7 +155,7 @@ exclude = [
     "scratch",
 ]
 extraPaths = [
-    "__pypackages__/3.12/lib/",
+    ".venv/lib/python3.13/site-packages/",
 ]
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
@@ -167,7 +165,7 @@ reportUnknownMemberType = false
 reportUnknownVariableType = false
 reportUnknownArgumentType = false
 reportPrivateUsage = "warning"
-pythonVersion = "3.12"
+pythonVersion = "3.13"
 pythonPlatform = "Darwin"
 
 [tool.codespell]
@@ -180,6 +178,8 @@ min_confidence = 84
 paths = [
     "fastblocks",
 ]
+
+[tool.pdm]
 
 [build-system]
 requires = [
