@@ -35,23 +35,24 @@ async def get_from_cache(
 async def set_in_cache(
     key: str,
     value: bytes,
+    ttl: t.Optional[int] = None,
     cache: Cache = depends(),  # type: ignore
     logger: Logger = depends(),  # type: ignore
 ) -> None:
     try:
-        await cache.set(key, value, ttl=cache.ttl)
+        await cache.set(key, value, ttl=ttl)
     except Exception as e:
         logger.exception(f"Couldn't set {value} in key {key}, {e}")
 
 
-def cached(func: t.Any):
+def cached(func: t.Any, ttl: t.Optional[int] = None):
     async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
         key = await get_cache_key(func, args, kwargs)
         value = await get_from_cache(key)
         if value is not None:
             return value
         result = await func(*args, **kwargs)
-        await set_in_cache(key, result)
+        await set_in_cache(key, result, ttl=ttl)
         return result
 
     return wrapper
