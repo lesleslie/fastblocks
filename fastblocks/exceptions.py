@@ -5,10 +5,10 @@ from starlette.exceptions import HTTPException
 from starlette.responses import PlainTextResponse
 
 
-@depends.inject
 async def handle_exception(request: HtmxRequest, exc: HTTPException):
     responses = {404: "Content not found", 500: "Server error"}
     templates = depends.get(import_adapter("templates"))
+    exc.status_code = 500 if not exc.status_code else exc.status_code
     if request.scope["htmx"]:
         return PlainTextResponse(
             content=responses[exc.status_code], status_code=exc.status_code

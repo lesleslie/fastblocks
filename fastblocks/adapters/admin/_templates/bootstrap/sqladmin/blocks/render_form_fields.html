@@ -1,0 +1,12 @@
+
+[% if form.hidden_tag is defined %]
+    [[ form.hidden_tag() ]]
+[% else %]
+    [% for f in form if f.widget.input_type == 'hidden' %]
+        [[ f ]]
+    [% endfor %]
+[% endif %]
+
+[% for f in form if f.widget.input_type != 'hidden' %]
+    [[ render_block('render_field.html', f, kwargs) ]]
+[% endfor %]
