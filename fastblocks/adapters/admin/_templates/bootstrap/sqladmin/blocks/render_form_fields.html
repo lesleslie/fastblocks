@@ -8,5 +8,5 @@
 [% endif %]
 
 [% for f in form if f.widget.input_type != 'hidden' %]
-    [[ render_block('render_field.html', f, kwargs) ]]
+    [[ render_block('render_field.html', field=f, kwargs=kwargs) ]]
 [% endfor %]
