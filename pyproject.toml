@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.7.5"
+version = "0.7.6"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -117,15 +117,15 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "tomli-w",
-    "uv",
     "pyfiglet",
-    "pytest",
-    "pre-commit",
-    "autotyping",
     "pdm",
-    "pdm-bump",
     "pyyaml",
+    "pytest",
+    "pdm-bump",
+    "uv",
+    "tomli-w",
+    "autotyping",
+    "pre-commit",
 ]
 
 [tool.refurb]
@@ -136,13 +136,13 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B403",
-    "B602",
-    "B311",
-    "B607",
-    "B404",
     "B301",
+    "B602",
     "B603",
+    "B404",
+    "B403",
+    "B607",
+    "B311",
 ]
 
 [tool.pyright]
