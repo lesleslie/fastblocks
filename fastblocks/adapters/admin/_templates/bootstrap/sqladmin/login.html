@@ -1,0 +1,56 @@
+[% extends 'sqladmin/base.html' %]
+
+[% block head %]
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import {
+    getAuth,
+    signInWithPopup,
+    GoogleAuthProvider,
+    onAuthStateChanged,
+    signOut,
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-analytics.js";
+
+const firebaseConfig = {
+    apiKey: "[[ config.auth.api_key.get_secret_value() ]]",
+    authDomain: "[[ config.app.domain ]]",
+    databaseURL: "https://[[ config.app.project ]].firebaseio.com",
+    storageBucket: "[[ config.app.project ]].appspot.com",
+    projectId: "[[ config.app.project ]]",
+    messagingSenderId: "[[ config.auth.messaging_sender_id ]]",
+    appId: "[[ config.auth.app_id ]]",
+};
+
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+const auth = getAuth();
+auth.useDeviceLanguage();
+
+[# if (window.location.hostname === 'localhost') {
+  connectAuthEmulator(auth, 'http://127.0.0.1:8000');
+} #]
+
+onAuthStateChanged(auth, async function (user) {
+    if (user) {
+        console.log(`signed in as ${user.displayName} (${user.email})`);
+        user.getIdToken().then(function (token) {
+            document.cookie = "[[ config.auth.token_id ]]=" + token;
+        });
+        console.log(user.getIdToken());
+        window.location.replace("[[url_for('admin:index')]]");
+    } else {
+        signOut(auth);
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({prompt: 'select_account'});
+        provider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+        await signInWithPopup(auth, provider);
+    }
+}, function (error) {
+    signOut(auth);
+    console.log(error);
+    ('Unable to log in: ' + error)
+  });
+</script>
+[% endblock %]

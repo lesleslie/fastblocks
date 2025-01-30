@@ -1,8 +1,8 @@
 import typing as t
 from abc import ABC
 
-from acb import Adapter
-from acb.adapters import get_enabled_adapters, root_path
+from acb import Adapter, pkg_registry
+from acb.adapters import root_path
 from acb.config import AdapterBase, Config, Settings
 from acb.depends import depends
 from aiopath import AsyncPath
@@ -43,18 +43,15 @@ class TemplatesBase(AdapterBase, ABC):
 
     async def get_searchpaths(self, adapter: Adapter) -> list[AsyncPath]:
         searchpaths = []
-        for path in (
-            root_path / "templates" / adapter.category,
-            adapter.path.parent / "_templates",
-        ):
-            searchpaths.extend(self.get_searchpath(adapter, path))
-            for a in [
-                a
-                for a in get_enabled_adapters()
-                if a.category not in ("app", "admin")
-                and await (a.path.parent / "_templates").exists()
-            ]:
-                searchpaths.extend(self.get_searchpath(a, path))
+        searchpaths.extend(
+            self.get_searchpath(adapter, root_path / "templates" / adapter.category)
+        )
+        for path in [p.path for p in pkg_registry.get()[1:]]:  # type: ignore
+            searchpaths.extend(
+                self.get_searchpath(
+                    adapter, path / "adapters" / adapter.category / "_templates"
+                )
+            )
         return searchpaths
 
     @staticmethod

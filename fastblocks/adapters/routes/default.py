@@ -1,4 +1,3 @@
-import typing as t
 from importlib import import_module
 
 from acb.adapters import get_installed_adapters, import_adapter, root_path
@@ -13,7 +12,6 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
 from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
-from starlette_async_jinja import AsyncJinja2Templates
 from ._base import RoutesBase, RoutesBaseSettings
 
 Templates = import_adapter()
@@ -59,7 +57,6 @@ class Block(HTTPEndpoint):
 
 
 class Routes(RoutesBase):
-    templates: t.Optional[AsyncJinja2Templates] = None
     routes: list[Route | Router | Mount | Host | WebSocketRoute] = []
 
     async def gather_routes(self, path: AsyncPath) -> None:
@@ -90,7 +87,7 @@ class Routes(RoutesBase):
         return PlainTextResponse(txt, 200)
 
     @depends.inject
-    async def init(self, templates: Templates = depends()) -> None:  # type: ignore
+    async def init(self) -> None:  # type: ignore
         self.routes.extend(
             [
                 Route("/favicon.ico", endpoint=self.favicon, methods=["GET"]),
