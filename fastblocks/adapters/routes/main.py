@@ -1,6 +1,6 @@
 from importlib import import_module
 
-from acb.adapters import get_installed_adapters, import_adapter, root_path
+from acb.adapters import get_enabled_adapters, import_adapter, root_path
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
@@ -62,20 +62,18 @@ class Routes(RoutesBase):
     async def gather_routes(self, path: AsyncPath) -> None:
         depth = -2
         if "adapters" in path.parts:
-            depth = -5
+            depth = -4
         module_path = ".".join(path.parts[depth:]).removesuffix(".py")
         module = import_module(module_path)
         module_routes = getattr(module, "routes", None)
         if module_routes and isinstance(module_routes, list):
-            self.routes.extend(module.routes)
-        else:
-            self.routes.extend(
-                [
-                    r
-                    for r in vars(module).items()
-                    if isinstance(r, Route | Router | Mount | Host | WebSocketRoute)
-                ]
-            )
+            self.routes = module.routes + self.routes
+        # else:
+        #     self.routes = [
+        #             r
+        #             for r in vars(module).items()
+        #             if isinstance(r, Route | Router | Mount | Host | WebSocketRoute)
+        #         ] + self.routes
 
     @staticmethod
     async def favicon(request: Request) -> Response:
@@ -97,10 +95,10 @@ class Routes(RoutesBase):
                 Route("/block/{block}", Block, methods=["GET"]),
             ]
         )
-        for adapter in get_installed_adapters():
-            _routes_path = adapter.path / "_routes.py"
-            if await _routes_path.exists():
-                await self.gather_routes(_routes_path)
+        for adapter in get_enabled_adapters():
+            routes_path = adapter.path.parent / "_routes.py"
+            if await routes_path.exists():
+                await self.gather_routes(routes_path)
         for _routes_path in base_routes_paths:
             if await _routes_path.exists():
                 await self.gather_routes(_routes_path)

@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.7.7"
+version = "0.7.8"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -39,11 +39,11 @@ dependencies = [
     "brotli-asgi>=1.4.0",
     "starlette-csrf>=3.0.0",
     "starception>=1.2.1",
-    "pydantic>=2.10.5",
+    "pydantic>=2.10.6",
     "pyfiglet>=1.0.2",
-    "starlette>=0.45.2",
+    "starlette>=0.45.3",
     "uvicorn>=0.34.0",
-    "starlette-async-jinja>=1.8.1",
+    "starlette-async-jinja>=1.8.2",
     "secure>=1.0.1",
     "acb[cache,requests,secret,sql,storage]",
     "minify-html>=0.15.0",
@@ -59,8 +59,8 @@ admin = [
     "sqladmin>=0.20.1",
 ]
 monitoring = [
-    "sentry-sdk[starlette]>=2.19.2",
-    "logfire[starlette]>=3.1.0",
+    "sentry-sdk[starlette]>=2.20.0",
+    "logfire[starlette]>=3.4.0",
 ]
 
 [project.license]
@@ -68,7 +68,7 @@ text = "BSD-3-Clause"
 
 [dependency-groups]
 dev = [
-    "crackerjack>=0.10.6",
+    "crackerjack>=0.10.7",
 ]
 
 [tool.ruff]
@@ -117,15 +117,15 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pre-commit",
+    "tomli-w",
     "pyfiglet",
-    "pytest",
     "autotyping",
+    "pre-commit",
+    "pdm-bump",
     "uv",
+    "pytest",
     "pdm",
     "pyyaml",
-    "pdm-bump",
-    "tomli-w",
 ]
 
 [tool.refurb]
@@ -136,12 +136,12 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B404",
-    "B607",
-    "B403",
-    "B603",
     "B311",
+    "B404",
+    "B603",
     "B602",
+    "B403",
+    "B607",
     "B301",
 ]
 

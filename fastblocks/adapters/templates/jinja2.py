@@ -83,8 +83,8 @@ class FileSystemLoader(AsyncBaseLoader):
     async def list_templates(self) -> list[str]:
         found = set()
         for searchpath in self.searchpath:  # type: ignore
-            paths = searchpath.rglob("*.html") + searchpath.rglob("*.css")
-            found.update([str(p) async for p in paths])
+            for ext in ("html", "css", "js"):
+                found.update([p async for p in searchpath.rglob(f"*.{ext}")])
         return sorted(found)
 
 
@@ -127,9 +127,7 @@ class CloudLoader(AsyncBaseLoader):
                 paths = await self.storage.templates.list(
                     Templates.get_storage_path(searchpath)
                 )
-                found.extend(
-                    [p for p in paths if p.endswith(".html") or p.endswith(".css")]
-                )
+                found.extend([p for p in paths if p.endswith(".html", ".css", ".js")])
         found.sort()
         return found
 
@@ -164,7 +162,7 @@ class RedisLoader(AsyncBaseLoader):
 
     async def list_templates(self) -> list[str]:
         found = []
-        for ext in ("html", "css"):
+        for ext in ("html", "css", "js"):
             found.extend([k async for k in self.cache.scan(f"*.{ext}")])
         found.sort()
         return found
