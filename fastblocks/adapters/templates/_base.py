@@ -29,17 +29,18 @@ class TemplatesBase(AdapterBase, ABC):
             getattr(self.config, adapter.category), "style", self.config.app.style
         )
         base_path = path / "base"
-        base_adapter_path = base_path / adapter.name
+        # base_adapter_path = base_path / adapter.name
+        # base_adapter_path = path / "base" / adapter.name
         style_path = path / style
         style_adapter_path = path / style / adapter.name
-        theme_path = style_path / "theme"
+        # theme_path = style_path / "theme"
         theme_adapter_path = style_adapter_path / "theme"
         return [
             theme_adapter_path,
-            theme_path,
+            # theme_path,
             style_adapter_path,
             style_path,
-            base_adapter_path,
+            # base_adapter_path,
             base_path,
             # path,
         ]

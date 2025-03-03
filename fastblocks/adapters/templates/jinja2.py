@@ -361,7 +361,7 @@ class Templates(TemplatesBase):
             self.logger.debug(f"{loader.__class__.__name__} initialized")
         for ext in self.app.env.extensions:
             self.logger.debug(f"{ext.split('.')[-1]} loaded")
-        if self.config.debug.templates and self.config.debug.cache:
+        if self.config.debug.templates:
             for namespace in ("templates", "_templates", "bccache"):
                 await cache.clear(namespace)
             self.logger.debug("Templates cache cleared")
