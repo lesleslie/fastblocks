@@ -1,5 +1,4 @@
 import typing as t
-from abc import ABC, abstractmethod
 from contextvars import ContextVar
 
 from acb.config import AdapterBase, Settings
@@ -13,7 +12,7 @@ class AuthBaseSettings(Settings):
     session_cookie: t.Optional[str] = None
 
 
-class AuthBase(AdapterBase, ABC):
+class AuthBase(AdapterBase):
     _current_user: ContextVar[t.Any] = ContextVar(
         "current_user", default=UnauthenticatedUser()
     )
@@ -23,53 +22,34 @@ class AuthBase(AdapterBase, ABC):
         return self._current_user.get()
 
     @staticmethod
-    @abstractmethod
-    async def authenticate(request: HtmxRequest) -> bool:
-        raise NotImplementedError
+    async def authenticate(request: HtmxRequest) -> bool: ...
 
-    @abstractmethod
     def __init__(self, secret_key: SecretStr, user_model: t.Any) -> None:  # noqa: F841
-        raise NotImplementedError
+        ...
 
-    @abstractmethod
-    async def init(self) -> None:
-        raise NotImplementedError
+    async def init(self) -> None: ...
 
-    @abstractmethod
-    async def login(self, request: HtmxRequest) -> bool:
-        raise NotImplementedError
+    async def login(self, request: HtmxRequest) -> bool: ...
 
-    @abstractmethod
-    async def logout(self, request: HtmxRequest) -> bool:
-        raise NotImplementedError
+    async def logout(self, request: HtmxRequest) -> bool: ...
 
 
-class AuthBaseUser(ABC):
-    @abstractmethod
+class AuthBaseUser(t.Protocol):
     def has_role(self, role: str) -> str:  # noqa: F841
-        raise NotImplementedError
+        ...
 
-    @abstractmethod
     def set_role(self, role: str) -> str | bool | None:  # noqa: F841
-        raise NotImplementedError
+        ...
 
     @property
-    @abstractmethod
-    def identity(self) -> UUID4 | str | int:
-        raise NotImplementedError
+    def identity(self) -> UUID4 | str | int: ...
 
     @property
-    @abstractmethod
-    def display_name(self) -> str:
-        raise NotImplementedError
+    def display_name(self) -> str: ...
 
     @property
-    @abstractmethod
-    def email(self) -> EmailStr:
-        raise NotImplementedError
+    def email(self) -> EmailStr: ...
 
-    @abstractmethod
     def is_authenticated(
         self, request: t.Optional[HtmxRequest] = None, config: t.Any = None
-    ) -> bool | int | str:
-        raise NotImplementedError
+    ) -> bool | int | str: ...

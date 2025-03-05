@@ -1,5 +1,4 @@
 import typing as t
-from abc import ABC
 
 from acb import Adapter, pkg_registry
 from acb.adapters import get_enabled_adapters, root_path
@@ -17,7 +16,7 @@ class TemplatesBaseSettings(Settings):
         self.cache_timeout = self.cache_timeout if config.deployed else 1
 
 
-class TemplatesBase(AdapterBase, ABC):
+class TemplatesBase(AdapterBase):
     app: t.Optional[t.Any] = None
     admin: t.Optional[t.Any] = None
     app_searchpaths: t.Optional[list[AsyncPath]] = None
