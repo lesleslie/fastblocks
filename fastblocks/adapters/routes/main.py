@@ -24,7 +24,7 @@ class RoutesSettings(RoutesBaseSettings): ...
 
 class Index(HTTPEndpoint):
     config: Config = depends()
-    templates: Templates = depends()  # type: ignore
+    templates: Templates = depends()
 
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)
@@ -45,7 +45,7 @@ class Index(HTTPEndpoint):
 
 
 class Block(HTTPEndpoint):
-    templates: Templates = depends()  # type: ignore
+    templates: Templates = depends()
 
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)

@@ -27,7 +27,7 @@ class Admin(AdminBase, SqlAdmin):  # type: ignore
     @t.override
     def init_templating_engine(
         self,
-        templates: Templates = depends(),  # type: ignore
+        templates: Templates = depends(),
     ) -> AsyncJinja2Templates:
         admin_templates = templates.admin
         admin_templates_env_globals = dict(

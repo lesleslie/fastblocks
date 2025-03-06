@@ -5,7 +5,7 @@ from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
 
-Cache, Logger = import_adapter()
+Cache, Logger = import_adapter()  # type: ignore
 
 
 @depends.inject
@@ -21,8 +21,8 @@ async def get_cache_key(
 @depends.inject
 async def get_from_cache(
     key: str,
-    cache: Cache = depends(),  # type: ignore
-    logger: Logger = depends(),  # type: ignore
+    cache: Cache = depends(),
+    logger: Logger = depends(),
 ) -> bytes | None:
     try:
         return await cache.get(key)
@@ -36,8 +36,8 @@ async def set_in_cache(
     key: str,
     value: bytes,
     ttl: t.Optional[int] = None,
-    cache: Cache = depends(),  # type: ignore
-    logger: Logger = depends(),  # type: ignore
+    cache: Cache = depends(),
+    logger: Logger = depends(),
 ) -> None:
     try:
         await cache.set(key, value, ttl=ttl)

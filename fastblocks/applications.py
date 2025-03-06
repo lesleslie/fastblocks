@@ -74,7 +74,7 @@ class FastBlocks(Starlette):
     @depends.inject
     def build_middleware_stack(
         self,
-        logger: Logger = depends(),  # type: ignore
+        logger: Logger = depends(),
     ) -> ASGIApp:
         error_handler = None
         exception_handlers: dict[

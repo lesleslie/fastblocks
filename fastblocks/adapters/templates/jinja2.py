@@ -21,13 +21,13 @@ from jinja2_async_environment.loaders import AsyncBaseLoader
 from starlette_async_jinja import AsyncJinja2Templates
 from ._base import TemplatesBase, TemplatesBaseSettings
 
-Logger, Cache, Storage, Models = import_adapter()
+Cache, Storage, Models = import_adapter()  # type: ignore
 
 
 class FileSystemLoader(AsyncBaseLoader):
     config: Config = depends()
-    cache: Cache = depends()  # type: ignore
-    storage: Storage = depends()  # type: ignore
+    cache: Cache = depends()
+    storage: Storage = depends()
 
     async def get_source(
         self, template: AsyncPath
@@ -89,8 +89,8 @@ class FileSystemLoader(AsyncBaseLoader):
 
 
 class CloudLoader(AsyncBaseLoader):
-    cache: Cache = depends()  # type: ignore
-    storage: Storage = depends()  # type: ignore
+    cache: Cache = depends()
+    storage: Storage = depends()
 
     async def get_source(
         self, template: AsyncPath
@@ -133,8 +133,8 @@ class CloudLoader(AsyncBaseLoader):
 
 
 class RedisLoader(AsyncBaseLoader):
-    cache: Cache = depends()  # type: ignore
-    storage: Storage = depends()  # type: ignore
+    cache: Cache = depends()
+    storage: Storage = depends()
 
     async def get_source(
         self, template: AsyncPath
@@ -170,7 +170,7 @@ class RedisLoader(AsyncBaseLoader):
 
 class PackageLoader(AsyncBaseLoader):
     config: Config = depends()
-    cache: Cache = depends()  # type: ignore
+    cache: Cache = depends()
 
     def __init__(
         self, package_name: str, path: str = "templates", adapter: str = "admin"
@@ -286,7 +286,7 @@ class TemplatesSettings(TemplatesBaseSettings):
     @depends.inject
     def __init__(
         self,
-        models: Models = depends(),  # type: ignore
+        models: Models = depends(),
         **data: t.Any,  # type: ignore
     ) -> None:
         super().__init__(**data)
@@ -321,7 +321,7 @@ class Templates(TemplatesBase):
     async def init_envs(
         self,
         template_paths: list[AsyncPath],
-        cache: Cache = depends(),  # type: ignore
+        cache: Cache = depends(),
     ) -> AsyncJinja2Templates:
         _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
         _imported_extensions = [
@@ -354,7 +354,7 @@ class Templates(TemplatesBase):
         return templates
 
     @depends.inject
-    async def init(self, cache: Cache = depends()) -> None:  # type: ignore
+    async def init(self, cache: Cache = depends()) -> None:
         self.app_searchpaths = await self.get_searchpaths(self.enabled_app)
         self.app = await self.init_envs(self.app_searchpaths)
         for loader in self.app.env.loader.loaders:

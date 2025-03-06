@@ -52,7 +52,7 @@ class SecureHeadersMiddleware:
         scope: Scope,
         receive: Receive,
         send: Send,
-        logger: Logger = depends(),  # type: ignore
+        logger: Logger = depends(),
     ) -> None:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
@@ -77,7 +77,7 @@ class ProcessTimeHeaderMiddleware:
         scope: Scope,
         receive: Receive,
         send: Send,
-        logger: Logger = depends(),  # type: ignore
+        logger: Logger = depends(),
     ) -> None:
         start_time = perf_counter()
         try:
@@ -91,7 +91,7 @@ class ProcessTimeHeaderMiddleware:
 
 
 @depends.inject
-def middlewares(config: Config = depends()) -> list[Middleware]:  # type: ignore
+def middlewares(config: Config = depends()) -> list[Middleware]:
     middleware = [
         Middleware(ProcessTimeHeaderMiddleware),  # type: ignore
         Middleware(

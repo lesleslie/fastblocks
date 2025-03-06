@@ -38,8 +38,8 @@ class App(FastBlocks, AppBase):
     async def lifespan(
         self,
         app: FastBlocks,
-        cache: Cache = depends(),  # type: ignore
-        auth: Auth = depends(),  # type: ignore
+        cache: Cache = depends(),
+        auth: Auth = depends(),
     ) -> t.AsyncGenerator[None, None]:
         if (
             not self.config.deployed
