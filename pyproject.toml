@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.7.11"
+version = "0.7.12"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -41,14 +41,14 @@ dependencies = [
     "starception>=1.2.1",
     "pydantic>=2.10.6",
     "pyfiglet>=1.0.2",
-    "starlette>=0.45.3",
+    "starlette>=0.46.0",
     "uvicorn>=0.34.0",
-    "starlette-async-jinja>=1.8.2",
+    "starlette-async-jinja>=1.8.3",
     "secure>=1.0.1",
     "acb[cache,requests,secret,sql,storage]",
     "minify-html>=0.15.0",
-    "rcssmin>=1.2.0",
-    "rjsmin>=1.2.3",
+    "rcssmin>=1.2.1",
+    "rjsmin>=1.2.4",
 ]
 
 [project.optional-dependencies]
@@ -59,8 +59,11 @@ admin = [
     "sqladmin>=0.20.1",
 ]
 monitoring = [
-    "sentry-sdk[starlette]>=2.20.0",
-    "logfire[starlette]>=3.4.0",
+    "sentry-sdk[starlette]>=2.22.0",
+    "logfire[starlette]>=3.7.1",
+]
+dev = [
+    "crackerjack>=0.11.3",
 ]
 
 [project.license]
@@ -113,19 +116,19 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-asyncio",
     "google-crc32c",
-    "tomli-w",
-    "pytest-mock",
-    "pre-commit",
-    "pytest",
-    "pdm",
-    "uv",
-    "pytest-cov",
-    "pyfiglet",
-    "autotyping",
-    "pdm-bump",
     "pyyaml",
+    "pytest-mock",
+    "pytest-cov",
+    "pytest-asyncio",
+    "pdm-bump",
+    "autotyping",
+    "pytest",
+    "uv",
+    "tomli-w",
+    "pre-commit",
+    "pdm",
+    "pyfiglet",
 ]
 
 [tool.refurb]
@@ -136,15 +139,15 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B404",
-    "B704",
-    "B602",
     "B403",
-    "B301",
-    "B603",
     "B607",
-    "B101",
+    "B602",
     "B311",
+    "B101",
+    "B704",
+    "B603",
+    "B404",
+    "B301",
 ]
 
 [tool.pyright]
@@ -186,11 +189,6 @@ paths = [
 [tool.pytest.ini_options]
 addopts = "--cov=crackerjack"
 asyncio_default_fixture_loop_scope = "function"
-
-[tool.pdm.dev-dependencies]
-dev = [
-    "-e file:///${PROJECT_ROOT}/../crackerjack#egg=crackerjack",
-]
 
 [build-system]
 requires = [
