@@ -3,7 +3,7 @@ import typing as t
 from platform import system
 
 from acb import register_pkg
-from acb.adapters import get_installed_adapters, import_adapter
+from acb.adapters import get_installed_adapter, import_adapter
 from acb.adapters.logger.loguru import InterceptHandler
 from acb.config import Config
 from acb.depends import depends
@@ -15,6 +15,7 @@ from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
 from starlette.responses import Response
 from starlette.types import ASGIApp, ExceptionHandler, Lifespan
+
 from .exceptions import handle_exception
 from .middleware import middlewares
 
@@ -66,7 +67,7 @@ class FastBlocks(Starlette):
             _logger = logging.getLogger(_logger)
             _logger.handlers.clear()
             _logger.handlers = [InterceptHandler()]
-        if "logfire" in [a.name for a in get_installed_adapters()]:
+        if get_installed_adapter("logfire"):
             from logfire import instrument_starlette
 
             instrument_starlette(self)

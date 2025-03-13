@@ -6,6 +6,7 @@ from acb.adapters import get_adapter, import_adapter
 from acb.config import Config
 from acb.depends import depends
 from fastblocks.applications import FastBlocks
+
 from ._base import AppBase, AppBaseSettings
 
 main_start = perf_counter()

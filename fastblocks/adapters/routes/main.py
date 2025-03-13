@@ -1,6 +1,6 @@
 from importlib import import_module
 
-from acb.adapters import get_enabled_adapters, import_adapter, root_path
+from acb.adapters import get_adapters, get_installed_adapter, import_adapter, root_path
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
@@ -12,9 +12,10 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
 from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
+
 from ._base import RoutesBase, RoutesBaseSettings
 
-Templates = import_adapter()
+Templates, Sitemap = import_adapter()  # type: ignore
 
 base_routes_paths = [AsyncPath(root_path / "routes.py")]
 
@@ -85,7 +86,7 @@ class Routes(RoutesBase):
         return PlainTextResponse(txt, 200)
 
     @depends.inject
-    async def init(self) -> None:  # type: ignore
+    async def init(self, sitemap: Sitemap = depends()) -> None:  # type: ignore
         self.routes.extend(
             [
                 Route("/favicon.ico", endpoint=self.favicon, methods=["GET"]),
@@ -95,13 +96,16 @@ class Routes(RoutesBase):
                 Route("/block/{block}", Block, methods=["GET"]),
             ]
         )
-        for adapter in get_enabled_adapters():
+        for adapter in get_adapters():
             routes_path = adapter.path.parent / "_routes.py"
             if await routes_path.exists():
                 await self.gather_routes(routes_path)
         for _routes_path in base_routes_paths:
             if await _routes_path.exists():
                 await self.gather_routes(_routes_path)
+        if get_installed_adapter("sitemap"):
+            self.routes.append(Route("/sitemap.xml", sitemap))
+
         debug(self.routes)
 
 

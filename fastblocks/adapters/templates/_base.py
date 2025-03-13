@@ -1,7 +1,7 @@
 import typing as t
 
 from acb import Adapter, pkg_registry
-from acb.adapters import get_enabled_adapters, root_path
+from acb.adapters import get_adapters, root_path
 from acb.config import AdapterBase, Config, Settings
 from acb.depends import depends
 from aiopath import AsyncPath
@@ -16,13 +16,21 @@ class TemplatesBaseSettings(Settings):
         self.cache_timeout = self.cache_timeout if config.deployed else 1
 
 
+class TemplatesProtocol(t.Protocol):
+    def get_searchpath(self, adapter: Adapter, path: AsyncPath) -> None: ...
+    async def get_searchpaths(self, adapter: Adapter) -> list[AsyncPath]: ...
+    @staticmethod
+    def get_storage_path(path: AsyncPath) -> AsyncPath: ...
+    @staticmethod
+    def get_cache_key(path: AsyncPath) -> str: ...
+
+
 class TemplatesBase(AdapterBase):
     app: t.Optional[t.Any] = None
     admin: t.Optional[t.Any] = None
     app_searchpaths: t.Optional[list[AsyncPath]] = None
     admin_searchpaths: t.Optional[list[AsyncPath]] = None
 
-    @depends.inject
     def get_searchpath(self, adapter: Adapter, path: AsyncPath) -> list[AsyncPath]:
         style = getattr(
             getattr(self.config, adapter.category), "style", self.config.app.style
@@ -52,7 +60,7 @@ class TemplatesBase(AdapterBase):
         if adapter.category == "app":
             for a in [
                 a
-                for a in get_enabled_adapters()
+                for a in get_adapters()
                 if a.category not in ("app", "admin", "secret")
             ]:
                 if await (a.path.parent / "_templates").exists():
