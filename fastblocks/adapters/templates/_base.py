@@ -32,9 +32,7 @@ class TemplatesBase(AdapterBase):
     admin_searchpaths: t.Optional[list[AsyncPath]] = None
 
     def get_searchpath(self, adapter: Adapter, path: AsyncPath) -> list[AsyncPath]:
-        style = getattr(
-            getattr(self.config, adapter.category), "style", self.config.app.style
-        )
+        style = self.config.app.style
         base_path = path / "base"
         # base_adapter_path = base_path / adapter.name
         # base_adapter_path = path / "base" / adapter.name

@@ -11,10 +11,7 @@ from ._base import AppBase, AppBaseSettings
 
 main_start = perf_counter()
 
-Logger = import_adapter()
-Cache = import_adapter()
-Auth = import_adapter()
-Models = import_adapter()
+Auth, Monitoring, Storage, Sql = import_adapter()  # type: ignore
 
 
 class AppSettings(AppBaseSettings):
@@ -39,16 +36,8 @@ class App(FastBlocks, AppBase):
     async def lifespan(
         self,
         app: FastBlocks,
-        cache: Cache = depends(),
         auth: Auth = depends(),
     ) -> t.AsyncGenerator[None, None]:
-        if (
-            not self.config.deployed
-            and self.config.debug.cache
-            and not self.config.debug.production
-        ):
-            await cache.delete_match("*")
-
         if get_adapter("admin").enabled:
             admin = depends.get(import_adapter("admin"))
             admin.__init__(
@@ -76,8 +65,8 @@ class App(FastBlocks, AppBase):
         main_start_time = perf_counter() - main_start
         self.logger.warning(f"App started in {main_start_time} s")
         yield
-        await cache.close()
-        self.logger.error("Application shut down")
+        self.logger.critical("Application shut down")
+        await self.logger.complete()
 
 
 depends.set(App)

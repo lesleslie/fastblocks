@@ -398,11 +398,10 @@ class Templates(TemplatesBase):
         env_configs = dict(
             extensions=_extensions,
             bytecode_cache=bytecode_cache,
-            context_processors=context_processors,
             enable_async=True,
         )
         templates = AsyncJinja2Templates(
-            AsyncPath("templates"), context_processors=None, **env_configs
+            AsyncPath("templates"), context_processors=context_processors, **env_configs
         )
         loader = self.get_loader(template_paths)
         if loader:
