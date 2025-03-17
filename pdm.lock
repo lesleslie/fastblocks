@@ -12,7 +12,7 @@ requires_python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.10.3"
+version = "0.10.4"
 summary = ""
 dependencies = [
     "aioconsole",
@@ -38,71 +38,71 @@ dependencies = [
     "typer",
 ]
 files = [
-    {file = "acb-0.10.3-py3-none-any.whl", hash = "sha256:fa65c78bc52e1f39dcbbbaf76b1c26912a5a085857a791e55955ed87862c187f"},
-    {file = "acb-0.10.3.tar.gz", hash = "sha256:478da3f69bc3fc4aad6e04f615c98dd29395680983fb333e8c7b7b6010d961fd"},
+    {file = "acb-0.10.4-py3-none-any.whl", hash = "sha256:445386eb6a4ad465067469f4f36381fbcc14e364fbb7799a762a9bc21c06cf3b"},
+    {file = "acb-0.10.4.tar.gz", hash = "sha256:b1c1f5e941c2fb408ab707ee0d75e98743645f209547ca9c03601dde652d25a7"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.10.3"
+version = "0.10.4"
 extras = ["cache"]
 summary = ""
 dependencies = [
-    "acb==0.10.3",
+    "acb==0.10.4",
     "aiocache",
     "coredis",
     "logfire",
 ]
 files = [
-    {file = "acb-0.10.3-py3-none-any.whl", hash = "sha256:fa65c78bc52e1f39dcbbbaf76b1c26912a5a085857a791e55955ed87862c187f"},
-    {file = "acb-0.10.3.tar.gz", hash = "sha256:478da3f69bc3fc4aad6e04f615c98dd29395680983fb333e8c7b7b6010d961fd"},
+    {file = "acb-0.10.4-py3-none-any.whl", hash = "sha256:445386eb6a4ad465067469f4f36381fbcc14e364fbb7799a762a9bc21c06cf3b"},
+    {file = "acb-0.10.4.tar.gz", hash = "sha256:b1c1f5e941c2fb408ab707ee0d75e98743645f209547ca9c03601dde652d25a7"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.10.3"
+version = "0.10.4"
 extras = ["requests"]
 summary = ""
 dependencies = [
-    "acb==0.10.3",
+    "acb==0.10.4",
     "hishel",
     "httpx",
     "logfire",
     "sentry-sdk",
 ]
 files = [
-    {file = "acb-0.10.3-py3-none-any.whl", hash = "sha256:fa65c78bc52e1f39dcbbbaf76b1c26912a5a085857a791e55955ed87862c187f"},
-    {file = "acb-0.10.3.tar.gz", hash = "sha256:478da3f69bc3fc4aad6e04f615c98dd29395680983fb333e8c7b7b6010d961fd"},
+    {file = "acb-0.10.4-py3-none-any.whl", hash = "sha256:445386eb6a4ad465067469f4f36381fbcc14e364fbb7799a762a9bc21c06cf3b"},
+    {file = "acb-0.10.4.tar.gz", hash = "sha256:b1c1f5e941c2fb408ab707ee0d75e98743645f209547ca9c03601dde652d25a7"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.10.3"
+version = "0.10.4"
 extras = ["secret"]
 summary = ""
 dependencies = [
-    "acb==0.10.3",
+    "acb==0.10.4",
     "google-cloud-secret-manager",
 ]
 files = [
-    {file = "acb-0.10.3-py3-none-any.whl", hash = "sha256:fa65c78bc52e1f39dcbbbaf76b1c26912a5a085857a791e55955ed87862c187f"},
-    {file = "acb-0.10.3.tar.gz", hash = "sha256:478da3f69bc3fc4aad6e04f615c98dd29395680983fb333e8c7b7b6010d961fd"},
+    {file = "acb-0.10.4-py3-none-any.whl", hash = "sha256:445386eb6a4ad465067469f4f36381fbcc14e364fbb7799a762a9bc21c06cf3b"},
+    {file = "acb-0.10.4.tar.gz", hash = "sha256:b1c1f5e941c2fb408ab707ee0d75e98743645f209547ca9c03601dde652d25a7"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.10.3"
+version = "0.10.4"
 extras = ["storage"]
 summary = ""
 dependencies = [
-    "acb==0.10.3",
+    "acb==0.10.4",
     "adlfs",
     "gcsfs",
     "s3fs",
 ]
 files = [
-    {file = "acb-0.10.3-py3-none-any.whl", hash = "sha256:fa65c78bc52e1f39dcbbbaf76b1c26912a5a085857a791e55955ed87862c187f"},
-    {file = "acb-0.10.3.tar.gz", hash = "sha256:478da3f69bc3fc4aad6e04f615c98dd29395680983fb333e8c7b7b6010d961fd"},
+    {file = "acb-0.10.4-py3-none-any.whl", hash = "sha256:445386eb6a4ad465067469f4f36381fbcc14e364fbb7799a762a9bc21c06cf3b"},
+    {file = "acb-0.10.4.tar.gz", hash = "sha256:b1c1f5e941c2fb408ab707ee0d75e98743645f209547ca9c03601dde652d25a7"},
 ]
 
 [[package]]
