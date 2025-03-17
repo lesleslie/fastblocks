@@ -35,7 +35,6 @@ class FileSystemLoader(AsyncBaseLoader):
         path: t.Optional[AsyncPath] = None
         for searchpath in self.searchpath:
             path = searchpath / template
-            debug(path)
             if await path.is_file():
                 break
 
@@ -43,6 +42,7 @@ class FileSystemLoader(AsyncBaseLoader):
             raise TemplateNotFound(str(template))
 
         storage_path = Templates.get_storage_path(path)
+        debug(path)
         fs_exists = await path.exists()
         storage_exists = await self.storage.templates.exists(storage_path)
         debug(fs_exists)
@@ -55,32 +55,31 @@ class FileSystemLoader(AsyncBaseLoader):
             local_stat = await path.stat()
             local_mtime = int(local_stat.st_mtime)
             local_size = local_stat.st_size
-            cloud_stat = await self.storage.templates.stat(storage_path)
-            cloud_mtime = int(round(cloud_stat.get("mtime").timestamp()))
-            cloud_size = cloud_stat.get("size")
-            debug(local_mtime, cloud_mtime)
-            debug(local_size, cloud_size)
-            if local_mtime < cloud_mtime and local_size != cloud_size:
+            storage_stat = await self.storage.templates.stat(storage_path)
+            debug(storage_stat)
+            # storage_mtime = int(round(storage_stat.get("mtime").timestamp()))
+            storage_mtime = int(round(storage_stat.get("mtime")))
+            storage_size = storage_stat.get("size")
+            debug(local_mtime, storage_mtime)
+            debug(local_size, storage_size)
+            if local_mtime < storage_mtime and local_size != storage_size:
                 resp = await self.storage.templates.open(storage_path)
                 await path.write_bytes(resp)
             else:
                 resp = await path.read_bytes()
-                if local_size != cloud_size:
+                if local_size != storage_size:
                     await self.storage.templates.write(storage_path, resp)
         else:
             try:
                 resp = await path.read_bytes()
-                if resp and not storage_exists:
-                    await self.storage.templates.write(storage_path, resp)
+                await self.storage.templates.write(storage_path, resp)
             except FileNotFoundError:
                 raise TemplateNotFound(path.name)
 
         await self.cache.set(Templates.get_cache_key(storage_path), resp)
 
-        path_final = path  # Create a final variable for the closure
-
         async def uptodate() -> bool:
-            return int((await path_final.stat()).st_mtime) == local_mtime
+            return int((await path.stat()).st_mtime) == local_mtime
 
         return resp.decode(), str(storage_path), uptodate
 
@@ -92,14 +91,14 @@ class FileSystemLoader(AsyncBaseLoader):
         return sorted(found)
 
 
-class CloudLoader(AsyncBaseLoader):
+class StorageLoader(AsyncBaseLoader):
     cache: Cache = depends()
     storage: Storage = depends()
 
     async def get_source_async(
         self, template: str | AsyncPath
     ) -> tuple[str, str, t.Callable[[], t.Awaitable[bool]]]:
-        debug("Cloud Loader")
+        debug("Storage Loader")
         path: t.Optional[AsyncPath] = None
         storage_path: t.Optional[AsyncPath] = None
 
@@ -119,13 +118,11 @@ class CloudLoader(AsyncBaseLoader):
             local_stat = await self.storage.templates.stat(storage_path)
             local_mtime = int(round(local_stat.get("mtime").timestamp()))
 
-            storage_path_final = storage_path  # Create a final variable for the closure
-
             async def uptodate() -> bool:
                 debug("cloud uptodate")
                 debug(local_mtime)
-                cloud_stat = await self.storage.templates.stat(storage_path_final)
-                return int(round(cloud_stat.get("mtime").timestamp())) == local_mtime
+                storage_stat = await self.storage.templates.stat(storage_path)
+                return int(round(storage_stat.get("mtime").timestamp())) == local_mtime
 
             return resp.decode(), str(storage_path), uptodate
         except (FileNotFoundError, AttributeError):
@@ -245,13 +242,8 @@ class PackageLoader(AsyncBaseLoader):
         source = await path.read_bytes()
         mtime = (await path.stat()).st_mtime
 
-        path_final = path  # Create a final variable for the closure
-
         async def uptodate() -> bool:
-            return (
-                await path_final.is_file()
-                and (await path_final.stat()).st_mtime == mtime
-            )
+            return await path.is_file() and (await path.stat()).st_mtime == mtime
 
         replace = [("{{", "[["), ("}}", "]]"), ("{%", "[%"), ("%}", "%]")]
         if self.config.deployed:
@@ -345,7 +337,7 @@ class Templates(TemplatesBase):
 
         loaders: list[AsyncBaseLoader] = [
             RedisLoader(searchpaths),
-            CloudLoader(searchpaths),
+            StorageLoader(searchpaths),
         ]
 
         debug(searchpaths)
