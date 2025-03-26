@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.8.4"
+version = "0.8.5"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -45,7 +45,7 @@ dependencies = [
     "uvicorn>=0.34.0",
     "starlette-async-jinja>=1.9.5",
     "secure>=1.0.1",
-    "minify-html>=0.15.0",
+    "minify-html>=0.16.4",
     "rcssmin>=1.2.1",
     "rjsmin>=1.2.4",
     "acb[cache,requests,secret,storage]",
@@ -63,7 +63,7 @@ monitoring = [
     "logfire[starlette]>=3.7.1",
 ]
 dev = [
-    "crackerjack>=0.14.3",
+    "crackerjack>=0.14.7",
 ]
 
 [project.license]
@@ -115,19 +115,19 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-asyncio",
-    "pyfiglet",
-    "autotyping",
-    "pre-commit",
-    "pdm-bump",
-    "tomli-w",
+    "pyyaml",
     "pytest-cov",
+    "pdm-bump",
+    "google-crc32c",
+    "pyfiglet",
+    "tomli-w",
+    "pre-commit",
+    "autotyping",
     "uv",
     "pytest-mock",
     "pdm",
     "pytest",
-    "pyyaml",
-    "google-crc32c",
+    "pytest-asyncio",
 ]
 
 [tool.refurb]
@@ -138,13 +138,13 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B404",
-    "B607",
-    "B603",
-    "B704",
     "B403",
-    "B301",
+    "B603",
+    "B404",
+    "B704",
+    "B607",
     "B311",
+    "B301",
     "B602",
     "B101",
 ]
@@ -191,6 +191,51 @@ ignore_names = [
 [tool.pytest.ini_options]
 addopts = "--cov=fastblocks"
 asyncio_default_fixture_loop_scope = "function"
+python_files = [
+    "test_*.py",
+    "*_test.py",
+]
+asyncio_mode = "auto"
+testpaths = [
+    "tests",
+    "fastblocks",
+]
+python_classes = [
+    "Test*",
+]
+python_functions = [
+    "test_*",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+    "fastblocks",
+]
+omit = [
+    "*/tests/*",
+    "*/site-packages/*",
+    "*/__pycache__/*",
+    "*/__init__.py",
+    "*/_version.py",
+    "*/conftest.py",
+    "*/test_*.py",
+    "*/_test.py",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError",
+    "except ImportError",
+    "def __str__",
+    "@abstractmethod",
+]
+ignore_errors = false
 
 [build-system]
 requires = [

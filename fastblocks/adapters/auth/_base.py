@@ -8,9 +8,7 @@ from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import UnauthenticatedUser
 
 
-class AuthBaseSettings(Settings):
-    token_id: t.Optional[str] = None
-    session_cookie: t.Optional[str] = None
+class AuthBaseSettings(Settings): ...
 
 
 class AuthBaseUser(t.Protocol):
@@ -46,12 +44,13 @@ class AuthBase(AdapterBase):
         "current_user", default=UnauthenticatedUser()
     )
 
-    def get_token(self) -> str:
-        return f"_ss_{b64encode(self.config.app.name.encode()).decode().rstrip('=')}"
-
     @property
     def current_user(self) -> t.Any:
         return self._current_user.get()
+
+    @property
+    def get_token(self) -> str:
+        return f"_fb_{b64encode(self.config.app.name.encode()).decode().rstrip('=')}"
 
     @staticmethod
     async def authenticate(request: HtmxRequest) -> bool: ...

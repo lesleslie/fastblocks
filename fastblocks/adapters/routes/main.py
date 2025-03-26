@@ -15,7 +15,7 @@ from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 
 from ._base import RoutesBase, RoutesBaseSettings
 
-Sitemap, Templates = import_adapter()  # type: ignore
+Templates = import_adapter()  # type: ignore
 
 base_routes_path = AsyncPath(root_path / "routes.py")
 
@@ -80,7 +80,7 @@ class Routes(RoutesBase):
         return PlainTextResponse(txt, 200)
 
     @depends.inject
-    async def init(self, sitemap: Sitemap = depends()) -> None:  # type: ignore
+    async def init(self) -> None:  # type: ignore
         self.routes.extend(
             [
                 Route("/favicon.ico", endpoint=self.favicon, methods=["GET"]),
@@ -96,8 +96,6 @@ class Routes(RoutesBase):
                 await self.gather_routes(routes_path)
         if await base_routes_path.exists():
             await self.gather_routes(base_routes_path)
-        if get_installed_adapter("sitemap"):
-            self.routes.append(Route("/sitemap.xml", sitemap))
         if get_installed_adapter("storage") in ("file", "memory"):
             from starlette.staticfiles import StaticFiles
 
