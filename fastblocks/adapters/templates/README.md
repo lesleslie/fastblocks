@@ -46,6 +46,7 @@ templates:
 ### Basic Template Rendering
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from starlette.routing import Route
@@ -53,7 +54,7 @@ from starlette.routing import Route
 Templates = import_adapter("templates")
 templates = depends.get(Templates)
 
-async def homepage(request):
+async def homepage(request) -> t.Any:
     context = {
         "title": "Welcome to FastBlocks",
         "message": "Hello, World!"
@@ -72,7 +73,9 @@ routes = [
 FastBlocks is designed to work with HTMX and template fragments:
 
 ```python
-async def get_user_list(request):
+import typing as t
+
+async def get_user_list(request) -> t.Any:
     users = await get_users_from_database()
     return await templates.app.render_template(
         request, "blocks/user_list.html", context={"users": users}
@@ -182,6 +185,7 @@ The Templates adapter includes several built-in filters:
 You can add custom filters:
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 
@@ -199,6 +203,7 @@ You can create a custom templates adapter for more specialized template needs:
 
 ```python
 # myapp/adapters/templates/custom.py
+import typing as t
 from fastblocks.adapters.templates._base import TemplatesBase, TemplatesBaseSettings
 from jinja2 import Environment, FileSystemLoader
 
@@ -206,23 +211,28 @@ class CustomTemplatesSettings(TemplatesBaseSettings):
     template_dir: str = "custom_templates"
 
 class CustomTemplates(TemplatesBase):
-    settings: CustomTemplatesSettings = None
+    settings: CustomTemplatesSettings | None = None
+    env: Environment | None = None
 
     async def init(self) -> None:
         # Initialize custom template environment
-        self.env = Environment(
-            loader=FileSystemLoader(self.settings.template_dir),
-            enable_async=True
-        )
+        if self.settings is not None:
+            self.env = Environment(
+                loader=FileSystemLoader(self.settings.template_dir),
+                enable_async=True
+            )
 
-        # Add custom filters
-        self.env.filters["custom_filter"] = self.custom_filter
+            # Add custom filters
+            if self.env is not None:
+                self.env.filters["custom_filter"] = self.custom_filter
 
-    async def render_template(self, name: str, context: dict = None) -> str:
+    async def render_template(self, name: str, context: dict[str, t.Any] | None = None) -> str:
+        if self.env is None:
+            raise RuntimeError("Template environment not initialized")
         template = self.env.get_template(name)
         return await template.render_async(**(context or {}))
 
-    def custom_filter(self, value):
+    def custom_filter(self, value: t.Any) -> t.Any:
         # Custom filter implementation
         return value
 ```

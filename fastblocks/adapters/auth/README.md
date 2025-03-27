@@ -34,6 +34,7 @@ auth:
 ### Basic Authentication
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from starlette.routing import Route
@@ -42,7 +43,7 @@ from starlette.responses import RedirectResponse
 Auth = import_adapter("auth")
 auth = depends.get(Auth)
 
-async def login(request):
+async def login(request) -> t.Any:
     if request.method == "POST":
         form = await request.form()
         username = form.get("username")
@@ -51,7 +52,7 @@ async def login(request):
         user = await auth.authenticate(username, password)
         if user:
             # Set session data
-            request.session["user"] = user.dict()
+            request.session["user"] = user.model_dump()
             return RedirectResponse("/dashboard", status_code=303)
 
         # Authentication failed
@@ -61,7 +62,7 @@ async def login(request):
 
     return await templates.app.render_template(request, "login.html")
 
-async def logout(request):
+async def logout(request) -> t.Any:
     request.session.clear()
     return RedirectResponse("/")
 
@@ -76,11 +77,16 @@ routes = [
 You can protect routes by checking the session:
 
 ```python
+import typing as t
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
+    def __init__(self, app: ASGIApp) -> None:
+        super().__init__(app)
+
+    async def dispatch(self, request, call_next) -> t.Any:
         # List of paths that don't require authentication
         public_paths = ["/", "/login", "/static"]
 
@@ -112,14 +118,15 @@ The Auth adapter is implemented in the following files:
 ### Base Class
 
 ```python
+import typing as t
 from acb.config import AdapterBase, Settings
 
 class AuthBaseSettings(Settings):
-    token_id: Optional[str] = None
+    token_id: str | None = None
     token_lifetime: int = 86400  # 24 hours
 
 class AuthBase(AdapterBase):
-    async def authenticate(self, username: str, password: str) -> Optional[dict]:
+    async def authenticate(self, username: str, password: str) -> dict[str, t.Any] | None:
         """Authenticate a user with username and password"""
         raise NotImplementedError()
 ```
@@ -130,6 +137,7 @@ You can create a custom authentication adapter for more advanced authentication 
 
 ```python
 # myapp/adapters/auth/oauth.py
+import typing as t
 from fastblocks.adapters.auth._base import AuthBase, AuthBaseSettings
 from pydantic import SecretStr
 
@@ -139,20 +147,20 @@ class OAuthSettings(AuthBaseSettings):
     redirect_uri: str = ""
 
 class OAuth(AuthBase):
-    settings: OAuthSettings = None
+    settings: OAuthSettings | None = None
 
     async def init(self) -> None:
         # Initialize OAuth client
         pass
 
-    async def authenticate(self, code: str) -> Optional[dict]:
+    async def authenticate(self, code: str) -> dict[str, t.Any] | None:
         # Exchange authorization code for access token
         # Validate token and return user info
         pass
 
     async def get_authorization_url(self) -> str:
         # Generate authorization URL
-        pass
+        return ""
 ```
 
 Then configure your application to use your custom adapter:

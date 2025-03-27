@@ -36,6 +36,7 @@ admin:
 ### Basic Setup
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from fastblocks.applications import FastBlocks
@@ -43,7 +44,7 @@ from sqlmodel import SQLModel, Field
 
 # Define your models
 class User(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     username: str
     email: str
     is_active: bool = True
@@ -105,17 +106,17 @@ The Admin adapter is implemented in the following files:
 ### Base Class
 
 ```python
+import typing as t
 from acb.config import AdapterBase, Settings
-from typing import Any, Type
 
 class AdminBaseSettings(Settings):
     enabled: bool = True
     title: str = "FastBlocks Admin"
-    logo_url: Optional[str] = None
+    logo_url: str | None = None
     style: str = "default"
 
 class AdminBase(AdapterBase):
-    def register_model(self, model: Type[Any]) -> None:
+    def register_model(self, model: t.Type[t.Any]) -> None:
         """Register a model with the admin interface"""
         raise NotImplementedError()
 ```
@@ -140,19 +141,20 @@ You can create a custom admin adapter for more specialized admin interfaces:
 
 ```python
 # myapp/adapters/admin/custom.py
+import typing as t
 from fastblocks.adapters.admin._base import AdminBase, AdminBaseSettings
 
 class CustomAdminSettings(AdminBaseSettings):
     dashboard_template: str = "admin/dashboard.html"
 
 class CustomAdmin(AdminBase):
-    settings: CustomAdminSettings = None
+    settings: CustomAdminSettings | None = None
 
     async def init(self) -> None:
         # Initialize custom admin interface
         pass
 
-    def register_model(self, model: Type[Any]) -> None:
+    def register_model(self, model: t.Type[t.Any]) -> None:
         # Register model with custom admin interface
         pass
 ```

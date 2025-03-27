@@ -27,6 +27,7 @@ app:
 ## Usage
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 
@@ -34,9 +35,9 @@ App = import_adapter("app")
 app = depends.get(App)
 
 # Access app settings
-app_name = app.settings.name
-app_style = app.settings.style
-app_theme = app.settings.theme
+app_name: str = app.settings.name
+app_style: str = app.settings.style
+app_theme: str = app.settings.theme
 ```
 
 ## Settings Reference
@@ -57,6 +58,7 @@ The App adapter is implemented in the following files:
 ### Base Class
 
 ```python
+import typing as t
 from acb.config import AdapterBase
 from acb.config import AppSettings as AppConfigSettings
 
@@ -75,6 +77,7 @@ You can extend the App adapter with additional settings or functionality by crea
 
 ```python
 # myapp/adapters/app/custom.py
+import typing as t
 from fastblocks.adapters.app._base import AppBase, AppBaseSettings
 
 class CustomAppSettings(AppBaseSettings):
@@ -82,11 +85,12 @@ class CustomAppSettings(AppBaseSettings):
     footer_text: str = "© 2025 My Company"
 
 class CustomApp(AppBase):
-    settings: CustomAppSettings = None
+    settings: CustomAppSettings | None = None
 
     async def init(self) -> None:
         # Custom initialization logic
-        self.logger.info(f"Initializing {self.settings.name} application")
+        if self.settings is not None:
+            self.logger.info(f"Initializing {self.settings.name} application")
 ```
 
 Then configure your application to use your custom adapter:

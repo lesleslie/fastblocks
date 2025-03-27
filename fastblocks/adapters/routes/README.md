@@ -23,12 +23,13 @@ The Routes adapter allows you to:
 ### Basic Setup
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from fastblocks.applications import FastBlocks
 from starlette.routing import Route
 
-async def homepage(request):
+async def homepage(request) -> t.Any:
     return await request.app.templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
@@ -73,9 +74,10 @@ The Routes adapter can automatically discover routes from modules:
 
 ```python
 # myapp/routes.py
+import typing as t
 from starlette.routing import Route
 
-async def about(request):
+async def about(request) -> t.Any:
     return await request.app.templates.app.render_template(
         request, "about.html"
     )
@@ -122,11 +124,19 @@ The default implementation provides:
 The `Index` endpoint handles both full page and HTMX partial requests:
 
 ```python
+import typing as t
+from starlette.endpoints import HTTPEndpoint
+from starlette.responses import Response
+from starlette.exceptions import HTTPException
+from acb.depends import depends
+from acb.config import Config
+from jinja2.exceptions import TemplateNotFound
+
 class Index(HTTPEndpoint):
     config: Config = depends()
-    templates: Templates = depends()
+    templates: t.Any = depends()
 
-    async def get(self, request: HtmxRequest) -> Response:
+    async def get(self, request: t.Any) -> Response:
         page = request.path_params.get("page") or "home"
         template = "index.html"
         headers = dict(vary="hx-request")
@@ -146,10 +156,17 @@ class Index(HTTPEndpoint):
 The `Block` endpoint renders template blocks for HTMX interactions:
 
 ```python
-class Block(HTTPEndpoint):
-    templates: Templates = depends()
+import typing as t
+from starlette.endpoints import HTTPEndpoint
+from starlette.responses import Response
+from starlette.exceptions import HTTPException
+from acb.depends import depends
+from jinja2.exceptions import TemplateNotFound
 
-    async def get(self, request: HtmxRequest) -> Response:
+class Block(HTTPEndpoint):
+    templates: t.Any = depends()
+
+    async def get(self, request: t.Any) -> Response:
         block = f"blocks/{request.path_params['block']}.html"
         try:
             return await self.templates.app.render_template(request, block)
@@ -163,6 +180,7 @@ You can create a custom routes adapter for more specialized routing needs:
 
 ```python
 # myapp/adapters/routes/custom.py
+import typing as t
 from fastblocks.adapters.routes._base import RoutesBase, RoutesBaseSettings
 from starlette.routing import Route, Router, Mount, Host, WebSocketRoute
 
@@ -170,7 +188,7 @@ class CustomRoutesSettings(RoutesBaseSettings):
     api_prefix: str = "/api"
 
 class CustomRoutes(RoutesBase):
-    settings: CustomRoutesSettings = None
+    settings: CustomRoutesSettings | None = None
     routes: list[Route | Router | Mount | Host | WebSocketRoute] = []
 
     async def init(self) -> None:
@@ -185,7 +203,10 @@ class CustomRoutes(RoutesBase):
             Route("/users", endpoint=self.list_users, methods=["GET"]),
             Route("/users/{id:int}", endpoint=self.get_user, methods=["GET"]),
         ]
-        self.routes.append(Mount(self.settings.api_prefix, routes=api_routes))
+        if self.settings is not None:
+            self.routes.append(Mount(self.settings.api_prefix, routes=api_routes))
+        else:
+            self.routes.append(Mount("/api", routes=api_routes))
 
         # Discover additional routes
         await self.discover_routes()

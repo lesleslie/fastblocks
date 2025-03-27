@@ -28,6 +28,7 @@ FastBlocks uses a pluggable adapter system that allows you to:
 Adapters are typically accessed through dependency injection:
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 
@@ -169,6 +170,7 @@ You can create your own adapters by following these steps:
 
 ```python
 # fastblocks/adapters/payment/_base.py
+import typing as t
 from acb.config import AdapterBase, Settings
 
 class PaymentBaseSettings(Settings):
@@ -187,6 +189,7 @@ class PaymentBase(AdapterBase):
 
 ```python
 # fastblocks/adapters/payment/stripe.py
+import typing as t
 from ._base import PaymentBase, PaymentBaseSettings
 from pydantic import SecretStr
 import stripe
@@ -195,15 +198,16 @@ class StripeSettings(PaymentBaseSettings):
     api_key: SecretStr = SecretStr("sk_test_default")
 
 class Stripe(PaymentBase):
-    settings: StripeSettings = None
+    settings: StripeSettings | None = None
 
     async def init(self) -> None:
-        stripe.api_key = self.settings.api_key.get_secret_value()
+        if self.settings is not None:
+            stripe.api_key = self.settings.api_key.get_secret_value()
 
     async def charge(self, amount: float, description: str) -> str:
         response = await stripe.PaymentIntent.create(
             amount=int(amount * 100),  # Convert to cents
-            currency=self.settings.currency,
+            currency=self.settings.currency if self.settings else "USD",
             description=description
         )
         return response.id

@@ -58,6 +58,7 @@ The sitemap will be automatically available at `/sitemap.xml`.
 You can add dynamic URLs to the sitemap:
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from datetime import datetime
@@ -66,7 +67,7 @@ Sitemap = import_adapter("sitemap")
 sitemap = depends.get(Sitemap)
 
 # Add blog posts to sitemap
-async def add_blog_posts_to_sitemap():
+async def add_blog_posts_to_sitemap() -> None:
     posts = await get_blog_posts_from_database()
     for post in posts:
         sitemap.add_url(
@@ -85,14 +86,16 @@ app.add_event_handler("startup", add_blog_posts_to_sitemap)
 You can manually generate the sitemap:
 
 ```python
+import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from starlette.responses import Response
+from starlette.routing import Route
 
 Sitemap = import_adapter("sitemap")
 sitemap = depends.get(Sitemap)
 
-async def get_sitemap(request):
+async def get_sitemap(request) -> Response:
     sitemap_xml = await sitemap.generate()
     return Response(
         content=sitemap_xml,
@@ -123,23 +126,23 @@ The Sitemap adapter is implemented in the following files:
 ### Base Class
 
 ```python
+import typing as t
 from acb.config import AdapterBase, Settings
 from datetime import datetime
-from typing import Optional, Literal
 
 class SitemapBaseSettings(Settings):
     enabled: bool = True
     base_url: str = ""
     cache_timeout: int = 3600
-    static_urls: list[dict] = []
+    static_urls: list[dict[str, t.Any]] = []
 
 class SitemapBase(AdapterBase):
     def add_url(
         self,
         url: str,
         priority: float = 0.5,
-        changefreq: Literal["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"] = "weekly",
-        lastmod: Optional[datetime] = None
+        changefreq: t.Literal["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"] = "weekly",
+        lastmod: datetime | None = None
     ) -> None:
         """Add a URL to the sitemap"""
         raise NotImplementedError()
@@ -159,29 +162,30 @@ You can create a custom sitemap adapter for more specialized sitemap needs:
 
 ```python
 # myapp/adapters/sitemap/custom.py
+import typing as t
 from fastblocks.adapters.sitemap._base import SitemapBase, SitemapBaseSettings
 from datetime import datetime
-from typing import Optional, Literal, List, Dict, Any
 
 class CustomSitemapSettings(SitemapBaseSettings):
     image_sitemaps: bool = False
 
 class CustomSitemap(SitemapBase):
-    settings: CustomSitemapSettings = None
-    urls: List[Dict[str, Any]] = []
+    settings: CustomSitemapSettings | None = None
+    urls: list[dict[str, t.Any]] = []
 
     async def init(self) -> None:
         self.urls = []
-        for url_data in self.settings.static_urls:
-            self.add_url(**url_data)
+        if self.settings is not None:
+            for url_data in self.settings.static_urls:
+                self.add_url(**url_data)
 
     def add_url(
         self,
         url: str,
         priority: float = 0.5,
-        changefreq: Literal["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"] = "weekly",
-        lastmod: Optional[datetime] = None,
-        images: Optional[List[Dict[str, str]]] = None
+        changefreq: t.Literal["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"] = "weekly",
+        lastmod: datetime | None = None,
+        images: list[dict[str, str]] | None = None
     ) -> None:
         url_data = {
             "url": url,
@@ -190,7 +194,7 @@ class CustomSitemap(SitemapBase):
         }
         if lastmod:
             url_data["lastmod"] = lastmod.isoformat()
-        if images and self.settings.image_sitemaps:
+        if images and self.settings is not None and self.settings.image_sitemaps:
             url_data["images"] = images
         self.urls.append(url_data)
 
@@ -198,13 +202,14 @@ class CustomSitemap(SitemapBase):
         # Generate custom XML sitemap
         xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
         xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
-        if self.settings.image_sitemaps:
+        if self.settings is not None and self.settings.image_sitemaps:
             xml += ' xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"'
         xml += '>\n'
 
         for url_data in self.urls:
             xml += '  <url>\n'
-            xml += f'    <loc>{self.settings.base_url}{url_data["url"]}</loc>\n'
+            base_url = self.settings.base_url if self.settings is not None else ""
+            xml += f'    <loc>{base_url}{url_data["url"]}</loc>\n'
             if "lastmod" in url_data:
                 xml += f'    <lastmod>{url_data["lastmod"]}</lastmod>\n'
             xml += f'    <changefreq>{url_data["changefreq"]}</changefreq>\n'
