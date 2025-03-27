@@ -57,7 +57,6 @@ class FileSystemLoader(AsyncBaseLoader):
             local_size = local_stat.st_size
             storage_stat = await self.storage.templates.stat(storage_path)
             debug(storage_stat)
-            # storage_mtime = int(round(storage_stat.get("mtime").timestamp()))
             storage_mtime = int(round(storage_stat.get("mtime")))
             storage_size = storage_stat.get("size")
             debug(local_mtime, storage_mtime)
@@ -308,8 +307,8 @@ class TemplatesSettings(TemplatesBaseSettings):
         block_end_string="%]",
         variable_start_string="[[",
         variable_end_string="]]",
-        comment_start_string="[#",
-        comment_end_string="#]",
+        comment_start_string="[#",  # skip
+        comment_end_string="#]",  # skip
     )
     globals: dict[str, t.Any] = {}
     context_processors: list[str] = []
@@ -343,12 +342,10 @@ class Templates(TemplatesBase):
         debug(searchpaths)
         file_loaders: list[AsyncBaseLoader] = [FileSystemLoader(searchpaths)]
 
-        # In development, prioritize file system loaders for easier template editing
         jinja_loaders: list[AsyncBaseLoader] = loaders + file_loaders
         if not self.config.deployed and not self.config.debug.production:
             jinja_loaders = file_loaders + loaders
 
-        # Add package loader for admin templates if needed
         if self.enabled_admin and template_paths == self.admin_searchpaths:
             jinja_loaders.append(
                 PackageLoader(self.enabled_admin.name, "templates", "admin")
@@ -436,7 +433,6 @@ class Templates(TemplatesBase):
             for ext in self.app.env.extensions:
                 self.logger.debug(f"{ext.split('.')[-1]} loaded")
 
-        # Clear template cache in debug mode
         if self.config.debug.templates:
             for namespace in ("templates", "_templates", "bccache"):
                 await cache.clear(namespace)

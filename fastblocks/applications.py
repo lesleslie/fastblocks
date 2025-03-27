@@ -60,7 +60,7 @@ class FastBlocks(Starlette):
             500: handle_exception,
         }
         self.user_middleware = middleware or []
-        self.models = depends.get(import_adapter("models"))
+        self.models = depends.get()
         self.templates = None
         set_editor("pycharm")
         for _logger in ("uvicorn", "uvicorn.access"):

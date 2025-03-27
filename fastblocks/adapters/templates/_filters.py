@@ -6,7 +6,7 @@ from fastblocks.actions import minify
 
 
 class Filters:
-    templates = depends.get("templates")
+    templates = depends.get()
     config: Config = depends()
 
     @staticmethod

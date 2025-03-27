@@ -2,16 +2,25 @@ import typing as t
 from base64 import b64encode
 from contextvars import ContextVar
 
-from acb.config import AdapterBase, Settings
+from acb.config import AdapterBase, Config, Settings
+from acb.depends import depends
 from asgi_htmx import HtmxRequest
 from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import UnauthenticatedUser
 
 
-class AuthBaseSettings(Settings): ...
+class AuthBaseSettings(Settings):
+    token_id: t.Optional[str] = "_fb_"
+
+    @depends.inject
+    def __init__(self, config: Config = depends(), **data: t.Any) -> None:
+        super().__init__(**data)
+        self.token_id = "".join(  # type: ignore
+            [self.token_id, b64encode(config.app.name.encode()).decode().rstrip("=")]  # type: ignore
+        )
 
 
-class AuthBaseUser(t.Protocol):
+class CurrentUser(t.Protocol):
     def has_role(self, role: str) -> str: ...  # noqa: F841
     def set_role(self, role: str) -> str | bool | None: ...  # noqa: F841
 
@@ -49,8 +58,8 @@ class AuthBase(AdapterBase):
         return self._current_user.get()
 
     @property
-    def get_token(self) -> str:
-        return f"_fb_{b64encode(self.config.app.name.encode()).decode().rstrip('=')}"
+    def token_id(self) -> str:
+        return self.config.auth.token_id
 
     @staticmethod
     async def authenticate(request: HtmxRequest) -> bool: ...

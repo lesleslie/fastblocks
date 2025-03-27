@@ -15,7 +15,7 @@ from ._base import AuthBase, AuthBaseSettings
 class AuthSettings(AuthBaseSettings): ...
 
 
-class AuthBasicUser:
+class CurrentUser:
     def has_role(self, role: str) -> str: ...  # noqa: F841
     def set_role(self, role: str) -> str | bool | None: ...  # noqa: F841
 
@@ -36,10 +36,6 @@ class AuthBasicUser:
 class Auth(AuthBase):
     secret_key: SecretStr
 
-    @property
-    def current_user(self) -> t.Any:
-        return self._current_user.get()
-
     @staticmethod
     async def authenticate(request: HtmxRequest) -> bool:
         if "Authorization" not in request.headers:
@@ -55,10 +51,7 @@ class Auth(AuthBase):
             raise AuthenticationError("Invalid basic auth credentials")
 
         username, _, password = decoded.partition(":")  # type: ignore
-        # TODO: You'd want to verify the username and password here.
-        # password variable is intentionally captured for future implementation
 
-        # Store the authentication credentials in the request state for later use
         request.state.auth_credentials = (
             AuthCredentials(["authenticated"]),
             SimpleUser(username),
@@ -72,9 +65,10 @@ class Auth(AuthBase):
     ) -> None:
         super().__init__(secret_key, user_model)
         self.secret_key = secret_key or self.config.app.secret_key
-        # Get token_id from settings or use a default
-        token_id = getattr(self.config.auth, "token_id", "fastblocks")
-        self.token_id = token_id
+        self.name = "basic"
+        self.user_model = user_model
+
+    async def init(self) -> None:
         self.middlewares = [
             Middleware(
                 SessionMiddleware,  # type: ignore
@@ -83,10 +77,6 @@ class Auth(AuthBase):
                 https_only=True if self.config.deployed else False,
             )
         ]
-        self.name = "basic"
-        self.user_model = user_model
-
-    async def init(self) -> None: ...
 
     async def login(self, request: HtmxRequest) -> bool: ...
 

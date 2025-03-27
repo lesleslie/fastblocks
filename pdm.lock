@@ -5,14 +5,14 @@
 groups = ["default", "dev", "sitemap"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:36c66bb0259e892b520447bf52fa2b25e66f6345d4fd3970dc37bf59c36dbeb2"
+content_hash = "sha256:9e302181898512264e06412fb9acaf5f751df270abb3639bf9beba6884651798"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.12.2"
+version = "0.12.3"
 summary = ""
 dependencies = [
     "aioconsole",
@@ -37,33 +37,48 @@ dependencies = [
     "typer",
 ]
 files = [
-    {file = "acb-0.12.2-py3-none-any.whl", hash = "sha256:9d49c110fc38a933b9e404207e60f1d1aa39472eb0bf6af84ae7d82ca94081d5"},
-    {file = "acb-0.12.2.tar.gz", hash = "sha256:d89e39f836e9d05504bf5a886f291ec016f1e68f6a8c4dcb5b50491d162208d6"},
+    {file = "acb-0.12.3-py3-none-any.whl", hash = "sha256:1bc55672f76cad42ed728ea2b4ff4765dd6ca841f8e65db3fd78cfcad6661581"},
+    {file = "acb-0.12.3.tar.gz", hash = "sha256:67fe2d730964efae86eeb9bc2180ed8ced0cfdeea12b19e18020a3de888a8bc9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.12.2"
+version = "0.12.3"
 extras = ["cache"]
 summary = ""
 dependencies = [
-    "acb==0.12.2",
+    "acb==0.12.3",
     "aiocache",
     "coredis",
     "logfire",
 ]
 files = [
-    {file = "acb-0.12.2-py3-none-any.whl", hash = "sha256:9d49c110fc38a933b9e404207e60f1d1aa39472eb0bf6af84ae7d82ca94081d5"},
-    {file = "acb-0.12.2.tar.gz", hash = "sha256:d89e39f836e9d05504bf5a886f291ec016f1e68f6a8c4dcb5b50491d162208d6"},
+    {file = "acb-0.12.3-py3-none-any.whl", hash = "sha256:1bc55672f76cad42ed728ea2b4ff4765dd6ca841f8e65db3fd78cfcad6661581"},
+    {file = "acb-0.12.3.tar.gz", hash = "sha256:67fe2d730964efae86eeb9bc2180ed8ced0cfdeea12b19e18020a3de888a8bc9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.12.2"
+version = "0.12.3"
+extras = ["monitoring"]
+summary = ""
+dependencies = [
+    "acb==0.12.3",
+    "logfire",
+    "sentry-sdk",
+]
+files = [
+    {file = "acb-0.12.3-py3-none-any.whl", hash = "sha256:1bc55672f76cad42ed728ea2b4ff4765dd6ca841f8e65db3fd78cfcad6661581"},
+    {file = "acb-0.12.3.tar.gz", hash = "sha256:67fe2d730964efae86eeb9bc2180ed8ced0cfdeea12b19e18020a3de888a8bc9"},
+]
+
+[[package]]
+name = "acb"
+version = "0.12.3"
 extras = ["requests"]
 summary = ""
 dependencies = [
-    "acb==0.12.2",
+    "acb==0.12.3",
     "hishel",
     "httpx",
     "logfire",
@@ -71,38 +86,38 @@ dependencies = [
     "sentry-sdk",
 ]
 files = [
-    {file = "acb-0.12.2-py3-none-any.whl", hash = "sha256:9d49c110fc38a933b9e404207e60f1d1aa39472eb0bf6af84ae7d82ca94081d5"},
-    {file = "acb-0.12.2.tar.gz", hash = "sha256:d89e39f836e9d05504bf5a886f291ec016f1e68f6a8c4dcb5b50491d162208d6"},
+    {file = "acb-0.12.3-py3-none-any.whl", hash = "sha256:1bc55672f76cad42ed728ea2b4ff4765dd6ca841f8e65db3fd78cfcad6661581"},
+    {file = "acb-0.12.3.tar.gz", hash = "sha256:67fe2d730964efae86eeb9bc2180ed8ced0cfdeea12b19e18020a3de888a8bc9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.12.2"
+version = "0.12.3"
 extras = ["secret"]
 summary = ""
 dependencies = [
-    "acb==0.12.2",
+    "acb==0.12.3",
     "google-cloud-secret-manager",
 ]
 files = [
-    {file = "acb-0.12.2-py3-none-any.whl", hash = "sha256:9d49c110fc38a933b9e404207e60f1d1aa39472eb0bf6af84ae7d82ca94081d5"},
-    {file = "acb-0.12.2.tar.gz", hash = "sha256:d89e39f836e9d05504bf5a886f291ec016f1e68f6a8c4dcb5b50491d162208d6"},
+    {file = "acb-0.12.3-py3-none-any.whl", hash = "sha256:1bc55672f76cad42ed728ea2b4ff4765dd6ca841f8e65db3fd78cfcad6661581"},
+    {file = "acb-0.12.3.tar.gz", hash = "sha256:67fe2d730964efae86eeb9bc2180ed8ced0cfdeea12b19e18020a3de888a8bc9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.12.2"
+version = "0.12.3"
 extras = ["storage"]
 summary = ""
 dependencies = [
-    "acb==0.12.2",
+    "acb==0.12.3",
     "adlfs",
     "gcsfs",
     "s3fs",
 ]
 files = [
-    {file = "acb-0.12.2-py3-none-any.whl", hash = "sha256:9d49c110fc38a933b9e404207e60f1d1aa39472eb0bf6af84ae7d82ca94081d5"},
-    {file = "acb-0.12.2.tar.gz", hash = "sha256:d89e39f836e9d05504bf5a886f291ec016f1e68f6a8c4dcb5b50491d162208d6"},
+    {file = "acb-0.12.3-py3-none-any.whl", hash = "sha256:1bc55672f76cad42ed728ea2b4ff4765dd6ca841f8e65db3fd78cfcad6661581"},
+    {file = "acb-0.12.3.tar.gz", hash = "sha256:67fe2d730964efae86eeb9bc2180ed8ced0cfdeea12b19e18020a3de888a8bc9"},
 ]
 
 [[package]]
@@ -668,7 +683,7 @@ files = [
 
 [[package]]
 name = "crackerjack"
-version = "0.14.8"
+version = "0.14.9"
 summary = ""
 dependencies = [
     "autotyping",
@@ -686,8 +701,8 @@ dependencies = [
     "uv",
 ]
 files = [
-    {file = "crackerjack-0.14.8-py3-none-any.whl", hash = "sha256:c00a382a2a7a8ec318a8ed48eac7326a25d97476fd20a7180342ffd4e7142062"},
-    {file = "crackerjack-0.14.8.tar.gz", hash = "sha256:b6245a4af16ac1e98a01efc7134b684a24492c3a4690c21cf1b7e87e84c412fa"},
+    {file = "crackerjack-0.14.9-py3-none-any.whl", hash = "sha256:61ed47cb654b79049e8bc6d6e113811a2c7e6ef3d645d9b44e0159cba469f5fc"},
+    {file = "crackerjack-0.14.9.tar.gz", hash = "sha256:bce116880e63f5f35e3f0543112569ad6bb03371e23eeea2b26e711134bf8534"},
 ]
 
 [[package]]
@@ -1432,6 +1447,20 @@ files = [
 ]
 
 [[package]]
+name = "logfire"
+version = "3.10.0"
+extras = ["system-metrics"]
+summary = ""
+dependencies = [
+    "logfire==3.10.0",
+    "opentelemetry-instrumentation-system-metrics",
+]
+files = [
+    {file = "logfire-3.10.0-py3-none-any.whl", hash = "sha256:9c174ecdc03f2a976ef7b423c2c4b222a2f9316f9b6605f77b7d1378225eed91"},
+    {file = "logfire-3.10.0.tar.gz", hash = "sha256:151d058f7e2c9d657b3ed6c2362494226a7b90e973d0cd7abb339999bbb0e078"},
+]
+
+[[package]]
 name = "loguru"
 version = "0.7.3"
 summary = ""
@@ -1716,6 +1745,20 @@ files = [
 ]
 
 [[package]]
+name = "opentelemetry-instrumentation-system-metrics"
+version = "0.52b1"
+summary = ""
+dependencies = [
+    "opentelemetry-api",
+    "opentelemetry-instrumentation",
+    "psutil",
+]
+files = [
+    {file = "opentelemetry_instrumentation_system_metrics-0.52b1-py3-none-any.whl", hash = "sha256:768063d811d0b20c483b320c4c7e508df597a90fbbe9ece9d592a79e00dd518b"},
+    {file = "opentelemetry_instrumentation_system_metrics-0.52b1.tar.gz", hash = "sha256:8e9fdea1ebffb50ecb2907e4fc7c92605d63bd46fe9a6ed731a22f9334e27a16"},
+]
+
+[[package]]
 name = "opentelemetry-proto"
 version = "1.31.1"
 summary = ""
@@ -1941,6 +1984,21 @@ files = [
     {file = "protobuf-5.29.4-cp38-abi3-manylinux2014_x86_64.whl", hash = "sha256:d7d3f7d1d5a66ed4942d4fefb12ac4b14a29028b209d4bfb25c68ae172059922"},
     {file = "protobuf-5.29.4-py3-none-any.whl", hash = "sha256:3fde11b505e1597f71b875ef2fc52062b6a9740e5f7c8997ce878b6009145862"},
     {file = "protobuf-5.29.4.tar.gz", hash = "sha256:4f1dfcd7997b31ef8f53ec82781ff434a28bf71d9102ddde14d076adcfc78c99"},
+]
+
+[[package]]
+name = "psutil"
+version = "7.0.0"
+summary = ""
+files = [
+    {file = "psutil-7.0.0-cp36-abi3-macosx_10_9_x86_64.whl", hash = "sha256:101d71dc322e3cffd7cea0650b09b3d08b8e7c4109dd6809fe452dfd00e58b25"},
+    {file = "psutil-7.0.0-cp36-abi3-macosx_11_0_arm64.whl", hash = "sha256:39db632f6bb862eeccf56660871433e111b6ea58f2caea825571951d4b6aa3da"},
+    {file = "psutil-7.0.0-cp36-abi3-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1fcee592b4c6f146991ca55919ea3d1f8926497a713ed7faaf8225e174581e91"},
+    {file = "psutil-7.0.0-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4b1388a4f6875d7e2aff5c4ca1cc16c545ed41dd8bb596cefea80111db353a34"},
+    {file = "psutil-7.0.0-cp36-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a5f098451abc2828f7dc6b58d44b532b22f2088f4999a937557b603ce72b1993"},
+    {file = "psutil-7.0.0-cp37-abi3-win32.whl", hash = "sha256:ba3fcef7523064a6c9da440fc4d6bd07da93ac726b5733c29027d7dc95b39d99"},
+    {file = "psutil-7.0.0-cp37-abi3-win_amd64.whl", hash = "sha256:4cf3d4eb1aa9b348dec30105c55cd9b7d4629285735a102beb4441e38db90553"},
+    {file = "psutil-7.0.0.tar.gz", hash = "sha256:7be9c3eba38beccb6495ea33afd982a44074b78f28c434a1f51cc07fd315c456"},
 ]
 
 [[package]]
@@ -2404,6 +2462,20 @@ extras = ["httpx"]
 summary = ""
 dependencies = [
     "httpx",
+    "sentry-sdk==2.24.1",
+]
+files = [
+    {file = "sentry_sdk-2.24.1-py2.py3-none-any.whl", hash = "sha256:36baa6a1128b9d98d2adc5e9b2f887eff0a6af558fc2b96ed51919042413556d"},
+    {file = "sentry_sdk-2.24.1.tar.gz", hash = "sha256:8ba3c29990fa48865b908b3b9dc5ae7fa7e72407c7c9e91303e5206b32d7b8b1"},
+]
+
+[[package]]
+name = "sentry-sdk"
+version = "2.24.1"
+extras = ["loguru"]
+summary = ""
+dependencies = [
+    "loguru",
     "sentry-sdk==2.24.1",
 ]
 files = [
