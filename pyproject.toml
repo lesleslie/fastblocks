@@ -1,6 +1,6 @@
 [project]
 name = "fastblocks"
-version = "0.8.8"
+version = "0.8.9"
 description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
@@ -39,11 +39,11 @@ dependencies = [
     "brotli-asgi>=1.4.0",
     "starlette-csrf>=3.0.0",
     "starception>=1.2.1",
-    "pydantic>=2.10.6",
+    "pydantic>=2.11.1",
     "pyfiglet>=1.0.2",
     "starlette>=0.46.1",
     "uvicorn>=0.34.0",
-    "starlette-async-jinja>=1.9.6",
+    "starlette-async-jinja>=1.9.7",
     "secure>=1.0.1",
     "minify-html>=0.16.4",
     "rcssmin>=1.2.1",
@@ -63,7 +63,7 @@ monitoring = [
     "logfire[starlette]>=3.7.1",
 ]
 dev = [
-    "crackerjack>=0.14.9",
+    "crackerjack>=0.15.0",
 ]
 
 [project.license]
@@ -115,19 +115,19 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-cov",
-    "pyfiglet",
-    "google-crc32c",
     "pdm",
+    "google-crc32c",
     "pre-commit",
-    "pytest",
+    "pytest-cov",
+    "pyyaml",
+    "autotyping",
     "pdm-bump",
     "tomli-w",
-    "pytest-asyncio",
-    "autotyping",
     "uv",
+    "pytest-asyncio",
     "pytest-mock",
-    "pyyaml",
+    "pytest",
+    "pyfiglet",
 ]
 
 [tool.refurb]
@@ -138,15 +138,15 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B607",
-    "B311",
-    "B603",
-    "B403",
-    "B602",
-    "B404",
-    "B704",
-    "B301",
     "B101",
+    "B602",
+    "B603",
+    "B311",
+    "B704",
+    "B404",
+    "B403",
+    "B301",
+    "B607",
 ]
 
 [tool.pyright]

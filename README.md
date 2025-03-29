@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://drive.google.com/uc?id=1pMUqyvgMkhGYoLz3jBibZDl3J63HEcCC">
+<img src="https://drive.google.com/file/d/1ZSdG66WqCzHIKJubnCGG33LXEBIKfhmw/view?usp=sharing">
 </p>
 
 > **FastBlocks Documentation**: [Main](./README.md) | [Core Features](./fastblocks/README.md) | [Actions](./fastblocks/actions/README.md) | [Adapters](./fastblocks/adapters/README.md)
@@ -274,8 +274,6 @@ For more detailed documentation about FastBlocks components:
 This project is licensed under the terms of the BSD 3-Clause license.
 
 ## Acknowledgements
-
-ACB "blocks" logo used by permission from <a href="https://andycoeband.com">Andy Coe Band</a>
 
 Special thanks to the following open-source projects that power FastBlocks:
 - [Starlette](https://www.starlette.io/)

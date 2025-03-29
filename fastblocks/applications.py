@@ -63,7 +63,7 @@ class FastBlocks(Starlette):
         self.models = depends.get()
         self.templates = None
         set_editor("pycharm")
-        for _logger in ("uvicorn", "uvicorn.access"):
+        for _logger in ("uvicorn", "uvicorn.access", "_granian, granian.access"):
             _logger = logging.getLogger(_logger)
             _logger.handlers.clear()
             _logger.handlers = [InterceptHandler()]

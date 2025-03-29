@@ -12,5 +12,4 @@
 /__pycache__/
 /*.pyc
 /.fastblocks.yaml
-
-.qodo
+/.zencoder/
