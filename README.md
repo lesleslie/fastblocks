@@ -1,6 +1,6 @@
-<p align="center">
-<img src="https://drive.google.com/file/d/1ZSdG66WqCzHIKJubnCGG33LXEBIKfhmw/preview">
-</p>
+
+![FastBlocks Logo](https://drive.google.com/file/d/1ZSdG66WqCzHIKJubnCGG33LXEBIKfhmw/preview)
+
 
 > **FastBlocks Documentation**: [Main](./README.md) | [Core Features](./fastblocks/README.md) | [Actions](./fastblocks/actions/README.md) | [Adapters](./fastblocks/adapters/README.md)
 
