@@ -1,4 +1,5 @@
-<p align="center">"
+
+<p align="center">
 <img src="./images/fastblocks-logo.png" alt="FastBlocks Logo">
 </p>
 
