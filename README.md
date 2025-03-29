@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://drive.google.com/u/0/drive-viewer/AKGpihbMxYtrPNBmsZHkWtrsEdkuEmPZ8QnTHdG1U28zGw4ssjU_8Jh30p93cZidc2gi2b3T6cgBEtUCJS7_kAooYP5PmLGmYQK0Mw=s1600-rw-v1">
+<img src="https://drive.google.com/file/d/1ZSdG66WqCzHIKJubnCGG33LXEBIKfhmw/preview">
 </p>
 
 > **FastBlocks Documentation**: [Main](./README.md) | [Core Features](./fastblocks/README.md) | [Actions](./fastblocks/actions/README.md) | [Adapters](./fastblocks/adapters/README.md)
