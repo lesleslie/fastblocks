@@ -57,7 +57,7 @@ class TemplatesBase(AdapterBase):
             ]:
                 if await (a.path.parent / "_templates").exists():
                     searchpaths.append(a.path.parent / "_templates")
-        for path in [p.path for p in pkg_registry.get()[1:]]:  # type: ignore
+        for path in [p.path for p in pkg_registry.get()]:  # type: ignore
             searchpaths.extend(
                 self.get_searchpath(
                     adapter, path / "adapters" / adapter.category / "_templates"

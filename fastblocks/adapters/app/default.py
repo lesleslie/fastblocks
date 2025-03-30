@@ -28,8 +28,8 @@ class App(FastBlocks, AppBase):
         super().__init__(lifespan=self.lifespan)
 
     async def init(self) -> None:
-        self.templates = depends.get(import_adapter("templates")).app
-        self.routes.extend(depends.get(import_adapter("routes")).routes)
+        self.templates = depends.get().app
+        self.routes.extend(depends.get("routes").routes)
 
     @asynccontextmanager
     @depends.inject
@@ -37,12 +37,13 @@ class App(FastBlocks, AppBase):
         self,
         app: FastBlocks,
         auth: Auth = depends(),
+        sql: Sql = depends(),
     ) -> t.AsyncGenerator[None, None]:
         if get_adapter("admin").enabled:
-            admin = depends.get(import_adapter("admin"))
+            admin = depends.get()
             admin.__init__(
                 app,
-                engine=depends.get(import_adapter("sql")).engine,
+                engine=sql.engine,
                 title=self.config.admin.title,
                 debug=self.config.debug.admin,
                 base_url=self.config.admin.url,

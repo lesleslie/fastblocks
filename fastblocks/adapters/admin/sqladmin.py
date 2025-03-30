@@ -15,8 +15,14 @@ class AdminSettings(AdminBaseSettings): ...
 
 
 class Admin(AdminBase, SqlAdmin):  # type: ignore
-    def __init__(self, app: Starlette = FastBlocks(), **kwargs: t.Any) -> None:
+    def __init__(
+        self,
+        app: Starlette = FastBlocks(),
+        templates: Templates = depends(),
+        **kwargs: t.Any,
+    ) -> None:
         super().__init__(app, **kwargs)  # type: ignore
+        self.templates = templates.admin
 
     @depends.inject
     async def init(self, models: Models = depends(), sql: Sql = depends()) -> None: ...  # noqa

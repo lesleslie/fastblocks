@@ -31,10 +31,10 @@ class FileSystemLoader(AsyncBaseLoader):
     storage: Storage = depends()
 
     async def get_source_async(self, template: str | AsyncPath) -> SourceType:
-        debug("File Loader")
         path: t.Optional[AsyncPath] = None
         for searchpath in self.searchpath:
             path = searchpath / template
+            debug(path)
             if await path.is_file():
                 break
 
@@ -42,7 +42,6 @@ class FileSystemLoader(AsyncBaseLoader):
             raise TemplateNotFound(str(template))
 
         storage_path = Templates.get_storage_path(path)
-        debug(path)
         fs_exists = await path.exists()
         storage_exists = await self.storage.templates.exists(storage_path)
         debug(fs_exists)
@@ -97,7 +96,6 @@ class StorageLoader(AsyncBaseLoader):
     async def get_source_async(
         self, template: str | AsyncPath
     ) -> tuple[str, str, t.Callable[[], t.Awaitable[bool]]]:
-        debug("Storage Loader")
         path: t.Optional[AsyncPath] = None
         storage_path: t.Optional[AsyncPath] = None
 
@@ -148,7 +146,6 @@ class RedisLoader(AsyncBaseLoader):
     async def get_source_async(
         self, template: str | AsyncPath
     ) -> tuple[str, t.Optional[str], t.Callable[[], t.Awaitable[bool]]]:
-        debug("Redis Loader")
         path: t.Optional[AsyncPath] = None
         cache_key: t.Optional[str] = None
         storage_path: t.Optional[AsyncPath] = None
@@ -231,7 +228,6 @@ class PackageLoader(AsyncBaseLoader):
     async def get_source_async(
         self, template: str | AsyncPath
     ) -> tuple[str, str, t.Callable[[], t.Awaitable[bool]]]:
-        debug("Package Loader")
         template = AsyncPath(template)
         path = self._template_root / template
         if not await path.is_file():
@@ -286,6 +282,7 @@ class ChoiceLoader(AsyncBaseLoader):
     async def get_source_async(self, template: str | AsyncPath) -> SourceType:
         for loader in self.loaders:
             with suppress(TemplateNotFound):
+                debug(loader.__class__.__name__, template)
                 return await loader.get_source_async(template)
         raise TemplateNotFound(str(template))
 
@@ -358,6 +355,7 @@ class Templates(TemplatesBase):
     async def init_envs(
         self,
         template_paths: list[AsyncPath],
+        admin: bool = False,
         cache: Cache = depends(),
     ) -> AsyncJinja2Templates:
         _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
@@ -401,7 +399,7 @@ class Templates(TemplatesBase):
             setattr(templates.env, delimiter, value)
         templates.env.globals["config"] = self.config  # type: ignore
         templates.env.globals["render_block"] = templates.render_block  # type: ignore
-        if self.enabled_admin:
+        if admin:
             from sqladmin.helpers import get_object_identifier  # type: ignore
 
             templates.env.globals.update(  # type: ignore
@@ -425,16 +423,15 @@ class Templates(TemplatesBase):
         self.app = await self.init_envs(self.app_searchpaths)
         if self.enabled_admin:
             self.admin_searchpaths = await self.get_searchpaths(self.enabled_admin)
-            self.admin = await self.init_envs(self.admin_searchpaths)
+            self.admin = await self.init_envs(self.admin_searchpaths, admin=True)
         if self.app and self.app.env.loader and hasattr(self.app.env.loader, "loaders"):
             for loader in self.app.env.loader.loaders:
                 self.logger.debug(f"{loader.__class__.__name__} initialized")
         if self.app and hasattr(self.app.env, "extensions"):
             for ext in self.app.env.extensions:
                 self.logger.debug(f"{ext.split('.')[-1]} loaded")
-
         if self.config.debug.templates:
-            for namespace in ("templates", "_templates", "bccache"):
+            for namespace in ("templates", "_templates", "bccache", "template", "test"):
                 await cache.clear(namespace)
             self.logger.debug("Templates cache cleared")
 
