@@ -4,7 +4,7 @@ from acb import Adapter, pkg_registry
 from acb.adapters import get_adapters, root_path
 from acb.config import AdapterBase, Config, Settings
 from acb.depends import depends
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 
 
 class TemplatesBaseSettings(Settings):

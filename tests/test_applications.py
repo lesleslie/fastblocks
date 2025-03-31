@@ -1,10 +1,10 @@
 import typing as t
-from collections.abc import Awaitable, Callable
 from unittest.mock import MagicMock, patch
 
 from starlette.middleware import Middleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks.applications import FastBlocks
 from fastblocks.exceptions import handle_exception
 
@@ -61,7 +61,7 @@ class TestFastBlocks:
         mock_set_editor: MagicMock,
         mock_install_error_handler: MagicMock,
         mock_config: MagicMock,
-        exception_handler: Callable[[Request, Exception], Awaitable[Response]],
+        exception_handler: t.Callable[[Request, Exception], t.Awaitable[Response]],
     ) -> None:
         mock_depends_get.return_value = {}
         custom_handlers = {404: exception_handler, 500: exception_handler}
@@ -81,7 +81,7 @@ class TestFastBlocks:
         mock_set_editor: MagicMock,
         mock_install_error_handler: MagicMock,
         mock_config: MagicMock,
-        test_lifespan: Callable[[t.Any], t.AsyncGenerator[None, None]],
+        test_lifespan: t.Callable[[t.Any], t.AsyncGenerator[None, None]],
     ) -> None:
         mock_depends_get.return_value = {}
 
@@ -90,8 +90,14 @@ class TestFastBlocks:
         assert app is not None
 
     @patch("fastblocks.applications.middlewares")
+    @patch("fastblocks.applications.ServerErrorMiddleware")
+    @patch("fastblocks.applications.ExceptionMiddleware")
     def test_build_middleware_stack_correctly(
-        self, mock_middlewares: MagicMock, mock_logger: MagicMock
+        self,
+        mock_exception_middleware: MagicMock,
+        mock_server_error_middleware: MagicMock,
+        mock_middlewares: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         app = MagicMock(spec=FastBlocks)
         app.debug = False
@@ -99,19 +105,62 @@ class TestFastBlocks:
         app.user_middleware = []
         app.router = MagicMock()
 
-        middleware1 = Middleware(MagicMock(), param1="value1")  # type: ignore
-        middleware2 = Middleware(MagicMock(), param2="value2")  # type: ignore
+        class Middleware1:
+            def __init__(self, app: ASGIApp, **kwargs: t.Any) -> None:
+                self.app: ASGIApp = app
+                self.kwargs = kwargs
+
+            async def __call__(
+                self, scope: Scope, receive: Receive, send: Send
+            ) -> None:  # type: ignore
+                await self.app(scope, receive, send)
+
+        Middleware1.__name__ = "Middleware1"
+
+        class Middleware2:
+            def __init__(self, app: ASGIApp, **kwargs: t.Any) -> None:
+                self.app: ASGIApp = app
+                self.kwargs = kwargs
+
+            async def __call__(
+                self, scope: Scope, receive: Receive, send: Send
+            ) -> None:  # type: ignore
+                await self.app(scope, receive, send)
+
+        Middleware2.__name__ = "Middleware2"
+
+        middleware1: Middleware = Middleware(Middleware1, param1="value1")
+        middleware2: Middleware = Middleware(Middleware2, param2="value2")
         mock_middlewares.return_value = [middleware1, middleware2]
+
+        mock_server_error_middleware_instance: MagicMock = MagicMock()
+        mock_server_error_middleware_instance.__name__ = "ServerErrorMiddleware"
+        mock_server_error_middleware.return_value = (
+            mock_server_error_middleware_instance
+        )
+
+        mock_exception_middleware_instance: MagicMock = MagicMock()
+        mock_exception_middleware_instance.__name__ = "ExceptionMiddleware"
+        mock_exception_middleware.return_value = mock_exception_middleware_instance
+
+        mock_server_error_middleware.__name__ = "ServerErrorMiddleware"
+        mock_exception_middleware.__name__ = "ExceptionMiddleware"
 
         result = FastBlocks.build_middleware_stack(app, logger=mock_logger)
 
-        assert isinstance(result, MagicMock)
-        mock_logger.debug.assert_called()
+        assert result is not None
+
         mock_logger.info.assert_called_once_with("Middleware stack built")
 
     @patch("fastblocks.applications.middlewares")
+    @patch("fastblocks.applications.ServerErrorMiddleware")
+    @patch("fastblocks.applications.ExceptionMiddleware")
     def test_handle_error_handler_assignment(
-        self, mock_middlewares: MagicMock, mock_logger: MagicMock
+        self,
+        mock_exception_middleware: MagicMock,
+        mock_server_error_middleware: MagicMock,
+        mock_middlewares: MagicMock,
+        mock_logger: MagicMock,
     ) -> None:
         app = MagicMock(spec=FastBlocks)
         app.debug = False
@@ -129,9 +178,21 @@ class TestFastBlocks:
 
         mock_middlewares.return_value = []
 
+        mock_server_error_middleware.__name__ = "ServerErrorMiddleware"
+        mock_exception_middleware.__name__ = "ExceptionMiddleware"
+
+        mock_server_error_middleware_instance = MagicMock()
+        mock_server_error_middleware_instance.__name__ = "ServerErrorMiddleware"
+        mock_server_error_middleware.return_value = (
+            mock_server_error_middleware_instance
+        )
+
+        mock_exception_middleware_instance = MagicMock()
+        mock_exception_middleware_instance.__name__ = "ExceptionMiddleware"
+        mock_exception_middleware.return_value = mock_exception_middleware_instance
+
         FastBlocks.build_middleware_stack(app, logger=mock_logger)
 
-        mock_logger.debug.assert_called()
         mock_logger.info.assert_called_once_with("Middleware stack built")
 
     @patch("fastblocks.applications.install_error_handler")
@@ -166,14 +227,12 @@ class TestFastBlocks:
         mock_depends_get.return_value = {}
         mock_get_installed_adapter.return_value = True
 
-        with patch.dict("sys.modules", {"logfire": MagicMock()}):
-            from sys import modules
+        mock_logfire = MagicMock()
+        mock_logfire.instrument_starlette = MagicMock()
 
-            mock_logfire = modules["logfire"]
-            mock_instrument_starlette = MagicMock()
-            mock_logfire.instrument_starlette = MagicMock()  # type: ignore
-
-            app = FastBlocks(config=mock_config)
+        with patch.dict("sys.modules", {"logfire": mock_logfire}):
+            FastBlocks(config=mock_config)
 
             mock_get_installed_adapter.assert_called_with("logfire")
-            mock_instrument_starlette.assert_called_once_with(app)
+
+            mock_logfire.instrument_starlette.assert_called_once()

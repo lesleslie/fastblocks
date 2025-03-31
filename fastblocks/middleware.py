@@ -9,7 +9,6 @@ from acb.depends import depends
 from asgi_htmx import HtmxMiddleware
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
-from starlette.applications import Starlette
 from starlette.datastructures import URL, Headers, MutableHeaders
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -57,7 +56,7 @@ class CurrentRequestMiddleware:
 
 
 class SecureHeadersMiddleware:
-    def __init__(self, app: Starlette) -> None:
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
     @depends.inject
@@ -82,7 +81,7 @@ class SecureHeadersMiddleware:
 
 
 class ProcessTimeHeaderMiddleware:
-    def __init__(self, app: Starlette) -> None:
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
     @depends.inject

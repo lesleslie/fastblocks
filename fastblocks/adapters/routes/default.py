@@ -1,10 +1,11 @@
+from contextlib import suppress
 from importlib import import_module
 
 from acb.adapters import get_adapters, get_installed_adapter, import_adapter, root_path
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from asgi_htmx import HtmxRequest
 from jinja2.exceptions import TemplateNotFound
 from starlette.endpoints import HTTPEndpoint
@@ -65,10 +66,12 @@ class Routes(RoutesBase):
         if "adapters" in path.parts:
             depth = -4
         module_path = ".".join(path.parts[depth:]).removesuffix(".py")
-        module = import_module(module_path)
-        module_routes = getattr(module, "routes", None)
-        if module_routes and isinstance(module_routes, list):
-            self.routes = module.routes + self.routes
+        debug(path, depth, module_path)
+        with suppress(ModuleNotFoundError):
+            module = import_module(module_path)
+            module_routes = getattr(module, "routes", None)
+            if module_routes and isinstance(module_routes, list):
+                self.routes = module.routes + self.routes
 
     @staticmethod
     async def favicon(request: Request) -> Response:

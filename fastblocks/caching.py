@@ -131,7 +131,7 @@ async def set_in_cache(
         logger.debug(f"max_out_ttl value={max_age!r}")
     else:
         max_age = int(ttl)
-    logger.debug(f"store_in_cache max_age={max_age!r}")
+    logger.debug(f"set_in_cache max_age={max_age!r}")
     response.headers["X-Cache"] = "hit"
     cache_headers = get_cache_response_headers(response, max_age=max_age)
     logger.debug(f"patch_response_headers headers={cache_headers!r}")
@@ -140,7 +140,7 @@ async def set_in_cache(
     logger.debug(f"learnt_cache_key cache_key={cache_key!r}")
     serialized_response = serialize_response(response)
     logger.debug(
-        f"store_response_in_cache key={cache_key!r} value={serialized_response!r}"
+        f"set_response_in_cache key={cache_key!r} value={serialized_response!r}"
     )
     kwargs = {}
     if ttl is not None:

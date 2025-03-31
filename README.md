@@ -11,7 +11,7 @@
 
 ## What is FastBlocks?
 
-FastBlocks is an asynchronous web application framework inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines the power of modern Python async capabilities with the simplicity of server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
+FastBlocks is an asynchronous web application framework, inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines the power of modern Python async capabilities with the simplicity of server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
 
 ## Key Features
 
@@ -174,6 +174,8 @@ FastBlocks includes several middleware components:
 - **Session Middleware**: Cookie-based session management
 - **Compression**: Brotli compression for reduced payload sizes
 - **Secure Headers**: Security headers for production environments
+- **Cache Middleware**: HTTP response caching with rule-based configuration
+- **Cache Control Middleware**: Simplified management of cache control headers
 
 ### HTMX Integration
 

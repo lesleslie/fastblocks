@@ -7,7 +7,19 @@ FastBlocks provides a set of core features that form the foundation of the frame
 ## Table of Contents
 
 - [Application Class](#application-class)
-- [Middleware Stack](#middleware-stack)
+- [Middleware](#middleware)
+  - [Default Middleware Stack](#default-middleware-stack)
+  - [Available Middleware Components](#available-middleware-components)
+    - [ProcessTimeHeaderMiddleware](#processtimeheadermiddleware)
+    - [CSRFMiddleware](#csrfmiddleware)
+    - [SessionMiddleware](#sessionmiddleware)
+    - [HtmxMiddleware](#htmxmiddleware)
+    - [CurrentRequestMiddleware](#currentrequestmiddleware)
+    - [BrotliMiddleware](#brotlimiddleware)
+    - [SecureHeadersMiddleware](#secureheadersmiddleware)
+    - [CacheMiddleware](#cachemiddleware)
+    - [CacheControlMiddleware](#cachecontrolmiddleware)
+  - [Custom Middleware](#custom-middleware)
 - [Exception Handling](#exception-handling)
 - [Dependency Injection](#dependency-injection)
 - [Configuration System](#configuration-system)
@@ -40,9 +52,11 @@ app = FastBlocks(routes=routes)
 - **Middleware Configuration**: Automatic configuration of middleware based on application settings
 - **Model Integration**: Automatic integration with SQLAlchemy models via `app.models`
 
-## Middleware Stack
+## Middleware
 
-FastBlocks includes a comprehensive middleware stack that enhances the functionality of your application:
+FastBlocks includes a comprehensive middleware stack that enhances the functionality of your application. These middleware components process requests and responses at various stages of the request lifecycle.
+
+### Default Middleware Stack
 
 ```python
 # Default middleware stack
@@ -57,15 +71,263 @@ middleware = [
 ]
 ```
 
-### Key Middleware Components
+### Available Middleware Components
 
-- **ProcessTimeHeaderMiddleware**: Measures and logs request processing time
-- **CSRFMiddleware**: Provides protection against Cross-Site Request Forgery attacks
-- **SessionMiddleware**: Manages user sessions via cookies
-- **HtmxMiddleware**: Processes HTMX-specific headers and request information
-- **CurrentRequestMiddleware**: Makes the current request available via a context variable
-- **BrotliMiddleware**: Compresses responses using Brotli compression
-- **SecureHeadersMiddleware**: Adds security headers to responses in production environments
+#### ProcessTimeHeaderMiddleware
+
+Measures and logs the time taken to process each request.
+
+```python
+from fastblocks.middleware import ProcessTimeHeaderMiddleware
+from starlette.applications import Starlette
+
+app = Starlette()
+app = ProcessTimeHeaderMiddleware(app)
+```
+
+#### CSRFMiddleware
+
+Provides protection against Cross-Site Request Forgery attacks by requiring a CSRF token for state-changing requests.
+
+```python
+from fastblocks.middleware import CSRFMiddleware
+from starlette.applications import Starlette
+
+app = Starlette()
+app = CSRFMiddleware(app, secret="your-secret-key")
+```
+
+#### SessionMiddleware
+
+Manages user sessions via cookies.
+
+```python
+from fastblocks.middleware import SessionMiddleware
+from starlette.applications import Starlette
+
+app = Starlette()
+app = SessionMiddleware(app, secret_key="your-secret-key")
+```
+
+#### HtmxMiddleware
+
+Processes HTMX-specific headers and makes HTMX request information available in the request object.
+
+```python
+from fastblocks.middleware import HtmxMiddleware
+from starlette.applications import Starlette
+
+app = Starlette()
+app = HtmxMiddleware(app)
+```
+
+#### CurrentRequestMiddleware
+
+Makes the current request available via a context variable, allowing access to the request outside of the request handler.
+
+```python
+from fastblocks.middleware import CurrentRequestMiddleware, get_request
+from starlette.applications import Starlette
+
+app = Starlette()
+app = CurrentRequestMiddleware(app)
+
+# Later, in any function
+def some_function():
+    request = get_request()
+    if request is not None:
+        # Use request
+        pass
+```
+
+#### BrotliMiddleware
+
+Compresses responses using Brotli compression to reduce payload sizes.
+
+```python
+from fastblocks.middleware import BrotliMiddleware
+from starlette.applications import Starlette
+
+app = Starlette()
+app = BrotliMiddleware(app, quality=3)
+```
+
+#### SecureHeadersMiddleware
+
+Adds security headers to responses in production environments.
+
+```python
+from fastblocks.middleware import SecureHeadersMiddleware
+from starlette.applications import Starlette
+
+app = Starlette()
+app = SecureHeadersMiddleware(app)
+```
+
+#### CacheMiddleware
+
+Caches HTTP responses based on configurable rules to improve performance.
+
+```python
+from fastblocks.middleware import CacheMiddleware
+from fastblocks.caching import Rule
+from acb.adapters import import_adapter
+from acb.depends import depends
+from starlette.applications import Starlette
+
+Cache = import_adapter("cache")
+cache = depends.get(Cache)
+
+# Define caching rules
+rules = [
+    Rule(match="/api/*", ttl=60),  # Cache API responses for 60 seconds
+    Rule(match="/static/*", ttl=3600),  # Cache static content for 1 hour
+]
+
+app = Starlette()
+app = CacheMiddleware(app, cache=cache, rules=rules)
+```
+
+##### Using the Cache Decorator
+
+You can also apply caching to specific route handlers using the `@cached` decorator:
+
+```python
+from fastblocks.decorators import cached
+from acb.adapters import import_adapter
+from acb.depends import depends
+from starlette.responses import JSONResponse
+
+Cache = import_adapter("cache")
+cache = depends.get(Cache)
+
+@cached(cache=cache)
+async def my_endpoint(request):
+    return JSONResponse({"data": "This response will be cached"})
+```
+
+##### Cache Rules
+
+Cache rules determine which requests and responses should be cached:
+
+```python
+from fastblocks.caching import Rule
+import re
+
+# Cache all requests
+rule = Rule(match="*")
+
+# Cache specific paths
+rule = Rule(match="/api/products")
+
+# Cache using regex pattern
+rule = Rule(match=re.compile(r"/api/products/\d+"))
+
+# Cache multiple patterns
+rule = Rule(match=["/api/products", "/api/categories"])
+
+# Cache with specific TTL (time-to-live)
+rule = Rule(match="/api/products", ttl=60)  # 60 seconds
+
+# Cache only specific status codes
+rule = Rule(match="/api/products", status=[200, 304])
+```
+
+#### CacheControlMiddleware
+
+Simplifies the management of cache control headers for HTTP responses.
+
+```python
+from fastblocks.middleware import CacheControlMiddleware
+from starlette.applications import Starlette
+
+app = Starlette()
+app = CacheControlMiddleware(app, max_age=300, public=True)
+```
+
+##### Using the Cache Control Decorator
+
+You can also apply cache control headers to specific route handlers using the `@cache_control` decorator:
+
+```python
+from fastblocks.decorators import cache_control
+from starlette.responses import JSONResponse
+
+@cache_control(max_age=300, public=True)
+async def my_endpoint(request):
+    return JSONResponse({"data": "This response will have cache headers"})
+```
+
+##### Cache Control Directives
+
+Available cache control directives:
+
+```python
+from fastblocks.decorators import cache_control
+
+# Set max-age
+@cache_control(max_age=300)
+
+# Set s-maxage (for shared caches)
+@cache_control(s_maxage=600)
+
+# Set public/private
+@cache_control(public=True)
+@cache_control(private=True)
+
+# Set no-cache/no-store
+@cache_control(no_cache=True)
+@cache_control(no_store=True)
+
+# Set must-revalidate
+@cache_control(must_revalidate=True)
+
+# Set proxy-revalidate
+@cache_control(proxy_revalidate=True)
+
+# Set immutable
+@cache_control(immutable=True)
+
+# Set stale-while-revalidate
+@cache_control(stale_while_revalidate=60)
+
+# Set stale-if-error
+@cache_control(stale_if_error=300)
+```
+
+### Custom Middleware
+
+You can create your own middleware by following the ASGI middleware pattern:
+
+```python
+class CustomMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # Process request
+        # ...
+
+        async def send_wrapper(message):
+            # Process response
+            # ...
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+```
+
+Then apply your middleware to your application:
+
+```python
+from starlette.applications import Starlette
+
+app = Starlette()
+app = CustomMiddleware(app)
+```
 
 ## Exception Handling
 
@@ -126,7 +388,7 @@ debug_mode = config.debug.fastblocks
 
 ## Caching
 
-FastBlocks includes a powerful caching system for templates and other data:
+FastBlocks includes a powerful caching system for templates, HTTP responses, and other data:
 
 ```python
 from acb.depends import depends
@@ -148,3 +410,43 @@ value = await cache.get("my_key")
 - **Bytecode Caching**: Jinja2 template bytecode is cached in Redis
 - **Distributed Caching**: Redis-based caching for distributed deployments
 - **Namespace Support**: Cache keys are organized by namespaces
+- **HTTP Response Caching**: Middleware for caching HTTP responses
+
+### Response Caching
+
+FastBlocks provides middleware for caching HTTP responses:
+
+```python
+from fastblocks.decorators import cached, cache_control
+from acb.adapters import import_adapter
+
+Cache = import_adapter("cache")
+cache = depends.get(Cache)
+
+# Apply caching to a route handler
+@cached(cache=cache)
+async def my_endpoint(request):
+    return JSONResponse({"data": "This response will be cached"})
+
+# Apply cache control headers
+@cache_control(max_age=300, public=True)
+async def another_endpoint(request):
+    return JSONResponse({"data": "This response will have cache headers"})
+```
+
+You can also apply caching to your entire application:
+
+```python
+from fastblocks.middleware import CacheMiddleware
+from starlette.applications import Starlette
+
+app = Starlette()
+app = CacheMiddleware(app, cache=cache)
+```
+
+The caching system supports:
+
+- **Rule-based caching**: Configure which responses should be cached based on patterns
+- **Automatic cache invalidation**: Cache is automatically invalidated on POST, PUT, PATCH, DELETE requests
+- **Cache control headers**: Easily add cache control headers to responses
+- **Cache helpers**: Utilities for working with cached responses

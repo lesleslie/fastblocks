@@ -12,7 +12,7 @@ from acb.adapters import get_adapter, import_adapter
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
-from aiopath import AsyncPath
+from anyio import Path as AsyncPath
 from jinja2 import TemplateNotFound
 from jinja2.ext import Extension, i18n, loopcontrols
 from jinja2.ext import debug as jinja_debug
@@ -123,8 +123,6 @@ class StorageLoader(AsyncBaseLoader):
 
             return resp.decode(), str(storage_path), uptodate
         except (FileNotFoundError, AttributeError):
-            if path is not None:
-                raise TemplateNotFound(path.name)
             raise TemplateNotFound(str(template))
 
     async def list_templates_async(self) -> list[str]:
