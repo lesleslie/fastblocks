@@ -12,6 +12,7 @@ from acb.actions.hash import hash
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
+from acb.logger import Logger
 from starlette.datastructures import URL, Headers, MutableHeaders
 from starlette.requests import Request
 from starlette.responses import Response
@@ -19,7 +20,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .exceptions import RequestNotCachable, ResponseNotCachable
 
-Cache, Logger = import_adapter()  # type: ignore
+Cache = import_adapter()  # type: ignore
 
 cachable_methods = frozenset(("GET", "HEAD"))
 cachable_status_codes = frozenset(
@@ -179,7 +180,8 @@ async def get_from_cache(
     if serialized_response is None:
         logger.debug("lookup_cached_response method='HEAD'")
         cache_key = await get_cache_key(request, method="HEAD", cache=cache)
-        assert cache_key is not None
+        if cache_key is None:
+            return None
         logger.debug(f"cache_key found=True cache_key={cache_key!r}")
         serialized_response = await cache.get(cache_key)
     if serialized_response is None:
@@ -306,8 +308,9 @@ def generate_cache_key(
     headers: Headers,
     varying_headers: list[str],
     config: Config = depends(),
-) -> str:
-    assert method in cachable_methods
+) -> str | None:
+    if method not in cachable_methods:
+        return None
 
     vary_hash = ""
     for header in varying_headers:
@@ -324,7 +327,8 @@ def generate_varying_headers_cache_key(url: URL) -> str:
 
 
 def get_cache_response_headers(response: Response, *, max_age: int) -> dict[str, str]:
-    assert max_age >= 0, "Can't have a negative cache max-age"
+    if max_age < 0:
+        max_age = 0
     headers = {}
     if "Expires" not in response.headers:
         headers["Expires"] = email.utils.formatdate(time.time() + max_age, usegmt=True)
@@ -389,7 +393,9 @@ class CacheResponder:
         self.request: Request | None = None
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        assert scope["type"] == "http"
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
         self.request = request = Request(scope)
 
@@ -409,20 +415,25 @@ class CacheResponder:
         await self.app(scope, receive, send)
 
     async def send_with_caching(self, message: Message, *, send: Send) -> None:
-        if not self.is_response_cachable:
+        if not self.is_response_cachable or message["type"] not in (
+            "http.response.start",
+            "http.response.body",
+        ):
             await send(message)
             return
         if message["type"] == "http.response.start":
             self.initial_message = message
             return
-        assert message["type"] == "http.response.body"
+        if message["type"] != "http.response.body":
+            return
         if message.get("more_body", False):
             self.logger.debug("response_not_cachable reason=is_streaming")
             self.is_response_cachable = False
             await send(self.initial_message)
             await send(message)
             return
-        assert self.request is not None
+        if self.request is None:
+            return
         body = message["body"]
         response = Response(content=body, status_code=self.initial_message["status"])
         response.raw_headers = list(self.initial_message["headers"])
@@ -438,7 +449,8 @@ class CacheResponder:
         await send(message)
 
     async def send_then_invalidate(self, message: Message, *, send: Send) -> None:
-        assert self.request is not None
+        if self.request is None:
+            return
         if message["type"] == "http.response.start" and 200 <= message["status"] < 400:
             await delete_from_cache(
                 self.request.url,
@@ -456,7 +468,9 @@ class CacheControlResponder:
         self.kwargs = kwargs
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        assert scope["type"] == "http"
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
         send = partial(self.send_with_caching, send=send)
         await self.app(scope, receive, send)
 

@@ -6,15 +6,43 @@ import typer
 import uvicorn
 from acb import pkg_registry
 from acb.console import console
-from acb.depends import depends
 from granian import Granian
-from rich.traceback import install
+from rich.prompt import Prompt
+
+fastblocks_path = Path(__file__)
+
+app_name = Path.cwd().stem
+
+if Path.cwd() == fastblocks_path:
+    raise SystemExit(
+        "FastBlocks can not be run in the same directory as FastBlocks itself."
+    )
 
 cli = typer.Typer()
 
-install(console=console)
 
-config = depends.get()
+@cli.command()
+def create() -> None:
+    console.print("Creating new FastBlocks project...")
+    app_name = Prompt.ask("Enter project name: ")
+    style = Prompt.ask(
+        "Choose style: ", choices=["bulma", "webawesome"], default="bulma"
+    )
+    execute(["pdm", "init", "-p", app_name], shell=True)
+    os.chdir(Path(app_name))
+    envrc = fastblocks_path / ".envrc"
+    Path(".envrc").write_text(envrc.read_text())
+    execute("direnv allow .".split())
+    execute(["pdm", "add", "fastblocks"])
+    main = fastblocks_path / "main.py"
+    Path("main.py").write_text(main.read_text())
+    templates = fastblocks_path / "templates"
+    (templates / "base/blocks").mkdir(parents=True, exist_ok=True)
+    (templates / f"{style}/blocks").mkdir(parents=True, exist_ok=True)
+    (templates / f"{style}/theme").mkdir(parents=True, exist_ok=True)
+    for p in ("models.py", "routes.py"):
+        Path.touch(Path(p))
+    execute("python -m fastblocks run")
 
 
 @cli.command()
@@ -22,7 +50,7 @@ def run(docker: bool = False, granian: bool = False) -> None:
     os.chdir(Path.cwd())
     try:
         if docker:
-            execute(f"docker run -it -ePORT=8080 -p8080:8080 {config.app.name}".split())
+            execute(f"docker run -it -ePORT=8080 -p8080:8080 {app_name}".split())
         if granian:
             reload_paths = [
                 *[Path(p.path) for p in pkg_registry.get()],
@@ -67,9 +95,17 @@ def run(docker: bool = False, granian: bool = False) -> None:
     except KeyError:
         console.print(
             "Project initialized. Please configure 'adapters.yml' "
-            "and 'app.yml' before running the application."
+            "and 'app.yml' in the settings directory before running the application "
+            "`python -m fastblocks run`"
         )
+    finally:
+        raise SystemExit()
 
 
 if __name__ == "__main__":
-    cli()
+    try:
+        cli()
+    except KeyboardInterrupt:
+        ...
+    finally:
+        raise SystemExit()

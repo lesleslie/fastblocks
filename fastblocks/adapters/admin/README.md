@@ -107,7 +107,7 @@ The Admin adapter is implemented in the following files:
 
 ```python
 import typing as t
-from acb.config import AdapterBase, Settings
+from acb.config import  Settings
 
 class AdminBaseSettings(Settings):
     enabled: bool = True

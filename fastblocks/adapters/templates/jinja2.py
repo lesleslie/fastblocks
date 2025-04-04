@@ -25,6 +25,20 @@ from ._base import TemplatesBase, TemplatesBaseSettings
 Cache, Storage, Models = import_adapter()  # type: ignore
 
 
+class LoaderProtocol(t.Protocol):
+    cache: t.Any
+    config: t.Any
+    storage: t.Any
+
+    async def get_source_async(
+        self, template: str | AsyncPath
+    ) -> tuple[
+        str, str | None, t.Callable[[], bool] | t.Callable[[], t.Awaitable[bool]]
+    ]: ...
+
+    async def list_templates_async(self) -> list[str]: ...
+
+
 class FileSystemLoader(AsyncBaseLoader):
     config: Config = depends()
     cache: Cache = depends()
@@ -90,6 +104,7 @@ class FileSystemLoader(AsyncBaseLoader):
 
 
 class StorageLoader(AsyncBaseLoader):
+    config: Config = depends()
     cache: Cache = depends()
     storage: Storage = depends()
 
@@ -138,6 +153,7 @@ class StorageLoader(AsyncBaseLoader):
 
 
 class RedisLoader(AsyncBaseLoader):
+    config: Config = depends()
     cache: Cache = depends()
     storage: Storage = depends()
 
@@ -181,6 +197,7 @@ class RedisLoader(AsyncBaseLoader):
 class PackageLoader(AsyncBaseLoader):
     config: Config = depends()
     cache: Cache = depends()
+    storage: Storage = depends()
     _template_root: AsyncPath
     _adapter: str
     package_name: str
@@ -267,11 +284,11 @@ class PackageLoader(AsyncBaseLoader):
 
 
 class ChoiceLoader(AsyncBaseLoader):
-    loaders: list[AsyncBaseLoader]
+    loaders: list[AsyncBaseLoader | LoaderProtocol]
 
     def __init__(
         self,
-        loaders: list[AsyncBaseLoader],
+        loaders: list[AsyncBaseLoader | LoaderProtocol],
         searchpath: t.Optional[AsyncPath | t.Sequence[AsyncPath]] = None,
     ) -> None:
         super().__init__(searchpath or AsyncPath("templates"))
@@ -335,9 +352,11 @@ class Templates(TemplatesBase):
         ]
 
         debug(searchpaths)
-        file_loaders: list[AsyncBaseLoader] = [FileSystemLoader(searchpaths)]
+        file_loaders: list[AsyncBaseLoader | LoaderProtocol] = [
+            FileSystemLoader(searchpaths)
+        ]
 
-        jinja_loaders: list[AsyncBaseLoader] = loaders + file_loaders
+        jinja_loaders: list[AsyncBaseLoader | LoaderProtocol] = loaders + file_loaders
         if not self.config.deployed and not self.config.debug.production:
             jinja_loaders = file_loaders + loaders
 

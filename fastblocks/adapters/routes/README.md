@@ -99,7 +99,7 @@ The Routes adapter is implemented in the following files:
 ### Base Class
 
 ```python
-from acb.config import AdapterBase, Settings
+from acb.config import  Settings
 
 class RoutesBaseSettings(Settings):
     ...

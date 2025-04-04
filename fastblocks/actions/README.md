@@ -86,9 +86,9 @@ Minifies JavaScript content by removing whitespace, comments, and optimizing cod
 
 The minify action uses the following libraries:
 
-- **HTML**: [minify-html](https://github.com/wilsonzlin/minify-html)
-- **CSS**: [rcssmin](https://github.com/ndparker/rcssmin)
-- **JavaScript**: [rjsmin](https://github.com/ndparker/rjsmin)
+- **HTML**: [minify-html](https://github.com/wilsonzlin/minify-html) v0.16.4
+- **CSS**: [rcssmin](https://github.com/ndparker/rcssmin) v1.2.1
+- **JavaScript**: [rjsmin](https://github.com/ndparker/rjsmin) v1.2.4
 
 ## Creating Custom Actions
 

@@ -2,11 +2,10 @@ import logging
 import typing as t
 from platform import system
 
-from acb import register_pkg
-from acb.adapters import get_installed_adapter, import_adapter
-from acb.adapters.logger.loguru import InterceptHandler
+from acb.adapters import get_installed_adapter
 from acb.config import Config
 from acb.depends import depends
+from acb.logger import InterceptHandler, Logger
 from asgi_htmx import HtmxRequest
 from starception import add_link_template, install_error_handler, set_editor
 from starlette.applications import Starlette
@@ -18,10 +17,6 @@ from starlette.types import ASGIApp, ExceptionHandler, Lifespan
 
 from .exceptions import handle_exception
 from .middleware import middlewares
-
-register_pkg()
-
-Logger = import_adapter()
 
 AppType = t.TypeVar("AppType", bound="FastBlocks")
 

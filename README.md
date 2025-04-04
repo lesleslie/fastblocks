@@ -51,6 +51,10 @@ Install FastBlocks using [pdm](https://pdm.fming.dev):
 pdm add fastblocks
 ```
 
+### Requirements
+
+- Python 3.13 or higher
+
 ### Optional Dependencies
 
 FastBlocks supports various optional dependencies for different features:
@@ -97,7 +101,7 @@ Create a basic template at `templates/index.html`:
 <head>
     <title>[[ title ]]</title>
     <!-- HTMX for interactivity -->
-    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
     <h1>[[ title ]]</h1>
@@ -176,6 +180,8 @@ FastBlocks includes several middleware components:
 - **Secure Headers**: Security headers for production environments
 - **Cache Middleware**: HTTP response caching with rule-based configuration
 - **Cache Control Middleware**: Simplified management of cache control headers
+- **Process Time Header Middleware**: Measures and logs request processing time
+- **Current Request Middleware**: Makes the current request available via a context variable
 
 ### HTMX Integration
 

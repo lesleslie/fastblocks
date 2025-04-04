@@ -21,10 +21,10 @@ class Filters:
 
     @staticmethod
     @templates.filter()
-    def minify_js(js: str) -> str:
+    def minify_js(js: str) -> bytearray | bytes | str:
         return minify.js(js)  # type: ignore
 
     @staticmethod
     @templates.filter()
-    def minify_scss(css: str) -> str:
-        return minify.scss(css)  # type: ignore
+    def minify_css(css: str) -> bytearray | bytes | str:
+        return minify.css(css)  # type: ignore

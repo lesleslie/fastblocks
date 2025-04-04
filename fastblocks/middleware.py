@@ -6,6 +6,7 @@ from time import perf_counter
 from acb.adapters import import_adapter
 from acb.config import Config
 from acb.depends import depends
+from acb.logger import Logger
 from asgi_htmx import HtmxMiddleware
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
@@ -25,7 +26,7 @@ from .caching import (
 )
 from .exceptions import DuplicateCaching, MissingCaching
 
-Logger, Cache = import_adapter()  # type: ignore
+Cache = import_adapter()  # type: ignore
 
 secure_headers = Secure()
 

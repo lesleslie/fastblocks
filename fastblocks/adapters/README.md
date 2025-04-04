@@ -28,7 +28,6 @@ FastBlocks uses a pluggable adapter system that allows you to:
 Adapters are typically accessed through dependency injection:
 
 ```python
-import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 
@@ -171,7 +170,7 @@ You can create your own adapters by following these steps:
 ```python
 # fastblocks/adapters/payment/_base.py
 import typing as t
-from acb.config import AdapterBase, Settings
+from acb.config import  Settings
 
 class PaymentBaseSettings(Settings):
     currency: str = "USD"

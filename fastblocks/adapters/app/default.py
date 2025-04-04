@@ -33,12 +33,12 @@ class App(FastBlocks, AppBase):
 
     @asynccontextmanager
     @depends.inject
-    async def lifespan(
+    async def lifespan(  # type: ignore
         self,
         app: FastBlocks,
         auth: Auth = depends(),
         sql: Sql = depends(),
-    ) -> t.AsyncGenerator[None, None]:
+    ) -> t.Any:
         if get_adapter("admin").enabled:
             admin = depends.get()
             admin.__init__(

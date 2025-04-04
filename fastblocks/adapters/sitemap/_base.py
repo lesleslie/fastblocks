@@ -13,4 +13,5 @@ class SitemapProtocol(t.Protocol):
     sitemap: t.Any = None
 
 
-class SitemapBase(AdapterBase): ...
+class SitemapBase(AdapterBase):
+    sitemap: t.Any = None

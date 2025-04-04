@@ -51,6 +51,8 @@ app = FastBlocks(routes=routes)
 - **Debug Mode**: Enhanced debugging with detailed error pages when in debug mode
 - **Middleware Configuration**: Automatic configuration of middleware based on application settings
 - **Model Integration**: Automatic integration with SQLAlchemy models via `app.models`
+- **Logging Integration**: Automatic configuration of logging with support for Logfire
+- **Error Handling**: Enhanced error handling with custom error pages
 
 ## Middleware
 

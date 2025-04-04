@@ -2,6 +2,7 @@ import typing as t
 
 from acb.config import AdapterBase
 from acb.config import AppSettings as AppConfigSettings
+from fastblocks.applications import FastBlocks
 
 
 class AppBaseSettings(AppConfigSettings):
@@ -12,7 +13,10 @@ class AppBaseSettings(AppConfigSettings):
 
 class AppProtocol(t.Protocol):
     def __init__(self) -> None: ...
-    def lifespan(self) -> t.AsyncIterator[None]: ...
+
+    async def lifespan(
+        self, app: FastBlocks, auth: t.Any = ..., sql: t.Any = ...
+    ) -> t.Any: ...
 
 
-class AppBase(AdapterBase): ...
+class AppBase(AdapterBase, AppProtocol): ...

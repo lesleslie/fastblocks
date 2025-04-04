@@ -119,7 +119,7 @@ The Auth adapter is implemented in the following files:
 
 ```python
 import typing as t
-from acb.config import AdapterBase, Settings
+from acb.config import  Settings
 
 class AuthBaseSettings(Settings):
     token_id: str | None = None
