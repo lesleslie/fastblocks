@@ -4,7 +4,7 @@ from acb.adapters import import_adapter
 from acb.depends import depends
 from sqladmin import Admin as SqlAdmin
 from starlette.applications import Starlette
-from fastblocks import FastBlocks
+from fastblocks.applications import FastBlocks
 
 from ._base import AdminBase, AdminBaseSettings
 

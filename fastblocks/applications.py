@@ -2,6 +2,7 @@ import logging
 import typing as t
 from platform import system
 
+from acb import register_pkg
 from acb.adapters import get_installed_adapter
 from acb.config import Config
 from acb.depends import depends
@@ -16,7 +17,9 @@ from starlette.responses import Response
 from starlette.types import ASGIApp, ExceptionHandler, Lifespan
 
 from .exceptions import handle_exception
-from .middleware import middlewares
+
+register_pkg()
+
 
 AppType = t.TypeVar("AppType", bound="FastBlocks")
 
@@ -81,6 +84,8 @@ class FastBlocks(Starlette):
                 error_handler = value
             else:
                 exception_handlers[key] = value  # type: ignore
+        from .middleware import middlewares
+
         middleware = (
             [
                 Middleware(

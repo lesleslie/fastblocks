@@ -4,12 +4,11 @@ from subprocess import run as execute
 
 import typer
 import uvicorn
-from acb import pkg_registry
 from acb.console import console
 from granian import Granian
 from rich.prompt import Prompt
 
-fastblocks_path = Path(__file__)
+fastblocks_path = Path(__file__).parent
 
 app_name = Path.cwd().stem
 
@@ -18,7 +17,7 @@ if Path.cwd() == fastblocks_path:
         "FastBlocks can not be run in the same directory as FastBlocks itself."
     )
 
-cli = typer.Typer()
+cli = typer.Typer(rich_markup_mode="rich")
 
 
 @cli.command()
@@ -52,12 +51,7 @@ def run(docker: bool = False, granian: bool = False) -> None:
         if docker:
             execute(f"docker run -it -ePORT=8080 -p8080:8080 {app_name}".split())
         if granian:
-            reload_paths = [
-                *[Path(p.path) for p in pkg_registry.get()],
-                Path.cwd(),
-                Path(__file__).parent,
-            ]
-
+            reload_paths = [Path.cwd(), fastblocks_path]
             Granian(
                 "main:app",
                 address="127.0.0.1",
@@ -80,11 +74,7 @@ def run(docker: bool = False, granian: bool = False) -> None:
                 host="127.0.0.1",
                 port=8000,
                 reload=True,
-                reload_includes=[
-                    "*.py",
-                    *[str(p.path) for p in pkg_registry.get()],
-                    str(Path.cwd()),
-                ],
+                reload_includes=["*.py", str(Path.cwd()), str(fastblocks_path)],
                 reload_excludes=[
                     "tmp/*",
                     "settings/*",
@@ -98,14 +88,7 @@ def run(docker: bool = False, granian: bool = False) -> None:
             "and 'app.yml' in the settings directory before running the application "
             "`python -m fastblocks run`"
         )
-    finally:
-        raise SystemExit()
 
 
 if __name__ == "__main__":
-    try:
-        cli()
-    except KeyboardInterrupt:
-        ...
-    finally:
-        raise SystemExit()
+    cli()

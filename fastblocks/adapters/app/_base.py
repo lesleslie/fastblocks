@@ -2,7 +2,7 @@ import typing as t
 
 from acb.config import AdapterBase
 from acb.config import AppSettings as AppConfigSettings
-from fastblocks.applications import FastBlocks
+from starlette.routing import Router
 
 
 class AppBaseSettings(AppConfigSettings):
@@ -13,10 +13,8 @@ class AppBaseSettings(AppConfigSettings):
 
 class AppProtocol(t.Protocol):
     def __init__(self) -> None: ...
-
-    async def lifespan(
-        self, app: FastBlocks, auth: t.Any = ..., sql: t.Any = ...
-    ) -> t.Any: ...
+    async def lifespan(self) -> t.AsyncIterator[None]: ...
 
 
-class AppBase(AdapterBase, AppProtocol): ...
+class AppBase(AdapterBase):
+    router: Router | None
