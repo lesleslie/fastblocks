@@ -3,7 +3,13 @@ import typing as t
 from platform import system
 
 from acb import register_pkg
-from acb.adapters import get_installed_adapter
+from acb.actions.encode import dump, load
+from acb.adapters import (
+    adapter_settings_path,
+    debug_settings_path,
+    get_adapter,
+    get_installed_adapter,
+)
 from acb.config import Config
 from acb.depends import depends
 from acb.logger import InterceptHandler, Logger
@@ -19,6 +25,10 @@ from starlette.types import ASGIApp, ExceptionHandler, Lifespan
 from .exceptions import handle_exception
 
 register_pkg()
+
+default_adapters = dict(
+    routes="default", templates="jinja2", auth="basic", sitemap="asgi"
+)
 
 
 AppType = t.TypeVar("AppType", bound="FastBlocks")
@@ -43,9 +53,21 @@ class FastBlocks(Starlette):
         lifespan: t.Optional[Lifespan["AppType"]] = None,
         config: Config = depends(),
     ) -> None:
+        if not hasattr(config.debug, "fastblocks"):
+            debug = load.yaml(debug_settings_path)
+            setattr(config.debug, "fastblocks", False)
+            debug["fastblocks"] = False
+            if not config.deployed and not config.debug.production:
+                dump.yaml(debug, debug_settings_path)
         self.debug = config.debug.fastblocks
         if self.debug or not config.deployed or not config.debug.production:
             install_error_handler()
+        if not get_adapter("routes") or not get_adapter("templates"):
+            adapters = load.yaml(adapter_settings_path)
+            for category, name in {c: n for c, n in default_adapters.items() if not n}:
+                adapters[category] = name
+            if not config.deployed or not config.debug.production:
+                dump.yaml(adapters, adapter_settings_path)
         super().__init__(
             debug=self.debug,
             routes=[],

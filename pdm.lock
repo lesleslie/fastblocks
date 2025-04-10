@@ -5,14 +5,14 @@
 groups = ["default", "dev", "sitemap"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:c4041f3d95c2f7fa399462b3db863dbf7bc5e67ea7b3028d55834b0b68fe926f"
+content_hash = "sha256:ca41e0fc49ae91dd7c3f6a4a6ece918f588337d6e35b4ebd0c0a52994faeac5a"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.14.2"
+version = "0.14.3"
 summary = ""
 dependencies = [
     "aioconsole",
@@ -37,48 +37,48 @@ dependencies = [
     "typer",
 ]
 files = [
-    {file = "acb-0.14.2-py3-none-any.whl", hash = "sha256:bdd6b303e6a13820b63157c44549ffb94a8a65e4e3fa122722d3b4a694e5b992"},
-    {file = "acb-0.14.2.tar.gz", hash = "sha256:b64a0aeb4b23d7868eccca45e2c794499b10b72cd5794dec144fb9a3bd2f6c18"},
+    {file = "acb-0.14.3-py3-none-any.whl", hash = "sha256:4e5be68d742bd840b0b8ec10bffe1ce1ed14828e504d23d4c8710ee52bf90eef"},
+    {file = "acb-0.14.3.tar.gz", hash = "sha256:f68e6960b44d402578edf9e067feeb3a80dab141808a3792f478418e0f7015b9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.14.2"
+version = "0.14.3"
 extras = ["cache"]
 summary = ""
 dependencies = [
-    "acb==0.14.2",
+    "acb==0.14.3",
     "aiocache",
     "coredis",
     "logfire",
 ]
 files = [
-    {file = "acb-0.14.2-py3-none-any.whl", hash = "sha256:bdd6b303e6a13820b63157c44549ffb94a8a65e4e3fa122722d3b4a694e5b992"},
-    {file = "acb-0.14.2.tar.gz", hash = "sha256:b64a0aeb4b23d7868eccca45e2c794499b10b72cd5794dec144fb9a3bd2f6c18"},
+    {file = "acb-0.14.3-py3-none-any.whl", hash = "sha256:4e5be68d742bd840b0b8ec10bffe1ce1ed14828e504d23d4c8710ee52bf90eef"},
+    {file = "acb-0.14.3.tar.gz", hash = "sha256:f68e6960b44d402578edf9e067feeb3a80dab141808a3792f478418e0f7015b9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.14.2"
+version = "0.14.3"
 extras = ["monitoring"]
 summary = ""
 dependencies = [
-    "acb==0.14.2",
+    "acb==0.14.3",
     "logfire",
     "sentry-sdk",
 ]
 files = [
-    {file = "acb-0.14.2-py3-none-any.whl", hash = "sha256:bdd6b303e6a13820b63157c44549ffb94a8a65e4e3fa122722d3b4a694e5b992"},
-    {file = "acb-0.14.2.tar.gz", hash = "sha256:b64a0aeb4b23d7868eccca45e2c794499b10b72cd5794dec144fb9a3bd2f6c18"},
+    {file = "acb-0.14.3-py3-none-any.whl", hash = "sha256:4e5be68d742bd840b0b8ec10bffe1ce1ed14828e504d23d4c8710ee52bf90eef"},
+    {file = "acb-0.14.3.tar.gz", hash = "sha256:f68e6960b44d402578edf9e067feeb3a80dab141808a3792f478418e0f7015b9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.14.2"
+version = "0.14.3"
 extras = ["requests"]
 summary = ""
 dependencies = [
-    "acb==0.14.2",
+    "acb==0.14.3",
     "hishel",
     "httpx",
     "logfire",
@@ -86,31 +86,31 @@ dependencies = [
     "sentry-sdk",
 ]
 files = [
-    {file = "acb-0.14.2-py3-none-any.whl", hash = "sha256:bdd6b303e6a13820b63157c44549ffb94a8a65e4e3fa122722d3b4a694e5b992"},
-    {file = "acb-0.14.2.tar.gz", hash = "sha256:b64a0aeb4b23d7868eccca45e2c794499b10b72cd5794dec144fb9a3bd2f6c18"},
+    {file = "acb-0.14.3-py3-none-any.whl", hash = "sha256:4e5be68d742bd840b0b8ec10bffe1ce1ed14828e504d23d4c8710ee52bf90eef"},
+    {file = "acb-0.14.3.tar.gz", hash = "sha256:f68e6960b44d402578edf9e067feeb3a80dab141808a3792f478418e0f7015b9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.14.2"
+version = "0.14.3"
 extras = ["secret"]
 summary = ""
 dependencies = [
-    "acb==0.14.2",
+    "acb==0.14.3",
     "google-cloud-secret-manager",
 ]
 files = [
-    {file = "acb-0.14.2-py3-none-any.whl", hash = "sha256:bdd6b303e6a13820b63157c44549ffb94a8a65e4e3fa122722d3b4a694e5b992"},
-    {file = "acb-0.14.2.tar.gz", hash = "sha256:b64a0aeb4b23d7868eccca45e2c794499b10b72cd5794dec144fb9a3bd2f6c18"},
+    {file = "acb-0.14.3-py3-none-any.whl", hash = "sha256:4e5be68d742bd840b0b8ec10bffe1ce1ed14828e504d23d4c8710ee52bf90eef"},
+    {file = "acb-0.14.3.tar.gz", hash = "sha256:f68e6960b44d402578edf9e067feeb3a80dab141808a3792f478418e0f7015b9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.14.2"
+version = "0.14.3"
 extras = ["sql"]
 summary = ""
 dependencies = [
-    "acb==0.14.2",
+    "acb==0.14.3",
     "aiomysql",
     "babel",
     "greenlet",
@@ -122,24 +122,24 @@ dependencies = [
     "sqlmodel",
 ]
 files = [
-    {file = "acb-0.14.2-py3-none-any.whl", hash = "sha256:bdd6b303e6a13820b63157c44549ffb94a8a65e4e3fa122722d3b4a694e5b992"},
-    {file = "acb-0.14.2.tar.gz", hash = "sha256:b64a0aeb4b23d7868eccca45e2c794499b10b72cd5794dec144fb9a3bd2f6c18"},
+    {file = "acb-0.14.3-py3-none-any.whl", hash = "sha256:4e5be68d742bd840b0b8ec10bffe1ce1ed14828e504d23d4c8710ee52bf90eef"},
+    {file = "acb-0.14.3.tar.gz", hash = "sha256:f68e6960b44d402578edf9e067feeb3a80dab141808a3792f478418e0f7015b9"},
 ]
 
 [[package]]
 name = "acb"
-version = "0.14.2"
+version = "0.14.3"
 extras = ["storage"]
 summary = ""
 dependencies = [
-    "acb==0.14.2",
+    "acb==0.14.3",
     "adlfs",
     "gcsfs",
     "s3fs",
 ]
 files = [
-    {file = "acb-0.14.2-py3-none-any.whl", hash = "sha256:bdd6b303e6a13820b63157c44549ffb94a8a65e4e3fa122722d3b4a694e5b992"},
-    {file = "acb-0.14.2.tar.gz", hash = "sha256:b64a0aeb4b23d7868eccca45e2c794499b10b72cd5794dec144fb9a3bd2f6c18"},
+    {file = "acb-0.14.3-py3-none-any.whl", hash = "sha256:4e5be68d742bd840b0b8ec10bffe1ce1ed14828e504d23d4c8710ee52bf90eef"},
+    {file = "acb-0.14.3.tar.gz", hash = "sha256:f68e6960b44d402578edf9e067feeb3a80dab141808a3792f478418e0f7015b9"},
 ]
 
 [[package]]
@@ -1074,54 +1074,54 @@ files = [
 
 [[package]]
 name = "granian"
-version = "2.2.1"
+version = "2.2.2"
 summary = ""
 dependencies = [
     "click",
 ]
 files = [
-    {file = "granian-2.2.1-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:f8bc1b87415339c29d3da9fa3c50fddc94f39c678fca88f9842ba2075e12261a"},
-    {file = "granian-2.2.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:da8af67997036a25c1e6930bb18afd86182cc5a2d5d7a073f27fe3f3e86d4460"},
-    {file = "granian-2.2.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:17d85d161fd16932fe46087d6f5f85763d285f2a8f71e27ab84aad595263d989"},
-    {file = "granian-2.2.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c8e62ddf7cdba5ee7c8910dfc59e01ead5de9f8796796a610f9bec3d9ac68814"},
-    {file = "granian-2.2.1-cp313-cp313-musllinux_1_1_aarch64.whl", hash = "sha256:d06bd0da2e8c38aae60b3e9f84b160a4f0f3b86691f8caa6f5b7495c6d1d78ad"},
-    {file = "granian-2.2.1-cp313-cp313-musllinux_1_1_x86_64.whl", hash = "sha256:7f01017ab85ea84d1a76e723bf23c4142d1ae9136d3048c749f7f7a0b62b5f06"},
-    {file = "granian-2.2.1-cp313-cp313-win_amd64.whl", hash = "sha256:ce54588206ec390b48cae815d3014b471f2ec35d0df56956d57a8f4adf0ab2b6"},
-    {file = "granian-2.2.1-cp313-cp313t-macosx_10_12_x86_64.whl", hash = "sha256:cc44bfd92aae2e3ab5463c834c91464d224644914d6ad5734c2ff1fb429d2d20"},
-    {file = "granian-2.2.1-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:4f4ff6da52886c3a6f23618e0b08b14ffd71a74fff11ee308bcca1a2a665fb26"},
-    {file = "granian-2.2.1-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:244eb616dcf9a86793b210fa69afea95bfcf25929c088e2239529575af291e16"},
-    {file = "granian-2.2.1-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5cf3b3c9a4eb573b083cc61a8965a23f4844c029982571ec32b00e29dd52360f"},
-    {file = "granian-2.2.1-cp313-cp313t-musllinux_1_1_aarch64.whl", hash = "sha256:10d285bc675af4475c44d9a25ec5758536c297e9812485d32aa0c59e7109caa1"},
-    {file = "granian-2.2.1-cp313-cp313t-musllinux_1_1_x86_64.whl", hash = "sha256:256ccb12b56d6634e18819ef006311de4808072c6607ff48913d7fb8ade5d1d9"},
-    {file = "granian-2.2.1-cp313-cp313t-win_amd64.whl", hash = "sha256:773f9a5c2710492f3f262fe408f3e189532fbcd36563fd5775b54b534b63f606"},
-    {file = "granian-2.2.1.tar.gz", hash = "sha256:aca4d20bdfb0043023feee1210c6d5f8245c8f6d89bb50081c64a81193ecf2a8"},
+    {file = "granian-2.2.2-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:05392c955e3944ba499f4b456c0b6671a40ec89339a0c8f76e57dfc7791193a2"},
+    {file = "granian-2.2.2-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:e0969e597ab929d3b2d38e41720f44306db5001120ccdcb7654626451b410e75"},
+    {file = "granian-2.2.2-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3341ea4d559531a1077a119d3aa8401613aa339c64d47867c73b9922494cb58d"},
+    {file = "granian-2.2.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:30ca43177d8ced11f84f470cf3a36818b26f662babef57531e98e6b6eff843d2"},
+    {file = "granian-2.2.2-cp313-cp313-musllinux_1_1_aarch64.whl", hash = "sha256:4a3c80e9c052b82c1f594de754896a82f2d14910d383723b1eb3dab979a83573"},
+    {file = "granian-2.2.2-cp313-cp313-musllinux_1_1_x86_64.whl", hash = "sha256:fd4e59bfb6837a3b2c9ee89f0969253d32819ef51f51db98719e88316b9070c0"},
+    {file = "granian-2.2.2-cp313-cp313-win_amd64.whl", hash = "sha256:ff1407c2d12ebec5190b5a3c67208071cac33780fe5d10801be3f02984959bec"},
+    {file = "granian-2.2.2-cp313-cp313t-macosx_10_12_x86_64.whl", hash = "sha256:86e3c1078072a25cb029abff70f540553dd86cd7933e4954a204520420c70eb1"},
+    {file = "granian-2.2.2-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:9b150cec477a31fb104a942d1f16a3f2012cc14cf018ae6356b032d9396c2319"},
+    {file = "granian-2.2.2-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:63ad5d8a2f00de947559c48bb824ed628c62ec927eb9d032c805bf4d6a990b55"},
+    {file = "granian-2.2.2-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f04b2c1351b124cec89c351324d4e4f447ea0ce9ea8c619aa7b0aca1234a803a"},
+    {file = "granian-2.2.2-cp313-cp313t-musllinux_1_1_aarch64.whl", hash = "sha256:0ba8392c1c5f008dd5a874296bb3992b88169741bb03e2c2e97938cafa8bc8e2"},
+    {file = "granian-2.2.2-cp313-cp313t-musllinux_1_1_x86_64.whl", hash = "sha256:df64906b405cc99ba3b70ab3ecfbcb602a2636806296bf1d0f0c8645903d88cd"},
+    {file = "granian-2.2.2-cp313-cp313t-win_amd64.whl", hash = "sha256:15a157889a4d6a9ad034bf82ce356d9f2557dfd04ca9302a2feea80aba7ac0f6"},
+    {file = "granian-2.2.2.tar.gz", hash = "sha256:a5560aa015e5575c5cf5b073e60258f804e886e871511ca18cf993ff199453c2"},
 ]
 
 [[package]]
 name = "granian"
-version = "2.2.1"
+version = "2.2.2"
 extras = ["reload"]
 summary = ""
 dependencies = [
-    "granian==2.2.1",
+    "granian==2.2.2",
     "watchfiles",
 ]
 files = [
-    {file = "granian-2.2.1-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:f8bc1b87415339c29d3da9fa3c50fddc94f39c678fca88f9842ba2075e12261a"},
-    {file = "granian-2.2.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:da8af67997036a25c1e6930bb18afd86182cc5a2d5d7a073f27fe3f3e86d4460"},
-    {file = "granian-2.2.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:17d85d161fd16932fe46087d6f5f85763d285f2a8f71e27ab84aad595263d989"},
-    {file = "granian-2.2.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c8e62ddf7cdba5ee7c8910dfc59e01ead5de9f8796796a610f9bec3d9ac68814"},
-    {file = "granian-2.2.1-cp313-cp313-musllinux_1_1_aarch64.whl", hash = "sha256:d06bd0da2e8c38aae60b3e9f84b160a4f0f3b86691f8caa6f5b7495c6d1d78ad"},
-    {file = "granian-2.2.1-cp313-cp313-musllinux_1_1_x86_64.whl", hash = "sha256:7f01017ab85ea84d1a76e723bf23c4142d1ae9136d3048c749f7f7a0b62b5f06"},
-    {file = "granian-2.2.1-cp313-cp313-win_amd64.whl", hash = "sha256:ce54588206ec390b48cae815d3014b471f2ec35d0df56956d57a8f4adf0ab2b6"},
-    {file = "granian-2.2.1-cp313-cp313t-macosx_10_12_x86_64.whl", hash = "sha256:cc44bfd92aae2e3ab5463c834c91464d224644914d6ad5734c2ff1fb429d2d20"},
-    {file = "granian-2.2.1-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:4f4ff6da52886c3a6f23618e0b08b14ffd71a74fff11ee308bcca1a2a665fb26"},
-    {file = "granian-2.2.1-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:244eb616dcf9a86793b210fa69afea95bfcf25929c088e2239529575af291e16"},
-    {file = "granian-2.2.1-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5cf3b3c9a4eb573b083cc61a8965a23f4844c029982571ec32b00e29dd52360f"},
-    {file = "granian-2.2.1-cp313-cp313t-musllinux_1_1_aarch64.whl", hash = "sha256:10d285bc675af4475c44d9a25ec5758536c297e9812485d32aa0c59e7109caa1"},
-    {file = "granian-2.2.1-cp313-cp313t-musllinux_1_1_x86_64.whl", hash = "sha256:256ccb12b56d6634e18819ef006311de4808072c6607ff48913d7fb8ade5d1d9"},
-    {file = "granian-2.2.1-cp313-cp313t-win_amd64.whl", hash = "sha256:773f9a5c2710492f3f262fe408f3e189532fbcd36563fd5775b54b534b63f606"},
-    {file = "granian-2.2.1.tar.gz", hash = "sha256:aca4d20bdfb0043023feee1210c6d5f8245c8f6d89bb50081c64a81193ecf2a8"},
+    {file = "granian-2.2.2-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:05392c955e3944ba499f4b456c0b6671a40ec89339a0c8f76e57dfc7791193a2"},
+    {file = "granian-2.2.2-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:e0969e597ab929d3b2d38e41720f44306db5001120ccdcb7654626451b410e75"},
+    {file = "granian-2.2.2-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3341ea4d559531a1077a119d3aa8401613aa339c64d47867c73b9922494cb58d"},
+    {file = "granian-2.2.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:30ca43177d8ced11f84f470cf3a36818b26f662babef57531e98e6b6eff843d2"},
+    {file = "granian-2.2.2-cp313-cp313-musllinux_1_1_aarch64.whl", hash = "sha256:4a3c80e9c052b82c1f594de754896a82f2d14910d383723b1eb3dab979a83573"},
+    {file = "granian-2.2.2-cp313-cp313-musllinux_1_1_x86_64.whl", hash = "sha256:fd4e59bfb6837a3b2c9ee89f0969253d32819ef51f51db98719e88316b9070c0"},
+    {file = "granian-2.2.2-cp313-cp313-win_amd64.whl", hash = "sha256:ff1407c2d12ebec5190b5a3c67208071cac33780fe5d10801be3f02984959bec"},
+    {file = "granian-2.2.2-cp313-cp313t-macosx_10_12_x86_64.whl", hash = "sha256:86e3c1078072a25cb029abff70f540553dd86cd7933e4954a204520420c70eb1"},
+    {file = "granian-2.2.2-cp313-cp313t-macosx_11_0_arm64.whl", hash = "sha256:9b150cec477a31fb104a942d1f16a3f2012cc14cf018ae6356b032d9396c2319"},
+    {file = "granian-2.2.2-cp313-cp313t-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:63ad5d8a2f00de947559c48bb824ed628c62ec927eb9d032c805bf4d6a990b55"},
+    {file = "granian-2.2.2-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f04b2c1351b124cec89c351324d4e4f447ea0ce9ea8c619aa7b0aca1234a803a"},
+    {file = "granian-2.2.2-cp313-cp313t-musllinux_1_1_aarch64.whl", hash = "sha256:0ba8392c1c5f008dd5a874296bb3992b88169741bb03e2c2e97938cafa8bc8e2"},
+    {file = "granian-2.2.2-cp313-cp313t-musllinux_1_1_x86_64.whl", hash = "sha256:df64906b405cc99ba3b70ab3ecfbcb602a2636806296bf1d0f0c8645903d88cd"},
+    {file = "granian-2.2.2-cp313-cp313t-win_amd64.whl", hash = "sha256:15a157889a4d6a9ad034bf82ce356d9f2557dfd04ca9302a2feea80aba7ac0f6"},
+    {file = "granian-2.2.2.tar.gz", hash = "sha256:a5560aa015e5575c5cf5b073e60258f804e886e871511ca18cf993ff199453c2"},
 ]
 
 [[package]]
@@ -1218,14 +1218,14 @@ files = [
 
 [[package]]
 name = "hishel"
-version = "0.1.1"
+version = "0.1.2"
 summary = ""
 dependencies = [
     "httpx",
 ]
 files = [
-    {file = "hishel-0.1.1-py3-none-any.whl", hash = "sha256:5b51acc340303faeef2f5cfc1658acb1db1fdc3e3ad76406265a485f9707c5d6"},
-    {file = "hishel-0.1.1.tar.gz", hash = "sha256:1f6421b78cc23fc43c610f651b7848c9b8eee2d29551d64a2ab0d45b319b6559"},
+    {file = "hishel-0.1.2-py3-none-any.whl", hash = "sha256:802b4e446017f4867efdb26d3417670991ad1b4826d24331110871fe8957b5d0"},
+    {file = "hishel-0.1.2.tar.gz", hash = "sha256:6643450bfb1cfa2ecd6002769f6f5069d0d048c9c1f1e29a98a48302d5875092"},
 ]
 
 [[package]]
@@ -2166,7 +2166,7 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.11.2"
+version = "2.11.3"
 summary = ""
 dependencies = [
     "annotated-types",
@@ -2175,8 +2175,8 @@ dependencies = [
     "typing-inspection",
 ]
 files = [
-    {file = "pydantic-2.11.2-py3-none-any.whl", hash = "sha256:7f17d25846bcdf89b670a86cdfe7b29a9f1c9ca23dee154221c9aa81845cfca7"},
-    {file = "pydantic-2.11.2.tar.gz", hash = "sha256:2138628e050bd7a1e70b91d4bf4a91167f4ad76fdb83209b107c8d84b854917e"},
+    {file = "pydantic-2.11.3-py3-none-any.whl", hash = "sha256:a082753436a07f9ba1289c6ffa01cd93db3548776088aa917cc43b63f68fa60f"},
+    {file = "pydantic-2.11.3.tar.gz", hash = "sha256:7471657138c16adad9322fe3070c0116dd6c3ad8d649300e3cbdfe91f4db4ec3"},
 ]
 
 [[package]]
@@ -2222,16 +2222,16 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.11.2"
+version = "2.11.3"
 extras = ["email"]
 summary = ""
 dependencies = [
     "email-validator",
-    "pydantic==2.11.2",
+    "pydantic==2.11.3",
 ]
 files = [
-    {file = "pydantic-2.11.2-py3-none-any.whl", hash = "sha256:7f17d25846bcdf89b670a86cdfe7b29a9f1c9ca23dee154221c9aa81845cfca7"},
-    {file = "pydantic-2.11.2.tar.gz", hash = "sha256:2138628e050bd7a1e70b91d4bf4a91167f4ad76fdb83209b107c8d84b854917e"},
+    {file = "pydantic-2.11.3-py3-none-any.whl", hash = "sha256:a082753436a07f9ba1289c6ffa01cd93db3548776088aa917cc43b63f68fa60f"},
+    {file = "pydantic-2.11.3.tar.gz", hash = "sha256:7471657138c16adad9322fe3070c0116dd6c3ad8d649300e3cbdfe91f4db4ec3"},
 ]
 
 [[package]]

@@ -12,7 +12,7 @@ from ._base import AppBase, AppBaseSettings
 
 main_start = perf_counter()
 
-Auth, Monitoring, Storage, Sql = import_adapter()  # type: ignore
+Storage = import_adapter()  # type: ignore
 
 
 class AppSettings(AppBaseSettings):
@@ -34,12 +34,11 @@ class App(FastBlocks, AppBase):
         self.routes.extend(depends.get("routes").routes)
 
     @asynccontextmanager
-    @depends.inject
-    async def lifespan(
-        self, app: FastBlocks, sql: Sql = depends(), auth: Auth = depends()
-    ) -> t.AsyncIterator[None]:
+    async def lifespan(self, app: FastBlocks) -> t.AsyncIterator[None]:
         try:
             if get_adapter("admin"):
+                sql = depends.get()
+                auth = depends.get()
                 admin = depends.get()
                 admin.__init__(
                     app,
