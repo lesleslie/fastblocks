@@ -1,4 +1,6 @@
+import asyncio
 import os
+import typing as t
 from enum import Enum
 from pathlib import Path
 from subprocess import DEVNULL
@@ -7,7 +9,9 @@ from subprocess import run as execute
 import nest_asyncio
 import typer
 import uvicorn
+from acb.actions.encode import dump, load
 from acb.console import console
+from anyio import Path as AsyncPath
 from granian import Granian
 from typing_extensions import Annotated
 
@@ -18,6 +22,11 @@ __all__ = (
     "run",
     "dev",
 )
+
+default_adapters = dict(
+    routes="default", templates="jinja2", auth="basic", sitemap="asgi"
+)
+
 
 fastblocks_path = Path(__file__).parent
 
@@ -60,7 +69,7 @@ granian_dev_args = dev_args | dict(
     ],
 )
 
-uvicorn_dev_args = run_args | dict(
+uvicorn_dev_args = dev_args | dict(
     host=granian_dev_args["address"],
     reload_includes=[
         "*.py",
@@ -71,6 +80,7 @@ uvicorn_dev_args = run_args | dict(
         for d in granian_dev_args["reload_ignore_dirs"]  # type: ignore
     ],
     lifespan="on",
+    log_config=dict(disable_existing_loggers=True),
 )
 
 
@@ -111,6 +121,9 @@ def create(
             "[{','.join(Styles._member_names_)}]",
         ),
     ] = Styles.bulma,
+    domain: Annotated[
+        str, typer.Option(prompt=True, help="Application domain")
+    ] = "example.com",
 ) -> None:
     app_path = apps_path / app_name
     app_path.mkdir(exist_ok=True)
@@ -142,11 +155,26 @@ def create(
     commands = (
         ["direnv", "allow", "."],
         ["pdm", "install"],
-        ["pdm", "info"],
         ["python", "-m", "fastblocks", "run"],
     )
     for command in commands:
         execute(command, stdout=DEVNULL, stderr=DEVNULL)
+
+    async def update_settings(
+        settings: str,
+        values: dict[str, t.Any],
+    ) -> None:
+        settings_path = AsyncPath(app_path / "settings")
+        settings_dict = await load.yaml(settings_path / f"{settings}.yml")
+        settings_dict.update(values)
+        await dump.yaml(settings_dict, settings_path / f"{settings}.yml")
+
+    async def update_configs() -> None:
+        await update_settings("debug", dict(fastblocks=False))
+        await update_settings("adapters", default_adapters)
+        await update_settings("app", dict(title="Welcome to FastBlocks", domain=domain))
+
+    asyncio.run(update_configs())
     console.print(
         "\n[bold][white]Project is initialized. Please configure [green]'adapters.yml'"
         f"[/] and [green]'app.yml'[/] in the [blue]'{app_name}/settings'[/] "
