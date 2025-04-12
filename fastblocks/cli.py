@@ -80,7 +80,6 @@ uvicorn_dev_args = dev_args | dict(
         for d in granian_dev_args["reload_ignore_dirs"]  # type: ignore
     ],
     lifespan="on",
-    log_config=dict(disable_existing_loggers=True),
 )
 
 
