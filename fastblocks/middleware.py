@@ -3,7 +3,7 @@ from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
 from time import perf_counter
 
-from acb.adapters import import_adapter
+from acb.adapters import get_adapter, import_adapter
 from acb.config import Config
 from acb.depends import depends
 from acb.logger import Logger
@@ -192,14 +192,8 @@ def middlewares(config: Config = depends()) -> list[Middleware]:
         Middleware(
             CSRFMiddleware,  # type: ignore
             secret=config.app.secret_key.get_secret_value(),
-            cookie_name=f"{config.auth.token_id or config.app.name}_csrf",
+            cookie_name=f"{config.app.token_id}_csrf",
             cookie_secure=config.deployed,
-        ),
-        Middleware(
-            SessionMiddleware,  # type: ignore
-            secret_key=config.app.secret_key.get_secret_value(),
-            session_cookie=f"{config.auth.token_id or config.app.name}_app",
-            https_only=config.deployed,
         ),
         Middleware(HtmxMiddleware),  # type: ignore
         Middleware(CurrentRequestMiddleware),  # type: ignore
@@ -207,4 +201,14 @@ def middlewares(config: Config = depends()) -> list[Middleware]:
     ]
     if config.deployed or config.debug.production:
         middleware.append(Middleware(SecureHeadersMiddleware))  # type: ignore
+    if get_adapter("auth"):
+        middleware.insert(
+            2,
+            Middleware(
+                SessionMiddleware,  # type: ignore
+                secret_key=config.app.secret_key.get_secret_value(),
+                session_cookie=f"{config.app.token_id}_app",
+                https_only=config.deployed,
+            ),
+        )
     return middleware

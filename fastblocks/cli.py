@@ -1,5 +1,7 @@
 import asyncio
 import os
+import signal
+import sys
 import typing as t
 from enum import Enum
 from pathlib import Path
@@ -21,12 +23,12 @@ __all__ = (
     "create",
     "run",
     "dev",
+    "cli",
 )
 
 default_adapters = dict(
     routes="default", templates="jinja2", auth="basic", sitemap="asgi"
 )
-
 
 fastblocks_path = Path(__file__).parent
 
@@ -83,24 +85,36 @@ uvicorn_dev_args = dev_args | dict(
 )
 
 
+def setup_signal_handlers() -> None:
+    def handle_signal(sig: int, frame: t.Any) -> None:  # noqa
+        print(f"\nReceived signal {sig}. Shutting down gracefully...")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
+
+
 @cli.command()
 def run(docker: bool = False, granian: bool = False) -> None:
     if docker:
         execute(f"docker run -it -ePORT=8080 -p8080:8080 {Path.cwd().stem}".split())
-    elif granian:
-        Granian(
-            **run_args
-            | dict(
-                address="0.0.0.0",  # type: ignore  # nosec B104
-                interface="asgi",
-            )
-        ).serve()
     else:
-        uvicorn.run(**run_args | dict(host="0.0.0.0"))  # nosec B104  # type: ignore
+        setup_signal_handlers()
+        if granian:
+            Granian(
+                **run_args
+                | dict(
+                    address="0.0.0.0",  # type: ignore  # nosec B104
+                    interface="asgi",
+                )
+            ).serve()
+        else:
+            uvicorn.run(**run_args | dict(host="0.0.0.0", lifespan="on"))  # nosec B104  # type: ignore
 
 
 @cli.command()
 def dev(granian: bool = False) -> None:
+    setup_signal_handlers()
     if granian:
         Granian(**granian_dev_args).serve()  # type: ignore
     else:

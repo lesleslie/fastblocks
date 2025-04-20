@@ -1,7 +1,7 @@
 [project]
 name = "fastblocks"
-version = "0.11.4"
-description = "Starlette based app for the rapid delivery HTMX/Jinja template blocks"
+version = "0.12.0"
+description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 authors = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
@@ -41,16 +41,16 @@ dependencies = [
     "starception>=1.2.1",
     "pydantic>=2.11.3",
     "pyfiglet>=1.0.2",
-    "starlette>=0.46.1",
-    "uvicorn>=0.34.0",
+    "starlette>=0.46.2",
+    "uvicorn>=0.34.2",
     "starlette-async-jinja>=1.9.10",
     "secure>=1.0.1",
     "minify-html>=0.16.4",
     "rcssmin>=1.2.1",
     "rjsmin>=1.2.4",
-    "granian[reload]>=2.2.4",
+    "granian[reload]>=2.2.5",
     "anyio>=4.9.0",
-    "acb[cache,monitoring,requests,secret,sql,storage]",
+    "acb[cache,requests,storage]",
 ]
 
 [project.optional-dependencies]
@@ -65,9 +65,9 @@ monitoring = [
     "logfire[starlette]>=3.7.1",
 ]
 dev = [
-    "crackerjack>=0.15.5",
+    "crackerjack>=0.15.7",
     "pytest-anyio>=0.0.0",
-    "py-spy>=0.4.0",
+    "pytest-benchmark>=5.1.0",
 ]
 
 [project.license]
@@ -119,19 +119,19 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pyyaml",
-    "pdm",
-    "pytest-mock",
-    "pdm-bump",
-    "uv",
-    "tomli-w",
-    "pytest",
-    "pytest-asyncio",
-    "autotyping",
     "pyfiglet",
+    "pre-commit",
     "pytest-cov",
     "google-crc32c",
-    "pre-commit",
+    "pytest-asyncio",
+    "autotyping",
+    "pytest",
+    "pdm-bump",
+    "tomli-w",
+    "pdm",
+    "uv",
+    "pytest-mock",
+    "pyyaml",
 ]
 
 [tool.refurb]
@@ -142,15 +142,15 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B704",
+    "B301",
     "B602",
+    "B101",
     "B603",
     "B403",
-    "B101",
-    "B301",
-    "B311",
-    "B404",
     "B607",
+    "B404",
+    "B704",
+    "B311",
 ]
 
 [tool.pyright]

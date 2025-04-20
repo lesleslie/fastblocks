@@ -1,5 +1,4 @@
 import typing as t
-from base64 import b64encode
 from contextvars import ContextVar
 
 from acb.config import AdapterBase, Config, Settings
@@ -10,14 +9,12 @@ from starlette.authentication import UnauthenticatedUser
 
 
 class AuthBaseSettings(Settings):
-    token_id: t.Optional[str] = "_fb_"
+    token_id: t.Optional[str] = None
 
     @depends.inject
     def __init__(self, config: Config = depends(), **data: t.Any) -> None:
         super().__init__(**data)
-        self.token_id = "".join(  # type: ignore
-            [self.token_id, b64encode(config.app.name.encode()).decode().rstrip("=")]  # type: ignore
-        )
+        self.token_id = self.token_id or config.app.token_id
 
 
 class CurrentUser(t.Protocol):

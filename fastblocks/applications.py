@@ -20,7 +20,6 @@ from .exceptions import handle_exception
 
 register_pkg()
 
-
 AppType = t.TypeVar("AppType", bound="FastBlocks")
 
 match system():
@@ -42,10 +41,14 @@ class FastBlocks(Starlette):
         exception_handlers: t.Mapping[t.Any, ExceptionHandler] | None = None,
         lifespan: t.Optional[Lifespan["AppType"]] = None,
         config: Config = depends(),
+        logger: Logger = depends(),
     ) -> None:
-        self.debug = config.debug.fastblocks
-        if self.debug or not config.deployed or not config.debug.production:
+        if not getattr(config, "deployed", False) or not getattr(
+            config.debug, "production", False
+        ):
             install_error_handler()
+        self.debug = config.debug.fastblocks
+        logger.info(f"Fastblocks debug: {self.debug}")
         super().__init__(
             debug=self.debug,
             routes=[],
@@ -73,6 +76,7 @@ class FastBlocks(Starlette):
     @depends.inject
     def build_middleware_stack(
         self,
+        config: Config = depends(),
         logger: Logger = depends(),
     ) -> ASGIApp:
         error_handler = None

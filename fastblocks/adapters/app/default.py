@@ -1,9 +1,9 @@
 import typing as t
+from base64 import b64encode
 from contextlib import asynccontextmanager
 from time import perf_counter
 
 from acb.adapters import get_adapter, import_adapter
-from acb.adapters.app import post_startup
 from acb.config import Config
 from acb.depends import depends
 from fastblocks.applications import FastBlocks
@@ -12,16 +12,20 @@ from ._base import AppBase, AppBaseSettings
 
 main_start = perf_counter()
 
-Storage = import_adapter()  # type: ignore
+Cache, Storage = import_adapter()  # type: ignore
 
 
 class AppSettings(AppBaseSettings):
     url: str = "http://localhost:8000"
+    token_id: t.Optional[str] = "_fb_"
 
     @depends.inject
     def __init__(self, config: Config = depends(), **data: t.Any) -> None:
         super().__init__(**data)
         self.url = self.url if not config.deployed else f"https://{self.domain}"
+        self.token_id = "".join(  # type: ignore
+            [self.token_id, b64encode(self.name.encode()).decode().rstrip("=")]  # type: ignore
+        )
 
 
 class App(FastBlocks, AppBase):
@@ -29,9 +33,18 @@ class App(FastBlocks, AppBase):
         super().__init__(lifespan=self.lifespan)
 
     async def init(self) -> None:
-        """Initialize templates and routes during startup."""
         self.templates = depends.get().app
         self.routes.extend(depends.get("routes").routes)
+
+    async def post_startup(self) -> None:
+        if not self.config.deployed:
+            from aioconsole import aprint
+            from pyfiglet import Figlet
+
+            fig = Figlet(font="slant", width=90, justify="center")
+            await aprint(f"\n\n{fig.renderText(self.config.app.name.upper())}\n")
+        if not self.config.debug.production and self.config.deployed:
+            self.logger.info("Entering production mode...")
 
     @asynccontextmanager
     async def lifespan(self, app: FastBlocks) -> t.AsyncIterator[None]:
@@ -51,7 +64,7 @@ class App(FastBlocks, AppBase):
                 )
                 self.router.routes.insert(0, self.router.routes.pop())
 
-            await post_startup()
+            await self.post_startup()
             main_start_time = perf_counter() - main_start
             self.logger.warning(f"App started in {main_start_time} s")
         except Exception as e:
@@ -59,7 +72,8 @@ class App(FastBlocks, AppBase):
             raise e
         yield
         self.logger.critical("Application shut down")
-        await self.logger.complete()
+        completer = self.logger.complete()
+        await completer
 
 
 depends.set(App)
