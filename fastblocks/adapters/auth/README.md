@@ -4,6 +4,15 @@
 
 The Auth adapter provides authentication mechanisms for FastBlocks applications.
 
+## Relationship with ACB
+
+The Auth adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+
+- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **FastBlocks Extension**: Implements web-specific authentication mechanisms
+
+The Auth adapter uses ACB's configuration system for settings management and leverages ACB's dependency injection for integration with other components like the Templates adapter.
+
 ## Overview
 
 The Auth adapter allows you to:
@@ -34,16 +43,17 @@ auth:
 ### Basic Authentication
 
 ```python
-import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from starlette.routing import Route
 from starlette.responses import RedirectResponse
 
 Auth = import_adapter("auth")
+Templates = import_adapter("templates")
 auth = depends.get(Auth)
+templates = depends.get(Templates)
 
-async def login(request) -> t.Any:
+async def login(request):
     if request.method == "POST":
         form = await request.form()
         username = form.get("username")
@@ -62,7 +72,7 @@ async def login(request) -> t.Any:
 
     return await templates.app.render_template(request, "login.html")
 
-async def logout(request) -> t.Any:
+async def logout(request):
     request.session.clear()
     return RedirectResponse("/")
 
@@ -77,16 +87,14 @@ routes = [
 You can protect routes by checking the session:
 
 ```python
-import typing as t
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
-from starlette.types import ASGIApp, Receive, Scope, Send
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: ASGIApp) -> None:
+    def __init__(self, app):
         super().__init__(app)
 
-    async def dispatch(self, request, call_next) -> t.Any:
+    async def dispatch(self, request, call_next):
         # List of paths that don't require authentication
         public_paths = ["/", "/login", "/static"]
 
@@ -118,15 +126,14 @@ The Auth adapter is implemented in the following files:
 ### Base Class
 
 ```python
-import typing as t
-from acb.config import  Settings
+from acb.config import Settings
 
 class AuthBaseSettings(Settings):
     token_id: str | None = None
     token_lifetime: int = 86400  # 24 hours
 
 class AuthBase(AdapterBase):
-    async def authenticate(self, username: str, password: str) -> dict[str, t.Any] | None:
+    async def authenticate(self, username: str, password: str) -> dict[str, object] | None:
         """Authenticate a user with username and password"""
         raise NotImplementedError()
 ```
@@ -137,7 +144,6 @@ You can create a custom authentication adapter for more advanced authentication 
 
 ```python
 # myapp/adapters/auth/oauth.py
-import typing as t
 from fastblocks.adapters.auth._base import AuthBase, AuthBaseSettings
 from pydantic import SecretStr
 
@@ -153,7 +159,7 @@ class OAuth(AuthBase):
         # Initialize OAuth client
         pass
 
-    async def authenticate(self, code: str) -> dict[str, t.Any] | None:
+    async def authenticate(self, code: str) -> dict[str, object] | None:
         # Exchange authorization code for access token
         # Validate token and return user info
         pass

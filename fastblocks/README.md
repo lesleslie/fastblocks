@@ -4,6 +4,28 @@
 
 FastBlocks provides a set of core features that form the foundation of the framework. These components work together to create a powerful, asynchronous web application framework optimized for server-side rendering with HTMX.
 
+## Framework Architecture
+
+### Relationship with Starlette
+
+FastBlocks extends [Starlette](https://www.starlette.io/) to provide enhanced capabilities for server-side rendered applications:
+
+- **Application Class**: The `FastBlocks` class directly inherits from Starlette's `Starlette` class
+- **Middleware System**: Uses and extends Starlette's middleware system with additional components
+- **Routing**: Builds on Starlette's routing system with HTMX-specific enhancements
+- **Request/Response**: Extends Starlette's request and response objects for HTMX integration
+
+By extending Starlette, FastBlocks maintains compatibility with the ASGI ecosystem while adding specialized features for server-side rendering.
+
+### Relationship with ACB
+
+FastBlocks is built on top of [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), which provides the underlying infrastructure. FastBlocks extends ACB with web-specific features:
+
+- **ACB Foundation**: Dependency injection, configuration system, component registration, and adapter pattern
+- **FastBlocks Extensions**: Web-specific components like HTMX integration, template rendering, and middleware
+
+This separation of concerns allows FastBlocks to focus on web application features while leveraging ACB's robust component architecture.
+
 ## Table of Contents
 
 - [Application Class](#application-class)
@@ -29,11 +51,27 @@ FastBlocks provides a set of core features that form the foundation of the frame
 
 The `FastBlocks` class extends Starlette's application class with additional features specifically designed for HTMX and template-based applications.
 
+### Starlette Extension
+
+FastBlocks directly inherits from Starlette's application class:
+
+```python
+from starlette.applications import Starlette
+
+class FastBlocks(Starlette):
+    """FastBlocks application class extending Starlette."""
+```
+
+This inheritance means that FastBlocks maintains full compatibility with Starlette's API while adding specialized features for server-side rendering and HTMX integration.
+
+### Usage Example
+
 ```python
 from fastblocks.applications import FastBlocks
 from starlette.routing import Route
 
 async def homepage(request):
+    # FastBlocks adds template rendering capabilities to the request object
     return await request.app.templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
@@ -45,10 +83,10 @@ routes = [
 app = FastBlocks(routes=routes)
 ```
 
-### Key Features
+### Key Extensions to Starlette
 
 - **Automatic Template Setup**: Templates are automatically configured and made available via `app.templates`
-- **Debug Mode**: Enhanced debugging with detailed error pages when in debug mode
+- **Enhanced Request Objects**: Extends Starlette's request objects with HTMX-specific properties
 - **Middleware Configuration**: Automatic configuration of middleware based on application settings
 - **Model Integration**: Automatic integration with SQLAlchemy models via `app.models`
 - **Logging Integration**: Automatic configuration of logging with support for Logfire
@@ -57,6 +95,15 @@ app = FastBlocks(routes=routes)
 ## Middleware
 
 FastBlocks includes a comprehensive middleware stack that enhances the functionality of your application. These middleware components process requests and responses at various stages of the request lifecycle.
+
+### Extending Starlette's Middleware System
+
+FastBlocks builds on Starlette's middleware system, which follows the ASGI specification. While Starlette provides a basic middleware framework, FastBlocks extends it with:
+
+- **Pre-configured Stack**: A carefully ordered set of middleware components
+- **HTMX-specific Middleware**: Components designed for server-side rendering with HTMX
+- **Configuration-driven**: Middleware that can be enabled/disabled through configuration
+- **Enhanced Security**: Additional security-focused middleware components
 
 ### Default Middleware Stack
 
@@ -354,7 +401,7 @@ from acb.depends import depends
 from acb.config import Config
 
 @depends.inject
-def process_data(data, config: Config = depends(), logger = depends("logger")):
+async def process_data(data, config: Config = depends(), logger = depends("logger")):
     logger.info(f"Processing data with app: {config.app.name}")
     # Process data...
     return result

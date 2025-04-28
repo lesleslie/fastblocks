@@ -4,6 +4,15 @@
 
 The App adapter manages application configuration and initialization in FastBlocks.
 
+## Relationship with ACB
+
+The App adapter extends ACB's configuration system with web application specific settings:
+
+- **ACB Foundation**: Provides the core configuration system and application settings structure
+- **FastBlocks Extension**: Adds web-specific settings and integrates with Starlette/ASGI
+
+The App adapter inherits from ACB's `AdapterBase` and extends `AppSettings` from ACB's configuration system, adding web-specific functionality while maintaining compatibility with ACB's core infrastructure.
+
 ## Overview
 
 The App adapter provides settings for your application, including:
@@ -27,7 +36,6 @@ app:
 ## Usage
 
 ```python
-import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 
@@ -58,7 +66,6 @@ The App adapter is implemented in the following files:
 ### Base Class
 
 ```python
-import typing as t
 from acb.config import AdapterBase
 from acb.config import AppSettings as AppConfigSettings
 
@@ -77,7 +84,6 @@ You can extend the App adapter with additional settings or functionality by crea
 
 ```python
 # myapp/adapters/app/custom.py
-import typing as t
 from fastblocks.adapters.app._base import AppBase, AppBaseSettings
 
 class CustomAppSettings(AppBaseSettings):

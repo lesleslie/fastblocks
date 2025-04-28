@@ -4,6 +4,15 @@
 
 The Routes adapter manages route discovery and registration in FastBlocks applications.
 
+## Relationship with ACB
+
+The Routes adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+
+- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **FastBlocks Extension**: Implements web-specific route management for Starlette/ASGI
+
+Unlike some other adapters, the Routes adapter is unique to FastBlocks and doesn't have a direct counterpart in ACB. It uses ACB's dependency injection system to integrate with other components like Templates and App.
+
 ## Overview
 
 The Routes adapter allows you to:
@@ -23,13 +32,12 @@ The Routes adapter allows you to:
 ### Basic Setup
 
 ```python
-import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from fastblocks.applications import FastBlocks
 from starlette.routing import Route
 
-async def homepage(request) -> t.Any:
+async def homepage(request) -> object:
     return await request.app.templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
@@ -74,10 +82,9 @@ The Routes adapter can automatically discover routes from modules:
 
 ```python
 # myapp/routes.py
-import typing as t
 from starlette.routing import Route
 
-async def about(request) -> t.Any:
+async def about(request) -> object:
     return await request.app.templates.app.render_template(
         request, "about.html"
     )

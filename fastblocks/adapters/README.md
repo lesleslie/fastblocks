@@ -4,6 +4,15 @@
 
 Adapters in FastBlocks provide standardized interfaces to external systems and services. Each adapter category includes a base class that defines the interface and multiple implementations.
 
+## Relationship with ACB
+
+FastBlocks adapters extend [ACB's adapter pattern](https://github.com/lesleslie/acb/blob/main/acb/adapters/README.md) with web-specific functionality:
+
+- **ACB Adapter Foundation**: Provides the core adapter pattern, configuration loading, and dependency injection
+- **FastBlocks Adapter Extensions**: Adds web-specific adapters like templates, routes, auth, and admin interfaces
+
+While ACB provides general-purpose adapters (cache, storage, database), FastBlocks focuses on adapters needed for web applications. This allows you to use the same adapter pattern for both infrastructure and web components.
+
 ## Available Adapters
 
 | Adapter | Description | Implementations |
@@ -169,8 +178,7 @@ You can create your own adapters by following these steps:
 
 ```python
 # fastblocks/adapters/payment/_base.py
-import typing as t
-from acb.config import  Settings
+from acb.config import Settings, AdapterBase
 
 class PaymentBaseSettings(Settings):
     currency: str = "USD"
@@ -188,7 +196,6 @@ class PaymentBase(AdapterBase):
 
 ```python
 # fastblocks/adapters/payment/stripe.py
-import typing as t
 from ._base import PaymentBase, PaymentBaseSettings
 from pydantic import SecretStr
 import stripe

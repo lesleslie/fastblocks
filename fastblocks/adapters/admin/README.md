@@ -4,6 +4,15 @@
 
 The Admin adapter provides an administrative interface for FastBlocks applications.
 
+## Relationship with ACB
+
+The Admin adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+
+- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **FastBlocks Extension**: Implements admin interface integration with SQLAlchemy
+
+The Admin adapter integrates with ACB's SQL adapter for database access and leverages ACB's dependency injection system to connect with other components like Templates and Models.
+
 ## Overview
 
 The Admin adapter allows you to:
@@ -36,7 +45,6 @@ admin:
 ### Basic Setup
 
 ```python
-import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from fastblocks.applications import FastBlocks
@@ -106,8 +114,7 @@ The Admin adapter is implemented in the following files:
 ### Base Class
 
 ```python
-import typing as t
-from acb.config import  Settings
+from acb.config import Settings
 
 class AdminBaseSettings(Settings):
     enabled: bool = True
@@ -116,7 +123,7 @@ class AdminBaseSettings(Settings):
     style: str = "default"
 
 class AdminBase(AdapterBase):
-    def register_model(self, model: t.Type[t.Any]) -> None:
+    def register_model(self, model: type[object]) -> None:
         """Register a model with the admin interface"""
         raise NotImplementedError()
 ```
@@ -141,7 +148,6 @@ You can create a custom admin adapter for more specialized admin interfaces:
 
 ```python
 # myapp/adapters/admin/custom.py
-import typing as t
 from fastblocks.adapters.admin._base import AdminBase, AdminBaseSettings
 
 class CustomAdminSettings(AdminBaseSettings):
@@ -154,7 +160,7 @@ class CustomAdmin(AdminBase):
         # Initialize custom admin interface
         pass
 
-    def register_model(self, model: t.Type[t.Any]) -> None:
+    def register_model(self, model: type[object]) -> None:
         # Register model with custom admin interface
         pass
 ```

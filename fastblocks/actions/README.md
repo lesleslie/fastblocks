@@ -4,6 +4,15 @@
 
 Actions in FastBlocks are utility functions that perform specific tasks. They are designed to be reusable, self-contained, and easily accessible throughout your application.
 
+## Relationship with ACB
+
+FastBlocks actions build on [ACB's action system](https://github.com/lesleslie/acb/blob/main/acb/actions/README.md) but with a different focus:
+
+- **ACB Actions**: Focus on general-purpose utilities like compression, encoding, and hashing
+- **FastBlocks Actions**: Focus on web-specific utilities like HTML/CSS/JS minification
+
+Both use the same pattern of self-contained, automatically discovered utility functions, but serve different purposes in the application stack.
+
 ## Available Actions
 
 | Action | Description | Functions |

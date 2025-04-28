@@ -4,6 +4,15 @@
 
 The Templates adapter provides template rendering capabilities for FastBlocks applications.
 
+## Relationship with ACB
+
+The Templates adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+
+- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **FastBlocks Extension**: Implements template rendering specifically for web applications
+
+Unlike some other adapters, the Templates adapter is unique to FastBlocks and doesn't have a direct counterpart in ACB. It leverages ACB's Storage adapter for template loading from various sources.
+
 ## Overview
 
 The Templates adapter allows you to:
@@ -46,7 +55,6 @@ templates:
 ### Basic Template Rendering
 
 ```python
-import typing as t
 from acb.depends import depends
 from acb.adapters import import_adapter
 from starlette.routing import Route
@@ -54,7 +62,7 @@ from starlette.routing import Route
 Templates = import_adapter("templates")
 templates = depends.get(Templates)
 
-async def homepage(request) -> t.Any:
+async def homepage(request):
     context = {
         "title": "Welcome to FastBlocks",
         "message": "Hello, World!"
@@ -73,9 +81,7 @@ routes = [
 FastBlocks is designed to work with HTMX and template fragments:
 
 ```python
-import typing as t
-
-async def get_user_list(request) -> t.Any:
+async def get_user_list(request):
     users = await get_users_from_database()
     return await templates.app.render_template(
         request, "blocks/user_list.html", context={"users": users}

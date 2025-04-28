@@ -3,7 +3,7 @@ from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
 from time import perf_counter
 
-from acb.adapters import get_adapter, import_adapter
+from acb.adapters import get_adapter
 from acb.config import Config
 from acb.depends import depends
 from acb.logger import Logger
@@ -26,7 +26,7 @@ from .caching import (
 )
 from .exceptions import DuplicateCaching, MissingCaching
 
-Cache = import_adapter()  # type: ignore
+Cache = t.Any
 
 secure_headers = Secure()
 
@@ -84,6 +84,7 @@ class SecureHeadersMiddleware:
 class ProcessTimeHeaderMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
+        self.logger = depends.get(Logger)
 
     @depends.inject
     async def __call__(
@@ -109,15 +110,32 @@ class CacheMiddleware:
         self,
         app: ASGIApp,
         *,
-        cache: Cache = depends(),
+        cache: Cache = None,
         rules: Sequence[Rule] | None = None,
     ) -> None:
         if rules is None:
             rules = [Rule()]
 
         self.app = app
-        self.cache = cache
+        self.cache = cache if cache is not None else depends.get()
         self.rules = rules
+
+        # Check if the app has a middleware attribute and it's iterable
+        # This handles both Starlette apps and other ASGI apps that might have middleware
+        if hasattr(app, "middleware"):
+            # Check if middleware is iterable
+            middleware = getattr(app, "middleware")
+            if hasattr(middleware, "__iter__") and any(
+                isinstance(m, CacheMiddleware) for m in middleware
+            ):
+                raise DuplicateCaching(
+                    "Another `CacheMiddleware` was detected in the middleware stack.\n"
+                    "HINT: this exception probably occurred because:\n"
+                    "- You wrapped an application around `CacheMiddleware` multiple "
+                    "times.\n"
+                    "- You tried to apply `@cached()` onto an endpoint, but "
+                    "the application is already wrapped around a `CacheMiddleware`."
+                )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -173,9 +191,43 @@ class CacheHelper(_BaseCacheMiddlewareHelper):
 
 
 class CacheControlMiddleware:
+    app: ASGIApp
+    kwargs: CacheDirectives
+    # Define attributes from CacheDirectives
+    max_age: int | None
+    s_maxage: int | None
+    no_cache: bool
+    no_store: bool
+    no_transform: bool
+    must_revalidate: bool
+    proxy_revalidate: bool
+    must_understand: bool
+    private: bool
+    public: bool
+    immutable: bool
+    stale_while_revalidate: int | None
+    stale_if_error: int | None
+
     def __init__(self, app: ASGIApp, **kwargs: t.Unpack[CacheDirectives]) -> None:
         self.app = app
         self.kwargs = kwargs
+        # Set default values
+        self.max_age = None
+        self.s_maxage = None
+        self.no_cache = False
+        self.no_store = False
+        self.no_transform = False
+        self.must_revalidate = False
+        self.proxy_revalidate = False
+        self.must_understand = False
+        self.private = False
+        self.public = False
+        self.immutable = False
+        self.stale_while_revalidate = None
+        self.stale_if_error = None
+        # Override with provided values
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
@@ -183,6 +235,30 @@ class CacheControlMiddleware:
             return
         responder = CacheControlResponder(self.app, **self.kwargs)
         await responder(scope, receive, send)
+
+    def process_response(self, response: t.Any) -> None:
+        cache_control_parts = []
+
+        if getattr(self, "public", False):
+            cache_control_parts.append("public")
+        elif getattr(self, "private", False):
+            cache_control_parts.append("private")
+
+        if getattr(self, "no_cache", False):
+            cache_control_parts.append("no-cache")
+
+        if getattr(self, "no_store", False):
+            cache_control_parts.append("no-store")
+
+        if getattr(self, "must_revalidate", False):
+            cache_control_parts.append("must-revalidate")
+
+        max_age = getattr(self, "max_age", None)
+        if max_age is not None:
+            cache_control_parts.append(f"max-age={max_age}")
+
+        if cache_control_parts:
+            response.headers["Cache-Control"] = ", ".join(cache_control_parts)
 
 
 @depends.inject

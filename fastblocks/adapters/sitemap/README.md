@@ -4,6 +4,15 @@
 
 The Sitemap adapter generates XML sitemaps for FastBlocks applications.
 
+## Relationship with ACB
+
+The Sitemap adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+
+- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **FastBlocks Extension**: Implements sitemap generation for web applications
+
+The Sitemap adapter is unique to FastBlocks and leverages ACB's Cache adapter for caching generated sitemaps and ACB's dependency injection system to integrate with other components like Routes.
+
 ## Overview
 
 The Sitemap adapter allows you to:

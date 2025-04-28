@@ -5,6 +5,30 @@ from acb.adapters import get_adapters, root_path
 from acb.config import AdapterBase, Config, Settings
 from acb.depends import depends
 from anyio import Path as AsyncPath
+from starlette.requests import Request
+from starlette.responses import Response
+
+TemplateContext: t.TypeAlias = dict[str, t.Any]
+TemplateResponse: t.TypeAlias = Response
+TemplateStr: t.TypeAlias = str
+TemplatePath: t.TypeAlias = str
+
+T = t.TypeVar("T")
+
+
+class TemplateRenderer(t.Protocol):
+    async def render_template(
+        self,
+        request: Request,
+        template: TemplatePath,
+        context: TemplateContext | None = None,  # noqa
+    ) -> TemplateResponse: ...
+
+
+class TemplateLoader(t.Protocol):
+    async def get_template(self, name: TemplatePath) -> t.Any: ...
+
+    async def list_templates(self) -> list[TemplatePath]: ...
 
 
 class TemplatesBaseSettings(Settings):
