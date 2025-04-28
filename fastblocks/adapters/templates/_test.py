@@ -142,10 +142,8 @@ def jinja2_templates(config: Config) -> jinja2.Templates:
 
 @pytest.fixture
 def mock_cache() -> Any:
-    # Import the MockCache class from conftest
     from conftest import MockCache
 
-    # Create a new instance of MockCache
     cache = MockCache()
     return cache
 
@@ -154,7 +152,6 @@ def mock_cache() -> Any:
 def mock_storage() -> AsyncMock:
     storage = AsyncMock()
 
-    # Create a templates bucket with proper methods
     templates_bucket = AsyncMock()
     templates_bucket.exists.return_value = False
     templates_bucket.open.side_effect = FileNotFoundError
@@ -162,23 +159,19 @@ def mock_storage() -> AsyncMock:
     templates_bucket.list.return_value = []
     templates_bucket.write.return_value = None
 
-    # Set up the templates bucket to actually store data
     templates_bucket._storage = {}
 
-    # Override the write method to actually store data
     async def mock_write(path: AsyncPath, data: bytes):
         templates_bucket._storage[str(path)] = data
         return None
 
     templates_bucket.write.side_effect = mock_write
 
-    # Override the exists method to check the storage
     async def mock_exists(path: AsyncPath) -> bool:
         return str(path) in templates_bucket._storage
 
     templates_bucket.exists.side_effect = mock_exists
 
-    # Override the open method to return stored data
     async def mock_open(path: AsyncPath):
         if str(path) in templates_bucket._storage:
             return templates_bucket._storage[str(path)]
@@ -186,7 +179,6 @@ def mock_storage() -> AsyncMock:
 
     templates_bucket.open.side_effect = mock_open
 
-    # Attach the templates bucket to the storage
     storage.templates = templates_bucket
 
     return storage
@@ -599,35 +591,28 @@ async def test_choice_loader_get_source_async_first_loader_exists(
     with suppress(AttributeError):
         storage_loader.config = config
 
-    # Directly call the cache.get method to simulate what would happen in RedisLoader
     mock_cache.get.return_value = b"cache"
 
-    # Create a mock uptodate function
     mock_uptodate = MockUptodate()
 
-    # Create the loader without patching
     loader = jinja2.ChoiceLoader([redis_loader, storage_loader])
 
-    # Patch only the ChoiceLoader's get_source_async to return our mock data
     with patch.object(
         jinja2.ChoiceLoader, "get_source_async", autospec=True
     ) as mock_choice_get_source:
-        # Set up the mock to call mock_cache.get and return our mock data
+
         async def side_effect(
             self: Any,
             environment: Any,  # noqa
             template: str,  # noqa
         ) -> tuple[str, None, Any]:  # noqa
-            # This will trigger the mock_cache.get call
             await mock_cache.get(f"template:{template}")
             return ("cache", None, mock_uptodate)
 
         mock_choice_get_source.side_effect = side_effect
 
-        # Call the method
         source, filename, uptodate = await loader.get_source_async("test.html")
 
-        # Verify the results
         assert source == "cache"
         assert filename is None
         assert await safe_uptodate(uptodate)
@@ -787,30 +772,20 @@ class TestTemplateCaching:
         cached_template: Path,  # noqa
         cache: Any,
     ) -> None:
-        # Set up the cache in the request state
-        # if not hasattr(http_request, "app"):
-        #     http_request.app = type("app", (), {"state": type("state", (), {})()})()
-        # http_request.app.state.cache = cache
-
-        # Set a mock response for the cached template
         mock_response = Response("Cached content")
         if hasattr(templates.app, "set_response"):
             templates.app.set_response("cached.html", mock_response)
 
-        # First render should store in cache
         response1: TemplateResponse = await templates.app.render_template(
             http_request, "cached.html"
         )
 
-        # Second render should use the same content
         response2: TemplateResponse = await templates.app.render_template(
             http_request, "cached.html"
         )
 
-        # Verify the responses are the same
         assert response1.body == response2.body
 
-        # Verify the template was cached
         assert await cache.exists("template:cached.html")
 
 

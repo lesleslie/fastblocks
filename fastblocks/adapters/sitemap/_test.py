@@ -1,4 +1,3 @@
-# Import MockSitemap from conftest.py
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -9,7 +8,6 @@ from acb.adapters import import_adapter
 from acb.config import Config
 from fastblocks.adapters.sitemap._base import SitemapURL
 
-# Add the root directory to the path so we can import from conftest.py
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 from conftest import MockSitemap  # noqa
 

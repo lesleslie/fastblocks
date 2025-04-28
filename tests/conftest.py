@@ -19,17 +19,13 @@ from fastblocks.adapters.templates._base import (
     TemplateResponse,
 )
 
-# Original methods storage for patching and restoring
 _original_methods = {}
 
 #
-# Mock Classes
 #
 
 
 class MockAdapterClass:
-    """Base class for mock adapter classes."""
-
     def __init__(self, name: str, category: str | None = None) -> None:
         self.name = name
         self.category = category or name
@@ -40,50 +36,36 @@ class MockAdapterClass:
 
 
 class MockTemplatesClass(MockAdapterClass):
-    """Mock templates adapter class."""
-
     def __init__(self) -> None:
         super().__init__("templates")
 
 
 class MockModelsClass(MockAdapterClass):
-    """Mock models adapter class."""
-
     def __init__(self) -> None:
         super().__init__("models")
 
 
 class MockRoutesClass(MockAdapterClass):
-    """Mock routes adapter class."""
-
     def __init__(self) -> None:
         super().__init__("routes")
 
 
 class MockCacheClass(MockAdapterClass):
-    """Mock cache adapter class."""
-
     def __init__(self) -> None:
         super().__init__("cache")
 
 
 class MockStorageClass(MockAdapterClass):
-    """Mock storage adapter class."""
-
     def __init__(self) -> None:
         super().__init__("storage")
 
 
 class MockSitemapClass(MockAdapterClass):
-    """Mock sitemap adapter class."""
-
     def __init__(self) -> None:
         super().__init__("sitemap")
 
 
 class MockAdapterBase:
-    """Base class for mock adapter implementations."""
-
     def __init__(self) -> None:
         self.initialized: bool = False
 
@@ -92,14 +74,10 @@ class MockAdapterBase:
 
 
 class MockModels(MockAdapterBase):
-    """Mock models implementation."""
-
     pass
 
 
 class MockTemplateRenderer(TemplateRenderer):
-    """Mock template renderer."""
-
     async def render_template(
         self, request: Request, template: str, context: TemplateContext | None = None
     ) -> TemplateResponse:
@@ -107,16 +85,12 @@ class MockTemplateRenderer(TemplateRenderer):
 
 
 class MockTemplates(MockAdapterBase):
-    """Mock templates implementation."""
-
     def __init__(self) -> None:
         super().__init__()
         self.app = MockTemplateRenderer()
 
 
 class MockCache(MockAdapterBase):
-    """Mock cache implementation."""
-
     def __init__(self) -> None:
         super().__init__()
         self._storage: dict[str, Any] = {}
@@ -132,8 +106,6 @@ class MockCache(MockAdapterBase):
 
 
 class MockSitemap(MockAdapterBase):
-    """Mock sitemap implementation."""
-
     def __init__(self) -> None:
         super().__init__()
         self.urls: list[str] = []
@@ -150,8 +122,6 @@ class MockSitemap(MockAdapterBase):
 
 
 class MockStorage(MockAdapterBase):
-    """Mock storage implementation."""
-
     def __init__(self) -> None:
         super().__init__()
         self.templates = MockStorageTemplates()
@@ -160,8 +130,6 @@ class MockStorage(MockAdapterBase):
 
 
 class MockStorageTemplates:
-    """Mock storage templates implementation."""
-
     async def exists(self, path: str) -> bool:
         return True
 
@@ -173,8 +141,6 @@ class MockStorageTemplates:
 
 
 class MockStorageStatic:
-    """Mock storage static implementation."""
-
     async def exists(self, path: str) -> bool:
         return True
 
@@ -186,8 +152,6 @@ class MockStorageStatic:
 
 
 class MockStorageMedia:
-    """Mock storage media implementation."""
-
     async def exists(self, path: str) -> bool:
         return True
 
@@ -199,8 +163,6 @@ class MockStorageMedia:
 
 
 class MockRoutes(MockAdapterBase):
-    """Mock routes implementation."""
-
     def __init__(self) -> None:
         super().__init__()
         self.routes: list[Route] = []
@@ -217,13 +179,11 @@ class MockRoutes(MockAdapterBase):
 
 
 #
-# Pytest Configuration
 #
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: pytest.Config) -> None:
-    """Configure pytest for testing."""
     import acb.config
 
     _original_methods["Config.__init__"] = Config.__init__
@@ -232,18 +192,15 @@ def pytest_configure(config: pytest.Config) -> None:
     _original_methods["AsyncPath.exists"] = AsyncPath.exists
     _original_methods["Path.exists"] = Path.exists
     _original_methods["tempfile.gettempdir"] = tempfile.gettempdir
-    # Store the original open function if it exists in globals
     if "open" in globals():
         _original_methods["open"] = globals()["open"]
     _original_methods["acb.config.Config.__init__"] = acb.config.Config.__init__
 
     test_dir = Path(__file__).parent
 
-    # Create the mock_tmp directory to fix the FileNotFoundError
     mock_tmp_dir = Path(test_dir / "mock_tmp")
     mock_tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create the pytest-of-les directory
     mock_pytest_dir = Path(test_dir / "mock_tmp" / "pytest-of-les")
     mock_pytest_dir.mkdir(parents=True, exist_ok=True)
 
@@ -307,14 +264,12 @@ def pytest_configure(config: pytest.Config) -> None:
 
 @pytest.hookimpl(trylast=True)
 def pytest_unconfigure(config: pytest.Config) -> None:
-    """Unconfigure pytest after testing."""
     Config.__init__ = _original_methods["Config.__init__"]
     AsyncPath.mkdir = _original_methods["AsyncPath.mkdir"]
     Path.mkdir = _original_methods["Path.mkdir"]
     AsyncPath.exists = _original_methods["AsyncPath.exists"]
     Path.exists = _original_methods["Path.exists"]
     tempfile.gettempdir = _original_methods["tempfile.gettempdir"]
-    # Restore the original open function if it was stored
     if "open" in _original_methods:
         globals()["open"] = _original_methods["open"]
 
@@ -325,19 +280,16 @@ def pytest_unconfigure(config: pytest.Config) -> None:
 
 
 #
-# Fixtures
 #
 
 
 @pytest.fixture(autouse=True)
 async def mock_settings(config: Config) -> AsyncGenerator[None, None]:
-    """Mock settings for testing."""
     yield
 
 
 @pytest.fixture
 def config() -> Generator[Config, None, None]:
-    """Provide a test configuration."""
     config = Config()
     config.deployed = False
 
@@ -352,50 +304,42 @@ def config() -> Generator[Config, None, None]:
 
 @pytest.fixture
 def models() -> Generator[MockModels, None, None]:
-    """Provide access to mock models."""
     yield depends.get(MockModels)
 
 
 @pytest.fixture
 def templates() -> Generator[MockTemplates, None, None]:
-    """Provide access to mock templates."""
     yield depends.get(MockTemplates)
 
 
 @pytest.fixture
 def sitemap() -> Generator[MockSitemap, None, None]:
-    """Provide access to mock sitemap."""
     yield depends.get(MockSitemap)
 
 
 @pytest.fixture
 def cache() -> Generator[MockCache, None, None]:
-    """Provide access to mock cache."""
     yield depends.get(MockCache)
 
 
 @pytest.fixture
 def mock_storage() -> Generator[MockStorage, None, None]:
-    """Provide access to mock storage."""
     yield depends.get(MockStorage)
 
 
 @pytest.fixture
 def routes() -> Generator[MockRoutes, None, None]:
-    """Provide access to mock routes."""
     yield depends.get(MockRoutes)
 
 
 @pytest.fixture
 def http_request() -> Request:
-    """Provide a mock HTTP request."""
     scope = {"type": "http", "method": "GET", "path": "/"}
     return Request(scope)
 
 
 @pytest.fixture
 def mock_tmp(monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
-    """Create a temporary directory for testing."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = Path(tmp_dir)
         monkeypatch.setattr(tempfile, "gettempdir", lambda: str(tmp_path))
@@ -403,41 +347,34 @@ def mock_tmp(monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
 
 
 #
-# Additional Fixtures from Root conftest.py
 #
 
 
 @pytest.fixture
 def adapter_config(tmp_path: Path) -> Config:
-    """Provide a test configuration for adapter tests."""
     config = Config()
 
-    # Add storage attribute to Config
     class StorageConfig:
         def __init__(self) -> None:
             self.local_fs = True
             self.local_path = tmp_path
 
-    # Set storage attribute on config
     config.storage = StorageConfig()
     return config
 
 
 @pytest.fixture
 def adapter_models() -> MockModels:
-    """Provide access to mock models for adapter tests."""
     return MockModels()
 
 
 @pytest.fixture
 def adapter_templates() -> MockTemplates:
-    """Provide access to mock templates for adapter tests."""
     return MockTemplates()
 
 
 @pytest.fixture
 def adapter_sitemap(adapter_config: Config) -> MockSitemap:
-    """Provide access to mock sitemap for adapter tests."""
     sitemap = MockSitemap()
     sitemap.config = adapter_config
     return sitemap
@@ -445,17 +382,14 @@ def adapter_sitemap(adapter_config: Config) -> MockSitemap:
 
 @pytest.fixture
 def adapter_cache() -> MockCache:
-    """Provide access to mock cache for adapter tests."""
     return MockCache()
 
 
 @pytest.fixture
 def adapter_storage() -> MockStorage:
-    """Provide access to mock storage for adapter tests."""
     return MockStorage()
 
 
 @pytest.fixture
 def adapter_routes() -> MockRoutes:
-    """Provide access to mock routes for adapter tests."""
     return MockRoutes()

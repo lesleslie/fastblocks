@@ -120,10 +120,7 @@ class CacheMiddleware:
         self.cache = cache if cache is not None else depends.get()
         self.rules = rules
 
-        # Check if the app has a middleware attribute and it's iterable
-        # This handles both Starlette apps and other ASGI apps that might have middleware
         if hasattr(app, "middleware"):
-            # Check if middleware is iterable
             middleware = getattr(app, "middleware")
             if hasattr(middleware, "__iter__") and any(
                 isinstance(m, CacheMiddleware) for m in middleware
@@ -193,7 +190,6 @@ class CacheHelper(_BaseCacheMiddlewareHelper):
 class CacheControlMiddleware:
     app: ASGIApp
     kwargs: CacheDirectives
-    # Define attributes from CacheDirectives
     max_age: int | None
     s_maxage: int | None
     no_cache: bool
@@ -211,7 +207,6 @@ class CacheControlMiddleware:
     def __init__(self, app: ASGIApp, **kwargs: t.Unpack[CacheDirectives]) -> None:
         self.app = app
         self.kwargs = kwargs
-        # Set default values
         self.max_age = None
         self.s_maxage = None
         self.no_cache = False
@@ -225,7 +220,6 @@ class CacheControlMiddleware:
         self.immutable = False
         self.stale_while_revalidate = None
         self.stale_if_error = None
-        # Override with provided values
         for key, value in kwargs.items():
             setattr(self, key, value)
 

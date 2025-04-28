@@ -86,8 +86,6 @@ class DecoratorTestInterface:
 
             @app.route("/cached")
             @cached(cache=Mock())  # type: ignore
-            # This function is used by the test, but pyright doesn't recognize it
-            # because it's defined inside a with block
             async def cached_endpoint(request: Any) -> PlainTextResponse:  # noqa # type: ignore
                 return PlainTextResponse("Original response")
 
@@ -105,8 +103,6 @@ class DecoratorTestInterface:
 
             @app.route("/cache-control")
             @cache_control(max_age=300, public=True)  # type: ignore
-            # This function is used by the test, but pyright doesn't recognize it
-            # because it's defined inside a with block
             async def cache_control_endpoint(request: Any) -> PlainTextResponse:  # noqa # type: ignore
                 return PlainTextResponse("Cache-controlled response")
 
@@ -169,7 +165,6 @@ class MockApp(FastBlocks):
         self.debug: bool = True
         self.routes: List[Route] = []
         # Use type: ignore to suppress the incompatible method override warning
-        # The Starlette class expects Sequence[Middleware] | None, but we're using List[Middleware]
         self.middleware: List[Middleware] = []  # type: ignore
         self.exception_handlers: Dict[Any, Callable[..., Any]] = {}
         self.models: Any = depends.get()

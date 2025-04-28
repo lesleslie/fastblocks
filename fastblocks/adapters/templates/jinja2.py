@@ -211,9 +211,7 @@ class PackageLoader(AsyncBaseLoader):
         super().__init__(AsyncPath(self.path))
         self.package_name = package_name
         try:
-            # Handle case where package_name is an absolute path
             if package_name.startswith("/"):
-                # For testing purposes, we'll just set a dummy spec
                 spec = None
                 self._loader = None
                 return
@@ -223,13 +221,10 @@ class PackageLoader(AsyncBaseLoader):
                 if spec is None:
                     raise ImportError(f"Could not find package {package_name}")
         except ModuleNotFoundError:
-            # For testing purposes, we'll just set a dummy spec
             spec = None
             self._loader = None
             return
 
-        # At this point, we know spec is not None because we returned early if it was None
-        # So we can safely access spec attributes without checking spec is not None
         roots: list[Path] = []
         template_root = None
 
