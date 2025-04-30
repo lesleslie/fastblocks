@@ -29,7 +29,7 @@ class ApplicationTestInterface:
     def test_app_inheritance(self, app: FastBlocks) -> None:
         assert isinstance(app, Starlette)
 
-    @pytest.mark.anyio
+    @pytest.mark.anyio(backends=["asyncio"])
     async def test_app_middleware(self, app: FastBlocks) -> None:
         assert hasattr(app, "middleware_stack")
 
@@ -39,12 +39,12 @@ class ApplicationTestInterface:
     def test_app_templates(self, app: FastBlocks) -> None:
         assert hasattr(app, "templates")
 
-    @pytest.mark.anyio
+    @pytest.mark.anyio(backends=["asyncio"])
     async def test_app_basic_request(self, client: TestClient) -> None:
         response = client.get("/test")
         assert response.status_code == 200
 
-    @pytest.mark.anyio
+    @pytest.mark.anyio(backends=["asyncio"])
     async def test_app_not_found(self, client: TestClient) -> None:
         response = client.get("/nonexistent")
         assert response.status_code == 404
@@ -78,7 +78,7 @@ class MiddlewareTestInterface:
 
 
 class DecoratorTestInterface:
-    @pytest.mark.anyio
+    @pytest.mark.anyio(backends=["asyncio"])
     async def test_cached_decorator(self, app: FastBlocks, client: TestClient) -> None:
         with patch("fastblocks.decorators.CacheMiddleware") as mock_cache_middleware:
             mock_instance = Mock()
@@ -93,7 +93,7 @@ class DecoratorTestInterface:
             assert response.status_code == 200
             mock_cache_middleware.assert_called_once()
 
-    @pytest.mark.anyio
+    @pytest.mark.anyio(backends=["asyncio"])
     async def test_cache_control_decorator(
         self, app: FastBlocks, client: TestClient
     ) -> None:
@@ -130,13 +130,13 @@ class CachingTestInterface:
         assert "POST" in invalidating_methods
         assert "DELETE" in invalidating_methods
 
-    @pytest.mark.anyio
+    @pytest.mark.anyio(backends=["asyncio"])
     async def test_request_not_cachable_exception(self) -> None:
         request = Mock()
         with pytest.raises(RequestNotCachable):
             raise RequestNotCachable(request)
 
-    @pytest.mark.anyio
+    @pytest.mark.anyio(backends=["asyncio"])
     async def test_response_not_cachable_exception(self) -> None:
         response = Mock()
         with pytest.raises(ResponseNotCachable):

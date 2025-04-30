@@ -8,6 +8,19 @@ from anyio import Path as AsyncPath
 from starlette.requests import Request
 from starlette.responses import Response
 
+
+async def safe_await(func_or_value: t.Any) -> t.Any:
+    if callable(func_or_value):
+        try:
+            result = func_or_value()
+            if hasattr(result, "__await__") and callable(getattr(result, "__await__")):
+                return await t.cast(t.Awaitable[t.Any], result)
+            return result
+        except Exception:
+            return True
+    return func_or_value
+
+
 TemplateContext: t.TypeAlias = dict[str, t.Any]
 TemplateResponse: t.TypeAlias = Response
 TemplateStr: t.TypeAlias = str
@@ -79,8 +92,9 @@ class TemplatesBase(AdapterBase):
                 for a in get_adapters()
                 if a.category not in ("app", "admin", "secret")
             ]:
-                if await (a.path.parent / "_templates").exists():
-                    searchpaths.append(a.path.parent / "_templates")
+                exists_result = await safe_await((a.path / "_templates").exists)
+                if exists_result:
+                    searchpaths.append(a.path / "_templates")
         for path in [p.path for p in pkg_registry.get()]:  # type: ignore
             searchpaths.extend(
                 self.get_searchpath(

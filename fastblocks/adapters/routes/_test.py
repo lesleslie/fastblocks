@@ -1,5 +1,6 @@
+import tempfile
 from pathlib import Path
-from typing import Any, Protocol, cast
+from typing import Any, Generator, Protocol, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -54,6 +55,33 @@ def mock_templates() -> MockTemplates:
 
 
 @pytest.fixture
+def config() -> Generator[Config, None, None]:
+    config = Config()
+    config.deployed = False
+
+    class StorageConfig:
+        def __init__(self) -> None:
+            self.local_fs = True
+            self.local_path = Path(tempfile.gettempdir())
+
+    config.__dict__["storage"] = StorageConfig()
+
+    class AppConfig:
+        def __init__(self) -> None:
+            self.style = "test_style"
+
+    config.__dict__["app"] = AppConfig()
+
+    config.logger = type(
+        "LoggerConfig",
+        (object,),
+        {"log_level": "INFO", "format": "simple", "level_per_module": {}},
+    )()
+
+    yield config
+
+
+@pytest.fixture
 def routes(config: Config) -> default.Routes:
     return default.Routes()
 
@@ -105,7 +133,7 @@ def app(initialized_routes: default.Routes) -> Starlette:
     return cast(Starlette, HtmxMiddleware(app))
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_index_get(
     app: Starlette, config: Config, tmp_path: Path, mock_templates: MockTemplates
 ) -> None:
@@ -115,7 +143,7 @@ async def test_index_get(
     #
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_index_get_htmx(app: Starlette, config: Config, tmp_path: Path) -> None:
     client: TestClient = TestClient(app)
     headers: dict[str, str] = {"HX-Request": "true"}
@@ -135,21 +163,21 @@ async def test_index_get_htmx(app: Starlette, config: Config, tmp_path: Path) ->
     assert "about" in response.text
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_block_get(
     app: Starlette, config: Config, tmp_path: Path, mock_templates: MockTemplates
 ) -> None:
     pytest.skip("This test requires a more complex setup to pass")
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_favicon(app: Starlette, config: Config, tmp_path: Path) -> None:
     response = TestClient(app).get("/favicon.ico")
     assert response.status_code == 200
     assert response.text == ""
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_robots(app: Starlette, config: Config, tmp_path: Path) -> None:
     response = TestClient(app).get("/robots.txt")
     assert response.status_code == 200
@@ -158,7 +186,7 @@ async def test_robots(app: Starlette, config: Config, tmp_path: Path) -> None:
     assert "Disallow: /blocks/" in response.text
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_gather_routes(
     config: Config, tmp_path: Path, mock_templates: MockTemplates
 ) -> None:
@@ -208,7 +236,7 @@ async def test_gather_routes(
             assert response.text == "test"
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_static_files(
     initialized_routes: default.Routes, config: Config, tmp_path: Path
 ) -> None:
@@ -240,7 +268,7 @@ async def test_static_files(
     assert response.status_code == 404
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_init(
     config: Config, tmp_path: Path, mock_templates: MockTemplates
 ) -> None:

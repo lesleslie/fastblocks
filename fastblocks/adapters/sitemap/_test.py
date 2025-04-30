@@ -9,7 +9,7 @@ from acb.config import Config
 from fastblocks.adapters.sitemap._base import SitemapURL
 
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
-from conftest import MockSitemap  # noqa
+from tests.conftest import MockSitemap  # noqa
 
 Sitemap = import_adapter("sitemap")
 
@@ -36,14 +36,14 @@ def sitemap(config: Config) -> MockSitemap:
     return sitemap
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_sitemap_init(sitemap: MockSitemap, config: Config) -> None:
     await sitemap.init()
     assert sitemap.sitemap is not None
     assert sitemap.sitemap.change_freq == "hourly"
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_sitemap_add_url(sitemap: MockSitemap, config: Config) -> None:
     await sitemap.init()
     await sitemap.add_url("/test")
@@ -55,7 +55,7 @@ async def test_sitemap_add_url(sitemap: MockSitemap, config: Config) -> None:
     assert sitemap.sitemap.urls[1].change_freq == "daily"
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_sitemap_add_url_invalid_change_freq(
     sitemap: MockSitemap, config: Config
 ) -> None:
@@ -64,7 +64,7 @@ async def test_sitemap_add_url_invalid_change_freq(
         await sitemap.add_url("/test", change_freq="invalid")
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_sitemap_generate(sitemap: MockSitemap, config: Config) -> None:
     await sitemap.init()
     await sitemap.add_url("/test")
@@ -73,7 +73,7 @@ async def test_sitemap_generate(sitemap: MockSitemap, config: Config) -> None:
     assert result.startswith("<?xml")
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_sitemap_write(
     sitemap: MockSitemap, config: Config, tmp_path: Path
 ) -> None:
@@ -91,7 +91,7 @@ async def test_sitemap_write(
     assert "<changefreq>hourly</changefreq>" in sitemap_content
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_sitemap_write_default_path(
     sitemap: MockSitemap, config: Config, tmp_path: Path
 ) -> None:

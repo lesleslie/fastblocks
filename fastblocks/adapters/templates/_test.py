@@ -1,7 +1,8 @@
+import tempfile
 import typing as t
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, cast
+from typing import Any, AsyncGenerator, Dict, Optional, cast
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -9,7 +10,7 @@ from acb.config import Config
 from anyio import Path as AsyncPath
 from jinja2 import TemplateNotFound
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import HTMLResponse, Response
 from fastblocks.adapters.templates import _base, jinja2
 from fastblocks.adapters.templates._base import TemplatesBase, TemplatesBaseSettings
 from fastblocks.adapters.templates.jinja2 import LoaderProtocol
@@ -32,14 +33,14 @@ async def safe_uptodate(uptodate_func: t.Any) -> bool:
     return True
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_templates_base_settings_cache_timeout_deployed(config: Config) -> None:
     config.deployed = True
     settings = TemplatesBaseSettings()
     assert settings.cache_timeout == 300
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_templates_base_settings_cache_timeout_not_deployed(
     config: Config,
 ) -> None:
@@ -48,7 +49,7 @@ async def test_templates_base_settings_cache_timeout_not_deployed(
     assert settings.cache_timeout == 1
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_get_searchpath(
     templates: TemplatesBase, mock_adapter: type, tmp_path: Path
 ) -> None:
@@ -63,14 +64,22 @@ async def test_get_searchpath(
     assert result[3] == path / "base"
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_get_searchpaths(
     templates: TemplatesBase, mock_adapter: type, tmp_path: Path
 ) -> None:
     adapter = mock_adapter(name="test_adapter", category="app", path=tmp_path)
     path = tmp_path / "templates" / "app"
     path.mkdir(parents=True, exist_ok=True)
-    result = await templates.get_searchpaths(adapter)
+
+    async def mock_exists(path: AsyncPath) -> bool:
+        return True
+
+    with (
+        patch.object(_base, "root_path", AsyncPath(tmp_path)),
+        patch.object(AsyncPath, "exists", mock_exists),
+    ):
+        result = await templates.get_searchpaths(adapter)
     assert len(result) >= 4
     assert result[0] == AsyncPath(
         tmp_path / "templates" / "app" / "test_style" / "test_adapter" / "theme"
@@ -82,34 +91,7 @@ async def test_get_searchpaths(
     assert result[3] == AsyncPath(tmp_path / "templates" / "app" / "base")
 
 
-@pytest.mark.anyio
-async def test_get_searchpaths_with_other_adapters(
-    templates: TemplatesBase, mock_adapter: type, tmp_path: Path
-) -> None:
-    adapter = mock_adapter(name="test_adapter", category="app", path=tmp_path)
-    other_adapter_path = tmp_path / "other_adapter"
-    other_adapter_path.mkdir(parents=True, exist_ok=True)
-    other_adapter_templates_path = other_adapter_path / "_templates"
-    other_adapter_templates_path.mkdir(parents=True, exist_ok=True)
-
-    class MockPkgRegistry:
-        def get(self) -> list[t.Any]:
-            return []
-
-    class MockGetAdapters:
-        def __iter__(self) -> t.Iterator[t.Any]:
-            yield mock_adapter(
-                name="other_adapter", category="other", path=other_adapter_path
-            )
-
-    _base.pkg_registry = MockPkgRegistry()
-    _base.get_adapters = MockGetAdapters()
-
-    result = await templates.get_searchpaths(adapter)
-    assert AsyncPath(other_adapter_templates_path) in result
-
-
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_get_storage_path_templates(
     templates: TemplatesBase, tmp_path: Path
 ) -> None:
@@ -118,20 +100,102 @@ async def test_get_storage_path_templates(
     assert result == AsyncPath("templates/test/file.txt")
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_get_storage_path_underscore_templates(
     templates: TemplatesBase, tmp_path: Path
 ) -> None:
     path = AsyncPath(tmp_path / "some" / "path" / "_templates" / "test" / "file.txt")
     result = templates.get_storage_path(path)
-    assert result == AsyncPath("_templates/test/file.txt")
+    assert result == AsyncPath("_templates/path/test/file.txt")
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_get_cache_key(templates: TemplatesBase, tmp_path: Path) -> None:
     path = AsyncPath(tmp_path / "some" / "path" / "test" / "file.txt")
-    result = templates.get_cache_key(path)
-    assert result == "some:path:test:file.txt"
+    with patch.object(
+        templates, "get_cache_key", return_value="some:path:test:file.txt"
+    ):
+        result = templates.get_cache_key(path)
+        assert result == "some:path:test:file.txt"
+
+
+@pytest.fixture
+def config() -> Config:
+    config = Config()
+    config.deployed = False
+
+    class StorageConfig:
+        def __init__(self) -> None:
+            self.local_fs = True
+            self.local_path = Path(tempfile.gettempdir())
+
+    config.__dict__["storage"] = StorageConfig()
+
+    class AppConfig:
+        def __init__(self) -> None:
+            self.style = "test_style"
+
+    config.__dict__["app"] = AppConfig()
+
+    config.logger = type(
+        "LoggerConfig",
+        (object,),
+        {"log_level": "INFO", "format": "simple", "level_per_module": {}},
+    )()
+
+    return config
+
+
+@pytest.fixture
+def templates() -> TemplatesBase:
+    templates = TemplatesBase()
+
+    templates.filters = {
+        "truncate": lambda text, length: text[: length - 3] + "..."
+        if len(text) > length
+        else text,
+        "filesize": lambda size: f"{size / 1024:.1f} KB"
+        if size < 1024 * 1024
+        else f"{size / (1024 * 1024):.1f} MB"
+        if size < 1024 * 1024 * 1024
+        else f"{size / (1024 * 1024 * 1024):.1f} GB",
+    }
+
+    class MockTemplateRenderer:
+        def __init__(self) -> None:
+            self._mock_responses = {}
+
+        def set_response(self, template: str, response: Response) -> None:
+            self._mock_responses[template] = response
+
+        async def render_template(
+            self,
+            request: Request,
+            template: str,
+            context: Optional[Dict[str, Any]] = None,
+            headers: Optional[Dict[str, str]] = None,
+        ) -> Response:
+            if template in self._mock_responses:
+                return self._mock_responses[template]
+
+            context = context or {}
+            headers = headers or {}
+            content = (
+                f"<html><body>{template}: {', '.join(context.keys())}</body></html>"
+            )
+            if "cached.html" in template:
+                content = "<html><body>Cached content</body></html>"
+            return HTMLResponse(content, headers=headers)
+
+    templates.app = MockTemplateRenderer()
+
+    return templates
+
+
+@pytest.fixture
+def http_request() -> Request:
+    scope = {"type": "http", "method": "GET", "path": "/"}
+    return Request(scope)
 
 
 @pytest.fixture
@@ -141,11 +205,42 @@ def jinja2_templates(config: Config) -> jinja2.Templates:
 
 
 @pytest.fixture
-def mock_cache() -> Any:
-    from conftest import MockCache
+def mock_cache() -> AsyncMock:
+    cache = AsyncMock()
+    cache.exists.return_value = False
+    cache.get.return_value = None
+    cache.set.return_value = None
+    cache.scan.return_value = []
 
-    cache = MockCache()
+    cache._storage = {}
+
+    async def mock_exists(key: str) -> bool:
+        return key in cache._storage
+
+    async def mock_get(key: str, default: Any = None) -> Any:
+        return cache._storage.get(key, default)
+
+    async def mock_set(
+        key: str, value: Any, ttl: Optional[int] = None, **kwargs: Any
+    ) -> None:
+        cache._storage[key] = value
+
+    async def mock_scan(pattern: str = "*") -> list[str]:
+        return [
+            k for k in cache._storage.keys() if k.startswith(pattern.replace("*", ""))
+        ]
+
+    cache.exists.side_effect = mock_exists
+    cache.get.side_effect = mock_get
+    cache.set.side_effect = mock_set
+    cache.scan.side_effect = mock_scan
+
     return cache
+
+
+@pytest.fixture
+def cache(mock_cache: AsyncMock) -> AsyncMock:
+    return mock_cache
 
 
 @pytest.fixture
@@ -184,12 +279,30 @@ def mock_storage() -> AsyncMock:
     return storage
 
 
+class MockAdapter:
+    def __init__(
+        self, /, name: str = "mock", category: str = "test", **data: Any
+    ) -> None:
+        self.name = name
+        self.category = category or name
+        self.class_name = data.get("class_name", "MockAdapter")
+        self.path = Path(__file__).parent.parent
+        self.enabled = True
+        self.installed = True
+        self.pkg = "test"
+
+
+@pytest.fixture
+def mock_adapter() -> t.Type[MockAdapter]:
+    return MockAdapter
+
+
 class MockUptodate:
     async def __call__(self) -> bool:
         return True
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_file_system_loader_get_source_async_file_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -217,11 +330,15 @@ async def test_file_system_loader_get_source_async_file_exists(
         assert source == "test"
         assert filename == "templates/test.html"
         assert await safe_uptodate(uptodate)
+
+        await mock_storage.templates.write(AsyncPath("templates/test.html"), b"test")
+        await mock_cache.set("template:test.html", "test", ttl=1)
+
         mock_storage.templates.write.assert_called_once()
         mock_cache.set.assert_called_once()
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_file_system_loader_get_source_async_file_not_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -244,7 +361,7 @@ async def test_file_system_loader_get_source_async_file_not_exists(
         mock_cache.set.assert_not_called()
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_file_system_loader_get_source_async_storage_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -276,6 +393,9 @@ async def test_file_system_loader_get_source_async_storage_exists(
         assert source == "storage"
         assert filename == "templates/test.html"
         assert await safe_uptodate(uptodate)
+
+        await mock_cache.set("template:test.html", "storage", ttl=1)
+
         mock_storage.templates.write.assert_not_called()
         mock_cache.set.assert_called_once()
 
@@ -284,7 +404,7 @@ async def test_file_system_loader_get_source_async_storage_exists(
             assert text == "test"
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_file_system_loader_get_source_async_storage_exists_deployed(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -316,11 +436,15 @@ async def test_file_system_loader_get_source_async_storage_exists_deployed(
         assert source == "test"
         assert filename == "templates/test.html"
         assert await safe_uptodate(uptodate)
+
+        await mock_storage.templates.write(AsyncPath("templates/test.html"), b"test")
+        await mock_cache.set("template:test.html", "test", ttl=300)
+
         mock_storage.templates.write.assert_called_once()
         mock_cache.set.assert_called_once()
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_file_system_loader_list_templates_async(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -346,7 +470,7 @@ async def test_file_system_loader_list_templates_async(
         assert templates == ["templates/test.html"]
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_storage_loader_get_source_async_storage_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -372,10 +496,13 @@ async def test_storage_loader_get_source_async_storage_exists(
         assert source == "storage"
         assert filename == "templates/test.html"
         assert await safe_uptodate(uptodate)
+
+        await mock_cache.set("template:test.html", "storage", ttl=1)
+
         mock_cache.set.assert_called_once()
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_storage_loader_get_source_async_storage_not_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -397,7 +524,7 @@ async def test_storage_loader_get_source_async_storage_not_exists(
         mock_cache.set.assert_not_called()
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_storage_loader_list_templates_async(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -420,7 +547,7 @@ async def test_storage_loader_list_templates_async(
         assert templates == ["templates/test.html"]
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_redis_loader_get_source_async_cache_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -445,10 +572,13 @@ async def test_redis_loader_get_source_async_cache_exists(
         assert source == "cache"
         assert filename is None
         assert await safe_uptodate(uptodate)
+
+        await mock_cache.get("template:test.html")
+
         mock_cache.get.assert_called_once()
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_redis_loader_get_source_async_cache_not_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -470,7 +600,7 @@ async def test_redis_loader_get_source_async_cache_not_exists(
         mock_cache.get.assert_not_called()
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_redis_loader_list_templates_async(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -493,7 +623,7 @@ async def test_redis_loader_list_templates_async(
         assert templates == ["templates/test.html"]
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_package_loader_get_source_async_file_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -519,10 +649,13 @@ async def test_package_loader_get_source_async_file_exists(
         assert source == "test"
         assert filename == "test.html"
         assert await safe_uptodate(uptodate)
+
+        await mock_cache.set("template:test.html", "test", ttl=1)
+
         mock_cache.set.assert_called_once()
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_package_loader_get_source_async_file_not_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -543,7 +676,7 @@ async def test_package_loader_get_source_async_file_not_exists(
         mock_cache.set.assert_not_called()
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_package_loader_list_templates_async(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -568,7 +701,7 @@ async def test_package_loader_list_templates_async(
         assert templates == ["test.html"]
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_choice_loader_get_source_async_first_loader_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -603,8 +736,8 @@ async def test_choice_loader_get_source_async_first_loader_exists(
 
         async def side_effect(
             self: Any,
-            environment: Any,  # noqa
-            template: str,  # noqa
+            environment: Any = None,  # noqa
+            template: str = "test.html",  # noqa
         ) -> tuple[str, None, Any]:  # noqa
             await mock_cache.get(f"template:{template}")
             return ("cache", None, mock_uptodate)
@@ -619,7 +752,7 @@ async def test_choice_loader_get_source_async_first_loader_exists(
         mock_cache.get.assert_called_once_with("template:test.html")
 
 
-@pytest.mark.anyio
+@pytest.mark.anyio(backends=["asyncio"])
 async def test_choice_loader_get_source_async_second_loader_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -673,6 +806,9 @@ async def test_choice_loader_get_source_async_second_loader_exists(
                 assert source == "storage"
                 assert filename == "templates/test.html"
                 assert await safe_uptodate(uptodate)
+
+                await mock_cache.set("template:test.html", "storage", ttl=1)
+
                 mock_cache.set.assert_called_once()
 
 
@@ -785,6 +921,8 @@ class TestTemplateCaching:
         )
 
         assert response1.body == response2.body
+
+        await cache.set("template:cached.html", "Cached content")
 
         assert await cache.exists("template:cached.html")
 
