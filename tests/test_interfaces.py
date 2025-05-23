@@ -183,6 +183,30 @@ class MockMiddleware:
         await self.app(scope, receive, send)
 
 
+class StorageTestInterface:
+    @pytest.mark.anyio(backends=["asyncio"])
+    async def test_storage_init(self, storage: Any) -> None:
+        assert hasattr(storage, "init")
+        assert hasattr(storage, "_initialized")
+        assert storage._initialized is True
+
+    @pytest.mark.anyio(backends=["asyncio"])
+    async def test_storage_exists(self, storage: Any) -> None:
+        assert hasattr(storage, "exists")
+
+    @pytest.mark.anyio(backends=["asyncio"])
+    async def test_storage_open(self, storage: Any) -> None:
+        assert hasattr(storage, "open")
+
+    @pytest.mark.anyio(backends=["asyncio"])
+    async def test_storage_write(self, storage: Any) -> None:
+        assert hasattr(storage, "write")
+
+    @pytest.mark.anyio(backends=["asyncio"])
+    async def test_storage_delete(self, storage: Any) -> None:
+        assert hasattr(storage, "delete")
+
+
 class MockCache:
     def __init__(self) -> None:
         self._data: Dict[str, Any] = {}

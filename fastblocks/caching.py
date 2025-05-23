@@ -110,7 +110,7 @@ async def set_in_cache(
     *,
     request: Request,
     rules: Sequence[Rule],
-    cache: Cache = depends(),
+    cache: t.Any = depends(),
     logger: Logger = depends(),
 ) -> None:
     if response.status_code not in cachable_status_codes:
@@ -155,7 +155,7 @@ async def get_from_cache(
     request: Request,
     *,
     rules: Sequence[Rule],
-    cache: Cache = depends(),
+    cache: t.Any = depends(),
     logger: Logger = depends(),
 ) -> Response | None:
     logger.debug(
@@ -195,7 +195,7 @@ async def get_from_cache(
 
 @depends.inject
 async def delete_from_cache(
-    url: URL, *, vary: Headers, cache: Cache = depends(), logger: Logger = depends()
+    url: URL, *, vary: Headers, cache: t.Any = depends(), logger: Logger = depends()
 ) -> None:
     varying_headers_cache_key = generate_varying_headers_cache_key(url)
     varying_headers = await cache.get(varying_headers_cache_key)
@@ -252,7 +252,7 @@ async def learn_cache_key(
     request: Request,
     response: Response,
     *,
-    cache: Cache = depends(),
+    cache: t.Any = depends(),
     logger: Logger = depends(),
 ) -> str:
     logger.debug(
@@ -283,7 +283,7 @@ async def learn_cache_key(
 
 
 async def get_cache_key(
-    request: Request, method: str, cache: Cache = depends(), logger: Logger = depends()
+    request: Request, method: str, cache: t.Any = depends(), logger: Logger = depends()
 ) -> str | None:
     url = request.url
     logger.debug(f"get_cache_key request.url={str(url)!r} method={method!r}")
@@ -317,12 +317,12 @@ def generate_cache_key(
         value = headers.get(header)
         if value is not None:
             vary_hash = hash.md5(value, usedforsecurity=False)
-    url_hash = hash.md5(str(url), ascii=True, usedforsecurity=False)
+    url_hash = hash.md5(str(url), usedforsecurity=False)
     return f"{config.app.name}:cached:{method}.{url_hash}.{vary_hash}"
 
 
 def generate_varying_headers_cache_key(url: URL) -> str:
-    url_hash = hash.md5(str(url.path), ascii=True, usedforsecurity=False)
+    url_hash = hash.md5(str(url.path), usedforsecurity=False)
     return f"varying_headers.{url_hash}"
 
 

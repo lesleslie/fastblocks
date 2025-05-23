@@ -339,7 +339,7 @@ class TemplatesSettings(TemplatesBaseSettings):
     @depends.inject
     def __init__(
         self,
-        models: Models = depends(),
+        models: t.Any = depends(),
         **data: t.Any,
     ) -> None:
         super().__init__(**data)
@@ -384,7 +384,7 @@ class Templates(TemplatesBase):
         self,
         template_paths: list[AsyncPath],
         admin: bool = False,
-        cache: Cache = depends(),
+        cache: t.Any = depends(),
     ) -> AsyncJinja2Templates:
         _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
         _imported_extensions = [
@@ -446,7 +446,7 @@ class Templates(TemplatesBase):
         return templates
 
     @depends.inject
-    async def init(self, cache: Cache = depends()) -> None:
+    async def init(self, cache: t.Any = depends()) -> None:
         self.app_searchpaths = await self.get_searchpaths(self.enabled_app)
         self.app = await self.init_envs(self.app_searchpaths)
         if self.enabled_admin:

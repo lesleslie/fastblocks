@@ -1,6 +1,10 @@
+"""Tests for the minify action module."""
+
+import pytest
 from fastblocks.actions.minify import minify
 
 
+@pytest.mark.unit
 class TestMinify:
     def test_js_minification(self) -> None:
         js_content: str = (
