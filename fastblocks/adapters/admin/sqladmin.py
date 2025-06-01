@@ -25,7 +25,11 @@ class Admin(AdminBase, SqlAdmin):  # type: ignore
         self.templates = templates.admin
 
     @depends.inject
-    async def init(self, models: t.Any = depends(), sql: t.Any = depends()) -> None: ...  # noqa
+    async def init(self, models: t.Any = depends(), sql: t.Any = depends()) -> None:
+        if hasattr(models, "get_admin_models"):
+            admin_models = models.get_admin_models()
+            for model in admin_models:
+                self.add_view(model)
 
 
 depends.set(Admin)

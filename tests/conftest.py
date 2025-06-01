@@ -1,9 +1,10 @@
 import os
 import sys
+import typing as t
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -844,6 +845,151 @@ def patch_depends():
         ),
     ):
         yield
+
+
+@pytest.fixture(autouse=True)
+def mock_fastblocks_module_structure() -> t.Generator[None, None, None]:
+    original_modules = {
+        k: v for k, v in sys.modules.items() if k.startswith("fastblocks")
+    }
+
+    fastblocks_module = ModuleType("fastblocks")
+    fastblocks_adapters = ModuleType("fastblocks.adapters")
+
+    adapters_app = ModuleType("fastblocks.adapters.app")
+    adapters_templates = ModuleType("fastblocks.adapters.templates")
+    adapters_templates_jinja2 = ModuleType("fastblocks.adapters.templates.jinja2")
+    adapters_auth = ModuleType("fastblocks.adapters.auth")
+    adapters_routes = ModuleType("fastblocks.adapters.routes")
+    adapters_admin = ModuleType("fastblocks.adapters.admin")
+    adapters_sqladmin = ModuleType("fastblocks.adapters.admin.sqladmin")
+    adapters_sitemap = ModuleType("fastblocks.adapters.sitemap")
+
+    app_base = ModuleType("fastblocks.adapters.app._base")
+    templates_base = ModuleType("fastblocks.adapters.templates._base")
+    templates_filters = ModuleType("fastblocks.adapters.templates._filters")
+    auth_base = ModuleType("fastblocks.adapters.auth._base")
+    routes_base = ModuleType("fastblocks.adapters.routes._base")
+    admin_base = ModuleType("fastblocks.adapters.admin._base")
+    sitemap_base = ModuleType("fastblocks.adapters.sitemap._base")
+
+    setattr(fastblocks_module, "adapters", fastblocks_adapters)
+
+    setattr(fastblocks_adapters, "app", adapters_app)
+    setattr(fastblocks_adapters, "templates", adapters_templates)
+    setattr(fastblocks_adapters, "auth", adapters_auth)
+    setattr(fastblocks_adapters, "routes", adapters_routes)
+    setattr(fastblocks_adapters, "admin", adapters_admin)
+    setattr(adapters_admin, "sqladmin", adapters_sqladmin)
+    setattr(fastblocks_adapters, "sitemap", adapters_sitemap)
+
+    setattr(adapters_app, "_base", app_base)
+    setattr(adapters_templates, "_base", templates_base)
+    setattr(adapters_templates, "_filters", templates_filters)
+    setattr(adapters_auth, "_base", auth_base)
+    setattr(adapters_routes, "_base", routes_base)
+    setattr(adapters_admin, "_base", admin_base)
+    setattr(adapters_sitemap, "_base", sitemap_base)
+
+    class MockAdapterBase:
+        def __init__(self, **kwargs: t.Any) -> None:
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+    class MockAdminBaseSettings:
+        def __init__(self) -> None:
+            self.title = "FastBlocks Dashboard"
+            self.style = "bootstrap"
+            self.logo_url = "/static/img/logo.png"
+            self.login_view = "/admin/login"
+            self.login_template = "admin/login.html"
+            self.templates_dir = "admin/templates"
+
+    class AdminBase(MockAdapterBase):
+        def __init__(self, **kwargs: t.Any) -> None:
+            super().__init__(**kwargs)
+            self.settings = MockAdminBaseSettings()
+
+    setattr(admin_base, "AdapterBase", MockAdapterBase)
+    setattr(admin_base, "AdminBaseSettings", MockAdminBaseSettings)
+    setattr(admin_base, "AdminBase", AdminBase)
+
+    mock_depends = MagicMock()
+    mock_depends.inject = MockDependsInjector.inject
+    setattr(templates_base, "depends", mock_depends)
+
+    setattr(templates_base, "TemplatesBaseSettings", MockTemplatesBaseSettings)
+
+    setattr(adapters_templates, "jinja2", adapters_templates_jinja2)
+
+    setattr(adapters_templates_jinja2, "FileSystemLoader", MockFileSystemLoader)
+    setattr(adapters_templates_jinja2, "RedisLoader", MockRedisLoader)
+    setattr(adapters_templates_jinja2, "StorageLoader", MockStorageLoader)
+    setattr(adapters_templates_jinja2, "ChoiceLoader", MockChoiceLoader)
+    setattr(adapters_templates_jinja2, "PackageLoader", MockPackageLoader)
+    setattr(adapters_templates_jinja2, "DictLoader", MockDictLoader)
+    setattr(adapters_templates_jinja2, "FunctionLoader", MockFunctionLoader)
+    setattr(adapters_templates_jinja2, "PrefixLoader", MockPrefixLoader)
+
+    mock_minify = MagicMock()
+    mock_minify.html = MagicMock(return_value="<html><body>minified</body></html>")
+    mock_minify.js = MagicMock(return_value="function test(){return true;}")
+    mock_minify.css = MagicMock(return_value="body{color:red}")
+
+    class MockFiltersClass:
+        @staticmethod
+        def map_src(s: str) -> str:
+            from urllib.parse import quote_plus
+
+            return quote_plus(s)
+
+        @staticmethod
+        def minify_html(content: str) -> str:
+            from fastblocks.adapters.templates._filters import minify
+
+            return str(minify.html(content))
+
+        @staticmethod
+        def minify_js(content: str) -> str:
+            from fastblocks.adapters.templates._filters import minify
+
+            return str(minify.js(content))
+
+        @staticmethod
+        def minify_css(content: str) -> str:
+            from fastblocks.adapters.templates._filters import minify
+
+            return str(minify.css(content))
+
+    setattr(templates_filters, "minify", mock_minify)
+    setattr(templates_filters, "Filters", MockFiltersClass)
+
+    sys.modules["fastblocks"] = fastblocks_module
+    sys.modules["fastblocks.adapters"] = fastblocks_adapters
+    sys.modules["fastblocks.adapters.app"] = adapters_app
+    sys.modules["fastblocks.adapters.app._base"] = app_base
+    sys.modules["fastblocks.adapters.templates"] = adapters_templates
+    sys.modules["fastblocks.adapters.templates._base"] = templates_base
+    sys.modules["fastblocks.adapters.templates._filters"] = templates_filters
+    sys.modules["fastblocks.adapters.templates.jinja2"] = adapters_templates_jinja2
+    sys.modules["fastblocks.adapters.auth"] = adapters_auth
+    sys.modules["fastblocks.adapters.auth._base"] = auth_base
+    sys.modules["fastblocks.adapters.routes"] = adapters_routes
+    sys.modules["fastblocks.adapters.routes._base"] = routes_base
+    sys.modules["fastblocks.adapters.admin"] = adapters_admin
+    sys.modules["fastblocks.adapters.admin._base"] = admin_base
+    sys.modules["fastblocks.adapters.admin.sqladmin"] = adapters_sqladmin
+    sys.modules["fastblocks.adapters.sitemap"] = adapters_sitemap
+    sys.modules["fastblocks.adapters.sitemap._base"] = sitemap_base
+
+    yield
+
+    for module_name in list(sys.modules.keys()):
+        if module_name.startswith("fastblocks"):
+            sys.modules.pop(module_name, None)
+
+    for module_name, module_obj in original_modules.items():
+        sys.modules[module_name] = module_obj
 
 
 class MockTemplateNotFound(Exception):

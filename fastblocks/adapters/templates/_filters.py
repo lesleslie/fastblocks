@@ -16,6 +16,11 @@ class Filters:
 
     @staticmethod
     @templates.filter()
+    def url_encode(text: str) -> str:
+        return quote_plus(text)
+
+    @staticmethod
+    @templates.filter()
     def minify_html(html: str) -> str:
         return minify.html(html)  # type: ignore
 

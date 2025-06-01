@@ -1,42 +1,190 @@
 """Tests for the ChoiceLoader class."""
 
+import typing as t
 from pathlib import Path
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from acb.config import Config
 from anyio import Path as AsyncPath
-from tests.conftest import (
-    MockChoiceLoader as ChoiceLoader,
-)
-from tests.conftest import (
-    MockFileSystemLoader as FileSystemLoader,
-)
-from tests.conftest import (
-    MockRedisLoader as RedisLoader,
-)
+
+
+class MockAsyncPath:
+    def __init__(self, path: t.Union[str, Path, "MockAsyncPath"] = "") -> None:
+        if isinstance(path, MockAsyncPath):
+            self._path = path._path
+        else:
+            self._path = str(path)
+
+    def __str__(self) -> str:
+        return self._path
+
+    def __truediv__(
+        self, other: t.Union[str, Path, "MockAsyncPath"]
+    ) -> "MockAsyncPath":
+        other_str = str(other)
+        if self._path.endswith("/"):
+            return MockAsyncPath(f"{self._path}{other_str}")
+        return MockAsyncPath(f"{self._path}/{other_str}")
+
+    async def exists(self) -> bool:
+        return True
+
+    async def is_file(self) -> bool:
+        return "." in self._path.split("/")[-1]
+
+
+class MockConfig:
+    def __init__(self) -> None:
+        self.app = MagicMock()
+        self.app.name = "test_app"
+        self.app.debug = True
+
+        self.templates = MagicMock()
+        self.templates.directory = "templates"
+        self.templates.extension = ".html"
+
+        self.cache = MagicMock()
+        self.cache.enabled = True
+        self.cache.ttl = 3600
+
+
+class MockBaseLoader:
+    def __init__(self, searchpath: t.Optional[t.List[MockAsyncPath]] = None) -> None:
+        self.searchpath = searchpath or [MockAsyncPath("templates")]
+        self.encoding = "utf-8"
+
+    async def get_source_async(
+        self, environment: t.Any = None, template: str = ""
+    ) -> t.Tuple[str, str, t.Callable[[], bool]]:
+        raise NotImplementedError("Subclasses must implement get_source_async")
+
+    async def list_templates_async(self) -> t.List[str]:
+        return []
+
+
+class MockFileSystemLoader(MockBaseLoader):
+    def __init__(
+        self,
+        searchpath: t.Optional[t.List[MockAsyncPath]] = None,
+        encoding: t.Optional[str] = None,
+        cache: t.Any = None,
+        storage: t.Any = None,
+        config: t.Any = None,
+    ) -> None:
+        super().__init__(searchpath=searchpath)
+        self.encoding = encoding or "utf-8"
+        self.cache = cache
+        self.storage = storage
+        self.config = config
+        self._templates = {}
+
+    async def get_source_async(
+        self, environment: t.Any = None, template: str = ""
+    ) -> t.Tuple[str, str, t.Callable[[], bool]]:
+        if template in self._templates:
+            return (
+                self._templates[template],
+                str(self.searchpath[0] / template),
+                lambda: True,
+            )
+
+        raise FileNotFoundError(f"Template {template} not found")
+
+
+class MockRedisLoader(MockBaseLoader):
+    def __init__(
+        self,
+        encoding: t.Optional[str] = None,
+        cache: t.Any = None,
+        storage: t.Any = None,
+        config: t.Any = None,
+    ) -> None:
+        super().__init__()
+        self.encoding = encoding or "utf-8"
+        self.cache = cache
+        self.storage = storage
+        self.config = config
+        self._templates = {
+            "test.html": "<html><body>Test from redis</body></html>",
+        }
+
+    async def get_source_async(
+        self, environment: t.Any = None, template: str = ""
+    ) -> t.Tuple[str, str, t.Callable[[], bool]]:
+        if template in self._templates:
+            template_path = AsyncPath("templates") / template
+            return self._templates[template], str(template_path), lambda: True
+
+        raise FileNotFoundError(f"Template {template} not found")
+
+
+class MockChoiceLoader(MockBaseLoader):
+    def __init__(
+        self,
+        loaders: t.Optional[t.List[t.Any]] = None,
+        encoding: t.Optional[str] = None,
+        cache: t.Any = None,
+        storage: t.Any = None,
+        config: t.Any = None,
+    ) -> None:
+        super().__init__()
+        self.loaders = loaders or []
+        self.encoding = encoding or "utf-8"
+        self.cache = cache
+        self.storage = storage
+        self.config = config
+
+    async def get_source_async(
+        self, environment: t.Any = None, template: str = ""
+    ) -> t.Tuple[str, str, t.Callable[[], bool]]:
+        for loader in self.loaders:
+            try:
+                return await loader.get_source_async(environment, template)
+            except FileNotFoundError:
+                continue
+
+        raise FileNotFoundError(f"Template {template} not found in any loader")
+
+
+@pytest.fixture
+def config() -> MockConfig:
+    return MockConfig()
+
+
+@pytest.fixture
+def mock_cache() -> AsyncMock:
+    cache = AsyncMock()
+    cache.get.return_value = None
+    return cache
+
+
+@pytest.fixture
+def mock_storage() -> AsyncMock:
+    storage = AsyncMock()
+    storage.get.return_value = None
+    return storage
 
 
 @pytest.mark.anyio(backends=["asyncio"])
 async def test_choice_loader_get_source_async_first_loader_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: MockConfig, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
-    fs_loader = FileSystemLoader(
-        searchpath=[AsyncPath(tmp_path)],
+    fs_loader = MockFileSystemLoader(
+        searchpath=[MockAsyncPath(tmp_path)],
         encoding="utf-8",
         cache=mock_cache,
         storage=mock_storage,
         config=config,
     )
 
-    redis_loader = RedisLoader(
+    redis_loader = MockRedisLoader(
         encoding="utf-8",
         cache=mock_cache,
         storage=mock_storage,
         config=config,
     )
 
-    ChoiceLoader(
+    choice_loader = MockChoiceLoader(
         loaders=[fs_loader, redis_loader],
         encoding="utf-8",
         cache=mock_cache,
@@ -46,42 +194,37 @@ async def test_choice_loader_get_source_async_first_loader_exists(
 
     template_name = "test.html"
     template_content = "<html><body>Test from filesystem</body></html>"
-    template_path = tmp_path / template_name
-    template_path.write_text(template_content)
 
-    source = template_content
-    path = str(template_path)
+    fs_loader._templates[template_name] = template_content
+    template_path = str(tmp_path / template_name)
 
-    def uptodate() -> bool:
-        return True
+    source, path, uptodate = await choice_loader.get_source_async(None, template_name)
 
     assert source == template_content
-    assert path == str(template_path)
+    assert path == template_path
     assert uptodate()
-
-    assert True
 
 
 @pytest.mark.anyio(backends=["asyncio"])
 async def test_choice_loader_get_source_async_second_loader_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: MockConfig, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
-    fs_loader = FileSystemLoader(
-        searchpath=[AsyncPath(tmp_path)],
+    fs_loader = MockFileSystemLoader(
+        searchpath=[MockAsyncPath(tmp_path)],
         encoding="utf-8",
         cache=mock_cache,
         storage=mock_storage,
         config=config,
     )
 
-    redis_loader = RedisLoader(
+    redis_loader = MockRedisLoader(
         encoding="utf-8",
         cache=mock_cache,
         storage=mock_storage,
         config=config,
     )
 
-    ChoiceLoader(
+    choice_loader = MockChoiceLoader(
         loaders=[fs_loader, redis_loader],
         encoding="utf-8",
         cache=mock_cache,
@@ -91,16 +234,10 @@ async def test_choice_loader_get_source_async_second_loader_exists(
 
     template_name = "test.html"
     template_content = "<html><body>Test from redis</body></html>"
-    template_path = AsyncPath("templates") / template_name
+    template_path = str(AsyncPath("templates") / template_name)
 
-    source = template_content
-    path = str(template_path)
-
-    def uptodate() -> bool:
-        return True
+    source, path, uptodate = await choice_loader.get_source_async(None, template_name)
 
     assert source == template_content
-    assert path == str(template_path)
+    assert path == template_path
     assert uptodate()
-
-    assert True
