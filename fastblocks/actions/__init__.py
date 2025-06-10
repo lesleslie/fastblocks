@@ -1,3 +1,3 @@
-from fastblocks.actions.minify import minify
+from . import minify
 
 __all__ = ["minify"]

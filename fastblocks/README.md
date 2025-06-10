@@ -2,7 +2,7 @@
 
 > **FastBlocks Documentation**: [Main](../README.md) | [Core Features](./README.md) | [Actions](./actions/README.md) | [Adapters](./adapters/README.md)
 
-FastBlocks provides a set of core features that form the foundation of the framework. These components work together to create a powerful, asynchronous web application framework optimized for server-side rendering with HTMX.
+FastBlocks provides a set of core features that form the foundation of the framework. These components work together to create a powerful, asynchronous web application framework optimized for server-side rendering with HTMX. The modular, component-based architecture enables "batteries-included but customizable" application development, allowing you to benefit from comprehensive defaults while maintaining the flexibility to replace, customize, or extend any component.
 
 ## Framework Architecture
 
@@ -25,6 +25,18 @@ FastBlocks is built on top of [Asynchronous Component Base (ACB)](https://github
 - **FastBlocks Extensions**: Web-specific components like HTMX integration, template rendering, and middleware
 
 This separation of concerns allows FastBlocks to focus on web application features while leveraging ACB's robust component architecture.
+
+### Component-Based Architecture Benefits
+
+FastBlocks' component-based architecture provides several significant advantages:
+
+- **Selective Inclusion**: Use only the components you need for your application
+- **Granular Replacements**: Replace individual components without rewriting the entire application
+- **Clear Boundaries**: Well-defined interfaces between components simplify testing and maintenance
+- **Consistent Patterns**: Common patterns across components reduce learning curve and cognitive load
+- **Independent Evolution**: Components can evolve at different rates while maintaining compatibility
+- **Infrastructure Flexibility**: Swap infrastructure components to support different cloud providers
+- **Deployment Options**: Support both traditional and containerized deployments with the same codebase
 
 ## Table of Contents
 

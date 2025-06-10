@@ -7,6 +7,7 @@ from enum import Enum
 from pathlib import Path
 from subprocess import DEVNULL
 from subprocess import run as execute
+from typing import Annotated
 
 import nest_asyncio
 import typer
@@ -15,31 +16,18 @@ from acb.actions.encode import dump, load
 from acb.console import console
 from anyio import Path as AsyncPath
 from granian import Granian
-from typing_extensions import Annotated
 
 nest_asyncio.apply()
-
-__all__ = (
-    "create",
-    "run",
-    "dev",
-    "cli",
-)
-
+__all__ = ("create", "run", "dev", "cli")
 default_adapters = dict(
     routes="default", templates="jinja2", auth="basic", sitemap="asgi"
 )
-
 fastblocks_path = Path(__file__).parent
-
 apps_path = Path.cwd()
-
 if Path.cwd() == fastblocks_path:
     raise SystemExit(
-        "FastBlocks can not be run in the same directory as FastBlocks itself. Run "
-        "`python -m fastblocks create`. Move into the app directory and try again."
+        "FastBlocks can not be run in the same directory as FastBlocks itself. Run `python -m fastblocks create`. Move into the app directory and try again."
     )
-
 cli = typer.Typer(rich_markup_mode="rich")
 
 
@@ -52,41 +40,26 @@ class Styles(str, Enum):
         return self.value
 
 
-run_args = dict(
-    app="main:app",
-)
-
+run_args = dict(app="main:app")
 dev_args = run_args | dict(port=8000, reload=True)
-
-granian_dev_args = dev_args | dict(
-    address="127.0.0.1",
-    reload_paths=[Path.cwd(), fastblocks_path],
-    interface="asgi",
-    log_enabled=False,
-    log_access=True,
-    reload_ignore_dirs=[
-        "tmp",
-        "settings",
-        "templates",
-    ],
-)
-
-uvicorn_dev_args = dev_args | dict(
-    host=granian_dev_args["address"],
-    reload_includes=[
-        "*.py",
-        *[str(p) for p in granian_dev_args["reload_paths"]],  # type: ignore
-    ],
-    reload_excludes=[
-        f"{d}/*"
-        for d in granian_dev_args["reload_ignore_dirs"]  # type: ignore
-    ],
-    lifespan="on",
-)
+granian_dev_args = dev_args | {
+    "address": "127.0.0.1",
+    "reload_paths": [Path.cwd(), fastblocks_path],
+    "interface": "asgi",
+    "log_enabled": False,
+    "log_access": True,
+    "reload_ignore_dirs": ["tmp", "settings", "templates"],
+}
+uvicorn_dev_args = dev_args | {
+    "host": "127.0.0.1",
+    "reload_includes": ["*.py", str(Path.cwd()), str(fastblocks_path)],
+    "reload_excludes": ["tmp/*", "settings/*", "templates/*"],
+    "lifespan": "on",
+}
 
 
 def setup_signal_handlers() -> None:
-    def handle_signal(sig: int, frame: t.Any) -> None:  # noqa
+    def handle_signal(sig: int, _: t.Any) -> None:
         print(f"\nReceived signal {sig}. Shutting down gracefully...")
         sys.exit(0)
 
@@ -95,30 +68,45 @@ def setup_signal_handlers() -> None:
 
 
 @cli.command()
-def run(docker: bool = False, granian: bool = False) -> None:
+def run(docker: bool = False, granian: bool = False, host: str = "127.0.0.1") -> None:
     if docker:
         execute(f"docker run -it -ePORT=8080 -p8080:8080 {Path.cwd().stem}".split())
     else:
         setup_signal_handlers()
         if granian:
-            Granian(
-                **run_args
-                | dict(
-                    address="0.0.0.0",  # type: ignore  # nosec B104
-                    interface="asgi",
-                )
-            ).serve()
+            from granian.constants import Interfaces
+
+            Granian("main:app", address=host, interface=Interfaces.ASGI).serve()
         else:
-            uvicorn.run(**run_args | dict(host="0.0.0.0", lifespan="on"))  # nosec B104  # type: ignore
+            uvicorn.run(app=run_args["app"], host=host, lifespan="on")
 
 
 @cli.command()
 def dev(granian: bool = False) -> None:
     setup_signal_handlers()
     if granian:
-        Granian(**granian_dev_args).serve()  # type: ignore
+        from granian.constants import Interfaces
+
+        Granian(
+            "main:app",
+            address="127.0.0.1",
+            port=8000,
+            reload=True,
+            reload_paths=[Path.cwd(), fastblocks_path],
+            interface=Interfaces.ASGI,
+            log_enabled=False,
+            log_access=True,
+        ).serve()
     else:
-        uvicorn.run(**uvicorn_dev_args)  # type: ignore
+        uvicorn.run(
+            app="main:app",
+            host="127.0.0.1",
+            port=8000,
+            reload=True,
+            reload_includes=["*.py", str(Path.cwd()), str(fastblocks_path)],
+            reload_excludes=["tmp/*", "settings/*", "templates/*"],
+            lifespan="on",
+        )
 
 
 @cli.command()
@@ -130,8 +118,7 @@ def create(
         Styles,
         typer.Option(
             prompt=True,
-            help="The style (css, or web component, framework) you want to use"
-            "[{','.join(Styles._member_names_)}]",
+            help="The style (css, or web component, framework) you want to use[{','.join(Styles._member_names_)}]",
         ),
     ] = Styles.bulma,
     domain: Annotated[
@@ -173,10 +160,7 @@ def create(
     for command in commands:
         execute(command, stdout=DEVNULL, stderr=DEVNULL)
 
-    async def update_settings(
-        settings: str,
-        values: dict[str, t.Any],
-    ) -> None:
+    async def update_settings(settings: str, values: dict[str, t.Any]) -> None:
         settings_path = AsyncPath(app_path / "settings")
         settings_dict = await load.yaml(settings_path / f"{settings}.yml")
         settings_dict.update(values)
@@ -189,10 +173,6 @@ def create(
 
     asyncio.run(update_configs())
     console.print(
-        "\n[bold][white]Project is initialized. Please configure [green]'adapters.yml'"
-        f"[/] and [green]'app.yml'[/] in the [blue]'{app_name}/settings'[/] "
-        "directory before running [magenta]`python -m fastblocks dev`[/] or "
-        f"[magenta]`python -m fastblocks run`[/] from the [blue]'{app_name}'[/] "
-        f"directory.[/][/]"
+        f"\n[bold][white]Project is initialized. Please configure [green]'adapters.yml'[/] and [green]'app.yml'[/] in the [blue]'{app_name}/settings'[/] directory before running [magenta]`python -m fastblocks dev`[/] or [magenta]`python -m fastblocks run`[/] from the [blue]'{app_name}'[/] directory.[/][/]"
     )
     raise SystemExit()

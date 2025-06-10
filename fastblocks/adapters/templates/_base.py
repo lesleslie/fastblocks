@@ -25,16 +25,12 @@ TemplateContext: t.TypeAlias = dict[str, t.Any]
 TemplateResponse: t.TypeAlias = Response
 TemplateStr: t.TypeAlias = str
 TemplatePath: t.TypeAlias = str
-
 T = t.TypeVar("T")
 
 
 class TemplateRenderer(t.Protocol):
     async def render_template(
-        self,
-        request: Request,
-        template: TemplatePath,
-        context: TemplateContext | None = None,  # noqa
+        self, request: Request, template: TemplatePath, _: TemplateContext | None = None
     ) -> TemplateResponse: ...
 
 
@@ -55,31 +51,29 @@ class TemplatesBaseSettings(Settings):
 
 class TemplatesProtocol(t.Protocol):
     def get_searchpath(self, adapter: Adapter, path: AsyncPath) -> None: ...
+
     async def get_searchpaths(self, adapter: Adapter) -> list[AsyncPath]: ...
+
     @staticmethod
     def get_storage_path(path: AsyncPath) -> AsyncPath: ...
+
     @staticmethod
     def get_cache_key(path: AsyncPath) -> str: ...
 
 
 class TemplatesBase(AdapterBase):
-    app: t.Optional[t.Any] = None
-    admin: t.Optional[t.Any] = None
-    app_searchpaths: t.Optional[list[AsyncPath]] = None
-    admin_searchpaths: t.Optional[list[AsyncPath]] = None
+    app: t.Any | None = None
+    admin: t.Any | None = None
+    app_searchpaths: list[AsyncPath] | None = None
+    admin_searchpaths: list[AsyncPath] | None = None
 
     def get_searchpath(self, adapter: Adapter, path: AsyncPath) -> list[AsyncPath]:
-        style = self.config.app.style
+        style = getattr(self.config.app, "style", "bulma")
         base_path = path / "base"
         style_path = path / style
         style_adapter_path = path / style / adapter.name
         theme_adapter_path = style_adapter_path / "theme"
-        return [
-            theme_adapter_path,
-            style_adapter_path,
-            style_path,
-            base_path,
-        ]
+        return [theme_adapter_path, style_adapter_path, style_path, base_path]
 
     async def get_searchpaths(self, adapter: Adapter) -> list[AsyncPath]:
         searchpaths = []
@@ -95,7 +89,7 @@ class TemplatesBase(AdapterBase):
                 exists_result = await safe_await((a.path / "_templates").exists)
                 if exists_result:
                     searchpaths.append(a.path / "_templates")
-        for path in [p.path for p in pkg_registry.get()]:  # type: ignore
+        for path in [p.path for p in pkg_registry.get()]:
             searchpaths.extend(
                 self.get_searchpath(
                     adapter, path / "adapters" / adapter.category / "_templates"

@@ -1,6 +1,7 @@
 """Standardized test interfaces for FastBlocks components."""
 
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -163,13 +164,13 @@ class MockApp(FastBlocks):
     def __init__(self) -> None:
         super().__init__()
         self.debug: bool = True
-        self.routes: List[Route] = []
+        self.routes: list[Route] = []
         # Use type: ignore to suppress the incompatible method override warning
-        self.middleware: List[Middleware] = []  # type: ignore
-        self.exception_handlers: Dict[Any, Callable[..., Any]] = {}
+        self.middleware: list[Middleware] = []  # type: ignore
+        self.exception_handlers: dict[Any, Callable[..., Any]] = {}
         self.models: Any = depends.get()
-        self.templates: Optional[Any] = None
-        self.user_middleware: List[Middleware] = []
+        self.templates: Any | None = None
+        self.user_middleware: list[Middleware] = []
 
     async def post_startup(self) -> None:
         pass
@@ -209,12 +210,12 @@ class StorageTestInterface:
 
 class MockCache:
     def __init__(self) -> None:
-        self._data: Dict[str, Any] = {}
+        self._data: dict[str, Any] = {}
 
     async def get(self, key: str, default: Any = None) -> Any:
         return self._data.get(key, default)
 
-    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> bool:
         self._data[key] = value
         return True
 
@@ -227,7 +228,7 @@ class MockCache:
     async def exists(self, key: str) -> bool:
         return key in self._data
 
-    async def clear(self, namespace: Optional[str] = None) -> bool:
+    async def clear(self, namespace: str | None = None) -> bool:
         if namespace:
             keys_to_delete = [
                 k for k in self._data.keys() if k.startswith(f"{namespace}:")

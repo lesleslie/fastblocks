@@ -8,7 +8,7 @@ from ._base import SitemapBase, SitemapBaseSettings
 class SitemapSettings(SitemapBaseSettings): ...
 
 
-class Sitemap(AsgiSitemap, SitemapBase):  # type: ignore
+class Sitemap(AsgiSitemap[str], SitemapBase):
     sitemap: AsgiSitemapApp | None = None
 
     @depends.inject

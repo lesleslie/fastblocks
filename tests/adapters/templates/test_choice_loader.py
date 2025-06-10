@@ -49,24 +49,24 @@ class MockConfig:
 
 
 class MockBaseLoader:
-    def __init__(self, searchpath: t.Optional[t.List[MockAsyncPath]] = None) -> None:
+    def __init__(self, searchpath: list[MockAsyncPath] | None = None) -> None:
         self.searchpath = searchpath or [MockAsyncPath("templates")]
         self.encoding = "utf-8"
 
     async def get_source_async(
         self, environment: t.Any = None, template: str = ""
-    ) -> t.Tuple[str, str, t.Callable[[], bool]]:
+    ) -> tuple[str, str, t.Callable[[], bool]]:
         raise NotImplementedError("Subclasses must implement get_source_async")
 
-    async def list_templates_async(self) -> t.List[str]:
+    async def list_templates_async(self) -> list[str]:
         return []
 
 
 class MockFileSystemLoader(MockBaseLoader):
     def __init__(
         self,
-        searchpath: t.Optional[t.List[MockAsyncPath]] = None,
-        encoding: t.Optional[str] = None,
+        searchpath: list[MockAsyncPath] | None = None,
+        encoding: str | None = None,
         cache: t.Any = None,
         storage: t.Any = None,
         config: t.Any = None,
@@ -80,7 +80,7 @@ class MockFileSystemLoader(MockBaseLoader):
 
     async def get_source_async(
         self, environment: t.Any = None, template: str = ""
-    ) -> t.Tuple[str, str, t.Callable[[], bool]]:
+    ) -> tuple[str, str, t.Callable[[], bool]]:
         if template in self._templates:
             return (
                 self._templates[template],
@@ -94,7 +94,7 @@ class MockFileSystemLoader(MockBaseLoader):
 class MockRedisLoader(MockBaseLoader):
     def __init__(
         self,
-        encoding: t.Optional[str] = None,
+        encoding: str | None = None,
         cache: t.Any = None,
         storage: t.Any = None,
         config: t.Any = None,
@@ -110,7 +110,7 @@ class MockRedisLoader(MockBaseLoader):
 
     async def get_source_async(
         self, environment: t.Any = None, template: str = ""
-    ) -> t.Tuple[str, str, t.Callable[[], bool]]:
+    ) -> tuple[str, str, t.Callable[[], bool]]:
         if template in self._templates:
             template_path = AsyncPath("templates") / template
             return self._templates[template], str(template_path), lambda: True
@@ -121,8 +121,8 @@ class MockRedisLoader(MockBaseLoader):
 class MockChoiceLoader(MockBaseLoader):
     def __init__(
         self,
-        loaders: t.Optional[t.List[t.Any]] = None,
-        encoding: t.Optional[str] = None,
+        loaders: list[t.Any] | None = None,
+        encoding: str | None = None,
         cache: t.Any = None,
         storage: t.Any = None,
         config: t.Any = None,
@@ -136,7 +136,7 @@ class MockChoiceLoader(MockBaseLoader):
 
     async def get_source_async(
         self, environment: t.Any = None, template: str = ""
-    ) -> t.Tuple[str, str, t.Callable[[], bool]]:
+    ) -> tuple[str, str, t.Callable[[], bool]]:
         for loader in self.loaders:
             try:
                 return await loader.get_source_async(environment, template)

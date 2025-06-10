@@ -16,3 +16,5 @@ __pycache__/
 *$py.class
 /.zencoder/
 /tests/mock_tmp/
+
+**/.claude/settings.local.json

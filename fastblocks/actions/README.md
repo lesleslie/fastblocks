@@ -95,9 +95,17 @@ Minifies JavaScript content by removing whitespace, comments, and optimizing cod
 
 The minify action uses the following libraries:
 
-- **HTML**: [minify-html](https://github.com/wilsonzlin/minify-html) v0.16.4
-- **CSS**: [rcssmin](https://github.com/ndparker/rcssmin) v1.2.1
-- **JavaScript**: [rjsmin](https://github.com/ndparker/rjsmin) v1.2.4
+- **HTML**: [minify-html](https://github.com/wilsonzlin/minify-html) (compatible with v0.16.4+)
+- **CSS**: [rcssmin](https://github.com/ndparker/rcssmin) (compatible with v1.2.1+)
+- **JavaScript**: [rjsmin](https://github.com/ndparker/rjsmin) (compatible with v1.2.4+)
+
+These dependencies are automatically installed when you install FastBlocks with the required extras:
+
+```bash
+pdm add "fastblocks[minify]"
+# or
+pip install "fastblocks[minify]"
+```
 
 ## Creating Custom Actions
 
@@ -131,3 +139,43 @@ is_valid = validate.email("user@example.com")
 3. **Use descriptive names**: Action names should clearly indicate their purpose
 4. **Document your actions**: Include docstrings and type hints
 5. **Add tests**: Ensure your actions work correctly with unit tests
+
+### Testing Custom Actions
+
+To create tests for your custom actions, add test files to the `tests/actions/` directory:
+
+```python
+# tests/actions/validate/test_validate.py
+import pytest
+from fastblocks.actions.validate import validate
+
+def test_email_validation_valid():
+    """Test that valid email addresses pass validation."""
+    valid_emails = [
+        "user@example.com",
+        "firstname.lastname@example.com",
+        "email@subdomain.example.com",
+        "user+tag@example.com"
+    ]
+    for email in valid_emails:
+        assert validate.email(email) is True
+
+def test_email_validation_invalid():
+    """Test that invalid email addresses fail validation."""
+    invalid_emails = [
+        "plainaddress",
+        "@missingusername.com",
+        "user@.com",
+        "user@domain"
+    ]
+    for email in invalid_emails:
+        assert validate.email(email) is False
+```
+
+Run your tests with pytest:
+
+```bash
+python -m pytest tests/actions/validate/test_validate.py -v
+```
+
+For more information on testing, see the [Testing Documentation](../../../tests/TESTING.md).

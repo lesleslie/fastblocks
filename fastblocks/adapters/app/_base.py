@@ -13,6 +13,7 @@ class AppBaseSettings(AppConfigSettings):
 
 class AppProtocol(t.Protocol):
     def __init__(self) -> None: ...
+
     async def lifespan(self) -> t.AsyncIterator[None]: ...
 
 

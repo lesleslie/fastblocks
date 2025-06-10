@@ -16,8 +16,9 @@ class AuthSettings(AuthBaseSettings): ...
 
 
 class CurrentUser:
-    def has_role(self, role: str) -> str: ...  # noqa: F841
-    def set_role(self, role: str) -> str | bool | None: ...  # noqa: F841
+    def has_role(self, _: str) -> str: ...
+
+    def set_role(self, _: str) -> str | bool | None: ...
 
     @property
     def identity(self) -> UUID4 | str | int: ...
@@ -29,7 +30,7 @@ class CurrentUser:
     def email(self) -> EmailStr | None: ...
 
     def is_authenticated(
-        self, request: t.Optional[HtmxRequest] = None, config: t.Any = None
+        self, request: HtmxRequest | None = None, config: t.Any = None
     ) -> bool | int | str: ...
 
 
@@ -40,7 +41,6 @@ class Auth(AuthBase):
     async def authenticate(request: HtmxRequest) -> bool:
         if "Authorization" not in request.headers:
             return False
-
         auth = request.headers["Authorization"]
         try:
             scheme, credentials = auth.split()
@@ -49,9 +49,7 @@ class Auth(AuthBase):
             decoded = base64.b64decode(credentials).decode("ascii")
         except (ValueError, UnicodeDecodeError, binascii.Error):
             raise AuthenticationError("Invalid basic auth credentials")
-
-        username, _, password = decoded.partition(":")  # type: ignore
-
+        username, _, _ = decoded.partition(":")
         request.state.auth_credentials = (
             AuthCredentials(["authenticated"]),
             SimpleUser(username),
@@ -61,7 +59,7 @@ class Auth(AuthBase):
     def __init__(
         self,
         secret_key: SecretStr = SecretStr("secret"),
-        user_model: t.Optional[t.Any] = None,
+        user_model: t.Any | None = None,
     ) -> None:
         super().__init__(secret_key, user_model)
         self.secret_key = secret_key or self.config.app.secret_key
@@ -71,7 +69,7 @@ class Auth(AuthBase):
     async def init(self) -> None:
         self.middlewares = [
             Middleware(
-                SessionMiddleware,  # type: ignore
+                SessionMiddleware,
                 secret_key=self.secret_key.get_secret_value(),
                 session_cookie=f"{self.token_id}_admin",
                 https_only=True if self.config.deployed else False,

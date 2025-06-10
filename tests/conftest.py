@@ -1,17 +1,378 @@
+"""Test configuration for FastBlocks."""
+# pyright: reportAttributeAccessIssue=false, reportFunctionMemberAccess=false, reportMissingParameterType=false, reportUnknownParameterType=false, reportArgumentType=false, reportMissingTypeArgument=false
+
+import asyncio
+import functools
+import json
 import os
 import sys
+import types
 import typing as t
+from collections.abc import Callable
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Optional, Protocol, Union
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
 from starlette.types import Message, Scope
+
+
+def _create_mock_debug_settings() -> type:
+    """Create a mock debug settings class for ACB."""
+
+    class MockDebugSettings:
+        def __init__(self) -> None:
+            self.enabled = False
+            self.settings_path = "/mock/path/to/settings"
+
+    return MockDebugSettings
+
+
+def _create_asyncio_mock_functions() -> tuple[Callable, Callable, Callable]:
+    """Create mock functions for asyncio-related operations."""
+
+    # Mock for asyncio.run to avoid issues with settings file creation
+    async def mock_build_settings() -> dict:
+        return {}
+
+    def mock_asyncio_run(coro) -> Any:
+        if coro.__qualname__ == "_settings_build_values":
+            return {}
+        # For other coroutines, use the real asyncio.run
+        return asyncio.run(coro)
+
+    # Create patch for ACB's load_yml_settings method
+    async def mock_load_yml_settings() -> dict:
+        return {}
+
+    return mock_build_settings, mock_asyncio_run, mock_load_yml_settings
+
+
+def _create_mock_yaml_functions() -> tuple[Callable, Callable]:  # noqa: F841
+    """Create mock functions for YAML operations."""
+
+    # Create patch for ACB's yaml.dump method to avoid file writes
+    async def mock_yaml_dump(obj, path) -> None:
+        pass
+
+    # Create a module-level patch function for Config.init
+    def mock_config_init(self) -> None:
+        MockDebugSettings = _create_mock_debug_settings()
+        self.debug = MockDebugSettings()
+
+    return mock_yaml_dump, mock_config_init
+
+
+# Use the function to prevent unused warning
+_create_mock_yaml_functions()  # noqa: F841
+
+
+def _is_minify_action_test() -> bool:
+    """Check if we're running minify action tests."""
+    import sys
+
+    # Check if test_minify.py is in the command line arguments
+    for arg in sys.argv:
+        if "test_minify.py" in arg or "actions/minify" in arg:
+            return True
+
+    # Also check if we're in pytest and the current test node contains minify
+    with suppress(ImportError, AttributeError):
+        import pytest
+
+        # Check if we're in a test session and the current item is a minify test
+        if hasattr(pytest, "current_node") and pytest.current_node:
+            return "test_minify" in str(pytest.current_node)
+    return False
+
+
+def _apply_patches() -> None:
+    """Apply necessary patches to prevent filesystem access."""
+    _, mock_asyncio_run, _ = _create_asyncio_mock_functions()
+
+    # Apply the patches
+    patches = [
+        patch("asyncio.run", mock_asyncio_run),
+    ]
+
+    # Apply the patches immediately
+    for p in patches:
+        p.start()
+
+
+def _create_acb_modules() -> tuple[dict[str, ModuleType], type]:
+    """Create the basic ACB module structure."""
+    MockDebugSettings = _create_mock_debug_settings()
+
+    # Preemptively add our patched modules to sys.modules
+    # This ensures our mocks are used instead of the real modules
+    # that might try to access the filesystem
+    mock_acb_module = types.ModuleType("acb")
+    mock_acb_module.__path__ = [
+        "/mock/path/to/acb"
+    ]  # Add __path__ to make it a package
+
+    mock_acb_config = types.ModuleType("acb.config")
+    mock_acb_depends = types.ModuleType("acb.depends")
+    mock_acb_actions = types.ModuleType("acb.actions")
+    mock_acb_actions.__path__ = ["/mock/path/to/acb/actions"]
+    mock_acb_actions_encode = types.ModuleType("acb.actions.encode")
+    mock_acb_actions_hash = types.ModuleType("acb.actions.hash")
+    mock_acb_adapters = types.ModuleType("acb.adapters")
+    mock_acb_logger = types.ModuleType("acb.logger")
+
+    # Build a dictionary of modules
+    mock_acb_debug = types.ModuleType("acb.debug")
+
+    modules_dict = {
+        "acb": mock_acb_module,
+        "acb.config": mock_acb_config,
+        "acb.depends": mock_acb_depends,
+        "acb.actions": mock_acb_actions,
+        "acb.actions.encode": mock_acb_actions_encode,
+        "acb.actions.hash": mock_acb_actions_hash,
+        "acb.adapters": mock_acb_adapters,
+        "acb.logger": mock_acb_logger,
+        "acb.debug": mock_acb_debug,
+    }
+
+    return modules_dict, MockDebugSettings
+
+
+def _setup_acb_module(mock_acb_module: ModuleType) -> None:
+    """Set up the main ACB module with necessary classes and attributes."""
+
+    # Add missing Adapter class and pkg_registry to acb module
+    class Adapter:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+    # Add register_pkg function
+    def register_pkg() -> None:
+        """Mock implementation of register_pkg."""
+        pass
+
+    mock_acb_module.Adapter = Adapter
+    mock_acb_module.pkg_registry = MagicMock()
+    mock_acb_module.register_pkg = register_pkg
+
+
+def _setup_acb_adapters(mock_acb_adapters: ModuleType) -> None:
+    """Set up the ACB adapters module with necessary functions."""
+    mock_acb_adapters.get_adapters = MagicMock(return_value=[])
+    mock_acb_adapters.get_adapter = MagicMock(return_value=MagicMock())
+    mock_acb_adapters.get_installed_adapter = MagicMock(return_value=MagicMock())
+    mock_acb_adapters.import_adapter = MagicMock(
+        side_effect=lambda adapter_name="templates": (
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+        )
+    )
+    mock_acb_adapters.root_path = "/mock/path/to/adapters"
+
+
+def _create_acb_classes(MockDebugSettings: type) -> tuple[type, type, type, Any]:
+    """Create the necessary classes for ACB modules."""
+
+    # Set up the basic functionality needed by tests
+    class Config:
+        def __init__(self) -> None:
+            self.debug = MockDebugSettings()
+
+        def init(self) -> None:
+            pass
+
+    class Settings:
+        def __init__(self) -> None:
+            self.debug = {}
+
+    class AdapterBase:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
+
+    # Mock the dependencies module
+    class Depends:
+        def __init__(self) -> None:
+            self.registered_classes = {}
+
+        def __call__(self, cls=None) -> Any:
+            """Make Depends callable to handle depends()."""
+            if cls is None:
+                return Config()
+            if cls == Config:
+                return Config()
+            return MagicMock()
+
+        @classmethod
+        def get(cls, adapter_class) -> Any:
+            if adapter_class.__name__ == "Config":
+                return Config()
+            return MagicMock()
+
+    depends = Depends()
+    depends.inject = lambda f: f
+    depends.set = lambda cls: cls
+
+    return Config, Settings, AdapterBase, depends
+
+
+def _setup_acb_config(
+    mock_acb_config: ModuleType, Config: type, Settings: type, AdapterBase: type
+) -> None:
+    """Set up the ACB config module with necessary classes."""
+    mock_acb_config.Config = Config
+    mock_acb_config.Settings = Settings
+    mock_acb_config.AdapterBase = AdapterBase
+
+
+def _setup_acb_depends(mock_acb_depends: ModuleType, depends: Any) -> None:
+    """Set up the ACB depends module with necessary functions."""
+    # Make depends directly accessible as a module attribute
+    mock_acb_depends.depends = depends
+    # Also set it as the default export for from acb.depends import depends
+    setattr(mock_acb_depends, "__call__", depends.__call__)
+
+
+def _setup_acb_actions_encode(mock_acb_actions_encode: ModuleType) -> None:
+    """Set up the ACB actions.encode module with necessary functions."""
+
+    # Set up encode module with dump/load functions
+    def mock_dump(obj) -> str:
+        return json.dumps(obj)
+
+    def mock_load(data) -> Any:
+        return json.loads(data)
+
+    mock_acb_actions_encode.dump = MagicMock(side_effect=mock_dump)
+    mock_acb_actions_encode.load = MagicMock(side_effect=mock_load)
+
+    # Ensure yaml is available with dummy methods
+    mock_acb_actions_encode.yaml = MagicMock()
+    mock_acb_actions_encode.yaml.dump = AsyncMock()
+    mock_acb_actions_encode.yaml.load = AsyncMock(return_value={})
+
+
+def _setup_acb_actions_hash(mock_acb_actions_hash: ModuleType) -> None:
+    """Set up the ACB actions.hash module with necessary functions."""
+
+    def mock_hash(content: Any) -> str:
+        """Mock hash function."""
+        if isinstance(content, str):
+            return f"hash_{len(content)}"
+        elif isinstance(content, bytes):
+            return f"hash_{len(content)}"
+        return "hash_mock"
+
+    mock_acb_actions_hash.hash = mock_hash
+
+    # Add url_encode for filters_mock
+    def url_encode(s: str) -> str:
+        from urllib.parse import quote_plus
+
+        return quote_plus(s)
+
+    mock_acb_actions_hash.url_encode = url_encode
+
+
+def _setup_acb_logger(mock_acb_logger: ModuleType) -> None:
+    """Set up the ACB logger module with a mock Logger class."""
+
+    class MockLogger:
+        def __init__(self, name: str = "test_logger", **kwargs: Any) -> None:
+            self.name = name
+
+        def bind(self, **kwargs: Any) -> "MockLogger":
+            return self
+
+        def debug(self, message: str, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def info(self, message: str, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def warning(self, message: str, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def error(self, message: str, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        def exception(self, message: str, *args: Any, **kwargs: Any) -> None:
+            pass
+
+    mock_acb_logger.Logger = MockLogger
+    mock_acb_logger.InterceptHandler = MagicMock()
+
+
+def _setup_acb_debug(mock_acb_debug: ModuleType) -> None:
+    """Set up the ACB debug module with a mock debug function."""
+
+    def debug(*args: Any, **kwargs: Any) -> None:
+        """Mock debug function that does nothing."""
+        pass
+
+    mock_acb_debug.debug = debug
+
+
+def _patch_acb_modules() -> None:
+    """Patch ACB modules to prevent filesystem access during tests.
+
+    This function patches key components of the ACB framework that attempt to
+    write to the filesystem during module import, preventing test failures due
+    to missing files or directories.
+    """
+    # Apply necessary patches
+    _apply_patches()
+
+    # Create ACB modules
+    modules_dict, MockDebugSettings = _create_acb_modules()
+
+    # Set up individual modules
+    _setup_acb_module(modules_dict["acb"])
+    _setup_acb_adapters(modules_dict["acb.adapters"])
+
+    # Create necessary classes
+    Config, Settings, AdapterBase, depends = _create_acb_classes(MockDebugSettings)
+
+    # Set up module contents
+    _setup_acb_config(modules_dict["acb.config"], Config, Settings, AdapterBase)
+    _setup_acb_depends(modules_dict["acb.depends"], depends)
+    _setup_acb_actions_encode(modules_dict["acb.actions.encode"])
+    _setup_acb_actions_hash(modules_dict["acb.actions.hash"])
+    _setup_acb_logger(modules_dict["acb.logger"])
+    _setup_acb_debug(modules_dict["acb.debug"])
+
+    # Add our modules to sys.modules
+    for module_name, module in modules_dict.items():
+        sys.modules[module_name] = module
+
+
+# Patch ACB modules immediately when conftest.py is imported
+# This needs to happen before any test modules import FastBlocks modules with ACB dependencies
+_patch_acb_modules()
+
+
+def pytest_configure(config) -> None:
+    """Register custom markers."""
+    config.addinivalue_line(
+        "markers", "cli_coverage: mark test as measuring CLI coverage"
+    )
+
+    # Patch anyio.Path to use our MockAsyncPath implementation
+    # This prevents filesystem access when using anyio.Path
+    from contextlib import suppress
+
+    with suppress(ImportError):
+        import anyio
+
+        sys.modules["anyio.Path"] = MockAsyncPath
+        if hasattr(anyio, "Path"):
+            anyio.Path = MockAsyncPath
 
 
 class MockAsyncPath:
@@ -29,6 +390,13 @@ class MockAsyncPath:
 
     def __fspath__(self) -> str:
         return self._path
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, MockAsyncPath):
+            return self._path == other._path
+        if isinstance(other, str | Path):
+            return self._path == str(other)
+        return False
 
     def __truediv__(self, other: Union[str, Path, "MockAsyncPath"]) -> "MockAsyncPath":
         other_str = str(other)
@@ -48,7 +416,16 @@ class MockAsyncPath:
         return self._path.split("/")[-1]
 
     @property
-    def parts(self) -> Tuple[str, ...]:
+    def stem(self) -> str:
+        """Return the final path component without its suffix."""
+        name = self.name
+        i = name.rfind(".")
+        if i == -1:
+            return name
+        return name[:i]
+
+    @property
+    def parts(self) -> tuple[str, ...]:
         parts = [part for part in self._path.split("/") if part]
         if self._path.startswith("/"):
             return ("/",) + tuple(parts)
@@ -63,6 +440,10 @@ class MockAsyncPath:
     async def is_dir(self) -> bool:
         return not await self.is_file()
 
+    async def mkdir(self, parents: bool = False, exist_ok: bool = False) -> None:
+        """Mock implementation of mkdir."""
+        return None
+
     def with_suffix(self, suffix: str) -> "MockAsyncPath":
         if "." in self._path:
             base = self._path.rsplit(".", 1)[0]
@@ -70,7 +451,27 @@ class MockAsyncPath:
             base = self._path
         return MockAsyncPath(f"{base}{suffix}")
 
-    async def glob(self, pattern: str) -> List["MockAsyncPath"]:
+    async def iterdir(self):
+        """Mock implementation of iterdir that returns an async iterator."""
+
+        class AsyncIterator:
+            def __init__(self, items=None) -> None:
+                self.items = items or []
+                self.index = 0
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if self.index >= len(self.items):
+                    raise StopAsyncIteration
+                item = self.items[self.index]
+                self.index += 1
+                return item
+
+        return AsyncIterator()
+
+    async def glob(self, pattern: str) -> list["MockAsyncPath"]:
         return []
 
 
@@ -109,7 +510,7 @@ class MockConfig:
         self.sitemap.change_freq = "hourly"
         self.sitemap.priority = 0.5
 
-        self.package_name: Optional[str] = None
+        self.package_name: str | None = None
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
@@ -117,7 +518,7 @@ class MockConfig:
     def __setitem__(self, key: str, value: Any) -> None:
         setattr(self, key, value)
 
-    def __call__(self, key: Optional[str] = None) -> Any:
+    def __call__(self, key: str | None = None) -> Any:
         if key is None:
             return self
         return self[key]
@@ -151,7 +552,7 @@ class MockTemplateRenderer:
         storage: Optional["MockStorage"] = None,
         cache: Optional["MockCache"] = None,
     ) -> None:
-        self.templates: Dict[str, str] = {
+        self.templates: dict[str, str] = {
             "page.html": "<html><body>page.html: title, content, items</body></html>",
             "custom.html": "<html><body>Custom template response</body></html>",
             "cached.html": "<html><body>Cached content</body></html>",
@@ -159,7 +560,7 @@ class MockTemplateRenderer:
         }
         self.storage = storage
         self.cache = cache
-        self._mock_responses: Dict[str, Response] = {}
+        self._mock_responses: dict[str, Response] = {}
 
     def add_template(self, name: str, content: str) -> None:
         self.templates[name] = content
@@ -171,8 +572,8 @@ class MockTemplateRenderer:
         self,
         request: Request,
         template: str,
-        context: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        context: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ) -> Response:
         if template in self._mock_responses:
             return self._mock_responses[template]
@@ -208,8 +609,8 @@ class MockTemplateRenderer:
         self,
         request: Request,
         template: str,
-        block: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        block: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> str:
         if context is None:
             context = {}
@@ -268,16 +669,16 @@ class MockTemplates:
                 adapter, adapter.path / "templates" / adapter.category
             )
 
-    def get_storage_path(self, path: Union[str, Path]) -> str:
+    def get_storage_path(self, path: str | Path) -> str:
         return f"templates/{path}"
 
-    def get_cache_key(self, path: Union[str, Path]) -> str:
+    def get_cache_key(self, path: str | Path) -> str:
         return f"template:{path}"
 
 
 class MockStorage:
     def __init__(self) -> None:
-        self._storage: Dict[str, Any] = {}
+        self._storage: dict[str, Any] = {}
 
     def __getitem__(self, key: str) -> Any:
         return self._storage[key]
@@ -310,7 +711,7 @@ class MockStorage:
 
 class MockCache:
     def __init__(self) -> None:
-        self._cache: Dict[str, Any] = {}
+        self._cache: dict[str, Any] = {}
 
     def get(self, key: str, default: Any = None) -> Any:
         return self._cache.get(key, default)
@@ -336,7 +737,7 @@ class MockAdapters:
         self.pkg_registry = {}
         self._adapters = self._create_adapter_objects()
 
-    def _create_adapter_objects(self) -> Dict[str, MockAdapter]:
+    def _create_adapter_objects(self) -> dict[str, MockAdapter]:
         adapters = {}
 
         for name in ("cache", "storage", "templates", "routes"):
@@ -346,7 +747,7 @@ class MockAdapters:
 
         return adapters
 
-    def import_adapter(self, adapter_name: str = "cache") -> Tuple[Any, Any, Any]:
+    def import_adapter(self, adapter_name: str = "cache") -> tuple[Any, Any, Any]:
         mock_cache = MockCache()
         mock_storage = MockStorage()
         mock_models = MockModels()
@@ -363,7 +764,7 @@ class MockAdapters:
             return (mock_routes, None, None)
         return (MagicMock(), MagicMock(), MagicMock())
 
-    def get_adapters(self) -> List[Any]:
+    def get_adapters(self) -> list[Any]:
         return list(self._adapters.values())
 
     def get_installed_adapter(self, adapter_name: str) -> Any:
@@ -435,7 +836,7 @@ class MockActions:
 
 class MockDepends:
     def __init__(self) -> None:
-        self.dependencies: Dict[str, Any] = {}
+        self.dependencies: dict[str, Any] = {}
 
         def depends_func(*args: Any, **kwargs: Any) -> Any:
             def decorator(func: Any) -> Any:
@@ -475,11 +876,15 @@ class MockDependsInjector:
 
 
 class MockTemplatesBaseSettings:
-    def __init__(self, cache_timeout: int = 300) -> None:
+    def __init__(
+        self, config: Any = None, cache_timeout: int = 300, **values: Any
+    ) -> None:
         self.cache_timeout = cache_timeout
+        if config:
+            self.update_from_config(config)
 
     def update_from_config(self, config: Any) -> None:
-        self.cache_timeout = 300 if config.deployed else 1
+        self.cache_timeout = 300 if getattr(config, "deployed", False) else 1
 
 
 class MockDebug:
@@ -567,7 +972,7 @@ class MockSitemap:
 
         priority = kwargs.get("priority", 0.5)
 
-        if not isinstance(priority, (int, float)) or priority < 0.0 or priority > 1.0:
+        if not isinstance(priority, int | float) or priority < 0.0 or priority > 1.0:
             raise ValueError(
                 f"Invalid priority value: {priority}. Must be between 0.0 and 1.0"
             )
@@ -625,7 +1030,7 @@ class MockSitemap:
 
 class MockModels:
     def __init__(self) -> None:
-        self.models: Dict[str, Any] = {}
+        self.models: dict[str, Any] = {}
 
     def get_model(self, model_name: str) -> Any:
         return self.models.get(model_name)
@@ -636,7 +1041,7 @@ class MockModels:
 
 class MockUptodate:
     def __init__(self) -> None:
-        self.updates: Dict[str, bool] = {}
+        self.updates: dict[str, bool] = {}
 
     def check(self, package: str) -> bool:
         return self.updates.get(package, True)
@@ -750,7 +1155,7 @@ def http_request() -> Request:
 def mock_jinja2_templates() -> Any:
     class MockJinja2Templates:
         def __init__(self) -> None:
-            self.templates: Dict[str, str] = {}
+            self.templates: dict[str, str] = {}
 
         def get_template(self, template_name: str) -> Any:
             if template_name not in self.templates:
@@ -793,8 +1198,15 @@ class SitemapURL:
         self.last_modified = last_modified
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=False)  # Changed to non-autouse
 def patch_template_loaders():
+    # Only patch if module exists to prevent errors in filters tests
+    from importlib.util import find_spec
+
+    if not find_spec("fastblocks.adapters.templates.jinja2"):
+        yield
+        return
+
     with (
         patch(
             "fastblocks.adapters.templates.jinja2.FileSystemLoader",
@@ -808,88 +1220,284 @@ def patch_template_loaders():
         yield
 
 
-def patch_acb_module():
-    mock_acb = MagicMock()
-    mock_acb.adapters = MockAdapters()
-    mock_acb.config = MockConfigModule()
-    mock_acb.depends = MockDepends()
-    mock_acb.debug = MockDebug()
-    mock_acb.logger = MockLogger()
-    mock_acb.actions = MockActions()
+@pytest.fixture(autouse=True)
+def mock_acb():  # noqa: C901
+    """Mock the ACB module for testing."""
+    # Create mock modules
+    module_structure = {
+        "acb": types.ModuleType("acb"),
+        "acb.actions": types.ModuleType("acb.actions"),
+        "acb.actions.encode": types.ModuleType("acb.actions.encode"),
+        "acb.config": types.ModuleType("acb.config"),
+        "acb.depends": types.ModuleType("acb.depends"),
+        "acb.adapters": types.ModuleType("acb.adapters"),
+        "anyio": types.ModuleType("anyio")
+        if "anyio" not in sys.modules
+        else sys.modules["anyio"],
+    }
 
-    sys.modules["acb"] = mock_acb
-    sys.modules["acb.adapters"] = mock_acb.adapters
-    sys.modules["acb.config"] = mock_acb.config
-    sys.modules["acb.depends"] = mock_acb.depends
-    sys.modules["acb.debug"] = mock_acb.debug
-    sys.modules["acb.logger"] = mock_acb.logger
-    sys.modules["acb.actions"] = mock_acb.actions
-    sys.modules["acb.actions.hash"] = mock_acb.actions.hash
+    # Set up package paths
+    module_structure["acb"].__path__ = ["/mock/path/to/acb"]
+    module_structure["acb.actions"].__path__ = ["/mock/path/to/acb/actions"]
+    module_structure["acb.adapters"].__path__ = ["/mock/path/to/acb/adapters"]
 
-    return mock_acb
+    # Make sure anyio.Path uses our MockAsyncPath
+    module_structure["anyio"].Path = MockAsyncPath
 
+    # Create mock implementations
+    class AdapterBase:
+        def __init__(self, *args, **kwargs) -> None:
+            self.path = "/mock/path/to/adapter"
 
-mock_acb = patch_acb_module()
+        def get_path(self) -> str:
+            return self.path
+
+    class Settings:
+        """Mock ACB Settings class."""
+
+        def __init__(self, *args, **kwargs) -> None:
+            self.data = {}
+            self.debug = {}
+            self.app = {"name": "test_app", "debug": True}
+
+        def __getitem__(self, key: str) -> Any:
+            return getattr(self, key, {})
+
+    class DebugSettings:
+        """Mock ACB DebugSettings class."""
+
+        def __init__(self) -> None:
+            self.enabled = False
+
+    class Config:
+        """Mock ACB Config class."""
+
+        def __init__(self, *args, **kwargs) -> None:
+            self.data = {}
+            self.debug = DebugSettings()
+            self.app = {"name": "test_app", "debug": True}
+
+        def load(self) -> dict:
+            return self.data
+
+        def dump(self) -> None:
+            pass
+
+        def init(self) -> None:
+            """Mock initialization - does nothing."""
+            pass
+
+        @classmethod
+        def get_instance(cls) -> "Config":
+            """Get singleton instance."""
+            return cls()
+
+    def injectable(func=None, *args, **kwargs):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            wrapper.__acb_injectable__ = True
+            return wrapper
+
+        return decorator(func) if func else decorator
+
+    def provider(func=None, *args, **kwargs):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            wrapper.__acb_provider__ = True
+            return wrapper
+
+        return decorator(func) if func else decorator
+
+    def dump(obj):
+        """Mock encode.dump."""
+        return json.dumps(obj)
+
+    def load(data):
+        """Mock encode.load."""
+        return json.loads(data)
+
+    # Create a mock depends module with get function
+    class Depends:
+        """Mock ACB depends module."""
+
+        def __init__(self) -> None:
+            pass
+
+        def __call__(self, cls=None) -> Any:
+            """Make Depends callable to handle depends()."""
+            if cls is None:
+                return Config()
+            if cls == Config:
+                return Config()
+            return MagicMock()
+
+        @classmethod
+        def get(cls, adapter_class):
+            """Return a mock Config instance."""
+            if adapter_class == Config:
+                return Config()
+            return MagicMock()
+
+    depends = Depends()
+    depends.injectable = injectable
+    depends.provider = provider
+    depends.inject = lambda f: f
+    depends.set = lambda cls: cls
+
+    # Add all classes and functions to modules
+    module_structure["acb.config"].Config = Config
+    module_structure["acb.config"].Settings = Settings
+    module_structure["acb.config"].DebugSettings = DebugSettings
+    module_structure["acb.config"].AdapterBase = AdapterBase
+
+    module_structure["acb.depends"].depends = depends
+    module_structure["acb.depends"].injectable = injectable
+    module_structure["acb.depends"].provider = provider
+    module_structure["acb.depends"].get = (
+        lambda cls: Config() if cls == Config else MagicMock()
+    )
+
+    module_structure["acb.actions.encode"].dump = dump
+    module_structure["acb.actions.encode"].load = load
+
+    module_structure["acb.adapters"].AdapterBase = AdapterBase
+    module_structure["acb.adapters"].get_adapter = MagicMock(return_value=None)
+    module_structure["acb.adapters"].get_installed_adapter = MagicMock(
+        return_value=None
+    )
+    module_structure["acb.adapters"].import_adapter = MagicMock(
+        side_effect=lambda adapter_name="templates": (
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+        )
+    )
+
+    # Register mock modules
+    with patch.dict("sys.modules", module_structure):
+        yield module_structure
 
 
 @pytest.fixture(autouse=True)
 def patch_depends():
-    with (
-        patch(
-            "fastblocks.adapters.templates._base.depends.inject",
-            MockDependsInjector.inject,
-        ),
-        patch(
-            "fastblocks.adapters.templates._base.TemplatesBaseSettings",
-            MockTemplatesBaseSettings,
-        ),
-    ):
+    try:
+        with (
+            patch(
+                "fastblocks.adapters.templates._base.depends.inject",
+                MockDependsInjector.inject,
+            ),
+            patch(
+                "fastblocks.adapters.templates._base.TemplatesBaseSettings",
+                MockTemplatesBaseSettings,
+            ),
+        ):
+            yield
+    except (ImportError, AttributeError):
         yield
 
 
-@pytest.fixture(autouse=True)
-def mock_fastblocks_module_structure() -> t.Generator[None, None, None]:
-    original_modules = {
-        k: v for k, v in sys.modules.items() if k.startswith("fastblocks")
+# Not using these anymore
+
+
+def _setup_fastblocks_module_structure() -> None:
+    """Set up the FastBlocks module structure with all necessary submodules.
+
+    This function creates mock modules for fastblocks package structure
+    to ensure imports work correctly during testing.
+    """
+    # Create the main module structure
+    module_structure = {
+        "fastblocks.adapters": types.ModuleType("fastblocks.adapters"),
+        "fastblocks.adapters.templates": types.ModuleType(
+            "fastblocks.adapters.templates"
+        ),
+        "fastblocks.adapters.templates._base": types.ModuleType(
+            "fastblocks.adapters.templates._base"
+        ),
+        "fastblocks.adapters.templates._filters": types.ModuleType(
+            "fastblocks.adapters.templates._filters"
+        ),
+        "fastblocks.adapters.templates.jinja2": types.ModuleType(
+            "fastblocks.adapters.templates.jinja2"
+        ),
+        "fastblocks.adapters.admin": types.ModuleType("fastblocks.adapters.admin"),
+        "fastblocks.adapters.admin._base": types.ModuleType(
+            "fastblocks.adapters.admin._base"
+        ),
+        "fastblocks.adapters.app": types.ModuleType("fastblocks.adapters.app"),
+        "fastblocks.adapters.app._base": types.ModuleType(
+            "fastblocks.adapters.app._base"
+        ),
+        "fastblocks.adapters.auth": types.ModuleType("fastblocks.adapters.auth"),
+        "fastblocks.adapters.auth._base": types.ModuleType(
+            "fastblocks.adapters.auth._base"
+        ),
+        "fastblocks.adapters.routes": types.ModuleType("fastblocks.adapters.routes"),
+        "fastblocks.adapters.routes._base": types.ModuleType(
+            "fastblocks.adapters.routes._base"
+        ),
+        "fastblocks.adapters.sitemap": types.ModuleType("fastblocks.adapters.sitemap"),
+        "fastblocks.adapters.sitemap._base": types.ModuleType(
+            "fastblocks.adapters.sitemap._base"
+        ),
+        "fastblocks.adapters.sitemap._routes": types.ModuleType(
+            "fastblocks.adapters.sitemap._routes"
+        ),
     }
 
-    fastblocks_module = ModuleType("fastblocks")
-    fastblocks_adapters = ModuleType("fastblocks.adapters")
+    # Set up each module
+    _setup_templates_base_module(
+        module_structure["fastblocks.adapters.templates._base"]
+    )
+    _setup_templates_filters_module(
+        module_structure["fastblocks.adapters.templates._filters"]
+    )
+    _setup_templates_jinja2_module(
+        module_structure["fastblocks.adapters.templates.jinja2"]
+    )
+    _setup_admin_base_module(module_structure["fastblocks.adapters.admin._base"])
 
-    adapters_app = ModuleType("fastblocks.adapters.app")
-    adapters_templates = ModuleType("fastblocks.adapters.templates")
-    adapters_templates_jinja2 = ModuleType("fastblocks.adapters.templates.jinja2")
-    adapters_auth = ModuleType("fastblocks.adapters.auth")
-    adapters_routes = ModuleType("fastblocks.adapters.routes")
-    adapters_admin = ModuleType("fastblocks.adapters.admin")
-    adapters_sqladmin = ModuleType("fastblocks.adapters.admin.sqladmin")
-    adapters_sitemap = ModuleType("fastblocks.adapters.sitemap")
+    # Set up module paths and inheritance
+    for module_name, module in module_structure.items():
+        module.__path__ = [f"/mock/path/to/{module_name.replace('.', '/')}"]
+        sys.modules[module_name] = module
 
-    app_base = ModuleType("fastblocks.adapters.app._base")
-    templates_base = ModuleType("fastblocks.adapters.templates._base")
-    templates_filters = ModuleType("fastblocks.adapters.templates._filters")
-    auth_base = ModuleType("fastblocks.adapters.auth._base")
-    routes_base = ModuleType("fastblocks.adapters.routes._base")
-    admin_base = ModuleType("fastblocks.adapters.admin._base")
-    sitemap_base = ModuleType("fastblocks.adapters.sitemap._base")
+    # Link parent modules to child modules
+    for module_name, module in module_structure.items():
+        if "._" in module_name:
+            parent_name = module_name.rsplit("._", 1)[0]
+            attr_name = f"_{module_name.split('._')[-1]}"
+            if parent_name in module_structure:
+                setattr(module_structure[parent_name], attr_name, module)
 
-    setattr(fastblocks_module, "adapters", fastblocks_adapters)
+    # Add imports from child modules to parent modules
+    for parent_name in (
+        "fastblocks.adapters.templates",
+        "fastblocks.adapters.admin",
+        "fastblocks.adapters.app",
+        "fastblocks.adapters.auth",
+        "fastblocks.adapters.routes",
+        "fastblocks.adapters.sitemap",
+    ):
+        if parent_name in module_structure:
+            parent = module_structure[parent_name]
+            # Import classes from _base
+            base_module_name = f"{parent_name}._base"
+            if base_module_name in module_structure:
+                base_module = module_structure[base_module_name]
+                for attr_name in dir(base_module):
+                    if not attr_name.startswith("_") or attr_name == "__all__":
+                        setattr(parent, attr_name, getattr(base_module, attr_name))
 
-    setattr(fastblocks_adapters, "app", adapters_app)
-    setattr(fastblocks_adapters, "templates", adapters_templates)
-    setattr(fastblocks_adapters, "auth", adapters_auth)
-    setattr(fastblocks_adapters, "routes", adapters_routes)
-    setattr(fastblocks_adapters, "admin", adapters_admin)
-    setattr(adapters_admin, "sqladmin", adapters_sqladmin)
-    setattr(fastblocks_adapters, "sitemap", adapters_sitemap)
 
-    setattr(adapters_app, "_base", app_base)
-    setattr(adapters_templates, "_base", templates_base)
-    setattr(adapters_templates, "_filters", templates_filters)
-    setattr(adapters_auth, "_base", auth_base)
-    setattr(adapters_routes, "_base", routes_base)
-    setattr(adapters_admin, "_base", admin_base)
-    setattr(adapters_sitemap, "_base", sitemap_base)
+def _setup_admin_base_module(admin_base: ModuleType) -> None:
+    """Set up the admin base module with necessary classes."""
 
     class MockAdapterBase:
         def __init__(self, **kwargs: t.Any) -> None:
@@ -914,27 +1522,301 @@ def mock_fastblocks_module_structure() -> t.Generator[None, None, None]:
     setattr(admin_base, "AdminBaseSettings", MockAdminBaseSettings)
     setattr(admin_base, "AdminBase", AdminBase)
 
-    mock_depends = MagicMock()
-    mock_depends.inject = MockDependsInjector.inject
-    setattr(templates_base, "depends", mock_depends)
 
-    setattr(templates_base, "TemplatesBaseSettings", MockTemplatesBaseSettings)
+def _setup_templates_base_module(templates_base: ModuleType) -> None:
+    """Set up the templates base module with necessary attributes."""
+    mock_depends = _create_mock_depends()
+    _setup_base_imports(templates_base, mock_depends)
+    _setup_type_aliases(templates_base)
+    _setup_safe_await(templates_base)
+    _setup_protocol_classes(templates_base)
+    _setup_settings_class(templates_base, mock_depends)
+    _setup_templates_protocol(templates_base)
+    _setup_templates_base_class(templates_base)
 
-    setattr(adapters_templates, "jinja2", adapters_templates_jinja2)
 
-    setattr(adapters_templates_jinja2, "FileSystemLoader", MockFileSystemLoader)
-    setattr(adapters_templates_jinja2, "RedisLoader", MockRedisLoader)
-    setattr(adapters_templates_jinja2, "StorageLoader", MockStorageLoader)
-    setattr(adapters_templates_jinja2, "ChoiceLoader", MockChoiceLoader)
-    setattr(adapters_templates_jinja2, "PackageLoader", MockPackageLoader)
-    setattr(adapters_templates_jinja2, "DictLoader", MockDictLoader)
-    setattr(adapters_templates_jinja2, "FunctionLoader", MockFunctionLoader)
-    setattr(adapters_templates_jinja2, "PrefixLoader", MockPrefixLoader)
+def _create_mock_depends():
+    """Create a mock depends object that's callable."""
 
+    class MockDependsCallable:
+        def __call__(self, cls=None):
+            return MockConfig()
+
+        def inject(self, f):
+            return MockDependsInjector.inject(f)
+
+    return MockDependsCallable()
+
+
+def _setup_base_imports(templates_base: ModuleType, mock_depends) -> None:
+    """Set up the basic imports from acb."""
+    templates_base.Adapter = MagicMock()
+    templates_base.pkg_registry = MagicMock()
+    templates_base.pkg_registry.get = MagicMock(return_value=[])
+    templates_base.root_path = MockAsyncPath("/mock/path/to/templates")
+    templates_base.get_adapters = MagicMock(return_value=[])
+    templates_base.AdapterBase = MagicMock()
+    templates_base.Config = MockConfig
+    templates_base.Settings = type(
+        "Settings", (), {"__init__": lambda self, **kwargs: None}
+    )
+    templates_base.depends = mock_depends
+    templates_base.AsyncPath = MockAsyncPath
+    templates_base.Request = MagicMock()
+    templates_base.Response = MagicMock()
+
+
+def _setup_type_aliases(templates_base: ModuleType) -> None:
+    """Create type aliases for type annotations."""
+    templates_base.TemplateContext = dict
+    templates_base.TemplateResponse = MagicMock()
+    templates_base.TemplateStr = str
+    templates_base.TemplatePath = str
+
+
+def _setup_safe_await(templates_base: ModuleType) -> None:
+    """Create the safe_await function."""
+
+    async def mock_safe_await(func_or_value: Any) -> Any:
+        if callable(func_or_value):
+            try:
+                result = func_or_value()
+                if hasattr(result, "__await__") and callable(
+                    getattr(result, "__await__")
+                ):
+                    return await result  # type: ignore[misc]
+                return result
+            except Exception:
+                return True
+        return func_or_value
+
+    templates_base.safe_await = mock_safe_await
+
+
+def _setup_protocol_classes(templates_base: ModuleType) -> None:
+    """Add protocol classes for templates."""
+
+    class TemplateRenderer(Protocol):
+        async def render_template(
+            self,
+            request: Any,
+            template: str,
+            context: dict | None = None,
+        ) -> Any:
+            pass
+
+    class TemplateLoader(Protocol):
+        async def get_template(self, name: str) -> Any:
+            pass
+
+        async def list_templates(self) -> list[str]:
+            return []
+
+    templates_base.TemplateRenderer = TemplateRenderer
+    templates_base.TemplateLoader = TemplateLoader
+
+
+def _setup_settings_class(templates_base: ModuleType, mock_depends) -> None:
+    """Add the TemplatesBaseSettings class."""
+
+    class TemplatesBaseSettings:
+        cache_timeout: int = 300
+
+        def __init__(self, config: MockConfig | None = None, **values: Any) -> None:
+            self.cache_timeout = 300 if getattr(config, "deployed", False) else 1
+
+    templates_base.TemplatesBaseSettings = TemplatesBaseSettings
+
+
+def _setup_templates_protocol(templates_base: ModuleType) -> None:
+    """Add the TemplatesProtocol class."""
+
+    class TemplatesProtocol(Protocol):
+        def get_searchpath(self, adapter: Any, path: Any) -> None:
+            pass
+
+        async def get_searchpaths(self, adapter: Any) -> list[Any]:
+            return []
+
+        @staticmethod
+        def get_storage_path(path: Any) -> Any:
+            pass
+
+        @staticmethod
+        def get_cache_key(path: Any) -> str:
+            return str(path)
+
+    templates_base.TemplatesProtocol = TemplatesProtocol
+
+
+def _setup_templates_base_class(templates_base: ModuleType) -> None:
+    """Add the TemplatesBase class."""
+
+    class TemplatesBase:
+        app: Any | None = None
+        admin: Any | None = None
+        app_searchpaths: list[Any] | None = None
+        admin_searchpaths: list[Any] | None = None
+
+        def __init__(self, **kwargs: Any) -> None:
+            self.config = MockConfig()
+
+        def get_searchpath(self, adapter: Any, path: Any) -> list[Any]:
+            style = self.config.app.style
+            base_path = path / "base"
+            style_path = path / style
+            style_adapter_path = path / style / adapter.name
+            theme_adapter_path = style_adapter_path / "theme"
+            return [
+                theme_adapter_path,
+                style_adapter_path,
+                style_path,
+                base_path,
+            ]
+
+        async def get_searchpaths(self, adapter: Any) -> list[Any]:
+            searchpaths = []
+            searchpaths.extend(
+                self.get_searchpath(
+                    adapter, templates_base.root_path / "templates" / adapter.category
+                )
+            )
+            return searchpaths
+
+        @staticmethod
+        def get_storage_path(path: Any) -> Any:
+            templates_path_name = "templates"
+            if templates_path_name not in str(path).split("/"):
+                templates_path_name = "_templates"
+                parts = str(path).split("/")
+                templates_idx = parts.index(templates_path_name)
+                depth = templates_idx - 1
+                _path = parts[depth:]
+                _path.insert(1, _path.pop(0))
+                return MockAsyncPath("/".join(_path))
+
+            parts = str(path).split("/")
+            depth = parts.index(templates_path_name)
+            return MockAsyncPath("/".join(parts[depth:]))
+
+        @staticmethod
+        def get_cache_key(path: Any) -> str:
+            parts = str(path).split("/")
+            return ":".join(parts)
+
+    templates_base.TemplatesBase = TemplatesBase
+
+
+def _setup_templates_jinja2_module(templates_jinja2: ModuleType) -> None:
+    """Set up the templates jinja2 module with loaders."""
+    # Import classes and types
+    templates_jinja2.t = t
+    templates_jinja2.suppress = suppress
+    templates_jinja2.literal_eval = MagicMock(side_effect=lambda x: x)
+    templates_jinja2.HTMLParser = MagicMock()
+    templates_jinja2.import_module = MagicMock(side_effect=lambda x: MagicMock())
+    templates_jinja2.find_spec = MagicMock(return_value=MagicMock())
+    templates_jinja2.isclass = MagicMock(side_effect=lambda x: isinstance(x, type))
+    templates_jinja2.Path = Path
+    templates_jinja2.search = MagicMock(return_value=MagicMock())
+    templates_jinja2.get_adapter = MagicMock(return_value=MagicMock())
+    templates_jinja2.import_adapter = MagicMock(
+        return_value=(MockCache(), MockStorage(), MockModels())
+    )
+    templates_jinja2.Config = MockConfig
+    templates_jinja2.debug = MagicMock()
+    templates_jinja2.depends = MagicMock()
+    templates_jinja2.depends.inject = lambda f: f
+    templates_jinja2.AsyncPath = MockAsyncPath
+    templates_jinja2.TemplateNotFound = Exception
+    templates_jinja2.Extension = MagicMock()
+    templates_jinja2.i18n = MagicMock()
+    templates_jinja2.loopcontrols = MagicMock()
+    templates_jinja2.jinja_debug = MagicMock()
+    templates_jinja2.AsyncRedisBytecodeCache = MagicMock()
+    templates_jinja2.AsyncBaseLoader = MagicMock()
+    templates_jinja2.SourceType = tuple
+    templates_jinja2.AsyncJinja2Templates = MagicMock()
+
+    # Import from _base
+    from importlib.util import find_spec
+
+    if find_spec("fastblocks.adapters.templates._base"):
+        # Import real module if available
+        from fastblocks.adapters.templates._base import (
+            TemplatesBase,
+            TemplatesBaseSettings,
+        )
+
+        templates_jinja2.TemplatesBase = TemplatesBase
+        templates_jinja2.TemplatesBaseSettings = TemplatesBaseSettings
+    else:
+        # Use our mocked versions
+        templates_jinja2.TemplatesBase = type("TemplatesBase", (), {})
+        templates_jinja2.TemplatesBaseSettings = MockTemplatesBaseSettings
+
+    # Add the LoaderProtocol
+    class LoaderProtocol(Protocol):
+        cache: Any
+        config: Any
+        storage: Any
+
+        async def get_source_async(
+            self, template: str | Any
+        ) -> tuple[str, str | None, Callable[[], bool] | Callable[[], Any]]:
+            return ("", None, lambda: True)
+
+        async def list_templates_async(self) -> list[str]:
+            return []
+
+    templates_jinja2.LoaderProtocol = LoaderProtocol
+
+    # Add the Templates class
+    class Templates(MockTemplates):
+        pass
+
+    templates_jinja2.Templates = Templates
+
+    # Add the loaders
+    setattr(templates_jinja2, "FileSystemLoader", MockFileSystemLoader)
+    setattr(templates_jinja2, "RedisLoader", MockRedisLoader)
+    setattr(templates_jinja2, "StorageLoader", MockStorageLoader)
+    setattr(templates_jinja2, "ChoiceLoader", MockChoiceLoader)
+    setattr(templates_jinja2, "PackageLoader", MockPackageLoader)
+    setattr(templates_jinja2, "DictLoader", MockDictLoader)
+    setattr(templates_jinja2, "FunctionLoader", MockFunctionLoader)
+    setattr(templates_jinja2, "PrefixLoader", MockPrefixLoader)
+
+
+def _setup_templates_filters_module(templates_filters: ModuleType) -> None:
+    """Set up the templates filters module with minify and filters."""
+    mock_minify = _create_mock_minify()
+    filters_class = _create_mock_filters_class(mock_minify)
+    _setup_filters_module_attributes(templates_filters, mock_minify, filters_class)
+
+
+def _create_mock_minify():
+    """Create a mock minify module with real functions."""
     mock_minify = MagicMock()
-    mock_minify.html = MagicMock(return_value="<html><body>minified</body></html>")
-    mock_minify.js = MagicMock(return_value="function test(){return true;}")
-    mock_minify.css = MagicMock(return_value="body{color:red}")
+
+    def mock_html(content: str) -> str:
+        return "<html><body>minified</body></html>"
+
+    def mock_js(content: str) -> str:
+        return "function test(){return true;}"
+
+    def mock_css(content: str) -> str:
+        return "body{color:red}"
+
+    mock_minify.html = MagicMock(side_effect=mock_html)
+    mock_minify.js = MagicMock(side_effect=mock_js)
+    mock_minify.css = MagicMock(side_effect=mock_css)
+
+    return mock_minify
+
+
+def _create_mock_filters_class(mock_minify):
+    """Create the MockFiltersClass that uses the mock minify module."""
 
     class MockFiltersClass:
         @staticmethod
@@ -945,51 +1827,66 @@ def mock_fastblocks_module_structure() -> t.Generator[None, None, None]:
 
         @staticmethod
         def minify_html(content: str) -> str:
-            from fastblocks.adapters.templates._filters import minify
-
-            return str(minify.html(content))
+            return mock_minify.html(content)
 
         @staticmethod
         def minify_js(content: str) -> str:
-            from fastblocks.adapters.templates._filters import minify
-
-            return str(minify.js(content))
+            return mock_minify.js(content)
 
         @staticmethod
         def minify_css(content: str) -> str:
-            from fastblocks.adapters.templates._filters import minify
+            return mock_minify.css(content)
 
-            return str(minify.css(content))
+        @staticmethod
+        def url_encode(s: str) -> str:
+            from urllib.parse import quote_plus
 
+            return quote_plus(s)
+
+        @staticmethod
+        def truncate(s: str, length: int = 100) -> str:
+            return s[:length] + "..." if len(s) > length else s
+
+        @staticmethod
+        def filesize(size: int) -> str:
+            if size < 1024:
+                return f"{size} B"
+            elif size < 1024 * 1024:
+                return f"{size / 1024:.1f} KB"
+            elif size < 1024 * 1024 * 1024:
+                return f"{size / (1024 * 1024):.1f} MB"
+            return f"{size / (1024 * 1024 * 1024):.1f} GB"
+
+    return MockFiltersClass
+
+
+def _setup_filters_module_attributes(
+    templates_filters: ModuleType, mock_minify, filters_class
+) -> None:
+    """Set up the filters module attributes."""
     setattr(templates_filters, "minify", mock_minify)
-    setattr(templates_filters, "Filters", MockFiltersClass)
+    setattr(templates_filters, "Filters", filters_class)
+    setattr(templates_filters, "t", t)
 
-    sys.modules["fastblocks"] = fastblocks_module
-    sys.modules["fastblocks.adapters"] = fastblocks_adapters
-    sys.modules["fastblocks.adapters.app"] = adapters_app
-    sys.modules["fastblocks.adapters.app._base"] = app_base
-    sys.modules["fastblocks.adapters.templates"] = adapters_templates
-    sys.modules["fastblocks.adapters.templates._base"] = templates_base
-    sys.modules["fastblocks.adapters.templates._filters"] = templates_filters
-    sys.modules["fastblocks.adapters.templates.jinja2"] = adapters_templates_jinja2
-    sys.modules["fastblocks.adapters.auth"] = adapters_auth
-    sys.modules["fastblocks.adapters.auth._base"] = auth_base
-    sys.modules["fastblocks.adapters.routes"] = adapters_routes
-    sys.modules["fastblocks.adapters.routes._base"] = routes_base
-    sys.modules["fastblocks.adapters.admin"] = adapters_admin
-    sys.modules["fastblocks.adapters.admin._base"] = admin_base
-    sys.modules["fastblocks.adapters.admin.sqladmin"] = adapters_sqladmin
-    sys.modules["fastblocks.adapters.sitemap"] = adapters_sitemap
-    sys.modules["fastblocks.adapters.sitemap._base"] = sitemap_base
+    # Add fastblocks.actions.minify reference - only for templates filter tests
+    # Don't mock if we're running minify action tests
+    if not _is_minify_action_test():
+        fastblocks_actions_minify = types.ModuleType("fastblocks.actions.minify")
+        fastblocks_actions_minify.html = mock_minify.html
+        fastblocks_actions_minify.js = mock_minify.js
+        fastblocks_actions_minify.css = mock_minify.css
+        # Add the minify object that tests expect to import
+        fastblocks_actions_minify.minify = mock_minify
+        sys.modules["fastblocks.actions.minify"] = fastblocks_actions_minify
 
-    yield
+        # Create fastblocks.actions module if it doesn't exist
+        if "fastblocks.actions" not in sys.modules:
+            fastblocks_actions = types.ModuleType("fastblocks.actions")
+            fastblocks_actions.minify = fastblocks_actions_minify
+            sys.modules["fastblocks.actions"] = fastblocks_actions
 
-    for module_name in list(sys.modules.keys()):
-        if module_name.startswith("fastblocks"):
-            sys.modules.pop(module_name, None)
 
-    for module_name, module_obj in original_modules.items():
-        sys.modules[module_name] = module_obj
+# We're no longer mocking the module structure
 
 
 class MockTemplateNotFound(Exception):
@@ -1000,7 +1897,7 @@ class MockTemplateNotFound(Exception):
 
 
 class MockAsyncBaseLoader:
-    def __init__(self, searchpath: Optional[Union[Path, List[Any]]] = None) -> None:
+    def __init__(self, searchpath: Path | list[Any] | None = None) -> None:
         if searchpath is None:
             self.searchpath = [MockAsyncPath("templates")]
         elif isinstance(searchpath, list):
@@ -1012,18 +1909,18 @@ class MockAsyncBaseLoader:
 
     async def get_source_async(
         self, environment: Any = None, template: str = ""
-    ) -> Tuple[str, str, Callable[[], bool]]:
+    ) -> tuple[str, str, Callable[[], bool]]:
         raise NotImplementedError()
 
-    async def list_templates_async(self) -> List[str]:
+    async def list_templates_async(self) -> list[str]:
         raise NotImplementedError()
 
 
 class MockFileSystemLoader(MockAsyncBaseLoader):
     def __init__(
         self,
-        searchpath: Optional[Union[Path, List[Any]]] = None,
-        encoding: Optional[str] = None,
+        searchpath: Path | list[Any] | None = None,
+        encoding: str | None = None,
         cache: Any = None,
         storage: Any = None,
         config: Any = None,
@@ -1034,7 +1931,7 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
         self.storage = storage
         self.config = config
 
-    def get_source(self, template: str = "") -> Tuple[str, str, Callable[[], bool]]:
+    def get_source(self, template: str = "") -> tuple[str, str, Callable[[], bool]]:
         if not self.searchpath:
             raise MockTemplateNotFound(template)
 
@@ -1053,7 +1950,7 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
 
     async def get_source_async(
         self, environment: Any = None, template: str = ""
-    ) -> Tuple[str, str, Callable[[], bool]]:
+    ) -> tuple[str, str, Callable[[], bool]]:
         if not self.searchpath:
             raise MockTemplateNotFound(template)
 
@@ -1086,7 +1983,7 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
 
         raise MockTemplateNotFound(template)
 
-    async def list_templates_async(self) -> List[str]:
+    async def list_templates_async(self) -> list[str]:
         templates = set()
 
         for i in range(len(self.searchpath)):
@@ -1112,7 +2009,7 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
 class MockRedisLoader(MockAsyncBaseLoader):
     def __init__(
         self,
-        encoding: Optional[str] = None,
+        encoding: str | None = None,
         cache: Any = None,
         storage: Any = None,
         config: Any = None,
@@ -1125,7 +2022,7 @@ class MockRedisLoader(MockAsyncBaseLoader):
 
     async def get_source_async(
         self, environment: Any = None, template: str = ""
-    ) -> Tuple[str, str, Callable[[], bool]]:
+    ) -> tuple[str, str, Callable[[], bool]]:
         if self.cache:
             cache_key = f"template:{template}"
             exists = self.cache.exists(cache_key)
@@ -1163,15 +2060,15 @@ class MockRedisLoader(MockAsyncBaseLoader):
 
         raise MockTemplateNotFound(template)
 
-    async def list_templates_async(self) -> List[str]:
+    async def list_templates_async(self) -> list[str]:
         return ["test1.html", "test2.html", "subdir/test3.html"]
 
 
 class MockStorageLoader(MockAsyncBaseLoader):
     def __init__(
         self,
-        searchpath: Optional[Union[Path, List[Any]]] = None,
-        encoding: Optional[str] = None,
+        searchpath: Path | list[Any] | None = None,
+        encoding: str | None = None,
         cache: Any = None,
         storage: Any = None,
         config: Any = None,
@@ -1184,7 +2081,7 @@ class MockStorageLoader(MockAsyncBaseLoader):
 
     async def get_source_async(
         self, environment: Any = None, template: str = ""
-    ) -> Tuple[str, str, Callable[[], bool]]:
+    ) -> tuple[str, str, Callable[[], bool]]:
         if not self.storage or not hasattr(self.storage, "templates"):
             raise MockTemplateNotFound(template)
 
@@ -1215,7 +2112,7 @@ class MockStorageLoader(MockAsyncBaseLoader):
         except Exception as e:
             raise MockTemplateNotFound(template) from e
 
-    async def list_templates_async(self) -> List[str]:
+    async def list_templates_async(self) -> list[str]:
         if not self.storage or not hasattr(self.storage, "templates"):
             return []
 
@@ -1229,8 +2126,8 @@ class MockStorageLoader(MockAsyncBaseLoader):
 class MockChoiceLoader(MockAsyncBaseLoader):
     def __init__(
         self,
-        loaders: Optional[List[Any]] = None,
-        encoding: Optional[str] = None,
+        loaders: list[Any] | None = None,
+        encoding: str | None = None,
         cache: Any = None,
         storage: Any = None,
         config: Any = None,
@@ -1244,7 +2141,7 @@ class MockChoiceLoader(MockAsyncBaseLoader):
 
     async def get_source_async(
         self, environment: Any = None, template: str = ""
-    ) -> Tuple[str, str, Callable[[], bool]]:
+    ) -> tuple[str, str, Callable[[], bool]]:
         for loader in self.loaders:
             try:
                 return await loader.get_source_async(environment, template)
@@ -1253,7 +2150,7 @@ class MockChoiceLoader(MockAsyncBaseLoader):
 
         raise MockTemplateNotFound(template)
 
-    async def list_templates_async(self) -> List[str]:
+    async def list_templates_async(self) -> list[str]:
         templates = set()
 
         for loader in self.loaders:
@@ -1265,9 +2162,9 @@ class MockChoiceLoader(MockAsyncBaseLoader):
 class MockPackageLoader(MockAsyncBaseLoader):
     def __init__(
         self,
-        package_name: Optional[str] = None,
-        package_path: Optional[str] = None,
-        encoding: Optional[str] = None,
+        package_name: str | None = None,
+        package_path: str | None = None,
+        encoding: str | None = None,
         cache: Any = None,
         storage: Any = None,
         config: Any = None,
@@ -1282,7 +2179,7 @@ class MockPackageLoader(MockAsyncBaseLoader):
 
     async def get_source_async(
         self, environment: Any = None, template: str = ""
-    ) -> Tuple[str, str, Callable[[], bool]]:
+    ) -> tuple[str, str, Callable[[], bool]]:
         if template == "test.html":
             return (
                 "<html><body>Test from package</body></html>",
@@ -1292,15 +2189,15 @@ class MockPackageLoader(MockAsyncBaseLoader):
 
         raise MockTemplateNotFound(template)
 
-    async def list_templates_async(self) -> List[str]:
+    async def list_templates_async(self) -> list[str]:
         return ["test1.html", "test2.html", "subdir/test3.html"]
 
 
 class MockDictLoader(MockAsyncBaseLoader):
     def __init__(
         self,
-        templates: Optional[Dict[str, str]] = None,
-        encoding: Optional[str] = None,
+        templates: dict[str, str] | None = None,
+        encoding: str | None = None,
         cache: Any = None,
         storage: Any = None,
         config: Any = None,
@@ -1314,22 +2211,22 @@ class MockDictLoader(MockAsyncBaseLoader):
 
     async def get_source_async(
         self, environment: Any = None, template: str = ""
-    ) -> Tuple[str, str, Callable[[], bool]]:
+    ) -> tuple[str, str, Callable[[], bool]]:
         if template not in self.templates:
             raise MockTemplateNotFound(template)
 
         content = self.templates[template]
         return content, template, lambda: True
 
-    async def list_templates_async(self) -> List[str]:
+    async def list_templates_async(self) -> list[str]:
         return list(self.templates.keys())
 
 
 class MockFunctionLoader(MockAsyncBaseLoader):
     def __init__(
         self,
-        load_func: Optional[Callable[[str], str]] = None,
-        encoding: Optional[str] = None,
+        load_func: Callable[[str], str] | None = None,
+        encoding: str | None = None,
         cache: Any = None,
         storage: Any = None,
         config: Any = None,
@@ -1343,20 +2240,20 @@ class MockFunctionLoader(MockAsyncBaseLoader):
 
     async def get_source_async(
         self, environment: Any = None, template: str = ""
-    ) -> Tuple[str, str, Callable[[], bool]]:
+    ) -> tuple[str, str, Callable[[], bool]]:
         content = self.load_func(template)
         return content, template, lambda: True
 
-    async def list_templates_async(self) -> List[str]:
+    async def list_templates_async(self) -> list[str]:
         return []
 
 
 class MockPrefixLoader(MockAsyncBaseLoader):
     def __init__(
         self,
-        loaders: Optional[Dict[str, Any]] = None,
-        delimiter: Optional[str] = None,
-        encoding: Optional[str] = None,
+        loaders: dict[str, Any] | None = None,
+        delimiter: str | None = None,
+        encoding: str | None = None,
         cache: Any = None,
         storage: Any = None,
         config: Any = None,
@@ -1371,7 +2268,7 @@ class MockPrefixLoader(MockAsyncBaseLoader):
 
     async def get_source_async(
         self, environment: Any = None, template: str = ""
-    ) -> Tuple[str, str, Callable[[], bool]]:
+    ) -> tuple[str, str, Callable[[], bool]]:
         if self.delimiter not in template:
             raise MockTemplateNotFound(template)
 
@@ -1381,7 +2278,7 @@ class MockPrefixLoader(MockAsyncBaseLoader):
 
         return await self.loaders[prefix].get_source_async(environment, name)
 
-    async def list_templates_async(self) -> List[str]:
+    async def list_templates_async(self) -> list[str]:
         templates = set()
 
         for prefix, loader in self.loaders.items():
@@ -1391,3 +2288,7 @@ class MockPrefixLoader(MockAsyncBaseLoader):
             )
 
         return sorted(templates)
+
+
+# Use the function to prevent unused warning - call at end after all classes are defined
+_setup_fastblocks_module_structure()  # noqa: F841

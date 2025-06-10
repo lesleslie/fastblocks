@@ -20,7 +20,7 @@ class TestMinify:
         minified_js: str | bytes | bytearray = minify.js(js_content)
         minified_js_str = (
             str(minified_js)
-            if isinstance(minified_js, (bytes, bytearray))
+            if isinstance(minified_js, bytes | bytearray)
             else minified_js
         )
 
@@ -103,7 +103,7 @@ class TestMinify:
         minified_css: str | bytes | bytearray = minify.css(css_content)
         minified_css_str = (
             str(minified_css)
-            if isinstance(minified_css, (bytes, bytearray))
+            if isinstance(minified_css, bytes | bytearray)
             else minified_css
         )
 
@@ -167,7 +167,7 @@ class TestMinify:
         minified_scss: str | bytes | bytearray = minify.css(scss_content)
         minified_scss_str = (
             str(minified_scss)
-            if isinstance(minified_scss, (bytes, bytearray))
+            if isinstance(minified_scss, bytes | bytearray)
             else minified_scss
         )
 
@@ -191,10 +191,10 @@ class TestMinify:
         result1 = minify.js("")
         result2 = minify.js("   ")
         result1_str = (
-            str(result1) if isinstance(result1, (bytes, bytearray)) else result1
+            str(result1) if isinstance(result1, bytes | bytearray) else result1
         )
         result2_str = (
-            str(result2) if isinstance(result2, (bytes, bytearray)) else result2
+            str(result2) if isinstance(result2, bytes | bytearray) else result2
         )
         assert result1_str == "" or not result1_str
         assert result2_str == "" or not result2_str
@@ -207,10 +207,10 @@ class TestMinify:
         result1 = minify.css("")
         result2 = minify.css("   ")
         result1_str = (
-            str(result1) if isinstance(result1, (bytes, bytearray)) else result1
+            str(result1) if isinstance(result1, bytes | bytearray) else result1
         )
         result2_str = (
-            str(result2) if isinstance(result2, (bytes, bytearray)) else result2
+            str(result2) if isinstance(result2, bytes | bytearray) else result2
         )
         assert result1_str == "" or not result1_str
         assert result2_str == "" or not result2_str
@@ -219,10 +219,10 @@ class TestMinify:
         result1 = minify.css("")
         result2 = minify.css("   ")
         result1_str = (
-            str(result1) if isinstance(result1, (bytes, bytearray)) else result1
+            str(result1) if isinstance(result1, bytes | bytearray) else result1
         )
         result2_str = (
-            str(result2) if isinstance(result2, (bytes, bytearray)) else result2
+            str(result2) if isinstance(result2, bytes | bytearray) else result2
         )
         assert result1_str == "" or not result1_str
         assert result2_str == "" or not result2_str
@@ -261,7 +261,7 @@ class TestMinify:
         minified_js: str | bytes | bytearray = minify.js(js_content)
         minified_js_str = (
             str(minified_js)
-            if isinstance(minified_js, (bytes, bytearray))
+            if isinstance(minified_js, bytes | bytearray)
             else minified_js
         )
 
@@ -359,7 +359,7 @@ class TestMinify:
         minified_css: str | bytes | bytearray = minify.css(css_content)
         minified_css_str = (
             str(minified_css)
-            if isinstance(minified_css, (bytes, bytearray))
+            if isinstance(minified_css, bytes | bytearray)
             else minified_css
         )
 

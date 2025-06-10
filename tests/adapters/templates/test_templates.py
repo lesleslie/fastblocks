@@ -3,7 +3,7 @@
 import tempfile
 import typing as t
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -18,7 +18,7 @@ from tests.conftest import (
     MockTemplatesBaseSettings,
 )
 
-TemplateContext = Dict[str, Any]
+TemplateContext = dict[str, Any]
 TemplateResponse = Response
 
 setattr(LoaderProtocol, "storage", None)
@@ -179,8 +179,8 @@ def templates() -> TemplatesBase:
             self,
             request: Request,
             template: str,
-            context: Optional[Dict[str, Any]] = None,
-            headers: Optional[Dict[str, str]] = None,
+            context: dict[str, Any] | None = None,
+            headers: dict[str, str] | None = None,
         ) -> Response:
             if template in self._mock_responses:
                 return self._mock_responses[template]

@@ -9,17 +9,18 @@ from starlette.authentication import UnauthenticatedUser
 
 
 class AuthBaseSettings(Settings):
-    token_id: t.Optional[str] = None
+    token_id: str | None = None
 
     @depends.inject
     def __init__(self, config: Config = depends(), **data: t.Any) -> None:
         super().__init__(**data)
-        self.token_id = self.token_id or config.app.token_id
+        self.token_id = self.token_id or getattr(config.app, "token_id", "_fb_")
 
 
 class CurrentUser(t.Protocol):
-    def has_role(self, role: str) -> str: ...  # noqa: F841
-    def set_role(self, role: str) -> str | bool | None: ...  # noqa: F841
+    def has_role(self, _: str) -> str: ...
+
+    def set_role(self, _: str) -> str | bool | None: ...
 
     @property
     def identity(self) -> UUID4 | str | int: ...
@@ -31,7 +32,7 @@ class CurrentUser(t.Protocol):
     def email(self) -> EmailStr | None: ...
 
     def is_authenticated(
-        self, request: t.Optional[HtmxRequest] = None, config: t.Any = None
+        self, request: HtmxRequest | None = None, config: t.Any = None
     ) -> bool | int | str: ...
 
 
@@ -40,8 +41,11 @@ class AuthProtocol(t.Protocol):
 
     @property
     def current_user(self) -> t.Any: ...
+
     async def authenticate(self, request: HtmxRequest) -> bool: ...
+
     async def login(self, request: HtmxRequest) -> bool: ...
+
     async def logout(self, request: HtmxRequest) -> bool: ...
 
 

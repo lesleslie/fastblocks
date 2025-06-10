@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.fixture
-def mock_sitemap_routes() -> t.Dict[str, t.Dict[str, str]]:
+def mock_sitemap_routes() -> dict[str, dict[str, str]]:
     return {
         "route1": {
             "changefreq": "daily",
@@ -27,7 +27,7 @@ class TestSitemapRoutes:
                 sys.modules.pop(mod, None)
 
     def test_sitemap_routes_creation(
-        self, mock_sitemap_routes: t.Dict[str, t.Dict[str, str]]
+        self, mock_sitemap_routes: dict[str, dict[str, str]]
     ) -> None:
         sys.modules["fastblocks"] = types.ModuleType("fastblocks")
         sys.modules["fastblocks.adapters"] = types.ModuleType("fastblocks.adapters")
@@ -46,8 +46,8 @@ class TestSitemapRoutes:
         assert "route1" in routes
         assert "route2" in routes
 
-        routes_dict: t.Dict[str, t.Dict[str, str]] = t.cast(
-            t.Dict[str, t.Dict[str, str]], routes
+        routes_dict: dict[str, dict[str, str]] = t.cast(
+            dict[str, dict[str, str]], routes
         )
 
         if "route1" in routes_dict:

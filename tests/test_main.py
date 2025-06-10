@@ -14,7 +14,7 @@ class MockMain:
 
 
 @pytest.fixture(autouse=True)
-def clean_modules() -> t.Generator[None, None, None]:
+def clean_modules() -> t.Generator[None]:
     original_modules = sys.modules.copy()
 
     for mod in list(sys.modules.keys()):

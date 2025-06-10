@@ -16,6 +16,8 @@
 
 FastBlocks is an asynchronous web application framework, inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines the power of modern Python async capabilities with the simplicity of server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
 
+Unlike monolithic frameworks or micro-frameworks that require extensive configuration, FastBlocks offers a modular, component-based architecture that provides batteries-included functionality while maintaining exceptional flexibility. Its adapter pattern allows for seamless component swapping, cloud provider migrations, and tailored customizations without extensive code changes.
+
 ## Key Concepts
 
 If you're new to FastBlocks, here are the key concepts to understand:
@@ -26,7 +28,7 @@ If you're new to FastBlocks, here are the key concepts to understand:
 
 3. **Template Blocks**: Small pieces of HTML that can be rendered independently and injected into the page, enabling dynamic updates without full page reloads.
 
-4. **Adapters**: Pluggable components that provide standardized interfaces to different implementations (templates, authentication, admin interfaces, etc.).
+4. **Adapters**: Pluggable components that provide standardized interfaces to different implementations (templates, authentication, admin interfaces, etc.). This architecture facilitates seamless provider switching, multi-cloud deployments, and targeted customizations without restructuring your application.
 
 5. **Dependency Injection**: A pattern that automatically provides components to your functions when needed, reducing boilerplate code.
 
@@ -39,13 +41,170 @@ If you're new to FastBlocks, here are the key concepts to understand:
 - **Asynchronous Architecture**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), a modular framework providing dependency injection, configuration management, and pluggable components
 - **Template-Focused**: Advanced asynchronous Jinja2 template system with fragments and partials support
 - **Modular Design**: Pluggable adapters for authentication, admin interfaces, routing, and more
+- **Cloud Flexibility**: Easily switch between cloud providers or create hybrid deployments by swapping adapters
 - **Performance Optimized**: Built-in Redis caching, Brotli compression, and HTML/CSS/JS minification
 - **Type Safety**: Leverages Pydantic v2 for validation and type safety
 - **Admin Interface**: Integrated SQLAlchemy Admin support for database management
 - **Dependency Injection**: Simple yet powerful dependency injection system
+- **Batteries Included, But Replaceable**: Comprehensive defaults with the ability to customize or replace any component
+
+## Why Choose FastBlocks?
+
+FastBlocks stands out from other Python web frameworks through its unique combination of server-side rendering focus, component-based architecture, and hybrid cloud capabilities. Here's how FastBlocks compares to other popular frameworks:
+
+### FastBlocks vs. FastAPI
+
+While FastAPI excels at API development, FastBlocks is specifically designed for server-side rendered applications with HTMX:
+
+| Aspect | FastBlocks | FastAPI |
+|--------|------------|---------|
+| **Primary Focus** | Server-side rendering + HTMX | JSON APIs + OpenAPI |
+| **Template System** | Built-in async Jinja2 with HTMX support | External template engines required |
+| **Component Architecture** | Pluggable adapters for all components | Manual dependency injection setup |
+| **Cloud Flexibility** | Built-in adapter system for multi-cloud | Cloud integration requires custom solutions |
+| **Frontend Approach** | HTMX for dynamic interfaces | Requires separate frontend framework |
+| **Development Speed** | Rapid HTML-first development | Fast API development, slower frontend integration |
+| **SEO Support** | Native server-side rendering | Requires additional SSR setup |
+| **Learning Curve** | Simple HTML + Python | API design + frontend framework |
+
+**Choose FastBlocks when:** You want to build interactive web applications with server-side rendering, need rapid development of admin interfaces, or prefer keeping business logic on the server.
+
+**Choose FastAPI when:** You're building APIs for mobile apps, need extensive OpenAPI documentation, or are creating microservices.
+
+### FastBlocks vs. FastHTML
+
+FastHTML focuses on Python-in-HTML, while FastBlocks uses a traditional template-based approach:
+
+| Aspect | FastBlocks | FastHTML |
+|--------|------------|----------|
+| **Template Approach** | Jinja2 templates with custom delimiters | Python functions generate HTML |
+| **Separation of Concerns** | Clear separation of logic and presentation | Logic and presentation mixed |
+| **Designer Collaboration** | HTML/CSS designers can work directly | Requires Python knowledge for frontend |
+| **Template Ecosystem** | Full Jinja2 ecosystem and tooling | Limited to Python HTML generation |
+| **Component Reusability** | Template blocks and inheritance | Python function composition |
+| **Infrastructure Flexibility** | Adapter pattern for all components | Monolithic approach |
+| **Cloud Deployment** | Built-in multi-cloud support | Manual cloud configuration |
+| **Performance** | Async template caching and optimization | Runtime HTML generation |
+
+**Choose FastBlocks when:** You work with designers, need template reusability, want infrastructure flexibility, or prefer traditional template-based development.
+
+**Choose FastHTML when:** You prefer Python-only development, want inline HTML generation, or are building simple prototypes.
+
+### FastBlocks vs. FastHX
+
+FastHX provides HTMX utilities for FastAPI, while FastBlocks is a complete framework built around HTMX:
+
+| Aspect | FastBlocks | FastHX |
+|--------|------------|--------|
+| **Framework Scope** | Complete web framework | HTMX utilities for FastAPI |
+| **Template Integration** | Built-in async template system | Requires separate template setup |
+| **Component Architecture** | Full adapter system | Limited to HTMX helpers |
+| **Cloud Deployment** | Built-in multi-cloud adapters | Relies on FastAPI deployment |
+| **Development Workflow** | Integrated HTMX + templates | Add-on to existing FastAPI |
+| **Performance Optimization** | Built-in caching, compression, minification | Manual optimization required |
+| **Admin Interface** | Integrated admin system | External admin interface needed |
+| **Configuration Management** | ACB-based configuration system | FastAPI configuration |
+
+**Choose FastBlocks when:** You want a complete HTMX-focused framework, need built-in admin interfaces, or want comprehensive infrastructure adapters.
+
+**Choose FastHX when:** You have an existing FastAPI application and want to add HTMX capabilities incrementally.
+
+### FastBlocks vs. FastHTMX
+
+FastHTMX is another HTMX integration library, while FastBlocks is a complete framework:
+
+| Aspect | FastBlocks | FastHTMX |
+|--------|------------|----------|
+| **Architecture** | Complete framework with adapters | HTMX integration library |
+| **Template System** | Advanced async Jinja2 with fragments | Basic template integration |
+| **Infrastructure** | Pluggable adapters for everything | Manual infrastructure setup |
+| **Cloud Support** | Built-in multi-cloud capabilities | External cloud configuration |
+| **Development Tools** | Full CLI, project generation, testing | Limited tooling |
+| **Performance Features** | Caching, compression, minification | Basic HTMX support |
+| **Admin Interface** | Integrated SQLAlchemy admin | No admin interface |
+| **Dependency Injection** | ACB-based DI system | Manual dependency management |
+
+**Choose FastBlocks when:** You want a batteries-included framework, need enterprise-grade features, or want rapid application development.
+
+**Choose FastHTMX when:** You need a lightweight HTMX integration for an existing application.
+
+### FastBlocks vs. Litestar
+
+Litestar is a modern FastAPI alternative with native HTMX support, while FastBlocks focuses on server-side rendering:
+
+| Aspect | FastBlocks | Litestar |
+|--------|------------|----------|
+| **Primary Focus** | Server-side rendering + HTMX | High-performance APIs |
+| **Template System** | Built-in async templates with HTMX | External template engines |
+| **HTMX Support** | Built-in HTMX integration | Native HTMX support |
+| **Component Architecture** | Adapter pattern for flexibility | Plugin system |
+| **Cloud Deployment** | Built-in multi-cloud adapters | Manual cloud integration |
+| **Performance** | Optimized for SSR and HTMX | Optimized for API throughput |
+| **Frontend Integration** | HTMX-first approach | API-first, frontend agnostic |
+| **Development Experience** | HTML-first rapid development | Type-safe API development |
+| **Infrastructure Flexibility** | Adapter-based infrastructure | Plugin-based extensions |
+
+**Choose FastBlocks when:** You're building traditional web applications, need HTMX integration, or want infrastructure flexibility through adapters.
+
+**Choose Litestar when:** You need high-performance APIs, want extensive type safety, or are building API-first applications.
+
+### Key Advantages of FastBlocks
+
+#### 🧩 **Component-Based Architecture**
+- **Batteries Included, But Customizable**: Comprehensive defaults for rapid development, with every component easily replaceable
+- **Pluggable Adapters**: Every component (auth, admin, templates, storage, cache) can be swapped without code changes
+- **Consistent Interfaces**: Standardized APIs across all adapters ensure predictable behavior
+- **Independent Evolution**: Update or replace individual components without affecting the entire application
+- **Zero Lock-in**: Unlike monolithic frameworks, you're never locked into specific implementations
+
+#### 🌐 **Multi-Cloud & Hybrid Deployment Ready**
+- **Cloud Provider Flexibility**: Switch between AWS, Azure, GCP, or on-premise with configuration changes
+- **Vendor Lock-in Prevention**: Abstract cloud-specific APIs behind adapter interfaces
+- **Hybrid Strategies**: Mix and match services from different providers in the same application
+- **Infrastructure as Code**: Configuration-driven infrastructure decisions
+
+#### 🚀 **Server-Side Rendering Excellence**
+- **HTMX-Native**: Built specifically for HTMX patterns and server-side rendering
+- **Template Block Rendering**: Render specific template fragments for dynamic updates
+- **SEO Optimized**: Full server-side rendering ensures search engine visibility
+- **Progressive Enhancement**: Start with functional HTML, enhance with HTMX
+
+#### ⚡ **Performance Optimized**
+- **Async Everything**: Fully asynchronous template loading, caching, and rendering
+- **Built-in Caching**: Redis-based template and response caching with configurable rules
+- **Compression**: Brotli compression reduces payload sizes
+- **Minification**: Built-in HTML, CSS, and JS minification
+
+#### 🛠 **Developer Experience**
+- **Rapid Development**: HTML-first approach with powerful template system
+- **Full CLI**: Project generation, development server, testing, and deployment tools
+- **Type Safety**: Pydantic-based configuration and validation throughout
+- **Testing Support**: Comprehensive testing utilities and mocking framework
+
+#### 🏢 **Enterprise Ready**
+- **Configuration Management**: Multi-environment configuration with secrets management
+- **Security Built-in**: CSRF protection, secure headers, session management
+- **Admin Interface**: Integrated SQLAlchemy admin for database management
+- **Monitoring**: Built-in integration with Sentry and Logfire
+- **Deployment Options**: Docker, traditional servers, and cloud platforms
+
+### When to Choose FastBlocks
+
+FastBlocks is the ideal choice for:
+
+- **Traditional Web Applications**: Where server-side rendering and SEO matter
+- **Admin Dashboards**: Complex business logic with moderate UI complexity
+- **Content Management Systems**: Where initial load performance is critical
+- **Internal Tools**: Rapid development and maintenance are prioritized
+- **Multi-Cloud Environments**: Organizations needing infrastructure flexibility
+- **Team Collaboration**: Designers can work with HTML/CSS while developers handle Python logic
+- **Prototype to Production**: Rapid prototyping that scales to enterprise needs
+
+FastBlocks combines the development speed of modern frameworks with the infrastructure flexibility needed for enterprise deployment. Unlike monolithic frameworks that lock you into specific implementations, FastBlocks provides comprehensive defaults (batteries included) while maintaining the flexibility to customize or replace any component to suit your specific needs. This makes it an excellent choice for teams that want to move fast without sacrificing long-term flexibility or architectural control.
 
 ## Table of Contents
 
+- [Why Choose FastBlocks?](#why-choose-fastblocks)
 - [Key Concepts](#key-concepts)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -450,6 +609,24 @@ FastBlocks is built on top of [Asynchronous Component Base (ACB)](https://github
 - **Adapter Pattern**: FastBlocks uses ACB's adapter pattern to create pluggable components for authentication, admin interfaces, templates, etc.
 
 This separation allows FastBlocks to focus on web application concerns while leveraging ACB's robust component architecture for the underlying infrastructure.
+
+### Server-Side Rendering with HTMX
+
+FastBlocks is particularly well-suited for modern server-side rendering applications that use HTMX, offering several advantages over traditional approaches:
+
+- **Reduced Complexity**: Avoid complex client-side state management and JavaScript frameworks
+- **Improved Performance**: Server-side rendering can deliver faster initial page loads and smaller payloads
+- **SEO-Friendly**: Fully rendered HTML content for better search engine optimization
+- **Progressive Enhancement**: Start with functional HTML and enhance with HTMX for interactivity
+- **Simplified Architecture**: Keep business logic on the server where it belongs
+- **Reduced Development Time**: Use HTML templates and simple endpoints instead of complex API design
+
+The combination of FastBlocks' templating system and HTMX offers a modern alternative to complex SPA frameworks, particularly for:
+
+- **Admin dashboards**: Where business logic complexity outweighs UI complexity
+- **Content management systems**: Where SEO and initial load performance are critical
+- **Internal tools**: Where development speed and maintainability are prioritized over cutting-edge UIs
+- **Applications with complex business logic**: Where keeping logic on the server simplifies testing and validation
 
 ### Project Structure
 
@@ -981,14 +1158,26 @@ python -m fastblocks create --app-name myapp --style bulma --domain example.com
 #### Dev Command
 
 ```bash
-python -m fastblocks dev [--granian]
+python -m fastblocks dev [--granian] [--host HOST] [--port PORT]
 ```
+
+Running with hot-reloading enabled for development.
 
 #### Run Command
 
 ```bash
-python -m fastblocks run [--docker] [--granian]
+python -m fastblocks run [--docker] [--granian] [--host HOST] [--port PORT]
 ```
+
+Run in production mode.
+
+#### Test Command
+
+```bash
+python -m fastblocks test [--cov] [--verbose]
+```
+
+Run the test suite for your FastBlocks application. The `--cov` flag enables coverage reporting, and `--verbose` provides detailed test output.
 
 ## Examples
 
@@ -1041,8 +1230,7 @@ For more detailed documentation about FastBlocks components:
   - [**Routes Adapter**](./fastblocks/adapters/routes/README.md): Routing system
   - [**Templates Adapter**](./fastblocks/adapters/templates/README.md): Template engine
   - [**Sitemap Adapter**](./fastblocks/adapters/sitemap/README.md): Sitemap generation
-- [**Testing Guide**](./tests/README.md): Comprehensive guide to testing ACB components
-- [**Running Tests**](./tests/TESTING.md): Instructions for running tests
+- [**Running Tests**](./tests/TESTING.md): Comprehensive guide to testing FastBlocks components
 
 ## License
 

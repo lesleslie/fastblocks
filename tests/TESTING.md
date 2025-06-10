@@ -119,6 +119,137 @@ For adapter tests, the project follows a structured approach:
 
 3. **Reusable Test Functions**: Where possible, test functions are designed to be reusable across different adapter implementations.
 
+## Mocking the ACB Framework
+
+FastBlocks relies on the [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb) framework, which requires special handling in tests to prevent filesystem access. The test suite includes comprehensive mocking of ACB components:
+
+### Using MockAsyncPath
+
+The `MockAsyncPath` class is a drop-in replacement for `anyio.Path` that avoids filesystem access:
+
+```python
+class MockAsyncPath:
+    def __init__(self, path: Union[str, Path, "MockAsyncPath"] = "") -> None:
+        if isinstance(path, MockAsyncPath):
+            self._path = path._path
+        else:
+            self._path = str(path)
+
+    async def exists(self) -> bool:
+        return True  # Always return True to avoid filesystem checks
+
+    async def is_dir(self) -> bool:
+        return not await self.is_file()
+
+    async def is_file(self) -> bool:
+        return "." in self._path.split("/")[-1]
+
+    async def iterdir(self):
+        # Return an async iterator with no items
+        class AsyncIterator:
+            def __init__(self, items=None):
+                self.items = items or []
+                self.index = 0
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if self.index >= len(self.items):
+                    raise StopAsyncIteration
+                item = self.items[self.index]
+                self.index += 1
+                return item
+
+        return AsyncIterator()
+```
+
+This implementation allows tests to mock filesystem operations without actually accessing the filesystem.
+
+### Mocking ACB Register Functions
+
+Two critical ACB functions that attempt filesystem access are `register_pkg()` and `register_actions()`. The test suite includes a utility script `patch_site_packages.py` that can patch these functions in the installed ACB package:
+
+```python
+# Example usage of patch_site_packages.py
+python tests/patch_site_packages.py --verbose  # Apply the patches
+# Run your tests...
+python tests/patch_site_packages.py --restore  # Restore original files
+```
+
+The patched versions of these functions are no-ops that avoid filesystem access:
+
+```python
+# Patched register_pkg
+def register_pkg() -> None:
+    # Patched by FastBlocks tests
+    return
+
+# Patched register_actions
+async def register_actions(path: AsyncPath) -> list[Action]:
+    # Patched by FastBlocks tests
+    return []
+```
+
+### Mocking ACB Modules in conftest.py
+
+The test suite's `conftest.py` includes comprehensive mocking of ACB modules:
+
+```python
+def _patch_acb_modules() -> None:
+    """Patch ACB modules to prevent filesystem access during tests."""
+    # Create mock modules
+    mock_acb_module = types.ModuleType('acb')
+    mock_acb_module.__path__ = ['/mock/path/to/acb']
+
+    mock_acb_config = types.ModuleType('acb.config')
+    mock_acb_depends = types.ModuleType('acb.depends')
+    mock_acb_actions = types.ModuleType('acb.actions')
+    mock_acb_adapters = types.ModuleType('acb.adapters')
+
+    # Add to sys.modules
+    sys.modules['acb'] = mock_acb_module
+    sys.modules['acb.config'] = mock_acb_config
+    sys.modules['acb.depends'] = mock_acb_depends
+    sys.modules['acb.actions'] = mock_acb_actions
+    sys.modules['acb.adapters'] = mock_acb_adapters
+
+    # Set up mock implementations
+    # ... (see conftest.py for complete implementation)
+```
+
+## Test Isolation Techniques
+
+To ensure tests run independently and don't interfere with each other, the test suite employs several isolation techniques:
+
+1. **Module Patching**: System modules are patched at the beginning of each test session to prevent real imports from accessing the filesystem.
+
+2. **Fixture Isolation**: Test fixtures are designed to be isolated, with each test receiving its own instance of mock objects.
+
+3. **Context Managers**: Context managers are used to ensure that patches are properly applied and removed, even if tests fail.
+
+4. **Mock Implementations**: Complete mock implementations of FastBlocks and ACB components prevent any actual configuration loading or filesystem access.
+
+5. **Stateless Tests**: Tests are designed to be stateless, not relying on global state that could be modified by other tests.
+
+Example of module isolation in a test file:
+
+```python
+@pytest.fixture(autouse=True)
+def clean_modules() -> t.Generator[None]:
+    """Save original modules and restore after test."""
+    original_modules = sys.modules.copy()
+
+    for mod in list(sys.modules.keys()):
+        if mod.startswith(("fastblocks", "acb", "typer", "uvicorn", "granian")):
+            sys.modules.pop(mod, None)
+
+    yield
+
+    sys.modules.clear()
+    sys.modules.update(original_modules)
+```
+
 ## Test Coverage
 
 The current test coverage is approximately 34% overall, with particularly good coverage in the templates adapter code (79% for `_base.py`). All 155 tests pass successfully without requiring filesystem access.
@@ -212,3 +343,65 @@ If tests fail inconsistently, check for shared state between tests that could ca
 ### Slow Tests
 
 Tests that run slowly might be accessing external resources or the filesystem. Ensure they're properly using the mocking framework.
+
+### ACB-Related Test Failures
+
+ACB-related test failures are often caused by the framework attempting to access the filesystem. Here are common issues and solutions:
+
+#### FileNotFoundError for settings files
+
+If you see errors like:
+```
+FileNotFoundError: [Errno 2] No such file or directory: '/path/to/settings/debug.yml'
+```
+
+This usually means that ACB is trying to load actual configuration files. Solutions:
+
+1. **Patch the ACB register_pkg function**:
+   ```bash
+   python tests/patch_site_packages.py
+   ```
+
+2. **Mock Config class**: Ensure tests use the `MockConfig` class instead of the real `Config` class.
+
+3. **Mock settings loading**: Add explicit patches for settings loading functions.
+
+#### AsyncPath iterdir() issues
+
+Errors involving `iterdir()` or async iteration often look like:
+```
+TypeError: 'async for' requires an object with __aiter__ method, got coroutine
+```
+
+This happens when `MockAsyncPath.iterdir()` doesn't properly implement the async iterator protocol. Solution:
+
+1. Ensure your `MockAsyncPath` class properly implements the async iterator protocol as shown in the example above.
+
+2. Make sure `iterdir()` returns an object with both `__aiter__` and `__anext__` methods.
+
+#### ACB module import errors
+
+If you see errors like:
+```
+ModuleNotFoundError: No module named 'acb.actions.encode'
+```
+
+The test is trying to import a real ACB module. Solutions:
+
+1. **Add comprehensive module mocking**: Make sure all ACB modules are mocked in `conftest.py`.
+
+2. **Patch imports at the module level**: In specific test files, add module-level patches:
+   ```python
+   # At the top of your test file
+   import sys
+   import types
+   from unittest.mock import MagicMock
+
+   # Create and patch ACB modules before other imports
+   mock_acb = types.ModuleType('acb')
+   mock_acb.register_pkg = MagicMock()
+   sys.modules['acb'] = mock_acb
+   # ... additional module patching
+   ```
+
+3. **Use the ensure_cli_module fixture**: For CLI tests, use the `ensure_cli_module` fixture which provides comprehensive mocking of the CLI's dependencies.

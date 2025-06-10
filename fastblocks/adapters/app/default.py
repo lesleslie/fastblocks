@@ -11,20 +11,20 @@ from fastblocks.applications import FastBlocks
 from ._base import AppBase, AppBaseSettings
 
 main_start = perf_counter()
-
-Cache, Storage = import_adapter()  # type: ignore
+Cache, Storage = import_adapter()
 
 
 class AppSettings(AppBaseSettings):
     url: str = "http://localhost:8000"
-    token_id: t.Optional[str] = "_fb_"
+    token_id: str | None = "_fb_"
 
     @depends.inject
     def __init__(self, config: Config = depends(), **data: t.Any) -> None:
         super().__init__(**data)
         self.url = self.url if not config.deployed else f"https://{self.domain}"
-        self.token_id = "".join(  # type: ignore
-            [self.token_id, b64encode(self.name.encode()).decode().rstrip("=")]  # type: ignore
+        token_prefix = self.token_id or "_fb_"
+        self.token_id = "".join(
+            [token_prefix, b64encode(self.name.encode()).decode().rstrip("=")]
         )
 
 
@@ -57,13 +57,12 @@ class App(FastBlocks, AppBase):
                     app,
                     engine=sql.engine,
                     title=self.config.admin.title,
-                    debug=self.config.debug.admin,
+                    debug=getattr(self.config.debug, "admin", False),
                     base_url=self.config.admin.url,
                     logo_url=self.config.admin.logo_url,
                     authentication_backend=auth,
                 )
                 self.router.routes.insert(0, self.router.routes.pop())
-
             await self.post_startup()
             main_start_time = perf_counter() - main_start
             self.logger.warning(f"App started in {main_start_time} s")

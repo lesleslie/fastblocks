@@ -84,12 +84,48 @@ class UserAdmin(ModelView, model=User):
     # Customize forms
     form_columns = [User.username, User.email, User.is_active]
 
-    # Add custom actions
+    # Customize display names and formatting
+    column_labels = {
+        User.email: "Email Address",
+        User.is_active: "Account Status"
+    }
+
+    # Format display values
+    column_formatters = {
+        User.is_active: lambda m, a: "Active" if m.is_active else "Inactive"
+    }
+
+    # Add validators
+    form_args = {
+        "username": {
+            "validators": [DataRequired(), Length(min=3, max=20)]
+        },
+        "email": {
+            "validators": [DataRequired(), Email()]
+        }
+    }
+
+    # Control access permissions
     def is_accessible(self):
-        return True  # Add your access control logic here
+        # Example: Check if user is authenticated and has admin role
+        from flask_login import current_user
+        return current_user.is_authenticated and current_user.has_role("admin")
 
     def is_visible(self):
         return True
+
+    # Add custom actions
+    @action(
+        name="activate_users",
+        label="Activate selected users",
+        confirmation="Are you sure you want to activate selected users?"
+    )
+    def action_activate_users(self, ids):
+        """Custom action to bulk activate users"""
+        for model in self.session.query(self.model).filter(self.model.id.in_(ids)).all():
+            model.is_active = True
+        self.session.commit()
+        return len(ids)
 
 # Register the custom model view
 admin.register_model(UserAdmin)
@@ -103,6 +139,75 @@ admin.register_model(UserAdmin)
 | `title` | `str` | `"FastBlocks Admin"` | The title of the admin interface |
 | `logo_url` | `Optional[str]` | `None` | URL to the logo image |
 | `style` | `str` | `"default"` | The style/theme of the admin interface |
+| `base_url` | `str` | `"/admin"` | URL prefix for the admin interface |
+| `secure_environments` | `List[str]` | `["production"]` | Environments where security measures are enforced |
+| `allowed_ips` | `Optional[List[str]]` | `None` | List of IPs/CIDR blocks allowed to access admin when secure |
+| `template_overrides` | `Optional[Dict[str, str]]` | `None` | Map of template names to override paths |
+| `custom_scripts` | `List[str]` | `[]` | List of custom JS files to include |
+| `custom_styles` | `List[str]` | `[]` | List of custom CSS files to include |
+| `menu_items` | `List[Dict]` | `[]` | Additional navigation menu items |
+| `default_sort_dir` | `str` | `"desc"` | Default sort direction (asc/desc) |
+| `page_size` | `int` | `25` | Number of items per page in lists |
+
+## Theme Customization
+
+The admin interface supports two built-in themes:
+
+1. **Bootstrap Theme** (default): Clean, responsive design based on Bootstrap 5
+2. **Material Theme**: Material Design-inspired theme with cards and elevated components
+
+### Changing the Theme
+
+```yaml
+# settings/admin.yml
+admin:
+  style: "material"  # or "bootstrap" (default)
+```
+
+### Custom Styling
+
+You can add your own CSS to customize the admin interface:
+
+```yaml
+# settings/admin.yml
+admin:
+  custom_styles:
+    - "/static/admin/custom.css"
+```
+
+Then create your CSS file:
+
+```css
+/* static/admin/custom.css */
+.admin-header {
+  background-color: #1a237e;
+  color: white;
+}
+
+.admin-sidebar {
+  background-color: #f5f5f5;
+}
+
+/* Override SQLAdmin components */
+.admin-card {
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+```
+
+### Template Overrides
+
+You can override specific admin templates:
+
+```yaml
+# settings/admin.yml
+admin:
+  template_overrides:
+    "layout.html": "my_admin/layout.html"
+    "list.html": "my_admin/list.html"
+```
+
+Then create your templates in your app's templates directory.
 
 ## Implementation Details
 
@@ -130,7 +235,7 @@ class AdminBase(AdapterBase):
 
 ## SQLAdmin Implementation
 
-The `sqladmin` implementation uses the [SQLAdmin](https://aminalaee.dev/sqladmin/) package to provide a powerful admin interface for SQLAlchemy models.
+The `sqladmin` implementation uses the [SQLAdmin](https://github.com/aminalaee/sqladmin) package to provide a powerful admin interface for SQLAlchemy models.
 
 ### Features
 
@@ -141,28 +246,219 @@ The `sqladmin` implementation uses the [SQLAdmin](https://aminalaee.dev/sqladmin
 - **Form Validation**: Automatic form validation based on model constraints
 - **Authentication**: Secure the admin interface with authentication
 - **Customization**: Customize the appearance and behavior of the admin interface
+- **File Uploads**: Support for file uploads with preview
+- **Rich Text Editing**: Integrated WYSIWYG editors for content fields
+- **Export**: Export data to various formats (CSV, JSON)
 
-## Customization
+### Advanced Usage Examples
 
-You can create a custom admin adapter for more specialized admin interfaces:
+#### Custom Form Fields
 
 ```python
-# myapp/adapters/admin/custom.py
-from fastblocks.adapters.admin._base import AdminBase, AdminBaseSettings
+from sqladmin import ModelView
+from wtforms.fields import StringField, TextAreaField
+from wtforms.widgets import ColorInput, FileInput
+
+class ProductAdmin(ModelView, model=Product):
+    column_list = [Product.id, Product.name, Product.price, Product.color, Product.is_available]
+
+    # Custom form fields
+    form_overrides = {
+        "description": TextAreaField,
+        "color": StringField,
+    }
+
+    form_widget_args = {
+        "color": {"widget": ColorInput()},
+        "image": {"widget": FileInput()}
+    }
+
+    # Custom formatters for display
+    column_formatters = {
+        Product.price: lambda m, a: f"${m.price:.2f}",
+        Product.image: lambda m, a: Markup(f"<img src='{m.image}' width='100'>")
+    }
+```
+
+#### Relationship Handling
+
+```python
+class OrderAdmin(ModelView, model=Order):
+    column_list = [Order.id, Order.customer, Order.date, Order.total]
+
+    # Handle relationships
+    form_ajax_refs = {
+        "customer": {
+            "fields": (Customer.name, Customer.email),
+            "order_by": (Customer.name,),
+            "page_size": 10
+        },
+        "products": {
+            "fields": (Product.name,),
+            "order_by": (Product.name,),
+            "page_size": 10
+        }
+    }
+
+    # Inline editing for order items
+    inline_models = [(
+        OrderItem,
+        {
+            "column_labels": {"quantity": "Qty"},
+            "form_columns": ["product", "quantity", "price"],
+            "form_args": {"price": {"default": 0.0}}
+        }
+    )]
+```
+
+#### Custom Admin Actions
+
+```python
+from sqladmin import action
+
+class UserAdmin(ModelView, model=User):
+    # Standard configuration...
+
+    @action(
+        name="send_welcome_email",
+        label="Send Welcome Email",
+        confirmation="Send welcome email to selected users?"
+    )
+    def send_welcome_email(self, ids):
+        users = self.session.query(self.model).filter(self.model.id.in_(ids)).all()
+        for user in users:
+            email_service.send_welcome(user.email, user.name)
+        flash(f"Welcome emails sent to {len(users)} users")
+        return len(users)
+
+    @action(
+        name="export_user_data",
+        label="Export User Data",
+        confirmation="Export data for selected users?"
+    )
+    def export_user_data(self, ids):
+        # Logic to export user data to CSV
+        users = self.session.query(self.model).filter(self.model.id.in_(ids)).all()
+        return export_to_csv(users, ["id", "username", "email", "created_at"])
+```
+
+## Securing the Admin Interface
+
+It's crucial to protect your admin interface from unauthorized access. Here are several approaches:
+
+### Using Authentication Middleware
+
+```python
+from starlette.middleware.authentication import AuthenticationMiddleware
+from starlette.authentication import AuthCredentials, BaseUser
+
+class AdminAuthBackend:
+    async def authenticate(self, request):
+        # Your authentication logic here
+        if not is_authorized_admin(request):
+            return None
+        return AuthCredentials(["admin"]), AdminUser(request)
+
+# In your application startup
+app.add_middleware(AuthenticationMiddleware, backend=AdminAuthBackend())
+```
+
+### Using Environment-Based Security
+
+```python
+# settings/admin.yml
+admin:
+  enabled: true
+  secure_environments: ["production", "staging"]
+  allowed_ips: ["10.0.0.0/8", "127.0.0.1"]
+```
+
+```python
+# In your admin adapter init
+if self.settings.secure_environments and app_env in self.settings.secure_environments:
+    # Apply IP restrictions
+    app.add_middleware(IPRestrictionMiddleware,
+                       allowed_ips=self.settings.allowed_ips)
+```
+
+### Using FastBlocks Auth Adapter Integration
+
+```python
+# In your FastBlocks app setup
+app = FastBlocks()
+
+# Get auth and admin adapters
+Auth = import_adapter("auth")
+Admin = import_adapter("admin")
+
+auth = depends.get(Auth)
+admin = depends.get(Admin)
+
+# Link authentication to admin
+admin.set_auth_handler(auth.authenticate_admin)
+```
+
+## Custom Admin Dashboards
+
+You can create a custom dashboard for your admin interface:
+
+```python
+from fastblocks.adapters.admin import AdminBase, AdminBaseSettings
+from sqladmin import Admin, ModelView
+from starlette.requests import Request
+from starlette.responses import Response
 
 class CustomAdminSettings(AdminBaseSettings):
     dashboard_template: str = "admin/dashboard.html"
+    custom_scripts: list[str] = ["admin/charts.js"]
+    custom_styles: list[str] = ["admin/dashboard.css"]
 
 class CustomAdmin(AdminBase):
     settings: CustomAdminSettings | None = None
 
     async def init(self) -> None:
-        # Initialize custom admin interface
-        pass
+        # Initialize SQLAdmin
+        self.admin = Admin(
+            self.app,
+            self.engine,
+            title=self.settings.title,
+            base_url="/admin",
+            authentication_backend=self.auth_backend,
+            templates_dir="templates/admin"
+        )
+
+        # Register custom dashboard route
+        @self.admin.add_view
+        class DashboardView:
+            name = "Dashboard"
+            icon = "fa fa-home"
+
+            def is_visible(self):
+                return True
+
+            def is_accessible(self):
+                return True
+
+            @admin.expose("/")
+            def index(self, request: Request) -> Response:
+                stats = {
+                    "users": self.get_user_stats(),
+                    "content": self.get_content_stats(),
+                    "system": self.get_system_stats()
+                }
+                return self.render_template(
+                    "admin/dashboard.html",
+                    request=request,
+                    stats=stats
+                )
+
+            def get_user_stats(self):
+                # Query database for user statistics
+                return {"total": 1250, "active": 860, "new_today": 15}
 
     def register_model(self, model: type[object]) -> None:
-        # Register model with custom admin interface
-        pass
+        if hasattr(self, "admin"):
+            self.admin.add_view(model)
 ```
 
 Then configure your application to use your custom adapter:

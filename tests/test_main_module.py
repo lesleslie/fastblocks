@@ -34,7 +34,7 @@ def mock_acb(mocker: MockerFixture) -> t.Any:
 
 
 @pytest.fixture
-def clean_modules() -> t.Generator[None, None, None]:
+def clean_modules() -> t.Generator[None]:
     original_modules = sys.modules.copy()
 
     for mod in list(sys.modules.keys()):
@@ -48,9 +48,7 @@ def clean_modules() -> t.Generator[None, None, None]:
 
 
 @pytest.fixture
-def mock_main_dependencies(
-    mocker: MockerFixture, mock_acb: t.Any
-) -> t.Dict[str, t.Any]:
+def mock_main_dependencies(mocker: MockerFixture, mock_acb: t.Any) -> dict[str, t.Any]:
     mock_register_pkg = mocker.MagicMock()
     mock_depends = mocker.MagicMock()
     mock_app = mocker.MagicMock()

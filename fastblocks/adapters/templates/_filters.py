@@ -2,7 +2,7 @@ from urllib.parse import quote_plus
 
 from acb.config import Config
 from acb.depends import depends
-from fastblocks.actions import minify
+from fastblocks.actions.minify import minify
 
 
 class Filters:
@@ -22,14 +22,14 @@ class Filters:
     @staticmethod
     @templates.filter()
     def minify_html(html: str) -> str:
-        return minify.html(html)  # type: ignore
+        return minify.html(html)
 
     @staticmethod
     @templates.filter()
     def minify_js(js: str) -> bytearray | bytes | str:
-        return minify.js(js)  # type: ignore
+        return minify.js(js)
 
     @staticmethod
     @templates.filter()
     def minify_css(css: str) -> bytearray | bytes | str:
-        return minify.css(css)  # type: ignore
+        return minify.css(css)

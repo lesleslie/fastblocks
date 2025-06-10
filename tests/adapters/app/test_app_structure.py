@@ -9,7 +9,7 @@ import pytest
 
 
 @pytest.fixture
-def clean_modules() -> t.Generator[None, None, None]:
+def clean_modules() -> t.Generator[None]:
     original_modules = sys.modules.copy()
 
     for mod in list(sys.modules.keys()):
@@ -110,7 +110,7 @@ class TestAppStructure:
             async def post_startup(self) -> None:
                 pass
 
-            async def lifespan(self, app: t.Any) -> t.AsyncGenerator[None, None]:
+            async def lifespan(self, app: t.Any) -> t.AsyncGenerator[None]:
                 yield
 
         setattr(default_module, "AppSettings", AppSettings)

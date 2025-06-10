@@ -1,7 +1,7 @@
 """Tests for template rendering functionality."""
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Protocol
 
 import pytest
 from jinja2 import TemplateNotFound
@@ -9,11 +9,11 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
 from fastblocks.adapters.templates._base import TemplatesBase
 
-TemplateContext = Dict[str, Any]
+TemplateContext = dict[str, Any]
 
 
 class TemplatesWithFilters(Protocol):
-    filters: Dict[str, Any]
+    filters: dict[str, Any]
 
 
 class TestTemplateRendering:
@@ -82,8 +82,8 @@ class TestTemplateErrors:
         async def mock_render(
             request: Request,
             template: str,
-            context: Optional[TemplateContext] = None,
-            headers: Optional[Dict[str, str]] = None,
+            context: TemplateContext | None = None,
+            headers: dict[str, str] | None = None,
         ) -> Response:
             if template == "missing.html":
                 raise TemplateNotFound(template)

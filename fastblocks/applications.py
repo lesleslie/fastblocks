@@ -7,21 +7,17 @@ from acb.adapters import get_installed_adapter
 from acb.config import Config
 from acb.depends import depends
 from acb.logger import InterceptHandler, Logger
-from asgi_htmx import HtmxRequest
 from starception import add_link_template, install_error_handler, set_editor
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
-from starlette.responses import Response
 from starlette.types import ASGIApp, ExceptionHandler, Lifespan
 
 from .exceptions import handle_exception
 
 register_pkg()
-
 AppType = t.TypeVar("AppType", bound="FastBlocks")
-
 match system():
     case "Windows":
         add_link_template("pycharm", "pycharm64.exe --line {lineno} {path}")
@@ -39,7 +35,7 @@ class FastBlocks(Starlette):
         self: AppType,
         middleware: t.Sequence[Middleware] | None = None,
         exception_handlers: t.Mapping[t.Any, ExceptionHandler] | None = None,
-        lifespan: t.Optional[Lifespan["AppType"]] = None,
+        lifespan: Lifespan["AppType"] | None = None,
         config: Config = depends(),
         logger: Logger = depends(),
     ) -> None:
@@ -47,7 +43,7 @@ class FastBlocks(Starlette):
             config.debug, "production", False
         ):
             install_error_handler()
-        self.debug = config.debug.fastblocks
+        self.debug = getattr(config.debug, "fastblocks", False)
         logger.info(f"Fastblocks debug: {self.debug}")
         super().__init__(
             debug=self.debug,
@@ -75,42 +71,37 @@ class FastBlocks(Starlette):
 
     @depends.inject
     def build_middleware_stack(
-        self,
-        config: Config = depends(),
-        logger: Logger = depends(),
+        self, config: Config = depends(), logger: Logger = depends()
     ) -> ASGIApp:
         error_handler = None
-        exception_handlers: dict[
-            t.Any, t.Callable[[HtmxRequest, Exception], Response]
-        ] = {}
+        exception_handlers: dict[t.Any, ExceptionHandler] = {}
         for key, value in self.exception_handlers.items():
             if key in (500, Exception):
                 error_handler = value
             else:
-                exception_handlers[key] = value  # type: ignore
+                exception_handlers[key] = t.cast(ExceptionHandler, value)
         from .middleware import middlewares
 
-        middleware = (
-            [
-                Middleware(
-                    ServerErrorMiddleware,  # type: ignore
-                    handler=error_handler,  # type: ignore
-                    debug=self.debug,
-                )
-            ]
-            + self.user_middleware
-            + middlewares()
-            + [
-                Middleware(
-                    ExceptionMiddleware,  # type: ignore
-                    handlers=exception_handlers,  # type: ignore
-                    debug=self.debug,
-                )
-            ]
+        middleware_list = [
+            Middleware(
+                ServerErrorMiddleware,
+                handler=t.cast(t.Any, error_handler),
+                debug=self.debug,
+            )
+        ]
+        middleware_list.extend(self.user_middleware)
+        middleware_list.extend(middlewares())
+        middleware_list.append(
+            Middleware(
+                ExceptionMiddleware,
+                handlers=t.cast(t.Any, exception_handlers),
+                debug=self.debug,
+            )
         )
+        middleware = middleware_list
         app = self.router
         for cls, args, kwargs in reversed(middleware):
             logger.debug(f"Adding middleware: {cls.__name__}")
-            app = cls(app=app, *args, **kwargs)
+            app = cls(*args, app=app, **kwargs)
         logger.info("Middleware stack built")
         return app

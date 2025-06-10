@@ -20,8 +20,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .exceptions import RequestNotCachable, ResponseNotCachable
 
-Cache = import_adapter()  # type: ignore
-
+Cache = import_adapter()
 cachable_methods = frozenset(("GET", "HEAD"))
 cachable_status_codes = frozenset(
     (200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501)
@@ -37,13 +36,9 @@ class Rule:
     ttl: float | None = None
 
 
-def request_matches_rule(
-    rule: Rule,
-    *,
-    request: Request,
-) -> bool:
+def request_matches_rule(rule: Rule, *, request: Request) -> bool:
     match = (
-        [rule.match] if isinstance(rule.match, (str, re.Pattern)) else list(rule.match)
+        [rule.match] if isinstance(rule.match, str | re.Pattern) else list(rule.match)
     )
     for item in match:
         if isinstance(item, re.Pattern):
@@ -73,10 +68,7 @@ def get_rule_matching_request(
 
 
 def get_rule_matching_response(
-    rules: Sequence[Rule],
-    *,
-    request: Request,
-    response: Response,
+    rules: Sequence[Rule], *, request: Request, response: Response
 ) -> Rule | None:
     return next(
         (
@@ -159,9 +151,7 @@ async def get_from_cache(
     logger: Logger = depends(),
 ) -> Response | None:
     logger.debug(
-        f"get_from_cache "
-        f"request.url={str(request.url)!r} "
-        f"request.method={request.method!r}"
+        f"get_from_cache request.url={str(request.url)!r} request.method={request.method!r}"
     )
     if request.method not in cachable_methods:
         logger.debug("request_not_cachable reason=method")
@@ -201,16 +191,12 @@ async def delete_from_cache(
     varying_headers = await cache.get(varying_headers_cache_key)
     if varying_headers is None:
         return
-    for method in "GET", "HEAD":
+    for method in ("GET", "HEAD"):
         cache_key = generate_cache_key(
-            url,
-            method=method,
-            headers=vary,
-            varying_headers=varying_headers,
+            url, method=method, headers=vary, varying_headers=varying_headers
         )
         logger.debug(f"clear_cache key={cache_key!r}")
         await cache.delete(cache_key)
-
     await cache.delete(varying_headers_cache_key)
 
 
@@ -222,24 +208,18 @@ def serialize_response(response: Response) -> dict[str, t.Any]:
     }
 
 
-def deserialize_response(
-    serialized_response: t.Any,
-) -> Response:
+def deserialize_response(serialized_response: t.Any) -> Response:
     if not isinstance(serialized_response, dict):
         raise TypeError(f"Expected dict, got {type(serialized_response)}")
-
     content = serialized_response.get("content")
     if not isinstance(content, str):
         raise TypeError(f"Expected content to be str, got {type(content)}")
-
     status_code = serialized_response.get("status_code")
     if not isinstance(status_code, int):
         raise TypeError(f"Expected status_code to be int, got {type(status_code)}")
-
     headers = serialized_response.get("headers")
     if not isinstance(headers, dict):
         raise TypeError(f"Expected headers to be dict, got {type(headers)}")
-
     return Response(
         content=base64.decodebytes(content.encode("ascii")),
         status_code=status_code,
@@ -256,9 +236,7 @@ async def learn_cache_key(
     logger: Logger = depends(),
 ) -> str:
     logger.debug(
-        "learn_cache_key "
-        f"request.method={request.method!r} "
-        f"response.headers.Vary={response.headers.get('Vary')!r}"
+        f"learn_cache_key request.method={request.method!r} response.headers.Vary={response.headers.get('Vary')!r}"
     )
     url = request.url
     varying_headers_cache_key = generate_varying_headers_cache_key(url)
@@ -270,8 +248,7 @@ async def learn_cache_key(
     if varying_headers:
         response.headers["Vary"] = ", ".join(varying_headers)
     logger.debug(
-        "store_varying_headers "
-        f"cache_key={varying_headers_cache_key!r} headers={varying_headers!r}"
+        f"store_varying_headers cache_key={varying_headers_cache_key!r} headers={varying_headers!r}"
     )
     await cache.set(key=varying_headers_cache_key, value=varying_headers)
     return generate_cache_key(
@@ -311,7 +288,6 @@ def generate_cache_key(
 ) -> str | None:
     if method not in cachable_methods:
         return None
-
     vary_hash = ""
     for header in varying_headers:
         value = headers.get(header)
@@ -344,7 +320,7 @@ def patch_cache_control(
     for field in parse_http_list(headers.get("Cache-Control", "")):
         try:
             key, value = field.split("=")
-        except ValueError:  # noqa: PERF203
+        except ValueError:
             cache_control[field] = True
         else:
             cache_control[key] = value
@@ -380,12 +356,7 @@ class CacheResponder:
     logger: Logger = depends()
     cache: Cache = depends()
 
-    def __init__(
-        self,
-        app: ASGIApp,
-        *,
-        rules: Sequence[Rule],
-    ) -> None:
+    def __init__(self, app: ASGIApp, *, rules: Sequence[Rule]) -> None:
         self.app = app
         self.rules = rules
         self.initial_message: Message = {}
@@ -396,9 +367,7 @@ class CacheResponder:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
-
         self.request = request = Request(scope)
-
         try:
             response = await get_from_cache(request, cache=self.cache, rules=self.rules)
         except RequestNotCachable:
@@ -411,7 +380,6 @@ class CacheResponder:
                 return
             send = partial(self.send_with_caching, send=send)
             self.logger.debug("cache_lookup MISS")
-
         await self.app(scope, receive, send)
 
     async def send_with_caching(self, message: Message, *, send: Send) -> None:
@@ -453,9 +421,7 @@ class CacheResponder:
             return
         if message["type"] == "http.response.start" and 200 <= message["status"] < 400:
             await delete_from_cache(
-                self.request.url,
-                vary=self.request.headers,
-                cache=self.cache,
+                self.request.url, vary=self.request.headers, cache=self.cache
             )
         await send(message)
 
@@ -476,7 +442,7 @@ class CacheControlResponder:
 
     @staticmethod
     def kvformat(**kwargs: t.Any) -> str:
-        return " ".join(f"{key}={value}" for key, value in kwargs.items())
+        return " ".join((f"{key}={value}" for key, value in kwargs.items()))
 
     async def send_with_caching(self, message: Message, *, send: Send) -> None:
         if message["type"] == "http.response.start":
@@ -484,5 +450,4 @@ class CacheControlResponder:
             headers = MutableHeaders(raw=list(message["headers"]))
             patch_cache_control(headers, **self.kwargs)
             message["headers"] = headers.raw
-
         await send(message)

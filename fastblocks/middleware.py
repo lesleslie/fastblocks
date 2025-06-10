@@ -27,15 +27,9 @@ from .caching import (
 from .exceptions import DuplicateCaching, MissingCaching
 
 Cache = t.Any
-
 secure_headers = Secure()
-
 scope_name = "__starlette_caches__"
-
-_request_ctx_var: ContextVar[Scope | None] = ContextVar(
-    "request",
-    default=None,  # type: ignore
-)
+_request_ctx_var: ContextVar[Scope | None] = ContextVar("request", default=None)
 
 
 def get_request() -> Scope | None:
@@ -62,11 +56,7 @@ class SecureHeadersMiddleware:
 
     @depends.inject
     async def __call__(
-        self,
-        scope: Scope,
-        receive: Receive,
-        send: Send,
-        logger: Logger = depends(),
+        self, scope: Scope, receive: Receive, send: Send, logger: Logger = depends()
     ) -> None:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
@@ -88,11 +78,7 @@ class ProcessTimeHeaderMiddleware:
 
     @depends.inject
     async def __call__(
-        self,
-        scope: Scope,
-        receive: Receive,
-        send: Send,
-        logger: Logger = depends(),
+        self, scope: Scope, receive: Receive, send: Send, logger: Logger = depends()
     ) -> None:
         start_time = perf_counter()
         try:
@@ -107,31 +93,20 @@ class ProcessTimeHeaderMiddleware:
 
 class CacheMiddleware:
     def __init__(
-        self,
-        app: ASGIApp,
-        *,
-        cache: Cache = None,
-        rules: Sequence[Rule] | None = None,
+        self, app: ASGIApp, *, cache: Cache = None, rules: Sequence[Rule] | None = None
     ) -> None:
         if rules is None:
             rules = [Rule()]
-
         self.app = app
         self.cache = cache if cache is not None else depends.get()
         self.rules = rules
-
         if hasattr(app, "middleware"):
             middleware = getattr(app, "middleware")
             if hasattr(middleware, "__iter__") and any(
                 isinstance(m, CacheMiddleware) for m in middleware
             ):
                 raise DuplicateCaching(
-                    "Another `CacheMiddleware` was detected in the middleware stack.\n"
-                    "HINT: this exception probably occurred because:\n"
-                    "- You wrapped an application around `CacheMiddleware` multiple "
-                    "times.\n"
-                    "- You tried to apply `@cached()` onto an endpoint, but "
-                    "the application is already wrapped around a `CacheMiddleware`."
+                    "Another `CacheMiddleware` was detected in the middleware stack.\nHINT: this exception probably occurred because:\n- You wrapped an application around `CacheMiddleware` multiple times.\n- You tried to apply `@cached()` onto an endpoint, but the application is already wrapped around a `CacheMiddleware`."
                 )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -140,18 +115,10 @@ class CacheMiddleware:
             return
         if scope_name in scope:
             raise DuplicateCaching(
-                "Another `CacheMiddleware` was detected in the middleware stack.\n"
-                "HINT: this exception probably occurred because:\n"
-                "- You wrapped an application around `CacheMiddleware` multiple "
-                "times.\n"
-                "- You tried to apply `@cached()` onto an endpoint, but "
-                "the application is already wrapped around a `CacheMiddleware`."
+                "Another `CacheMiddleware` was detected in the middleware stack.\nHINT: this exception probably occurred because:\n- You wrapped an application around `CacheMiddleware` multiple times.\n- You tried to apply `@cached()` onto an endpoint, but the application is already wrapped around a `CacheMiddleware`."
             )
         scope[scope_name] = self
-        responder = CacheResponder(
-            self.app,
-            rules=self.rules,
-        )
+        responder = CacheResponder(self.app, rules=self.rules)
         await responder(scope, receive, send)
 
 
@@ -160,25 +127,19 @@ class _BaseCacheMiddlewareHelper:
         self.request = request
         if scope_name not in request.scope:
             raise MissingCaching(
-                "No CacheMiddleware instance found in the ASGI scope. Did you forget "
-                "to wrap the ASGI application with `CacheMiddleware`?"
+                "No CacheMiddleware instance found in the ASGI scope. Did you forget to wrap the ASGI application with `CacheMiddleware`?"
             )
         middleware = request.scope[scope_name]
         if not isinstance(middleware, CacheMiddleware):
             raise MissingCaching(
-                f"A scope variable named {scope_name!r} was found, but it does not "
-                "contain a `CacheMiddleware` instance. It is likely that an "
-                "incompatible middleware was added to the middleware stack."
+                f"A scope variable named {scope_name!r} was found, but it does not contain a `CacheMiddleware` instance. It is likely that an incompatible middleware was added to the middleware stack."
             )
         self.middleware = middleware
 
 
 class CacheHelper(_BaseCacheMiddlewareHelper):
     async def invalidate_cache_for(
-        self,
-        url: str | URL,
-        *,
-        headers: Mapping[str, str] | None = None,
+        self, url: str | URL, *, headers: Mapping[str, str] | None = None
     ) -> None:
         if not isinstance(url, URL):
             url = self.request.url_for(url)
@@ -232,25 +193,19 @@ class CacheControlMiddleware:
 
     def process_response(self, response: t.Any) -> None:
         cache_control_parts = []
-
         if getattr(self, "public", False):
             cache_control_parts.append("public")
         elif getattr(self, "private", False):
             cache_control_parts.append("private")
-
         if getattr(self, "no_cache", False):
             cache_control_parts.append("no-cache")
-
         if getattr(self, "no_store", False):
             cache_control_parts.append("no-store")
-
         if getattr(self, "must_revalidate", False):
             cache_control_parts.append("must-revalidate")
-
         max_age = getattr(self, "max_age", None)
         if max_age is not None:
             cache_control_parts.append(f"max-age={max_age}")
-
         if cache_control_parts:
             response.headers["Cache-Control"] = ", ".join(cache_control_parts)
 
@@ -258,26 +213,26 @@ class CacheControlMiddleware:
 @depends.inject
 def middlewares(config: Config = depends()) -> list[Middleware]:
     middleware = [
-        Middleware(ProcessTimeHeaderMiddleware),  # type: ignore
+        Middleware(ProcessTimeHeaderMiddleware),
         Middleware(
-            CSRFMiddleware,  # type: ignore
+            CSRFMiddleware,
             secret=config.app.secret_key.get_secret_value(),
-            cookie_name=f"{config.app.token_id}_csrf",
+            cookie_name=f"{getattr(config.app, 'token_id', '_fb_')}_csrf",
             cookie_secure=config.deployed,
         ),
-        Middleware(HtmxMiddleware),  # type: ignore
-        Middleware(CurrentRequestMiddleware),  # type: ignore
-        Middleware(BrotliMiddleware, quality=3),  # type: ignore
+        Middleware(HtmxMiddleware),
+        Middleware(CurrentRequestMiddleware),
+        Middleware(BrotliMiddleware, quality=3),
     ]
     if config.deployed or config.debug.production:
-        middleware.append(Middleware(SecureHeadersMiddleware))  # type: ignore
+        middleware.append(Middleware(SecureHeadersMiddleware))
     if get_adapter("auth"):
         middleware.insert(
             2,
             Middleware(
-                SessionMiddleware,  # type: ignore
+                SessionMiddleware,
                 secret_key=config.app.secret_key.get_secret_value(),
-                session_cookie=f"{config.app.token_id}_app",
+                session_cookie=f"{getattr(config.app, 'token_id', '_fb_')}_app",
                 https_only=config.deployed,
             ),
         )

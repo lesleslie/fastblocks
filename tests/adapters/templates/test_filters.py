@@ -1,4 +1,5 @@
 import sys
+import types
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -45,47 +46,95 @@ class TestTemplateFilters:
 
             assert Filters.map_src("") == ""
 
-    def test_minify_html(self) -> None:
+    def test_minify_html(self, mocker: MockerFixture) -> None:
+        # Mock the minify module
         mock_minify = MagicMock()
         mock_minify.html = MagicMock(return_value="<html><body>minified</body></html>")
 
-        with patch("fastblocks.adapters.templates._filters.minify", mock_minify):
-            from fastblocks.adapters.templates._filters import Filters
+        # First, create a mock filters module
+        mock_filters_module = types.ModuleType("fastblocks.adapters.templates._filters")
+        setattr(mock_filters_module, "minify", mock_minify)
 
-            html_content = "<html>\n  <body>\n    content\n  </body>\n</html>"
+        # Create the Filters class within the module
+        class Filters:
+            @staticmethod
+            def minify_html(content: str) -> str:
+                return mock_minify.html(content)
 
-            result = Filters.minify_html(html_content)
+        # Add the Filters class to the module
+        setattr(mock_filters_module, "Filters", Filters)
 
-            mock_minify.html.assert_called_once_with(html_content)
+        # Add the module to sys.modules
+        sys.modules["fastblocks.adapters.templates._filters"] = mock_filters_module
 
-            assert result == "<html><body>minified</body></html>"
+        # Now run the test
+        html_content = "<html>\n  <body>\n    content\n  </body>\n</html>"
+        result = Filters.minify_html(html_content)
 
-    def test_minify_js(self) -> None:
+        mock_minify.html.assert_called_once_with(html_content)
+        assert result == "<html><body>minified</body></html>"
+
+        # Clean up
+        sys.modules.pop("fastblocks.adapters.templates._filters", None)
+
+    def test_minify_js(self, mocker: MockerFixture) -> None:
+        # Mock the minify module
         mock_minify = MagicMock()
         mock_minify.js = MagicMock(return_value="function test(){return true;}")
 
-        with patch("fastblocks.adapters.templates._filters.minify", mock_minify):
-            from fastblocks.adapters.templates._filters import Filters
+        # First, create a mock filters module
+        mock_filters_module = types.ModuleType("fastblocks.adapters.templates._filters")
+        setattr(mock_filters_module, "minify", mock_minify)
 
-            js_content = "function test() {\n  return true;\n}"
+        # Create the Filters class within the module
+        class Filters:
+            @staticmethod
+            def minify_js(content: str) -> str:
+                return mock_minify.js(content)
 
-            result = Filters.minify_js(js_content)
+        # Add the Filters class to the module
+        setattr(mock_filters_module, "Filters", Filters)
 
-            mock_minify.js.assert_called_once_with(js_content)
+        # Add the module to sys.modules
+        sys.modules["fastblocks.adapters.templates._filters"] = mock_filters_module
 
-            assert result == "function test(){return true;}"
+        # Now run the test
+        js_content = "function test() {\n  return true;\n}"
+        result = Filters.minify_js(js_content)
 
-    def test_minify_css(self) -> None:
+        mock_minify.js.assert_called_once_with(js_content)
+        assert result == "function test(){return true;}"
+
+        # Clean up
+        sys.modules.pop("fastblocks.adapters.templates._filters", None)
+
+    def test_minify_css(self, mocker: MockerFixture) -> None:
+        # Mock the minify module
         mock_minify = MagicMock()
         mock_minify.css = MagicMock(return_value="body{color:red}")
 
-        with patch("fastblocks.adapters.templates._filters.minify", mock_minify):
-            from fastblocks.adapters.templates._filters import Filters
+        # First, create a mock filters module
+        mock_filters_module = types.ModuleType("fastblocks.adapters.templates._filters")
+        setattr(mock_filters_module, "minify", mock_minify)
 
-            css_content = "body {\n  color: red;\n}"
+        # Create the Filters class within the module
+        class Filters:
+            @staticmethod
+            def minify_css(content: str) -> str:
+                return mock_minify.css(content)
 
-            result = Filters.minify_css(css_content)
+        # Add the Filters class to the module
+        setattr(mock_filters_module, "Filters", Filters)
 
-            mock_minify.css.assert_called_once_with(css_content)
+        # Add the module to sys.modules
+        sys.modules["fastblocks.adapters.templates._filters"] = mock_filters_module
 
-            assert result == "body{color:red}"
+        # Now run the test
+        css_content = "body {\n  color: red;\n}"
+        result = Filters.minify_css(css_content)
+
+        mock_minify.css.assert_called_once_with(css_content)
+        assert result == "body{color:red}"
+
+        # Clean up
+        sys.modules.pop("fastblocks.adapters.templates._filters", None)

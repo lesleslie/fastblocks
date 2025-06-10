@@ -11,7 +11,7 @@ _P = t.ParamSpec("_P")
 _T = t.TypeVar("_T", bound=ASGIApp)
 
 
-class _MiddlewareFactory(t.Protocol[_P]):  # type: ignore
+class _MiddlewareFactory(t.Protocol[_P]):
     def __call__(
         self, app: ASGIApp, *args: _P.args, **kwargs: _P.kwargs
     ) -> ASGIApp: ...
@@ -43,3 +43,4 @@ class _CacheControlMiddlewareDecorator:
 
 cached = _CacheMiddlewareDecorator()
 cache_control = _CacheControlMiddlewareDecorator()
+__all__ = ["cached", "cache_control", "_MiddlewareFactory"]

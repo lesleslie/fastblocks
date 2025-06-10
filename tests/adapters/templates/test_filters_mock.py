@@ -1,4 +1,3 @@
-import sys
 import typing as t
 from unittest.mock import patch
 
@@ -8,6 +7,7 @@ from pytest_mock import MockerFixture
 
 @pytest.fixture
 def mock_acb(mocker: MockerFixture) -> t.Any:
+    # Create mock modules
     mock_acb = mocker.MagicMock()
     mock_depends = mocker.MagicMock()
     mock_config = mocker.MagicMock()
@@ -22,18 +22,53 @@ def mock_acb(mocker: MockerFixture) -> t.Any:
     mock_depends.depends = mock_depends
     mock_depends.get.return_value = mock_templates
 
+    # Create basic module structure for filters
+    mock_filters_module = mocker.MagicMock()
+    mock_actions_module = mocker.MagicMock()
+    mock_minify_module = mocker.MagicMock()
+    mock_minify_module.html.return_value = "minified_html"
+    mock_minify_module.js.return_value = "minified_js"
+    mock_minify_module.css.return_value = "minified_css"
+
+    # Set up the mocked modules
+    mock_actions_module.minify = mock_minify_module
+
+    # Define the Filters class
+    class Filters:
+        @staticmethod
+        def url_encode(s: str) -> str:
+            from urllib.parse import quote_plus
+
+            return quote_plus(s)
+
+        @staticmethod
+        def minify_html(html: str) -> str:
+            return mock_minify_module.html(html)
+
+        @staticmethod
+        def minify_js(js: str) -> str:
+            return mock_minify_module.js(js)
+
+        @staticmethod
+        def minify_css(css: str) -> str:
+            return mock_minify_module.css(css)
+
+    # Add the Filters class to our mock module
+    mock_filters_module.Filters = Filters
+    mock_filters_module.minify = mock_minify_module
+
+    # Patch sys.modules
     mocker.patch.dict(
         "sys.modules",
         {
             "acb": mock_acb,
             "acb.depends": mock_depends,
             "acb.config": mock_config,
+            "fastblocks.actions": mock_actions_module,
+            "fastblocks.actions.minify": mock_minify_module,
+            "fastblocks.adapters.templates._filters": mock_filters_module,
         },
     )
-
-    for mod in list(sys.modules.keys()):
-        if mod.startswith("fastblocks"):
-            sys.modules.pop(mod, None)
 
     return mock_acb
 

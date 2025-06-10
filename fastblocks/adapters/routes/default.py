@@ -16,8 +16,7 @@ from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 
 from ._base import RoutesBase, RoutesBaseSettings
 
-Templates = import_adapter()  # type: ignore
-
+Templates = import_adapter()
 base_routes_path = AsyncPath(root_path / "routes.py")
 
 
@@ -83,7 +82,7 @@ class Routes(RoutesBase):
         return PlainTextResponse(txt, 200)
 
     @depends.inject
-    async def init(self) -> None:  # type: ignore
+    async def init(self) -> None:
         self.routes.extend(
             [
                 Route("/favicon.ico", endpoint=self.favicon, methods=["GET"]),

@@ -78,7 +78,11 @@ routes = [
 
 ### Template Fragments for HTMX
 
-FastBlocks is designed to work with HTMX and template fragments:
+FastBlocks is designed to work seamlessly with HTMX for dynamic UI updates without full page reloads. The template system supports two approaches to fragments:
+
+#### 1. Fragment Files
+
+You can create separate template files for fragments:
 
 ```python
 async def get_user_list(request):
@@ -109,6 +113,153 @@ And in your fragment template (`blocks/user_list.html`):
     [% endfor %]
 </ul>
 ```
+
+#### 2. Named Template Blocks
+
+You can also use named blocks within a single template file:
+
+```python
+async def get_user_details(request):
+    user_id = request.path_params["user_id"]
+    user = await get_user_from_database(user_id)
+
+    # Render just the user_details block from the user_profile.html template
+    return await templates.app.render_template_block(
+        request,
+        "user_profile.html",
+        "user_details_block",
+        context={"user": user}
+    )
+
+routes = [
+    Route("/users/{user_id}/details", endpoint=get_user_details)
+]
+```
+
+Template with named blocks (`user_profile.html`):
+
+```html
+[% block user_details_block %]
+<div class="user-details">
+    <h2>[[ user.full_name ]]</h2>
+    <p><strong>Email:</strong> [[ user.email ]]</p>
+    <p><strong>Joined:</strong> [[ user.joined_date | datetime("%B %d, %Y") ]]</p>
+</div>
+[% endblock %]
+
+[% block user_stats_block %]
+<div class="user-stats">
+    <h3>Activity Stats</h3>
+    <p><strong>Posts:</strong> [[ user.post_count ]]</p>
+    <p><strong>Comments:</strong> [[ user.comment_count ]]</p>
+</div>
+[% endblock %]
+```
+
+### HTMX Integration Patterns
+
+FastBlocks works particularly well with these HTMX patterns:
+
+#### 1. Lazy Loading
+
+Load content only when needed:
+
+```html
+<!-- Load user details when tab is clicked -->
+<button
+    hx-get="/users/123/details"
+    hx-target="#user-details-container"
+    hx-trigger="click">
+    User Details
+</button>
+
+<div id="user-details-container"></div>
+```
+
+#### 2. Form Submission
+
+Submit forms without page refresh:
+
+```html
+<form hx-post="/users/create" hx-swap="outerHTML">
+    <input type="text" name="username" placeholder="Username">
+    <input type="email" name="email" placeholder="Email">
+    <button type="submit">Create User</button>
+</form>
+```
+
+Server-side handler:
+
+```python
+async def create_user(request):
+    form_data = await request.form()
+    username = form_data.get("username")
+    email = form_data.get("email")
+
+    # Create user in database...
+
+    # Return success message template fragment
+    return await templates.app.render_template(
+        request, "blocks/user_created.html",
+        context={"username": username}
+    )
+```
+
+#### 3. Real-time Search
+
+Provide search results as the user types:
+
+```html
+<input
+    type="search"
+    name="q"
+    placeholder="Search users..."
+    hx-get="/users/search"
+    hx-trigger="keyup changed delay:500ms"
+    hx-target="#search-results">
+
+<div id="search-results"></div>
+```
+
+#### 4. Infinite Scroll
+
+Load more content when user scrolls to the bottom:
+
+```html
+<div id="user-list">
+    <!-- Initial users loaded here -->
+</div>
+
+<div
+    hx-get="/users?page=2"
+    hx-trigger="revealed"
+    hx-target="#user-list"
+    hx-swap="beforeend">
+    Loading more users...
+</div>
+```
+
+### HTMX Response Headers
+
+You can set HTMX-specific response headers to control client behavior:
+
+```python
+async def user_action(request):
+    # Perform user action...
+
+    response = await templates.app.render_template(
+        request, "blocks/action_success.html"
+    )
+
+    # Set HTMX-specific headers
+    response.headers["HX-Trigger"] = "userUpdated"  # Trigger client-side events
+    response.headers["HX-Push-Url"] = "/users/profile"  # Update browser URL
+    response.headers["HX-Redirect"] = "/dashboard"  # Redirect after request
+
+    return response
+```
+
+For more information on HTMX integration, see the [official HTMX documentation](https://htmx.org/docs/).
 
 ## Template Loaders
 
@@ -187,8 +338,38 @@ The Templates adapter includes several built-in filters:
 - **`filesize`**: Format file sizes
 - **`truncate`**: Truncate text to a specific length
 - **`markdown`**: Render Markdown text as HTML
+- **`minify_html`**: Minify HTML content
+- **`minify_css`**: Minify CSS content
+- **`minify_js`**: Minify JavaScript content
+- **`map_src`**: URL-encode strings for use in URLs
 
-You can add custom filters:
+### Using Built-in Filters
+
+```html
+<!-- Format a date -->
+<p>Published: [[ article.published_date | datetime("%Y-%m-%d") ]]</p>
+
+<!-- Format a file size -->
+<p>Size: [[ file.size | filesize ]]</p>
+
+<!-- Truncate text -->
+<p>[[ article.content | truncate(100) ]]</p>
+
+<!-- Render markdown -->
+<div>[[ article.body | markdown ]]</div>
+
+<!-- Minify inline CSS -->
+<style>[[ styles | minify_css ]]</style>
+
+<!-- Minify inline JavaScript -->
+<script>[[ scripts | minify_js ]]</script>
+```
+
+### Creating Custom Filters
+
+You can add custom filters in several ways:
+
+#### 1. Using the filter decorator
 
 ```python
 import typing as t
@@ -200,7 +381,75 @@ templates = depends.get(Templates)
 
 @templates.filter()
 def uppercase(text: str) -> str:
+    """Convert text to uppercase."""
     return text.upper()
+
+@templates.filter(name="reverse")
+def reverse_text(text: str) -> str:
+    """Reverse the characters in a string."""
+    return text[::-1]
+```
+
+#### 2. Registering a filter function
+
+```python
+def pluralize(count: int, singular: str, plural: str = None) -> str:
+    """Return singular or plural form based on count."""
+    if count == 1:
+        return singular
+    if plural is None:
+        return singular + "s"
+    return plural
+
+# Register the filter
+templates.add_filter("pluralize", pluralize)
+```
+
+#### 3. Creating a filters module
+
+For more complex scenarios, create a dedicated filters module:
+
+```python
+# myapp/templates/filters.py
+import typing as t
+from datetime import datetime
+
+class CustomFilters:
+    @staticmethod
+    def relative_time(dt: datetime) -> str:
+        """Format a datetime as a relative time string (e.g., '2 hours ago')."""
+        now = datetime.now()
+        diff = now - dt
+
+        seconds = diff.total_seconds()
+        if seconds < 60:
+            return "just now"
+        if seconds < 3600:
+            minutes = int(seconds / 60)
+            return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+        if seconds < 86400:
+            hours = int(seconds / 3600)
+            return f"{hours} hour{'s' if hours != 1 else ''} ago"
+
+        days = int(seconds / 86400)
+        return f"{days} day{'s' if days != 1 else ''} ago"
+
+# Then in your app initialization
+from myapp.templates.filters import CustomFilters
+
+for name in dir(CustomFilters):
+    if not name.startswith("_") and callable(getattr(CustomFilters, name)):
+        templates.add_filter(name, getattr(CustomFilters, name))
+```
+
+### Using Custom Filters in Templates
+
+Once registered, you can use your custom filters in templates:
+
+```html
+<h1>[[ title | uppercase ]]</h1>
+<p>[[ count | pluralize("item", "items") ]]</p>
+<p>Posted [[ article.created_at | relative_time ]]</p>
 ```
 
 ## Customization
