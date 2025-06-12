@@ -36,7 +36,7 @@ async def safe_uptodate(uptodate_func: t.Any) -> bool:
     return True
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_templates_base_settings_cache_timeout_deployed(config: Config) -> None:
     config.deployed = True
     settings = MockTemplatesBaseSettings()
@@ -44,7 +44,7 @@ async def test_templates_base_settings_cache_timeout_deployed(config: Config) ->
     assert settings.cache_timeout == 300
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_templates_base_settings_cache_timeout_not_deployed(
     config: Config,
 ) -> None:
@@ -54,7 +54,7 @@ async def test_templates_base_settings_cache_timeout_not_deployed(
     assert settings.cache_timeout == 1
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_get_searchpath(
     templates: TemplatesBase, mock_adapter: type, tmp_path: Path
 ) -> None:
@@ -69,7 +69,7 @@ async def test_get_searchpath(
         assert result[3] == path / "base"
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_get_searchpaths(
     templates: TemplatesBase, mock_adapter: type, tmp_path: Path
 ) -> None:
@@ -94,7 +94,7 @@ async def test_get_searchpaths(
     assert result[3] == AsyncPath(tmp_path / "templates" / "app" / "base")
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_get_storage_path_templates(
     templates: TemplatesBase, tmp_path: Path
 ) -> None:
@@ -103,7 +103,7 @@ async def test_get_storage_path_templates(
     assert result == AsyncPath("templates/test/file.txt")
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_get_storage_path_underscore_templates(
     templates: TemplatesBase, tmp_path: Path
 ) -> None:
@@ -112,7 +112,7 @@ async def test_get_storage_path_underscore_templates(
     assert result == AsyncPath("_templates/path/test/file.txt")
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_get_cache_key(templates: TemplatesBase, tmp_path: Path) -> None:
     path = AsyncPath(tmp_path / "some" / "path" / "test" / "file.txt")
     with patch.object(

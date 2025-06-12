@@ -165,7 +165,7 @@ def mock_storage() -> AsyncMock:
     return storage
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_choice_loader_get_source_async_first_loader_exists(
     config: MockConfig, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -205,7 +205,7 @@ async def test_choice_loader_get_source_async_first_loader_exists(
     assert uptodate()
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_choice_loader_get_source_async_second_loader_exists(
     config: MockConfig, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:

@@ -587,7 +587,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.20.15"
+version = "0.20.17"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "autotyping" },
@@ -609,9 +609,9 @@ dependencies = [
     { name = "typer" },
     { name = "uv" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/06/4d844fba4b61c05e8da4fd1743b1da6a88a3169541428a256451d2091420/crackerjack-0.20.15.tar.gz", hash = "sha256:cf5e4293d57d82bece72a73cc4a62da53c7e0d1476dcaadcdb529d760307b8ad", size = 61413, upload-time = "2025-06-10T22:27:36.727Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9e/53/0c49950c5a2eb42603a0a03f1e38b1249647530146929443d20fa6db5c73/crackerjack-0.20.17.tar.gz", hash = "sha256:9d237c1d69ac0bacaad13c70b175de3b854fe9d182201b5e35f60a6a3a0731d3", size = 61408, upload-time = "2025-06-12T00:33:43.291Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ae/ce/9afc10c2ecb223111c3abde6a8685a1fb0af42a791c703ed8890d2e8aac1/crackerjack-0.20.15-py3-none-any.whl", hash = "sha256:bba86fbb0616dabad98585717d266803c935eb7d50e785671211f293d7468cf7", size = 48296, upload-time = "2025-06-10T22:27:35.156Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/36/6b074145b0e5ac37eccd937a55e054cd27c4af233a9dd94381fe5aa68e72/crackerjack-0.20.17-py3-none-any.whl", hash = "sha256:4ce30b2f7ea392a0188d19b12a3cf2e4a26e9eda7deacbb01fe95c3352af6608", size = 48302, upload-time = "2025-06-12T00:33:40.071Z" },
 ]
 
 [[package]]
@@ -756,7 +756,7 @@ wheels = [
 
 [[package]]
 name = "fastblocks"
-version = "0.12.6"
+version = "0.12.7"
 source = { editable = "." }
 dependencies = [
     { name = "acb", extra = ["cache", "monitoring", "requests", "storage"] },
@@ -784,7 +784,6 @@ admin = [
 dev = [
     { name = "crackerjack" },
     { name = "pytest" },
-    { name = "pytest-anyio" },
     { name = "pytest-benchmark" },
 ]
 monitoring = [
@@ -808,14 +807,13 @@ requires-dist = [
     { name = "asgi-htmx", specifier = ">=0.1" },
     { name = "asgi-sitemaps", marker = "extra == 'sitemap'", specifier = ">=1" },
     { name = "brotli-asgi", specifier = ">=1.4" },
-    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.20.15" },
+    { name = "crackerjack", marker = "extra == 'dev'", specifier = ">=0.20.17" },
     { name = "granian", extras = ["reload"], specifier = ">=2.3.3" },
     { name = "logfire", extras = ["starlette"], marker = "extra == 'monitoring'", specifier = ">=3.7.1" },
     { name = "minify-html", specifier = ">=0.16.4" },
     { name = "pydantic", specifier = ">=2.11.5" },
     { name = "pyfiglet", specifier = ">=1.0.3" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4" },
-    { name = "pytest-anyio", marker = "extra == 'dev'", specifier = ">=0" },
     { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=5.1" },
     { name = "rcssmin", specifier = ">=1.2.1" },
     { name = "rjsmin", specifier = ">=1.2.4" },
@@ -2304,19 +2302,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fb/aa/405082ce2749be5398045152251ac69c0f3578c7077efc53431303af97ce/pytest-8.4.0.tar.gz", hash = "sha256:14d920b48472ea0dbf68e45b96cd1ffda4705f33307dcc86c676c1b5104838a6", size = 1515232, upload-time = "2025-06-02T17:36:30.03Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2f/de/afa024cbe022b1b318a3d224125aa24939e99b4ff6f22e0ba639a2eaee47/pytest-8.4.0-py3-none-any.whl", hash = "sha256:f40f825768ad76c0977cbacdf1fd37c6f7a468e460ea6a0636078f8972d4517e", size = 363797, upload-time = "2025-06-02T17:36:27.859Z" },
-]
-
-[[package]]
-name = "pytest-anyio"
-version = "0.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "anyio" },
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/00/44/a02e5877a671b0940f21a7a0d9704c22097b123ed5cdbcca9cab39f17acc/pytest-anyio-0.0.0.tar.gz", hash = "sha256:b41234e9e9ad7ea1dbfefcc1d6891b23d5ef7c9f07ccf804c13a9cc338571fd3", size = 1560, upload-time = "2021-06-29T22:57:30.846Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c6/25/bd6493ae85d0a281b6a0f248d0fdb1d9aa2b31f18bcd4a8800cf397d8209/pytest_anyio-0.0.0-py2.py3-none-any.whl", hash = "sha256:dc8b5c4741cb16ff90be37fddd585ca943ed12bbeb563de7ace6cd94441d8746", size = 1999, upload-time = "2021-06-29T22:57:29.158Z" },
 ]
 
 [[package]]

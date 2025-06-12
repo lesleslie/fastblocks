@@ -1,4 +1,4 @@
-from minify_html import minify as min_html
+from minify_html import minify as min_html  # type: ignore
 from rcssmin import cssmin as min_css
 from rjsmin import jsmin as min_js
 

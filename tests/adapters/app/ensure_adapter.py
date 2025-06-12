@@ -1,10 +1,11 @@
 """Common module for app adapter test fixtures."""
 # pyright: reportAttributeAccessIssue=false, reportFunctionMemberAccess=false, reportMissingParameterType=false, reportUnknownParameterType=false, reportArgumentType=false, reportMissingTypeArgument=false, reportUntypedFunctionDecorator=false
 
+import inspect
 import sys
 import types
 import typing as t
-from contextlib import suppress
+from contextlib import asynccontextmanager, suppress
 
 
 def create_adapter_modules() -> dict[str, types.ModuleType]:  # noqa: C901
@@ -36,10 +37,10 @@ def create_adapter_modules() -> dict[str, types.ModuleType]:  # noqa: C901
             self.style = "bulma"
             self.theme = "light"
 
+    @t.runtime_checkable
     class AppProtocol(t.Protocol):
         """Protocol for app adapters."""
 
-        @t.runtime_checkable
         def __call__(self) -> None:
             """Make protocol callable."""
             ...
@@ -101,13 +102,16 @@ def create_adapter_modules() -> dict[str, types.ModuleType]:  # noqa: C901
             """Post-startup tasks."""
             # Call any registered hooks
             for hook in self._hooks:
-                await hook() if t.iscoroutinefunction(hook) else hook()
+                await hook() if inspect.iscoroutinefunction(hook) else hook()
 
+        @asynccontextmanager
         async def lifespan(self, app: object) -> t.AsyncIterator[None]:
             """App lifespan handler."""
             with suppress(Exception):
+                # Suppress exceptions for testing but still yield
                 await self.post_startup()
-                yield
+            # Always yield to ensure the context manager works
+            yield
 
     class FastBlocks:
         """FastBlocks ASGI application."""
@@ -145,23 +149,12 @@ def ensure_adapter_modules() -> dict[str, types.ModuleType]:
     # Create modules if not present
     modules = {}
 
-    if "fastblocks.adapters.app._base" not in sys.modules:
-        # Create modules
-        adapter_modules = create_adapter_modules()
+    # Always create fresh modules for testing to avoid interference
+    adapter_modules = create_adapter_modules()
 
-        # Register with sys.modules
-        for name, module in adapter_modules.items():
-            sys.modules[name] = module
-            modules[name] = module
-    else:
-        # Use existing modules
-        for name in (
-            "fastblocks",
-            "fastblocks.adapters",
-            "fastblocks.adapters.app",
-            "fastblocks.adapters.app._base",
-            "fastblocks.adapters.app.default",
-        ):
-            modules[name] = sys.modules[name]
+    # Register with sys.modules
+    for name, module in adapter_modules.items():
+        sys.modules[name] = module
+        modules[name] = module
 
     return modules

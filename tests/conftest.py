@@ -189,7 +189,7 @@ def _create_acb_classes(MockDebugSettings: type) -> tuple[type, type, type, Any]
             pass
 
     class Settings:
-        def __init__(self) -> None:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
             self.debug = {}
 
     class AdapterBase:
@@ -363,7 +363,7 @@ def pytest_configure(config) -> None:
         "markers", "cli_coverage: mark test as measuring CLI coverage"
     )
 
-    # Patch anyio.Path to use our MockAsyncPath implementation
+    # Patch anyio.Path to use our MockAsyncPath implementation for existing code that still uses it
     # This prevents filesystem access when using anyio.Path
     from contextlib import suppress
 
@@ -451,7 +451,7 @@ class MockAsyncPath:
             base = self._path
         return MockAsyncPath(f"{base}{suffix}")
 
-    async def iterdir(self):
+    def iterdir(self):
         """Mock implementation of iterdir that returns an async iterator."""
 
         class AsyncIterator:
@@ -473,6 +473,14 @@ class MockAsyncPath:
 
     async def glob(self, pattern: str) -> list["MockAsyncPath"]:
         return []
+
+    def read_text(self, encoding: str = "utf-8") -> str:
+        """Mock implementation of read_text."""
+        return "mock file content"
+
+    async def read_text_async(self, encoding: str = "utf-8") -> str:
+        """Mock async implementation of read_text."""
+        return "mock file content"
 
 
 class MockAdapter:
@@ -1462,6 +1470,7 @@ def _setup_fastblocks_module_structure() -> None:
         module_structure["fastblocks.adapters.templates.jinja2"]
     )
     _setup_admin_base_module(module_structure["fastblocks.adapters.admin._base"])
+    _setup_routes_module(module_structure["fastblocks.adapters.routes"])
 
     # Set up module paths and inheritance
     for module_name, module in module_structure.items():
@@ -1494,6 +1503,19 @@ def _setup_fastblocks_module_structure() -> None:
                 for attr_name in dir(base_module):
                     if not attr_name.startswith("_") or attr_name == "__all__":
                         setattr(parent, attr_name, getattr(base_module, attr_name))
+
+
+def _setup_routes_module(routes_module: ModuleType) -> None:
+    """Set up the routes module with necessary attributes."""
+    # Create a mock default module that the routes module can expose
+    mock_default = types.ModuleType("fastblocks.adapters.routes.default")
+
+    # Add mock attributes to the default module
+    mock_default.MockRouter = MagicMock()
+    mock_default.RoutesAdapter = MagicMock()
+
+    # Set the default attribute on the routes module
+    setattr(routes_module, "default", mock_default)
 
 
 def _setup_admin_base_module(admin_base: ModuleType) -> None:
@@ -1796,7 +1818,7 @@ def _setup_templates_filters_module(templates_filters: ModuleType) -> None:
 
 
 def _create_mock_minify():
-    """Create a mock minify module with real functions."""
+    """Create a mock minify module with simple functions."""
     mock_minify = MagicMock()
 
     def mock_html(content: str) -> str:
@@ -1868,22 +1890,8 @@ def _setup_filters_module_attributes(
     setattr(templates_filters, "Filters", filters_class)
     setattr(templates_filters, "t", t)
 
-    # Add fastblocks.actions.minify reference - only for templates filter tests
-    # Don't mock if we're running minify action tests
-    if not _is_minify_action_test():
-        fastblocks_actions_minify = types.ModuleType("fastblocks.actions.minify")
-        fastblocks_actions_minify.html = mock_minify.html
-        fastblocks_actions_minify.js = mock_minify.js
-        fastblocks_actions_minify.css = mock_minify.css
-        # Add the minify object that tests expect to import
-        fastblocks_actions_minify.minify = mock_minify
-        sys.modules["fastblocks.actions.minify"] = fastblocks_actions_minify
-
-        # Create fastblocks.actions module if it doesn't exist
-        if "fastblocks.actions" not in sys.modules:
-            fastblocks_actions = types.ModuleType("fastblocks.actions")
-            fastblocks_actions.minify = fastblocks_actions_minify
-            sys.modules["fastblocks.actions"] = fastblocks_actions
+    # Note: Template filter tests that need minify mocking should use their own fixtures
+    # (see test_filters_mock.py) rather than global mocking that interferes with real minify tests
 
 
 # We're no longer mocking the module structure

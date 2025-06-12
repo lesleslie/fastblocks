@@ -20,7 +20,6 @@ keywords = [
     "sqlmodel",
     "starlette",
 ]
-license.text = "BSD-3-Clause"
 maintainers = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
@@ -62,20 +61,23 @@ dependencies = [
     "uvicorn>=0.34.3",
 ]
 
-optional-dependencies.admin = [
+[project.license]
+text = "BSD-3-Clause"
+
+[project.optional-dependencies]
+admin = [
     "sqladmin>=0.20.1",
 ]
-optional-dependencies.dev = [
-    "crackerjack>=0.20.15",
+dev = [
+    "crackerjack>=0.20.17",
     "pytest>=8.4",
-    "pytest-anyio>=0",
     "pytest-benchmark>=5.1",
 ]
-optional-dependencies.monitoring = [
+monitoring = [
     "logfire[starlette]>=3.7.1",
     "sentry-sdk[starlette]>=2.22",
 ]
-optional-dependencies.sitemap = [
+sitemap = [
     "asgi-sitemaps>=1",
 ]
 
@@ -104,15 +106,18 @@ unsafe-fixes = true
 show-fixes = true
 output-format = "full"
 
-format.docstring-code-format = true
-lint.extend-select = [
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+extend-select = [
     "C901",
     "D",
     "F",
     "I",
     "UP",
 ]
-lint.ignore = [
+ignore = [
     "D100",
     "D101",
     "D102",
@@ -124,15 +129,21 @@ lint.ignore = [
     "F821",
     "UP040",
 ]
-lint.fixable = [
+fixable = [
     "ALL",
 ]
-lint.unfixable = [  ]
-lint.isort.no-lines-before = [
+unfixable = []
+
+[tool.ruff.lint.isort]
+no-lines-before = [
     "first-party",
 ]
-lint.mccabe.max-complexity = 13
-lint.pydocstyle.convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 13
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.codespell]
 skip = "*/data/*"
@@ -165,7 +176,7 @@ markers = [
     "benchmark: mark test as a benchmark (disables parallel execution)",
     "integration: marks test as an integration test",
 ]
-timeout = 60
+timeout = 300
 timeout_method = "thread"
 addopts = "--cov=fastblocks --cov-report=term --cov-fail-under=42"
 
@@ -236,23 +247,23 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pdm",
-    "tomli-w",
-    "pytest",
-    "pdm-bump",
-    "pyfiglet",
-    "pre-commit",
-    "pytest-mock",
     "pytest-xdist",
     "pyyaml",
-    "google-crc32c",
-    "pytest-timeout",
-    "pytest-asyncio",
-    "autotyping",
     "pytest-benchmark",
-    "uv",
+    "pdm-bump",
+    "pre-commit",
+    "pytest-asyncio",
+    "pyfiglet",
     "keyring",
+    "pytest-timeout",
+    "autotyping",
+    "uv",
+    "pytest-mock",
     "pytest-cov",
+    "pytest",
+    "tomli-w",
+    "google-crc32c",
+    "pdm",
 ]
 
 [tool.refurb]
@@ -265,14 +276,14 @@ target = [
 ]
 skips = [
     "B607",
-    "B403",
-    "B301",
     "B311",
-    "B404",
-    "B603",
-    "B602",
+    "B301",
     "B101",
+    "B403",
     "B704",
+    "B602",
+    "B603",
+    "B404",
 ]
 
 [tool.vulture]

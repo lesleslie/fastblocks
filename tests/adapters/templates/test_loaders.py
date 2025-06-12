@@ -35,7 +35,7 @@ class MockUptodate:
         return True
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_file_system_loader_get_source_async_file_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -63,7 +63,7 @@ async def test_file_system_loader_get_source_async_file_exists(
     assert uptodate()
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_file_system_loader_get_source_async_file_not_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -78,7 +78,7 @@ async def test_file_system_loader_get_source_async_file_not_exists(
     assert True
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_file_system_loader_get_source_async_storage_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -107,7 +107,7 @@ async def test_file_system_loader_get_source_async_storage_exists(
     assert uptodate()
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_file_system_loader_get_source_async_storage_exists_deployed(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -140,7 +140,7 @@ async def test_file_system_loader_get_source_async_storage_exists_deployed(
     config.deployed = False
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_file_system_loader_list_templates_async(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -163,7 +163,7 @@ async def test_file_system_loader_list_templates_async(
     assert set(templates) == {"test1.html", "test2.html", "subdir/test3.html"}
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_single_path_loader(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -191,7 +191,7 @@ async def test_single_path_loader(
     assert uptodate()
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_storage_loader_get_source_async_storage_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -219,7 +219,7 @@ async def test_storage_loader_get_source_async_storage_exists(
     assert uptodate()
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_storage_loader_get_source_async_storage_not_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -235,7 +235,7 @@ async def test_storage_loader_get_source_async_storage_not_exists(
     assert True
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_storage_loader_list_templates_async(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:

@@ -29,7 +29,8 @@ class MockCacheMiddleware:
 
         mock_depends = sys.modules.get("acb.depends")
         if mock_depends and hasattr(mock_depends, "get"):
-            self.cache = mock_depends.get()
+            # Pass a mock class to the get method
+            self.cache = mock_depends.get(MagicMock)
         else:
             self.cache = MagicMock()
 

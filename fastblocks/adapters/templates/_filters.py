@@ -1,8 +1,12 @@
+import sys
+from pathlib import Path
 from urllib.parse import quote_plus
 
 from acb.config import Config
 from acb.depends import depends
-from fastblocks.actions.minify import minify
+
+sys.path.insert(0, str(Path(__file__).parent / "../.."))
+from actions.minify import minify
 
 
 class Filters:

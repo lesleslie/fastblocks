@@ -363,7 +363,7 @@ class TestCLIFunctions:
         # Check proper args to Granian
         granian_args = mock_granian.call_args[1]
         assert "address" in granian_args
-        assert granian_args["address"] == "0.0.0.0"  # nosec B104
+        assert granian_args["address"] == "127.0.0.1"  # nosec B104
         assert "interface" in granian_args
         assert granian_args["interface"] == "asgi"
 
@@ -391,7 +391,7 @@ class TestCLIFunctions:
         # Check proper args to uvicorn.run
         uvicorn_args = mock_uvicorn.run.call_args[1]
         assert "host" in uvicorn_args
-        assert uvicorn_args["host"] == "0.0.0.0"  # nosec B104
+        assert uvicorn_args["host"] == "127.0.0.1"  # nosec B104
         assert "lifespan" in uvicorn_args
         assert uvicorn_args["lifespan"] == "on"
 

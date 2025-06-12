@@ -13,7 +13,7 @@ from tests.conftest import (
 )
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_redis_loader_get_source_async_cache_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -42,7 +42,7 @@ async def test_redis_loader_get_source_async_cache_exists(
     assert uptodate()
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_redis_loader_get_source_async_cache_not_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -61,7 +61,7 @@ async def test_redis_loader_get_source_async_cache_not_exists(
     assert True
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_redis_loader_get_source_async_storage_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
 ) -> None:
@@ -91,7 +91,7 @@ async def test_redis_loader_get_source_async_storage_exists(
     assert True
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_redis_loader_list_templates_async(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -114,7 +114,7 @@ async def test_redis_loader_list_templates_async(
     assert set(templates) == {"test1.html", "test2.html", "subdir/test3.html"}
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_package_loader_get_source_async_file_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -158,7 +158,7 @@ async def test_package_loader_get_source_async_file_exists(
         assert True
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_package_loader_get_source_async_file_not_exists(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:
@@ -187,7 +187,7 @@ async def test_package_loader_get_source_async_file_not_exists(
         assert True
 
 
-@pytest.mark.anyio(backends=["asyncio"])
+@pytest.mark.asyncio
 async def test_package_loader_list_templates_async(
     config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
 ) -> None:

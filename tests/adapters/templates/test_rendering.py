@@ -41,7 +41,7 @@ class TestTemplateRendering:
             ("cached.html", "<html><body>Cached content</body></html>"),
         ],
     )
-    @pytest.mark.anyio(backends=["asyncio"])
+    @pytest.mark.asyncio
     async def test_template_render_pages(
         self,
         mock_templates: TemplatesBase,
@@ -59,7 +59,7 @@ class TestTemplateRendering:
         )
         assert response.body.decode() == expected_content
 
-    @pytest.mark.anyio(backends=["asyncio"])
+    @pytest.mark.asyncio
     async def test_template_render_with_context(
         self,
         mock_templates: TemplatesBase,
@@ -98,7 +98,7 @@ class TestTemplateErrors:
             "missing.html",
         ],
     )
-    @pytest.mark.anyio(backends=["asyncio"])
+    @pytest.mark.asyncio
     async def test_template_not_found(
         self, mock_templates: TemplatesBase, http_request: Request, template_name: str
     ) -> None:
@@ -113,7 +113,7 @@ class TestTemplateCaching:
         template_path.write_text("<html><body>Cached content</body></html>")
         return template_path
 
-    @pytest.mark.anyio(backends=["asyncio"])
+    @pytest.mark.asyncio
     async def test_template_caching(
         self,
         templates: TemplatesBase,
