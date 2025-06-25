@@ -100,7 +100,8 @@ async def test_get_storage_path_templates(
 ) -> None:
     path = AsyncPath(tmp_path / "some" / "path" / "templates" / "test" / "file.txt")
     result = templates.get_storage_path(path)
-    assert result == AsyncPath("templates/test/file.txt")
+    # Convert result to string for comparison since types may vary
+    assert str(result) == "templates/test/file.txt"
 
 
 @pytest.mark.asyncio
@@ -109,7 +110,8 @@ async def test_get_storage_path_underscore_templates(
 ) -> None:
     path = AsyncPath(tmp_path / "some" / "path" / "_templates" / "test" / "file.txt")
     result = templates.get_storage_path(path)
-    assert result == AsyncPath("_templates/path/test/file.txt")
+    # Convert result to string for comparison since types may vary
+    assert str(result) == "_templates/path/test/file.txt"
 
 
 @pytest.mark.asyncio

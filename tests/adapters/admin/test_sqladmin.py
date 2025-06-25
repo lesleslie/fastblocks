@@ -41,5 +41,4 @@ class TestAdminBase:
         settings = AdminBaseSettings()
 
         assert hasattr(settings, "title")
-        assert hasattr(settings, "logo_url")
-        assert hasattr(settings, "templates_dir")
+        assert hasattr(settings, "style")

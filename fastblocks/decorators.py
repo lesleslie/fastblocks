@@ -17,8 +17,8 @@ class _MiddlewareFactory(t.Protocol[_P]):
     ) -> ASGIApp: ...
 
 
-def _wrap_in_middleware(app: _T, middleware: ASGIApp) -> _T:
-    return t.cast(_T, functools.wraps(app, updated=())(middleware))
+def _wrap_in_middleware[T: ASGIApp](app: T, middleware: ASGIApp) -> T:
+    return t.cast(T, functools.wraps(app, updated=())(middleware))
 
 
 class _CacheMiddlewareDecorator:

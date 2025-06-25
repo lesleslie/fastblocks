@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.12.7"
+version = "0.13.0"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -20,6 +20,7 @@ keywords = [
     "sqlmodel",
     "starlette",
 ]
+license.text = "BSD-3-Clause"
 maintainers = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
@@ -42,42 +43,38 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "acb>=0.16.9",
+    "acb>=0.16.11",
     "acb[cache,monitoring,requests,storage]",
     "anyio>=4.9",
     "asgi-htmx>=0.1",
     "brotli-asgi>=1.4",
-    "granian[reload]>=2.3.3",
+    "granian[reload]>=2.3.4",
     "minify-html>=0.16.4",
-    "pydantic>=2.11.5",
+    "pydantic>=2.11.7",
     "pyfiglet>=1.0.3",
     "rcssmin>=1.2.1",
     "rjsmin>=1.2.4",
     "secure>=1.0.1",
     "starception>=1.2.1",
-    "starlette>=0.47",
-    "starlette-async-jinja>=1.9.13",
+    "starlette>=0.47.1",
+    "starlette-async-jinja>=1.10.1",
     "starlette-csrf>=3",
     "uvicorn>=0.34.3",
 ]
 
-[project.license]
-text = "BSD-3-Clause"
-
-[project.optional-dependencies]
-admin = [
+optional-dependencies.admin = [
     "sqladmin>=0.20.1",
 ]
-dev = [
-    "crackerjack>=0.20.17",
-    "pytest>=8.4",
+optional-dependencies.dev = [
+    "crackerjack>=0.20.20",
+    "pytest>=8.4.1",
     "pytest-benchmark>=5.1",
 ]
-monitoring = [
+optional-dependencies.monitoring = [
     "logfire[starlette]>=3.7.1",
     "sentry-sdk[starlette]>=2.22",
 ]
-sitemap = [
+optional-dependencies.sitemap = [
     "asgi-sitemaps>=1",
 ]
 
@@ -106,18 +103,15 @@ unsafe-fixes = true
 show-fixes = true
 output-format = "full"
 
-[tool.ruff.format]
-docstring-code-format = true
-
-[tool.ruff.lint]
-extend-select = [
+format.docstring-code-format = true
+lint.extend-select = [
     "C901",
     "D",
     "F",
     "I",
     "UP",
 ]
-ignore = [
+lint.ignore = [
     "D100",
     "D101",
     "D102",
@@ -129,21 +123,15 @@ ignore = [
     "F821",
     "UP040",
 ]
-fixable = [
+lint.fixable = [
     "ALL",
 ]
-unfixable = []
-
-[tool.ruff.lint.isort]
-no-lines-before = [
+lint.unfixable = [  ]
+lint.isort.no-lines-before = [
     "first-party",
 ]
-
-[tool.ruff.lint.mccabe]
-max-complexity = 13
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+lint.mccabe.max-complexity = 13
+lint.pydocstyle.convention = "google"
 
 [tool.codespell]
 skip = "*/data/*"
@@ -184,6 +172,8 @@ addopts = "--cov=fastblocks --cov-report=term --cov-fail-under=42"
 disable_gc = true
 warmup = false
 warmup_iterations = 0
+min_rounds = 1
+max_time = 5.0
 
 [tool.coverage.run]
 branch = false
@@ -247,23 +237,23 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-xdist",
-    "pyyaml",
-    "pytest-benchmark",
-    "pdm-bump",
-    "pre-commit",
-    "pytest-asyncio",
-    "pyfiglet",
-    "keyring",
-    "pytest-timeout",
-    "autotyping",
-    "uv",
-    "pytest-mock",
-    "pytest-cov",
     "pytest",
-    "tomli-w",
+    "pytest-xdist",
+    "pyfiglet",
+    "pytest-cov",
+    "autotyping",
+    "pytest-asyncio",
+    "pdm-bump",
     "google-crc32c",
     "pdm",
+    "pyyaml",
+    "tomli-w",
+    "pytest-timeout",
+    "pytest-benchmark",
+    "keyring",
+    "uv",
+    "pytest-mock",
+    "pre-commit",
 ]
 
 [tool.refurb]
@@ -275,15 +265,15 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B607",
-    "B311",
-    "B301",
-    "B101",
     "B403",
-    "B704",
-    "B602",
     "B603",
     "B404",
+    "B101",
+    "B311",
+    "B602",
+    "B607",
+    "B301",
+    "B704",
 ]
 
 [tool.vulture]

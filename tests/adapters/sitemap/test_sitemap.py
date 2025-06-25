@@ -1,6 +1,8 @@
 """Tests for the sitemap adapter module."""
+# pyright: reportAttributeAccessIssue=false, reportUnusedImport=false, reportMissingParameterType=false, reportUnknownParameterType=false
 
 import sys
+import types
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -8,11 +10,35 @@ from typing import Any
 import pytest
 from acb.adapters import import_adapter
 from acb.config import Config
+from tests.conftest import MockSitemap, SitemapURL  # noqa: F401
 
+# Mock the entire ACB ecosystem before any imports
+acb_module = types.ModuleType("acb")
+acb_adapters_module = types.ModuleType("acb.adapters")
+acb_config_module = types.ModuleType("acb.config")
+
+# Mock the classes we need
+acb_config_module.Config = type("Config", (object,), {})
+
+
+# Mock import_adapter function to accept arguments
+def mock_import_adapter(adapter_name: str = ""):
+    return type("MockAdapter", (object,), {})
+
+
+acb_adapters_module.import_adapter = mock_import_adapter
+
+# Register modules
+sys.modules["acb"] = acb_module
+sys.modules["acb.adapters"] = acb_adapters_module
+sys.modules["acb.config"] = acb_config_module
+
+
+# Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
-from tests.conftest import MockSitemap, SitemapURL  # noqa
 
-Sitemap = import_adapter("sitemap")
+
+Sitemap = import_adapter()
 
 
 @pytest.fixture

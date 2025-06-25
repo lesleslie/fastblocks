@@ -58,7 +58,7 @@ def mock_main_dependencies(mocker: MockerFixture, mock_acb: t.Any) -> dict[str, 
     mock_depends.get.side_effect = [mock_app, mock_logger]
 
     mocker.patch("fastblocks.main.register_pkg", mock_register_pkg)
-    mocker.patch("fastblocks.main.depends", mock_depends)
+    mocker.patch("acb.depends.depends", mock_depends)
 
     if "fastblocks.main" in sys.modules:
         del sys.modules["fastblocks.main"]

@@ -1,0 +1,1 @@
+"""FastBlocks auth adapters."""

@@ -31,7 +31,7 @@ class LoaderProtocol(t.Protocol):
     storage: t.Any
 
     async def get_source_async(
-        self, template: str | AsyncPath
+        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
     ) -> tuple[
         str, str | None, t.Callable[[], bool] | t.Callable[[], t.Awaitable[bool]]
     ]: ...
@@ -44,7 +44,12 @@ class FileSystemLoader(AsyncBaseLoader):
     cache: Cache = depends()
     storage: Storage = depends()
 
-    async def get_source_async(self, template: str | AsyncPath) -> SourceType:
+    async def get_source_async(
+        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+    ) -> SourceType:
+        if template is None:
+            template = environment_or_template
+        assert template is not None
         path: AsyncPath | None = None
         for searchpath in self.searchpath:
             path = searchpath / template
@@ -105,8 +110,11 @@ class StorageLoader(AsyncBaseLoader):
     storage: Storage = depends()
 
     async def get_source_async(
-        self, template: str | AsyncPath
+        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
     ) -> tuple[str, str, t.Callable[[], t.Awaitable[bool]]]:
+        if template is None:
+            template = environment_or_template
+        assert template is not None
         path: AsyncPath | None = None
         storage_path: AsyncPath | None = None
         for searchpath in self.searchpath:
@@ -151,13 +159,19 @@ class RedisLoader(AsyncBaseLoader):
     storage: Storage = depends()
 
     async def get_source_async(
-        self, template: str | AsyncPath
+        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
     ) -> tuple[str, str | None, t.Callable[[], t.Awaitable[bool]]]:
+        if template is None:
+            template = environment_or_template
+        assert template is not None
+        template_path: str | AsyncPath = template
         path: AsyncPath | None = None
         cache_key: str | None = None
         storage_path: AsyncPath | None = None
         for searchpath in self.searchpath:
-            path = searchpath / template if searchpath else AsyncPath(template)
+            path = (
+                searchpath / template_path if searchpath else AsyncPath(template_path)
+            )
             storage_path = Templates.get_storage_path(path)
             cache_key = Templates.get_cache_key(storage_path)
             debug(storage_path)
@@ -179,7 +193,11 @@ class RedisLoader(AsyncBaseLoader):
     async def list_templates_async(self) -> list[str]:
         found: list[str] = []
         for ext in ("html", "css", "js"):
-            found.extend([k async for k in self.cache.scan(f"*.{ext}")])
+            scan_result = await self.cache.scan(f"*.{ext}")
+            if hasattr(scan_result, "__aiter__"):
+                found.extend([k async for k in scan_result])
+            else:
+                found.extend(scan_result)
         found.sort()
         return found
 
@@ -200,6 +218,8 @@ class PackageLoader(AsyncBaseLoader):
         self.path = self.package_path / path
         super().__init__(AsyncPath(self.path))
         self.package_name = package_name
+        self._adapter = adapter
+        self._template_root = AsyncPath(".")
         try:
             if package_name.startswith("/"):
                 spec = None
@@ -232,15 +252,17 @@ class PackageLoader(AsyncBaseLoader):
                 f"The {package_name!r} package was not installed in a way that PackageLoader understands."
             )
         self._template_root = AsyncPath(template_root)
-        self._adapter = adapter
 
     async def get_source_async(
-        self, template: str | AsyncPath
+        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
     ) -> tuple[str, str, t.Callable[[], t.Awaitable[bool]]]:
-        template = AsyncPath(template)
-        path = self._template_root / template
+        if template is None:
+            template = environment_or_template
+        assert template is not None
+        template_path: AsyncPath = AsyncPath(template)
+        path = self._template_root / template_path
         if not await path.is_file():
-            raise TemplateNotFound(template.name)
+            raise TemplateNotFound(template_path.name)
         debug(path)
         source = await path.read_bytes()
         mtime = (await path.stat()).st_mtime
@@ -284,7 +306,12 @@ class ChoiceLoader(AsyncBaseLoader):
         super().__init__(searchpath or AsyncPath("templates"))
         self.loaders = loaders
 
-    async def get_source_async(self, template: str | AsyncPath) -> SourceType:
+    async def get_source_async(
+        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+    ) -> SourceType:
+        if template is None:
+            template = environment_or_template
+        assert template is not None
         for loader in self.loaders:
             with suppress(TemplateNotFound):
                 debug(loader.__class__.__name__, template)
@@ -326,6 +353,10 @@ class Templates(TemplatesBase):
     admin: AsyncJinja2Templates | None = None
     enabled_admin: t.Any = get_adapter("admin")
     enabled_app: t.Any = get_adapter("app")
+
+    def __init__(self, **kwargs: t.Any) -> None:
+        super().__init__(**kwargs)
+        self.filters: dict[str, t.Callable[..., t.Any]] = {}
 
     def get_loader(self, template_paths: list[AsyncPath]) -> ChoiceLoader:
         searchpaths: list[AsyncPath] = []
@@ -377,11 +408,12 @@ class Templates(TemplatesBase):
             module = import_module(module_path)
             processor = getattr(module, func_name)
             context_processors.append(processor)
-        env_configs = dict(
-            extensions=_extensions, bytecode_cache=bytecode_cache, enable_async=True
-        )
         templates = AsyncJinja2Templates(
-            AsyncPath("templates"), context_processors=context_processors, **env_configs
+            directory=AsyncPath("templates"),
+            context_processors=context_processors,
+            extensions=_extensions,
+            bytecode_cache=bytecode_cache,
+            enable_async=True,
         )
         loader = self.get_loader(template_paths)
         if loader:
@@ -438,6 +470,45 @@ class Templates(TemplatesBase):
                 return attr_value
         return None
 
+    def _add_filters(self, env: t.Any) -> None:
+        if hasattr(self, "filters") and self.filters:
+            for name, filter_func in self.filters.items():
+                if hasattr(env, "add_filter"):
+                    env.add_filter(filter_func, name)
+                else:
+                    env.filters[name] = filter_func
+
+    async def render_template(
+        self,
+        request: t.Any,
+        template: str,
+        context: dict[str, t.Any] | None = None,
+        status_code: int = 200,
+        headers: dict[str, str] | None = None,
+    ) -> t.Any:
+        """Render a template with the given context."""
+        if context is None:
+            context = {}
+        if headers is None:
+            headers = {}
+
+        templates_env = self.app
+        if templates_env:
+            return await templates_env.TemplateResponse(
+                name=template,
+                context=context,
+                status_code=status_code,
+                headers=headers,
+            )
+        else:
+            from starlette.responses import HTMLResponse
+
+            return HTMLResponse(
+                content=f"<html><body>Template {template} not found</body></html>",
+                status_code=404,
+                headers=headers,
+            )
+
     def filter(
         self, name: str | None = None
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
@@ -449,6 +520,26 @@ class Templates(TemplatesBase):
             return f
 
         return decorator
+
+    def _load_extensions(self) -> list[t.Any]:
+        _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
+        extensions_list = getattr(
+            getattr(self, "settings", None),
+            "extensions",
+            self.config.templates.extensions,
+        )
+        _imported_extensions = [import_module(e) for e in extensions_list]
+        for e in _imported_extensions:
+            _extensions.extend(
+                [
+                    v
+                    for v in vars(e).values()
+                    if isclass(v)
+                    and v.__name__ != "Extension"
+                    and issubclass(v, Extension)
+                ]
+            )
+        return _extensions
 
 
 depends.set(Templates)

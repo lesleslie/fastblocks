@@ -1,14 +1,15 @@
 """Tests for the routes adapter module."""
+# pyright: reportAttributeAccessIssue=false, reportUnusedImport=false, reportMissingParameterType=false, reportUnknownParameterType=false
 
+import sys
 import tempfile
+import types
 from collections.abc import Callable, Generator
 from pathlib import Path
 from typing import Any, Protocol, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
-from acb.config import Config
-from acb.depends import depends
 from asgi_htmx import HtmxMiddleware
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -16,9 +17,55 @@ from starlette.responses import HTMLResponse, PlainTextResponse, Response
 from starlette.routing import Mount, Route
 from starlette.testclient import TestClient
 
-with patch("acb.adapters.import_adapter") as mock_import_adapter:
-    mock_import_adapter.return_value = MagicMock()
-    from fastblocks.adapters.routes import default
+# We need to set up mocks before importing ACB modules
+# This is a special case where imports can't be at the top
+# due to the need to mock modules before they're imported
+
+# Mock the entire ACB ecosystem before any imports
+acb_module = types.ModuleType("acb")
+acb_adapters_module = types.ModuleType("acb.adapters")
+acb_config_module = types.ModuleType("acb.config")
+acb_depends_module = types.ModuleType("acb.depends")
+acb_debug_module = types.ModuleType("acb.debug")
+
+# Mock the classes we need
+acb_config_module.AdapterBase = type("AdapterBase", (object,), {})
+acb_config_module.Settings = type("Settings", (object,), {})
+acb_config_module.Config = type("Config", (object,), {"deployed": False})
+
+
+# Mock import_adapter function
+def mock_import_adapter():
+    return type("MockTemplates", (object,), {})
+
+
+acb_adapters_module.import_adapter = mock_import_adapter
+acb_adapters_module.get_adapters = list
+acb_adapters_module.get_installed_adapter = lambda x: "memory"
+acb_adapters_module.root_path = Path(tempfile.gettempdir())  # Use secure temp directory
+
+# Mock depends
+mock_depends = MagicMock()
+mock_depends.get = MagicMock()
+mock_depends.inject = lambda f: f
+mock_depends.set = MagicMock()
+acb_depends_module.depends = mock_depends
+
+# Mock debug
+acb_debug_module.debug = lambda *args: None
+
+# Register modules
+sys.modules["acb"] = acb_module
+sys.modules["acb.adapters"] = acb_adapters_module
+sys.modules["acb.config"] = acb_config_module
+sys.modules["acb.depends"] = acb_depends_module
+sys.modules["acb.debug"] = acb_debug_module
+
+# Import ACB-dependent modules - we need to disable E402 here
+# because these imports must come after the mock setup
+from acb.config import Config  # noqa: E402
+from acb.depends import depends  # noqa: E402
+from fastblocks.adapters.routes import default  # noqa: E402
 
 
 class MockTemplates:
