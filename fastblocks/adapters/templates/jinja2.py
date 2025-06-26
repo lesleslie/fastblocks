@@ -8,6 +8,7 @@ from inspect import isclass
 from pathlib import Path
 from re import search
 
+from acb import Adapter
 from acb.adapters import get_adapter, import_adapter
 from acb.config import Config
 from acb.debug import debug
@@ -342,21 +343,24 @@ class TemplatesSettings(TemplatesBaseSettings):
     globals: dict[str, t.Any] = {}
     context_processors: list[str] = []
 
-    @depends.inject
-    def __init__(self, models: t.Any = depends(), **data: t.Any) -> None:
+    def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)
-        self.globals["models"] = models
+        try:
+            models = depends.get("models")
+            self.globals["models"] = models
+        except Exception:
+            self.globals["models"] = None
 
 
 class Templates(TemplatesBase):
     app: AsyncJinja2Templates | None = None
     admin: AsyncJinja2Templates | None = None
-    enabled_admin: t.Any = get_adapter("admin")
-    enabled_app: t.Any = get_adapter("app")
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.filters: dict[str, t.Callable[..., t.Any]] = {}
+        self.enabled_admin = get_adapter("admin")
+        self.enabled_app = get_adapter("app")
 
     def get_loader(self, template_paths: list[AsyncPath]) -> ChoiceLoader:
         searchpaths: list[AsyncPath] = []
@@ -385,7 +389,7 @@ class Templates(TemplatesBase):
         self,
         template_paths: list[AsyncPath],
         admin: bool = False,
-        cache: t.Any = depends(),
+        cache: t.Any | None = None,
     ) -> AsyncJinja2Templates:
         _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
         _imported_extensions = [
@@ -440,13 +444,20 @@ class Templates(TemplatesBase):
             templates.env.globals[k] = v  # type: ignore[assignment]
         return templates
 
-    @depends.inject
-    async def init(self, cache: t.Any = depends()) -> None:
-        self.app_searchpaths = await self.get_searchpaths(self.enabled_app)
-        self.app = await self.init_envs(self.app_searchpaths)
+    async def init(self, cache: t.Any | None = None) -> None:
+        if cache is None:
+            try:
+                cache = depends.get("cache")
+            except Exception:
+                cache = None
+        app_adapter = t.cast(Adapter, self.enabled_app)
+        self.app_searchpaths = await self.get_searchpaths(app_adapter)
+        self.app = await self.init_envs(self.app_searchpaths, cache=cache)
         if self.enabled_admin:
             self.admin_searchpaths = await self.get_searchpaths(self.enabled_admin)
-            self.admin = await self.init_envs(self.admin_searchpaths, admin=True)
+            self.admin = await self.init_envs(
+                self.admin_searchpaths, admin=True, cache=cache
+            )
         if self.app and self.app.env.loader and hasattr(self.app.env.loader, "loaders"):
             for loader in self.app.env.loader.loaders:
                 self.logger.debug(f"{loader.__class__.__name__} initialized")

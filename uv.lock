@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "acb"
-version = "0.16.11"
+version = "0.16.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioconsole" },
@@ -29,9 +29,9 @@ dependencies = [
     { name = "toml" },
     { name = "tomli-w" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/db/1b/431fc6041f590238c44052fef8a7f16d9ac18726ef5048f12cf9c3a24c46/acb-0.16.11.tar.gz", hash = "sha256:f8f458f21db037168be060b2dddca79eb0ba615bcb3a571bd12773afec532323", size = 206923, upload-time = "2025-06-16T08:03:54.093Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8c/c4/5f513fe539697d33a4de6c893105ce6f8ceb1b7f920f64f9e290c923d73b/acb-0.16.12.tar.gz", hash = "sha256:98b1c8202f81a47f23e028bd4aae4ac2d366d28a1e56718748da5c65b3e62500", size = 208391, upload-time = "2025-06-26T02:34:06.502Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/25/78/a310e1059cb1a0bbe3ae2061ea9cbd196f1008e1a86bf8f55ddc52fae0ef/acb-0.16.11-py3-none-any.whl", hash = "sha256:d6af495455ec1ee7753043cbea89561657dde2b12493a8e6b9d207cf5299c4b6", size = 153818, upload-time = "2025-06-16T08:03:52.238Z" },
+    { url = "https://files.pythonhosted.org/packages/39/e6/43173c7fc605cd22b57952e024285ed53413afc53dfe5f649afce05dcd09/acb-0.16.12-py3-none-any.whl", hash = "sha256:92c3c3bc3b43b75d2cc6b4b8a049af3703b53386e79f252020a1ebe64811c059", size = 154872, upload-time = "2025-06-26T02:34:04.442Z" },
 ]
 
 [package.optional-dependencies]
@@ -756,7 +756,7 @@ wheels = [
 
 [[package]]
 name = "fastblocks"
-version = "0.12.7"
+version = "0.13.0"
 source = { editable = "." }
 dependencies = [
     { name = "acb", extra = ["cache", "monitoring", "requests", "storage"] },
@@ -801,7 +801,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "acb", specifier = ">=0.16.11" },
+    { name = "acb", specifier = ">=0.16.12" },
     { name = "acb", extras = ["cache", "monitoring", "requests", "storage"] },
     { name = "anyio", specifier = ">=4.9" },
     { name = "asgi-htmx", specifier = ">=0.1" },

@@ -24,23 +24,20 @@ async def test_cache_middleware_initialization() -> None:
     mock_app = MagicMock()
     mock_app.middleware = []
 
-    # Mock the cache
-    mock_cache = MagicMock()
+    # Create the middleware (cache will be None initially)
+    middleware = CacheMiddleware(mock_app)
 
-    # Create the middleware with a mocked cache
-    with patch("acb.depends.depends.get", return_value=mock_cache):
-        middleware = CacheMiddleware(mock_app)
+    # Verify the app was set correctly
+    assert middleware.app is mock_app
+    # Cache should be None initially (lazy initialization)
+    assert middleware.cache is None
 
-        # Verify the app and cache were set correctly
-        assert middleware.app is mock_app
-        assert middleware.cache is not None  # Just verify cache was set
+    # Verify that rules were set to the default
+    assert len(middleware.rules) == 1
 
-        # Verify that rules were set to the default
-        assert len(middleware.rules) == 1
-
-        # Verify that the middleware was not added to the app's middleware list
-        # (this is handled by the application, not the middleware itself)
-        assert mock_app.middleware == []
+    # Verify that the middleware was not added to the app's middleware list
+    # (this is handled by the application, not the middleware itself)
+    assert mock_app.middleware == []
 
 
 @pytest.mark.asyncio
@@ -96,7 +93,7 @@ async def test_cache_middleware_non_http_request() -> None:
     mock_cache = MagicMock()
 
     # Create the middleware with a mocked cache
-    with patch("acb.depends.depends", return_value=mock_cache):
+    with patch("acb.depends.depends.get", return_value=mock_cache):
         middleware = CacheMiddleware(mock_app)
 
         # Call the middleware
@@ -150,7 +147,7 @@ async def test_cache_middleware_http_request() -> None:
             await self.app(scope, receive, send)
 
     # Create the middleware with mocked dependencies
-    with patch("acb.depends.depends", return_value=mock_cache):
+    with patch("acb.depends.depends.get", return_value=mock_cache):
         with patch("fastblocks.caching.CacheResponder", MockCacheResponder):
             middleware = CacheMiddleware(mock_app)
 
@@ -181,7 +178,7 @@ async def test_cache_middleware_duplicate_in_scope() -> None:
     mock_cache = MagicMock()
 
     # Create the middleware with a mocked cache
-    with patch("acb.depends.depends", return_value=mock_cache):
+    with patch("acb.depends.depends.get", return_value=mock_cache):
         middleware = CacheMiddleware(mock_app)
 
         # Call the middleware and expect a DuplicateCaching exception

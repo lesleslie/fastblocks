@@ -1,6 +1,6 @@
 import typing as t
 from base64 import b64encode
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from time import perf_counter
 
 from acb.adapters import get_adapter, import_adapter
@@ -11,6 +11,7 @@ from fastblocks.applications import FastBlocks
 from ._base import AppBase, AppBaseSettings
 
 main_start = perf_counter()
+
 Cache, Storage = import_adapter()
 
 
@@ -33,8 +34,14 @@ class App(FastBlocks, AppBase):
         super().__init__(lifespan=self.lifespan)
 
     async def init(self) -> None:
-        self.templates = depends.get().app
-        self.routes.extend(depends.get("routes").routes)
+        try:
+            templates_adapter = depends.get("templates")
+            self.templates = templates_adapter.app
+        except Exception:
+            self.templates = None
+        with suppress(Exception):
+            routes_adapter = depends.get("routes")
+            self.routes.extend(routes_adapter.routes)
 
     async def post_startup(self) -> None:
         if not self.config.deployed:
@@ -71,8 +78,31 @@ class App(FastBlocks, AppBase):
             raise e
         yield
         self.logger.critical("Application shut down")
-        completer = self.logger.complete()
-        await completer
+        try:
+            import asyncio
+
+            if hasattr(self.logger, "complete"):
+                completer = getattr(self.logger, "complete")()
+            elif hasattr(self.logger, "stop"):
+                completer = getattr(self.logger, "stop")()
+            else:
+                completer = None
+            if completer:
+                await asyncio.wait_for(completer, timeout=1.0)
+        except TimeoutError:
+            self.logger.warning("Logger completion timed out, forcing shutdown")
+        except Exception as e:
+            self.logger.error(f"Logger completion failed: {e}")
+        finally:
+            with suppress(Exception):
+                import asyncio
+
+                loop = asyncio.get_event_loop()
+                tasks = [t for t in asyncio.all_tasks(loop) if not t.done()]
+                if tasks:
+                    self.logger.debug(f"Cancelling {len(tasks)} remaining tasks")
+                    for task in tasks:
+                        task.cancel()
 
 
 depends.set(App)

@@ -2,11 +2,6 @@ import logging
 import typing as t
 from platform import system
 
-from acb import register_pkg
-from acb.adapters import get_installed_adapter
-from acb.config import Config
-from acb.depends import depends
-from acb.logger import InterceptHandler, Logger
 from starception import add_link_template, install_error_handler, set_editor
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -16,7 +11,64 @@ from starlette.types import ASGIApp, ExceptionHandler, Lifespan
 
 from .exceptions import handle_exception
 
-register_pkg()
+depends = None
+
+Config = None
+AdapterBase = None
+InterceptHandler = None
+Logger = None
+
+
+def _import_acb_modules():
+    global Config, AdapterBase, InterceptHandler, Logger, depends
+    if Config is None:
+        from acb import register_pkg
+        from acb.adapters import get_installed_adapter
+        from acb.config import AdapterBase as _AdapterBase
+        from acb.config import Config as _Config
+        from acb.depends import depends as _depends
+        from acb.logger import InterceptHandler as _InterceptHandler
+        from acb.logger import Logger as _Logger
+
+        Config = _Config
+        AdapterBase = _AdapterBase
+        InterceptHandler = _InterceptHandler
+        Logger = _Logger
+        depends = _depends
+        return (
+            register_pkg,
+            get_installed_adapter,
+            Config,
+            AdapterBase,
+            InterceptHandler,
+            Logger,
+            depends,
+        )
+    else:
+        from acb import register_pkg
+        from acb.adapters import get_installed_adapter
+
+        return (
+            register_pkg,
+            get_installed_adapter,
+            Config,
+            AdapterBase,
+            InterceptHandler,
+            Logger,
+            depends,
+        )
+
+
+class FastBlocksSettings:
+    def __init_subclass__(cls, **kwargs: t.Any) -> None:
+        _, _, _Config, AdapterBase, _InterceptHandler, _Logger, _depends = (
+            _import_acb_modules()
+        )
+        if AdapterBase not in cls.__bases__:
+            cls.__bases__ = (AdapterBase,) + cls.__bases__
+        super().__init_subclass__(**kwargs)
+
+
 AppType = t.TypeVar("AppType", bound="FastBlocks")
 match system():
     case "Windows":
@@ -30,21 +82,39 @@ match system():
 
 
 class FastBlocks(Starlette):
-    @depends.inject
     def __init__(
         self: AppType,
         middleware: t.Sequence[Middleware] | None = None,
         exception_handlers: t.Mapping[t.Any, ExceptionHandler] | None = None,
         lifespan: Lifespan["AppType"] | None = None,
-        config: Config = depends(),
-        logger: Logger = depends(),
+        config: t.Any = None,
+        logger: t.Any = None,
     ) -> None:
+        (
+            _register_pkg,
+            get_installed_adapter,
+            _Config,
+            _AdapterBase,
+            InterceptHandler,
+            _Logger,
+            depends,
+        ) = _import_acb_modules()
+
+        if config is None:
+            config = depends.get("config")
+        if logger is None:
+            logger = depends.get("logger")
+
         if not getattr(config, "deployed", False) or not getattr(
-            config.debug, "production", False
+            getattr(config, "debug", None), "production", False
         ):
             install_error_handler()
-        self.debug = getattr(config.debug, "fastblocks", False)
-        logger.info(f"Fastblocks debug: {self.debug}")
+        debug_config = getattr(config, "debug", None)
+        self.debug = (
+            getattr(debug_config, "fastblocks", False) if debug_config else False
+        )
+        if logger:
+            logger.info(f"Fastblocks debug: {self.debug}")
         super().__init__(
             debug=self.debug,
             routes=[],
@@ -63,16 +133,33 @@ class FastBlocks(Starlette):
         for _logger in ("uvicorn", "uvicorn.access", "_granian, granian.access"):
             _logger = logging.getLogger(_logger)
             _logger.handlers.clear()
-            _logger.handlers = [InterceptHandler()]
+            _logger.handlers.clear()
+            _logger.addHandler(InterceptHandler())
         if get_installed_adapter("logfire"):
             from logfire import instrument_starlette
 
             instrument_starlette(self)
 
-    @depends.inject
     def build_middleware_stack(
-        self, config: Config = depends(), logger: Logger = depends()
+        self, config: t.Any = None, logger: t.Any = None
     ) -> ASGIApp:
+        (
+            _register_pkg,
+            _get_installed_adapter,
+            _Config,
+            _AdapterBase,
+            _InterceptHandler,
+            _Logger,
+            depends,
+        ) = _import_acb_modules()
+
+        if config is None:
+            config = depends.get("config")
+        if logger is None:
+            try:
+                logger = depends.get("logger")
+            except Exception:
+                logger = None
         error_handler = None
         exception_handlers: dict[t.Any, ExceptionHandler] = {}
         for key, value in self.exception_handlers.items():
@@ -101,7 +188,9 @@ class FastBlocks(Starlette):
         middleware = middleware_list
         app = self.router
         for cls, args, kwargs in reversed(middleware):
-            logger.debug(f"Adding middleware: {cls.__name__}")
+            if logger:
+                logger.debug(f"Adding middleware: {cls.__name__}")
             app = cls(*args, app=app, **kwargs)
-        logger.info("Middleware stack built")
+        if logger:
+            logger.info("Middleware stack built")
         return app

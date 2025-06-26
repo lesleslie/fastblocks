@@ -17,6 +17,7 @@ from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 from ._base import RoutesBase, RoutesBaseSettings
 
 Templates = import_adapter()
+
 base_routes_path = AsyncPath(root_path / "routes.py")
 
 

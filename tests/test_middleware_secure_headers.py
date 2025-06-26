@@ -27,7 +27,7 @@ async def test_secure_headers_middleware_http_request() -> None:
     middleware = SecureHeadersMiddleware(mock_app)
 
     # Mock the logger
-    mock_logger = MagicMock()
+    MagicMock()
 
     # Mock secure_headers
     mock_secure_headers = {
@@ -39,7 +39,7 @@ async def test_secure_headers_middleware_http_request() -> None:
         mock_secure.headers = mock_secure_headers
 
         # Call the middleware
-        await middleware(mock_scope, mock_receive, mock_send, logger=mock_logger)
+        await middleware(mock_scope, mock_receive, mock_send)
 
         # Verify the app was called with the correct scope and receive
         mock_app.assert_called_once()
@@ -65,10 +65,10 @@ async def test_secure_headers_middleware_non_http_request() -> None:
     middleware = SecureHeadersMiddleware(mock_app)
 
     # Mock the logger
-    mock_logger = MagicMock()
+    MagicMock()
 
     # Call the middleware
-    await middleware(mock_scope, mock_receive, mock_send, logger=mock_logger)
+    await middleware(mock_scope, mock_receive, mock_send)
 
     # Verify the app was called with the original arguments
     mock_app.assert_called_once_with(mock_scope, mock_receive, mock_send)

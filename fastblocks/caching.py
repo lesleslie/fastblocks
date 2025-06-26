@@ -8,11 +8,6 @@ from dataclasses import dataclass
 from functools import partial
 from urllib.request import parse_http_list
 
-from acb.actions.hash import hash
-from acb.adapters import import_adapter
-from acb.config import Config
-from acb.depends import depends
-from acb.logger import Logger
 from starlette.datastructures import URL, Headers, MutableHeaders
 from starlette.requests import Request
 from starlette.responses import Response
@@ -20,7 +15,28 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .exceptions import RequestNotCachable, ResponseNotCachable
 
-Cache = import_adapter()
+
+def _get_acb_modules():
+    from acb.actions.hash import hash
+    from acb.adapters import import_adapter
+    from acb.config import Config
+    from acb.depends import depends
+    from acb.logger import Logger
+
+    return hash, import_adapter, Config, depends, Logger
+
+
+Cache = None
+
+
+def get_cache():
+    global Cache
+    if Cache is None:
+        _, import_adapter, _, _, _ = _get_acb_modules()
+        Cache = import_adapter("cache")
+    return Cache
+
+
 cachable_methods = frozenset(("GET", "HEAD"))
 cachable_status_codes = frozenset(
     (200, 203, 204, 206, 300, 301, 404, 405, 410, 414, 501)
@@ -96,15 +112,20 @@ class CacheDirectives(t.TypedDict, total=False):
     stale_if_error: int
 
 
-@depends.inject
 async def set_in_cache(
     response: Response,
     *,
     request: Request,
     rules: Sequence[Rule],
-    cache: t.Any = depends(),
-    logger: Logger = depends(),
+    cache: t.Any = None,
+    logger: t.Any = None,
 ) -> None:
+    if cache is None or logger is None:
+        _, _, _, depends, _Logger = _get_acb_modules()
+        if cache is None:
+            cache = depends.get("cache")
+        if logger is None:
+            logger = depends.get("logger")
     if response.status_code not in cachable_status_codes:
         logger.debug("response_not_cachable reason=status_code")
         raise ResponseNotCachable(response)
@@ -142,14 +163,19 @@ async def set_in_cache(
     response.headers["X-Cache"] = "miss"
 
 
-@depends.inject
 async def get_from_cache(
     request: Request,
     *,
     rules: Sequence[Rule],
-    cache: t.Any = depends(),
-    logger: Logger = depends(),
+    cache: t.Any = None,
+    logger: t.Any = None,
 ) -> Response | None:
+    if cache is None or logger is None:
+        _, _, _, depends, _Logger = _get_acb_modules()
+        if cache is None:
+            cache = depends.get("cache")
+        if logger is None:
+            logger = depends.get("logger")
     logger.debug(
         f"get_from_cache request.url={str(request.url)!r} request.method={request.method!r}"
     )
@@ -183,10 +209,15 @@ async def get_from_cache(
     return deserialize_response(serialized_response)
 
 
-@depends.inject
 async def delete_from_cache(
-    url: URL, *, vary: Headers, cache: t.Any = depends(), logger: Logger = depends()
+    url: URL, *, vary: Headers, cache: t.Any = None, logger: t.Any = None
 ) -> None:
+    if cache is None or logger is None:
+        _, _, _, depends, _Logger = _get_acb_modules()
+        if cache is None:
+            cache = depends.get("cache")
+        if logger is None:
+            logger = depends.get("logger")
     varying_headers_cache_key = generate_varying_headers_cache_key(url)
     varying_headers = await cache.get(varying_headers_cache_key)
     if varying_headers is None:
@@ -227,14 +258,19 @@ def deserialize_response(serialized_response: t.Any) -> Response:
     )
 
 
-@depends.inject
 async def learn_cache_key(
     request: Request,
     response: Response,
     *,
-    cache: t.Any = depends(),
-    logger: Logger = depends(),
+    cache: t.Any = None,
+    logger: t.Any = None,
 ) -> str:
+    if cache is None or logger is None:
+        _, _, _, depends, _Logger = _get_acb_modules()
+        if cache is None:
+            cache = depends.get("cache")
+        if logger is None:
+            logger = depends.get("logger")
     logger.debug(
         f"learn_cache_key request.method={request.method!r} response.headers.Vary={response.headers.get('Vary')!r}"
     )
@@ -251,17 +287,26 @@ async def learn_cache_key(
         f"store_varying_headers cache_key={varying_headers_cache_key!r} headers={varying_headers!r}"
     )
     await cache.set(key=varying_headers_cache_key, value=varying_headers)
-    return generate_cache_key(
+    cache_key = generate_cache_key(
         url,
         method=request.method,
         headers=request.headers,
         varying_headers=varying_headers,
     )
+    if cache_key is None:
+        raise ValueError(f"Unable to generate cache key for method {request.method}")
+    return cache_key
 
 
 async def get_cache_key(
-    request: Request, method: str, cache: t.Any = depends(), logger: Logger = depends()
+    request: Request, method: str, cache: t.Any = None, logger: t.Any = None
 ) -> str | None:
+    if cache is None or logger is None:
+        _, _, _, depends, _Logger = _get_acb_modules()
+        if cache is None:
+            cache = depends.get("cache")
+        if logger is None:
+            logger = depends.get("logger")
     url = request.url
     logger.debug(f"get_cache_key request.url={str(url)!r} method={method!r}")
     varying_headers_cache_key = generate_varying_headers_cache_key(url)
@@ -278,16 +323,19 @@ async def get_cache_key(
     )
 
 
-@depends.inject
 def generate_cache_key(
     url: URL,
     method: str,
     headers: Headers,
     varying_headers: list[str],
-    config: Config = depends(),
+    config: t.Any = None,
 ) -> str | None:
+    if config is None:
+        _, _, _Config, depends, _ = _get_acb_modules()
+        config = depends.get("config")
     if method not in cachable_methods:
         return None
+    hash, _, _, _, _ = _get_acb_modules()
     vary_hash = ""
     for header in varying_headers:
         value = headers.get(header)
@@ -298,6 +346,7 @@ def generate_cache_key(
 
 
 def generate_varying_headers_cache_key(url: URL) -> str:
+    hash, _, _, _, _ = _get_acb_modules()
     url_hash = hash.md5(str(url.path), usedforsecurity=False)
     return f"varying_headers.{url_hash}"
 
@@ -353,12 +402,21 @@ def patch_cache_control(
 
 
 class CacheResponder:
-    logger: Logger = depends()
-    cache: Cache = depends()
-
     def __init__(self, app: ASGIApp, *, rules: Sequence[Rule]) -> None:
         self.app = app
         self.rules = rules
+        try:
+            _, _, _, depends, _ = _get_acb_modules()
+            self.logger = depends.get("logger")
+        except Exception:
+            import logging
+
+            self.logger = logging.getLogger("fastblocks.cache")
+        try:
+            _, _, _, depends, _ = _get_acb_modules()
+            self.cache = depends.get("cache")
+        except Exception:
+            self.cache = None
         self.initial_message: Message = {}
         self.is_response_cachable = True
         self.request: Request | None = None
@@ -427,11 +485,16 @@ class CacheResponder:
 
 
 class CacheControlResponder:
-    logger: Logger = depends()
-
     def __init__(self, app: ASGIApp, **kwargs: t.Unpack[CacheDirectives]) -> None:
         self.app = app
         self.kwargs = kwargs
+        try:
+            _, _, _, depends, _Logger = _get_acb_modules()
+            self.logger = depends.get("logger")
+        except Exception:
+            import logging
+
+            self.logger = logging.getLogger("fastblocks.cache")
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":

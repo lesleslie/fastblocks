@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from starlette.datastructures import URL, Headers, MutableHeaders
+from starlette.requests import Request
 from starlette.responses import Response
 from fastblocks.caching import (
     CacheControlResponder,
@@ -15,6 +16,67 @@ from fastblocks.caching import (
     patch_cache_control,
     serialize_response,
 )
+
+
+@pytest.fixture
+def mock_request() -> MagicMock:
+    """Create a mock request object."""
+    mock = MagicMock(spec=Request)
+    mock.url = URL("http://example.com/test")
+    mock.method = "GET"
+    mock.headers = Headers(
+        raw=[(b"accept-encoding", b"gzip"), (b"user-agent", b"test")]
+    )
+    return mock
+
+
+@pytest.fixture
+def mock_response() -> MagicMock:
+    """Create a mock response object."""
+    mock = MagicMock(spec=Response)
+    mock.status_code = 200
+    mock.headers = MutableHeaders({})
+    return mock
+
+
+@pytest.fixture
+def mock_cache() -> MagicMock:
+    """Create a mock cache object."""
+    mock = MagicMock()
+    mock.exists = AsyncMock(return_value=False)
+    mock.get = AsyncMock(return_value=None)
+    mock.set = AsyncMock()
+    mock.delete = AsyncMock()
+    mock.ttl = 60
+    return mock
+
+
+@pytest.fixture
+def mock_logger() -> MagicMock:
+    """Create a mock logger object."""
+    mock = MagicMock()
+    mock.debug = MagicMock()
+    mock.info = MagicMock()
+    mock.warning = MagicMock()
+    mock.error = MagicMock()
+    return mock
+
+
+@pytest.fixture
+def mock_depends() -> MagicMock:
+    """Create a mock depends object."""
+    mock = MagicMock()
+    mock.get = MagicMock()
+    return mock
+
+
+@pytest.fixture
+def mock_config() -> MagicMock:
+    """Create a mock config object."""
+    mock = MagicMock()
+    mock.app = MagicMock()
+    mock.app.name = "test_app"
+    return mock
 
 
 class TestSerializationFunctions:
@@ -120,7 +182,7 @@ class TestCacheKeyFunctions:
 
         # Verify the cache key
         assert isinstance(cache_key, str)
-        assert len(cache_key) > 0
+        assert cache_key
 
         # Verify cache.set was called to store the varying headers
         mock_cache.set.assert_called_once()
@@ -153,7 +215,7 @@ class TestCacheKeyFunctions:
 
         # Verify the cache key
         assert isinstance(cache_key, str)
-        assert len(cache_key) > 0
+        assert cache_key
 
         # Verify the Vary header was updated with both headers
         assert mock_response.headers["Vary"] == "accept-encoding, user-agent"

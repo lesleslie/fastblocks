@@ -23,11 +23,11 @@ async def test_process_time_middleware_normal_request() -> None:
     mock_logger = MagicMock()
 
     # Create the middleware with a mocked logger
-    with patch("acb.depends.depends", return_value=mock_logger):
+    with patch("acb.depends.depends.get", return_value=mock_logger):
         middleware = ProcessTimeHeaderMiddleware(mock_app)
 
         # Call the middleware
-        await middleware(mock_scope, mock_receive, mock_send, logger=mock_logger)
+        await middleware(mock_scope, mock_receive, mock_send)
 
         # Verify the app was called with the correct arguments
         mock_app.assert_called_once_with(mock_scope, mock_receive, mock_send)
@@ -55,12 +55,12 @@ async def test_process_time_middleware_exception() -> None:
     mock_logger = MagicMock()
 
     # Create the middleware with a mocked logger
-    with patch("acb.depends.depends", return_value=mock_logger):
+    with patch("acb.depends.depends.get", return_value=mock_logger):
         middleware = ProcessTimeHeaderMiddleware(mock_app)
 
         # Call the middleware and expect an exception
         with pytest.raises(ValueError, match="Test exception"):
-            await middleware(mock_scope, mock_receive, mock_send, logger=mock_logger)
+            await middleware(mock_scope, mock_receive, mock_send)
 
         # Verify the app was called with the correct arguments
         mock_app.assert_called_once_with(mock_scope, mock_receive, mock_send)
@@ -93,11 +93,11 @@ async def test_process_time_middleware_performance() -> None:
     mock_logger = MagicMock()
 
     # Create the middleware with a mocked logger
-    with patch("acb.depends.depends", return_value=mock_logger):
+    with patch("acb.depends.depends.get", return_value=mock_logger):
         middleware = ProcessTimeHeaderMiddleware(mock_app)
 
         # Call the middleware
-        await middleware(mock_scope, mock_receive, mock_send, logger=mock_logger)
+        await middleware(mock_scope, mock_receive, mock_send)
 
         # Verify that logger.debug was called with a message containing a positive time
         assert mock_logger.debug.call_count == 1

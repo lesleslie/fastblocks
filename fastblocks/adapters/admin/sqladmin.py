@@ -1,4 +1,5 @@
 import typing as t
+from contextlib import suppress
 
 from acb.adapters import import_adapter
 from acb.depends import depends
@@ -29,12 +30,13 @@ class Admin(AdminBase):
     def __getattr__(self, name: str) -> t.Any:
         return getattr(self._sqladmin, name)
 
-    @depends.inject
-    async def init(self, models: t.Any = depends()) -> None:
-        if hasattr(models, "get_admin_models"):
-            admin_models = models.get_admin_models()
-            for model in admin_models:
-                self._sqladmin.add_view(model)
+    async def init(self) -> None:
+        with suppress(Exception):
+            models = depends.get("models")
+            if hasattr(models, "get_admin_models"):
+                admin_models = models.get_admin_models()
+                for model in admin_models:
+                    self._sqladmin.add_view(model)
 
 
 depends.set(Admin)

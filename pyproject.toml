@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.13.0"
+version = "0.13.1"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -43,7 +43,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "acb>=0.16.11",
+    "acb>=0.16.12",
     "acb[cache,monitoring,requests,storage]",
     "anyio>=4.9",
     "asgi-htmx>=0.1",
@@ -237,23 +237,23 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest",
-    "pytest-xdist",
+    "pytest-benchmark",
+    "pdm",
     "pyfiglet",
     "pytest-cov",
     "autotyping",
-    "pytest-asyncio",
-    "pdm-bump",
-    "google-crc32c",
-    "pdm",
     "pyyaml",
     "tomli-w",
-    "pytest-timeout",
-    "pytest-benchmark",
-    "keyring",
     "uv",
     "pytest-mock",
+    "pytest-xdist",
+    "pytest",
+    "pytest-timeout",
     "pre-commit",
+    "google-crc32c",
+    "pytest-asyncio",
+    "pdm-bump",
+    "keyring",
 ]
 
 [tool.refurb]
@@ -265,15 +265,15 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B403",
-    "B603",
-    "B404",
-    "B101",
-    "B311",
-    "B602",
     "B607",
-    "B301",
     "B704",
+    "B602",
+    "B101",
+    "B403",
+    "B404",
+    "B603",
+    "B311",
+    "B301",
 ]
 
 [tool.vulture]

@@ -3,10 +3,6 @@ from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
 from time import perf_counter
 
-from acb.adapters import get_adapter
-from acb.config import Config
-from acb.depends import depends
-from acb.logger import Logger
 from asgi_htmx import HtmxMiddleware
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
@@ -25,6 +21,16 @@ from .caching import (
     delete_from_cache,
 )
 from .exceptions import DuplicateCaching, MissingCaching
+
+
+def _get_acb_modules():
+    from acb.adapters import get_adapter
+    from acb.config import Config
+    from acb.depends import depends
+    from acb.logger import Logger
+
+    return get_adapter, Config, depends, Logger
+
 
 Cache = t.Any
 secure_headers = Secure()
@@ -54,10 +60,9 @@ class SecureHeadersMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    @depends.inject
-    async def __call__(
-        self, scope: Scope, receive: Receive, send: Send, logger: Logger = depends()
-    ) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        _, _, depends, _ = _get_acb_modules()
+        depends.get("logger")
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
 
@@ -74,12 +79,11 @@ class SecureHeadersMiddleware:
 class ProcessTimeHeaderMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
-        self.logger = depends.get(Logger)
+        self.logger = None
 
-    @depends.inject
-    async def __call__(
-        self, scope: Scope, receive: Receive, send: Send, logger: Logger = depends()
-    ) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        _, _, depends, _ = _get_acb_modules()
+        logger = depends.get("logger")
         start_time = perf_counter()
         try:
             await self.app(scope, receive, send)
@@ -98,7 +102,10 @@ class CacheMiddleware:
         if rules is None:
             rules = [Rule()]
         self.app = app
-        self.cache = cache if cache is not None else depends.get()
+        if cache is not None:
+            self.cache = cache
+        else:
+            self.cache = None
         self.rules = rules
         if hasattr(app, "middleware"):
             middleware = getattr(app, "middleware")
@@ -110,6 +117,12 @@ class CacheMiddleware:
                 )
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if self.cache is None:
+            _, _, depends, _ = _get_acb_modules()
+            try:
+                self.cache = depends.get("cache")
+            except Exception:
+                self.cache = None
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
@@ -210,8 +223,9 @@ class CacheControlMiddleware:
             response.headers["Cache-Control"] = ", ".join(cache_control_parts)
 
 
-@depends.inject
-def middlewares(config: Config = depends()) -> list[Middleware]:
+def middlewares() -> list[Middleware]:
+    get_adapter, _, depends, _ = _get_acb_modules()
+    config = depends.get("config")
     middleware = [
         Middleware(ProcessTimeHeaderMiddleware),
         Middleware(
