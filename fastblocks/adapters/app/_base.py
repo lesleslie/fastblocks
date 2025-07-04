@@ -1,8 +1,10 @@
 import typing as t
 
-from acb.config import AdapterBase
-from acb.config import AppSettings as AppConfigSettings
 from starlette.routing import Router
+
+from ...dependencies import get_acb_subset
+
+AdapterBase, AppConfigSettings = get_acb_subset("AdapterBase", "AppSettings")
 
 
 class AppBaseSettings(AppConfigSettings):

@@ -22,7 +22,7 @@ While ACB provides general-purpose adapters (cache, storage, database), FastBloc
 | [Admin](#admin-adapter) | Admin interface | `sqladmin` |
 | [Routes](#routes-adapter) | Route management | `default` |
 | [Templates](#templates-adapter) | Template engine | `jinja2` |
-| [Sitemap](#sitemap-adapter) | Sitemap generation | `default` |
+| [Sitemap](#sitemap-adapter) | Sitemap generation | `asgi` |
 
 ## Adapter System
 

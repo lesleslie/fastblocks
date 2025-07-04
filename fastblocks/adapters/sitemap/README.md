@@ -26,7 +26,7 @@ The Sitemap adapter allows you to:
 
 | Implementation | Description |
 |----------------|-------------|
-| `sitemap` | Default sitemap implementation |
+| `asgi` | Default sitemap implementation using asgi-sitemaps |
 
 ## Configuration
 

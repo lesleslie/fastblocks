@@ -1,12 +1,30 @@
 import typing as t
 
-from acb import Adapter, pkg_registry
-from acb.adapters import get_adapters, root_path
-from acb.config import AdapterBase, Config, Settings
-from acb.depends import depends
 from anyio import Path as AsyncPath
 from starlette.requests import Request
 from starlette.responses import Response
+
+from ...dependencies import get_acb_subset
+
+(
+    Adapter,
+    pkg_registry,
+    get_adapters,
+    root_path,
+    AdapterBase,
+    Config,
+    Settings,
+    depends,
+) = get_acb_subset(
+    "Adapter",
+    "pkg_registry",
+    "get_adapters",
+    "root_path",
+    "AdapterBase",
+    "Config",
+    "Settings",
+    "depends",
+)
 
 
 async def safe_await(func_or_value: t.Any) -> t.Any:
@@ -44,15 +62,15 @@ class TemplatesBaseSettings(Settings):
     cache_timeout: int = 300
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **values: t.Any) -> None:
+    def __init__(self, config: t.Any = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         self.cache_timeout = self.cache_timeout if config.deployed else 1
 
 
 class TemplatesProtocol(t.Protocol):
-    def get_searchpath(self, adapter: Adapter, path: AsyncPath) -> None: ...
+    def get_searchpath(self, adapter: t.Any, path: AsyncPath) -> None: ...
 
-    async def get_searchpaths(self, adapter: Adapter) -> list[AsyncPath]: ...
+    async def get_searchpaths(self, adapter: t.Any) -> list[AsyncPath]: ...
 
     @staticmethod
     def get_storage_path(path: AsyncPath) -> AsyncPath: ...
@@ -67,7 +85,7 @@ class TemplatesBase(AdapterBase):
     app_searchpaths: list[AsyncPath] | None = None
     admin_searchpaths: list[AsyncPath] | None = None
 
-    def get_searchpath(self, adapter: Adapter, path: AsyncPath) -> list[AsyncPath]:
+    def get_searchpath(self, adapter: t.Any, path: AsyncPath) -> list[AsyncPath]:
         style = getattr(self.config.app, "style", "bulma")
         base_path = path / "base"
         style_path = path / style
@@ -75,7 +93,7 @@ class TemplatesBase(AdapterBase):
         theme_adapter_path = style_adapter_path / "theme"
         return [theme_adapter_path, style_adapter_path, style_path, base_path]
 
-    async def get_searchpaths(self, adapter: Adapter) -> list[AsyncPath]:
+    async def get_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
         searchpaths = []
         searchpaths.extend(
             self.get_searchpath(adapter, root_path / "templates" / adapter.category)
@@ -89,7 +107,7 @@ class TemplatesBase(AdapterBase):
                 exists_result = await safe_await((a.path / "_templates").exists)
                 if exists_result:
                     searchpaths.append(a.path / "_templates")
-        for path in [p.path for p in pkg_registry.get()]:
+        for path in (p.path for p in pkg_registry.get()):
             searchpaths.extend(
                 self.get_searchpath(
                     adapter, path / "adapters" / adapter.category / "_templates"

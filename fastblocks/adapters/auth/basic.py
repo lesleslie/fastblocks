@@ -1,15 +1,18 @@
 import base64
 import binascii
 import typing as t
+from contextlib import suppress
 
-from acb.depends import depends
 from asgi_htmx import HtmxRequest
 from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import AuthCredentials, AuthenticationError, SimpleUser
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 
+from ...dependencies import get_acb_subset
 from ._base import AuthBase, AuthBaseSettings
+
+depends = get_acb_subset("depends")[0]
 
 
 class AuthSettings(AuthBaseSettings): ...
@@ -81,4 +84,5 @@ class Auth(AuthBase):
     async def logout(self, request: HtmxRequest) -> bool: ...
 
 
-depends.set(Auth)
+with suppress(Exception):
+    depends.set(Auth)

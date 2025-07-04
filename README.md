@@ -14,7 +14,7 @@
 
 ## What is FastBlocks?
 
-FastBlocks is an asynchronous web application framework, inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines the power of modern Python async capabilities with the simplicity of server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
+FastBlocks is an asynchronous web application framework, inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines modern Python async capabilities with server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
 
 Unlike monolithic frameworks or micro-frameworks that require extensive configuration, FastBlocks offers a modular, component-based architecture that provides batteries-included functionality while maintaining exceptional flexibility. Its adapter pattern allows for seamless component swapping, cloud provider migrations, and tailored customizations without extensive code changes.
 
@@ -38,14 +38,14 @@ If you're new to FastBlocks, here are the key concepts to understand:
 
 - **Starlette Foundation**: Built on the [Starlette](https://www.starlette.io/) ASGI framework for high performance, extending its application class and middleware system
 - **HTMX Integration**: First-class support for HTMX to create dynamic interfaces with server-side rendering
-- **Asynchronous Architecture**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), a modular framework providing dependency injection, configuration management, and pluggable components
-- **Template-Focused**: Advanced asynchronous Jinja2 template system with fragments and partials support
-- **Modular Design**: Pluggable adapters for authentication, admin interfaces, routing, and more
+- **Asynchronous Architecture**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), providing dependency injection, configuration management, and pluggable components
+- **Template-Focused**: Advanced asynchronous Jinja2 template system with fragments and partials support using `[[` and `]]` delimiters
+- **Modular Design**: Pluggable adapters for authentication, admin interfaces, routing, templates, and sitemap generation
 - **Cloud Flexibility**: Easily switch between cloud providers or create hybrid deployments by swapping adapters
-- **Performance Optimized**: Built-in Redis caching, Brotli compression, and HTML/CSS/JS minification
-- **Type Safety**: Leverages Pydantic v2 for validation and type safety
+- **Performance Optimized**: Built-in caching system, Brotli compression, and HTML/CSS/JS minification
+- **Type Safety**: Leverages Pydantic v2 for validation and type safety throughout
 - **Admin Interface**: Integrated SQLAlchemy Admin support for database management
-- **Dependency Injection**: Simple yet powerful dependency injection system
+- **Dependency Injection**: Robust dependency injection system with automatic resolution
 - **Batteries Included, But Replaceable**: Comprehensive defaults with the ability to customize or replace any component
 
 ## Why Choose FastBlocks?
@@ -926,6 +926,125 @@ FastBlocks includes several middleware components:
 - **Process Time Header Middleware**: Measures and logs request processing time
 - **Current Request Middleware**: Makes the current request available via a context variable
 
+#### Middleware Ordering
+
+FastBlocks uses a position-based middleware system to ensure middleware components are executed in the correct order. The middleware execution flow follows the ASGI specification:
+
+1. The last middleware in the list is the first to process the request
+2. The first middleware in the list is the last to process the request
+
+The actual execution flow is:
+- ExceptionMiddleware (outermost - first to see request, last to see response)
+- System middleware (ordered by MiddlewarePosition enum)
+- User-provided middleware
+- ServerErrorMiddleware (innermost - last to see request, first to see response)
+
+#### Adding Custom Middleware
+
+You can add custom middleware to your FastBlocks application in two ways:
+
+1. **User Middleware**: Added to the user middleware stack
+
+```python
+# Add a middleware to the end of the user middleware stack
+app.add_middleware(CustomMiddleware, option="value")
+
+# Add a middleware at a specific position in the user middleware stack
+app.add_middleware(CustomMiddleware, position=0, option="value")
+```
+
+2. **System Middleware**: Replace middleware at specific positions defined by the MiddlewarePosition enum
+
+```python
+from fastblocks.middleware import MiddlewarePosition
+
+# Replace the compression middleware with a custom implementation
+app.add_system_middleware(
+    CustomMiddleware,
+    position=MiddlewarePosition.COMPRESSION,
+    option="value"
+)
+```
+
+#### Example: Custom Middleware
+
+Here's a complete example of creating and adding custom middleware:
+
+```python
+from typing import Any
+from starlette.types import ASGIApp, Receive, Scope, Send
+from fastblocks import FastBlocks
+from fastblocks.middleware import MiddlewarePosition
+
+# Define a simple custom middleware
+class CustomHeaderMiddleware:
+    """A middleware that adds a custom header to responses."""
+
+    def __init__(self, app: ASGIApp, header_name: str, header_value: str) -> None:
+        self.app = app
+        self.header_name = header_name
+        self.header_value = header_value
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_header(message: dict[str, Any]) -> None:
+            if message["type"] == "http.response.start":
+                headers = message.get("headers", [])
+                headers.append(
+                    (self.header_name.encode(), self.header_value.encode())
+                )
+                message["headers"] = headers
+            await send(message)
+
+        await self.app(scope, receive, send_with_header)
+
+# Create a FastBlocks application
+app = FastBlocks()
+
+# Add a custom middleware to the user middleware stack
+app.add_middleware(
+    CustomHeaderMiddleware,
+    header_name="X-Custom-User",
+    header_value="User-defined"
+)
+
+# Replace the compression middleware with a custom implementation
+app.add_system_middleware(
+    CustomHeaderMiddleware,
+    position=MiddlewarePosition.COMPRESSION,
+    header_name="X-Custom-Compression",
+    header_value="Replaced"
+)
+```
+
+#### Middleware Positions
+
+The `MiddlewarePosition` enum defines the positions of middleware in the system stack:
+
+```python
+class MiddlewarePosition(IntEnum):
+    # Core middleware (always present)
+    PROCESS_TIME = 0      # First middleware to see request, last to see response
+    CSRF = 1              # Security middleware should be early in the chain
+    SESSION = 2           # Session handling (if auth enabled)
+    HTMX = 3              # HTMX request processing
+    CURRENT_REQUEST = 4   # Request context tracking
+    COMPRESSION = 5       # Response compression
+    SECURITY_HEADERS = 6  # Security headers for responses
+```
+
+You can get a dictionary of middleware positions using the `get_middleware_positions()` function:
+
+```python
+from fastblocks.middleware import get_middleware_positions
+
+positions = get_middleware_positions()
+print(positions)  # {'PROCESS_TIME': 0, 'CSRF': 1, ...}
+```
+
 ### HTMX Integration
 
 FastBlocks is designed to work seamlessly with HTMX, a lightweight JavaScript library that allows you to access modern browser features directly from HTML attributes.
@@ -1171,13 +1290,13 @@ python -m fastblocks run [--docker] [--granian] [--host HOST] [--port PORT]
 
 Run in production mode.
 
-#### Test Command
+#### Components Command
 
 ```bash
-python -m fastblocks test [--cov] [--verbose]
+python -m fastblocks components
 ```
 
-Run the test suite for your FastBlocks application. The `--cov` flag enables coverage reporting, and `--verbose` provides detailed test output.
+Show available FastBlocks components and their status.
 
 ## Examples
 

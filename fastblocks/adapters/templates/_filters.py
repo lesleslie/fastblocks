@@ -1,35 +1,71 @@
+import hashlib
+import typing as t
 from urllib.parse import quote_plus
 
-from acb.config import Config
-from acb.depends import depends
+from ...dependencies import get_acb_subset
+
+Config, depends = get_acb_subset("Config", "depends")
 from fastblocks.actions.minify import minify
+
+_minification_cache = {}
+_cache_max_size = 1000
+
+
+def _cached_minify(
+    content: str,
+    minify_func: t.Callable[[str], str | bytes | bytearray],
+    cache_prefix: str,
+) -> str | bytes | bytearray:
+    content_hash = hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
+    cache_key = f"{cache_prefix}:{content_hash}"
+
+    if cache_key in _minification_cache:
+        return _minification_cache[cache_key]
+
+    result = minify_func(content)
+
+    if len(_minification_cache) >= _cache_max_size:
+        oldest_key = next(iter(_minification_cache))
+        del _minification_cache[oldest_key]
+
+    _minification_cache[cache_key] = result
+    return result
 
 
 class Filters:
-    templates = depends.get()
     config: Config = depends()
 
+    @classmethod
+    def get_templates(cls):
+        if not hasattr(cls, "_templates"):
+            cls._templates = depends.get("templates")
+        return cls._templates
+
     @staticmethod
-    @templates.filter()
     def map_src(address: str) -> str:
         return quote_plus(address)
 
     @staticmethod
-    @templates.filter()
     def url_encode(text: str) -> str:
         return quote_plus(text)
 
     @staticmethod
-    @templates.filter()
-    def minify_html(html: str) -> str:
-        return minify.html(html)
+    def minify_html(html: str) -> str | bytes | bytearray:
+        return _cached_minify(html, minify.html, "html")
 
     @staticmethod
-    @templates.filter()
     def minify_js(js: str) -> bytearray | bytes | str:
-        return minify.js(js)
+        return _cached_minify(js, minify.js, "js")
 
     @staticmethod
-    @templates.filter()
     def minify_css(css: str) -> bytearray | bytes | str:
-        return minify.css(css)
+        return _cached_minify(css, minify.css, "css")
+
+    @classmethod
+    def register_filters(cls) -> None:
+        templates = cls.get_templates()
+        templates.filter()(cls.map_src)
+        templates.filter()(cls.url_encode)
+        templates.filter()(cls.minify_html)
+        templates.filter()(cls.minify_js)
+        templates.filter()(cls.minify_css)

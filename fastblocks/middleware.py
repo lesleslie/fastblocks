@@ -1,6 +1,8 @@
+import sys
 import typing as t
 from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
+from enum import IntEnum
 from time import perf_counter
 
 from asgi_htmx import HtmxMiddleware
@@ -20,26 +22,62 @@ from .caching import (
     Rule,
     delete_from_cache,
 )
-from .exceptions import DuplicateCaching, MissingCaching
+from .dependencies import get_acb_modules_for_middleware
+
+MiddlewareCallable = t.Callable[[ASGIApp], ASGIApp]
+MiddlewareClass = type[t.Any]
+MiddlewareOptions = dict[str, t.Any]
+from .exceptions import MissingCaching
 
 
-def _get_acb_modules():
-    from acb.adapters import get_adapter
-    from acb.config import Config
-    from acb.depends import depends
-    from acb.logger import Logger
+class MiddlewarePosition(IntEnum):
+    PROCESS_TIME = 0
+    CSRF = 1
+    SESSION = 2
+    HTMX = 3
+    CURRENT_REQUEST = 4
+    COMPRESSION = 5
+    SECURITY_HEADERS = 6
 
-    return get_adapter, Config, depends, Logger
+
+class MiddlewareUtils:
+    Cache = t.Any
+
+    secure_headers = Secure()
+
+    scope_name = "__starlette_caches__"
+
+    _request_ctx_var: ContextVar[Scope | None] = ContextVar("request", default=None)
+
+    HTTP = sys.intern("http")
+    WEBSOCKET = sys.intern("websocket")
+    TYPE = sys.intern("type")
+    METHOD = sys.intern("method")
+    PATH = sys.intern("path")
+    GET = sys.intern("GET")
+    HEAD = sys.intern("HEAD")
+    POST = sys.intern("POST")
+    PUT = sys.intern("PUT")
+    PATCH = sys.intern("PATCH")
+    DELETE = sys.intern("DELETE")
+
+    @classmethod
+    def get_request(cls) -> Scope | None:
+        return cls._request_ctx_var.get()
+
+    @classmethod
+    def set_request(cls, scope: Scope | None) -> None:
+        cls._request_ctx_var.set(scope)
 
 
-Cache = t.Any
-secure_headers = Secure()
-scope_name = "__starlette_caches__"
-_request_ctx_var: ContextVar[Scope | None] = ContextVar("request", default=None)
+Cache = MiddlewareUtils.Cache
+secure_headers = MiddlewareUtils.secure_headers
+scope_name = MiddlewareUtils.scope_name
+_request_ctx_var = MiddlewareUtils._request_ctx_var
 
 
 def get_request() -> Scope | None:
-    return _request_ctx_var.get()
+    return MiddlewareUtils.get_request()
 
 
 class CurrentRequestMiddleware:
@@ -47,7 +85,10 @@ class CurrentRequestMiddleware:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] not in ("http", "websocket"):
+        if scope[MiddlewareUtils.TYPE] not in (
+            MiddlewareUtils.HTTP,
+            MiddlewareUtils.WEBSOCKET,
+        ):
             await self.app(scope, receive, send)
             return
         local_scope = _request_ctx_var.set(scope)
@@ -59,18 +100,21 @@ class CurrentRequestMiddleware:
 class SecureHeadersMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
+        _, _, depends, _ = get_acb_modules_for_middleware()
+        try:
+            self.logger = depends.get("logger")
+        except Exception:
+            self.logger = None
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        _, _, depends, _ = _get_acb_modules()
-        depends.get("logger")
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
 
         async def send_with_secure_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = MutableHeaders(scope=message)
-                for k, v in secure_headers.headers.items():
-                    headers.append(k, v)
+                for header_name, header_value in secure_headers.headers.items():
+                    headers.append(header_name, header_value)
             await send(message)
 
         await self.app(scope, receive, send_with_secure_headers)
@@ -79,56 +123,89 @@ class SecureHeadersMiddleware:
 class ProcessTimeHeaderMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
-        self.logger = None
+        _, _, depends, _ = get_acb_modules_for_middleware()
+        try:
+            self.logger = depends.get("logger")
+        except Exception:
+            self.logger = None
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        _, _, depends, _ = _get_acb_modules()
-        logger = depends.get("logger")
         start_time = perf_counter()
         try:
             await self.app(scope, receive, send)
         except Exception as exc:
-            logger.exception(exc)
+            if self.logger:
+                self.logger.exception(exc)
             raise
         finally:
             process_time = perf_counter() - start_time
-            logger.debug(f"Request processed in {process_time} s")
+            if self.logger:
+                self.logger.debug(f"Request processed in {process_time:.6f} s")
+
+
+class CacheValidator:
+    def __init__(self, rules: Sequence[Rule] | None = None) -> None:
+        self.rules = rules or [Rule()]
+
+    def check_for_duplicate_middleware(self, app: ASGIApp) -> None:
+        if hasattr(app, "middleware"):
+            middleware = getattr(app, "middleware")
+            for middleware_item in middleware:
+                if isinstance(middleware_item, CacheMiddleware):
+                    from .exceptions import DuplicateCaching
+
+                    raise DuplicateCaching(
+                        "CacheMiddleware detected in middleware stack"
+                    )
+
+    def is_duplicate_in_scope(self, scope: Scope) -> bool:
+        return scope_name in scope
+
+
+class CacheKeyManager:
+    def __init__(self, cache: t.Any = None) -> None:
+        self.cache = cache
+        self._cache_dict = {}
+
+    def get_cache_instance(self):
+        if self.cache is None:
+            from .exceptions import safe_depends_get
+
+            _, _, _, _ = get_acb_modules_for_middleware()
+            self.cache = safe_depends_get("cache", self._cache_dict)
+        return self.cache
 
 
 class CacheMiddleware:
     def __init__(
-        self, app: ASGIApp, *, cache: Cache = None, rules: Sequence[Rule] | None = None
+        self, app: ASGIApp, *, cache: t.Any = None, rules: Sequence[Rule] | None = None
     ) -> None:
-        if rules is None:
-            rules = [Rule()]
         self.app = app
-        if cache is not None:
-            self.cache = cache
-        else:
-            self.cache = None
-        self.rules = rules
-        if hasattr(app, "middleware"):
-            middleware = getattr(app, "middleware")
-            if hasattr(middleware, "__iter__") and any(
-                isinstance(m, CacheMiddleware) for m in middleware
-            ):
-                raise DuplicateCaching(
-                    "Another `CacheMiddleware` was detected in the middleware stack.\nHINT: this exception probably occurred because:\n- You wrapped an application around `CacheMiddleware` multiple times.\n- You tried to apply `@cached()` onto an endpoint, but the application is already wrapped around a `CacheMiddleware`."
-                )
+
+        self.validator = CacheValidator(rules)
+        self.key_manager = CacheKeyManager(cache)
+
+        self.cache = cache
+
+        self.rules = self.validator.rules
+
+        self.validator.check_for_duplicate_middleware(app)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if self.cache is None:
-            _, _, depends, _ = _get_acb_modules()
-            try:
-                self.cache = depends.get("cache")
-            except Exception:
-                self.cache = None
+        cache = self.key_manager.get_cache_instance()
+        self.cache = cache
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
-        if scope_name in scope:
+        if self.validator.is_duplicate_in_scope(scope):
+            from .exceptions import DuplicateCaching
+
             raise DuplicateCaching(
-                "Another `CacheMiddleware` was detected in the middleware stack.\nHINT: this exception probably occurred because:\n- You wrapped an application around `CacheMiddleware` multiple times.\n- You tried to apply `@cached()` onto an endpoint, but the application is already wrapped around a `CacheMiddleware`."
+                "Another `CacheMiddleware` was detected in the middleware stack.\n"
+                "HINT: this exception probably occurred because:\n"
+                "- You wrapped an application around `CacheMiddleware` multiple times.\n"
+                "- You tried to apply `@cached()` onto an endpoint, but the application "
+                "is already wrapped around a `CacheMiddleware`."
             )
         scope[scope_name] = self
         responder = CacheResponder(self.app, rules=self.rules)
@@ -223,31 +300,114 @@ class CacheControlMiddleware:
             response.headers["Cache-Control"] = ", ".join(cache_control_parts)
 
 
-def middlewares() -> list[Middleware]:
-    get_adapter, _, depends, _ = _get_acb_modules()
-    config = depends.get("config")
-    middleware = [
-        Middleware(ProcessTimeHeaderMiddleware),
-        Middleware(
-            CSRFMiddleware,
-            secret=config.app.secret_key.get_secret_value(),
-            cookie_name=f"{getattr(config.app, 'token_id', '_fb_')}_csrf",
-            cookie_secure=config.deployed,
-        ),
-        Middleware(HtmxMiddleware),
-        Middleware(CurrentRequestMiddleware),
-        Middleware(BrotliMiddleware, quality=3),
-    ]
-    if config.deployed or config.debug.production:
-        middleware.append(Middleware(SecureHeadersMiddleware))
-    if get_adapter("auth"):
-        middleware.insert(
-            2,
-            Middleware(
-                SessionMiddleware,
-                secret_key=config.app.secret_key.get_secret_value(),
-                session_cookie=f"{getattr(config.app, 'token_id', '_fb_')}_app",
-                https_only=config.deployed,
-            ),
+def get_middleware_positions() -> dict[str, int]:
+    return {position.name: position.value for position in MiddlewarePosition}
+
+
+class MiddlewareStackManager:
+    def __init__(self, config: t.Any = None, logger: t.Any = None) -> None:
+        self.config = config
+        self.logger = logger
+        self._middleware_registry: dict[MiddlewarePosition, MiddlewareClass] = {}
+        self._middleware_options: dict[MiddlewarePosition, MiddlewareOptions] = {}
+        self._custom_middleware: dict[MiddlewarePosition, Middleware] = {}
+        self._initialized = False
+
+    def _ensure_dependencies(self) -> None:
+        if self.config is None or self.logger is None:
+            _get_adapter, _, depends, _Logger = get_acb_modules_for_middleware()
+            if self.config is None:
+                self.config = depends.get("config")
+            if self.logger is None:
+                try:
+                    self.logger = depends.get("logger")
+                except Exception:
+                    self.logger = None
+
+    def _register_default_middleware(self) -> None:
+        self._middleware_registry.update(
+            {
+                MiddlewarePosition.PROCESS_TIME: ProcessTimeHeaderMiddleware,
+                MiddlewarePosition.HTMX: HtmxMiddleware,
+                MiddlewarePosition.CURRENT_REQUEST: CurrentRequestMiddleware,
+                MiddlewarePosition.COMPRESSION: BrotliMiddleware,
+            }
         )
-    return middleware
+        self._middleware_options[MiddlewarePosition.COMPRESSION] = {"quality": 3}
+
+    def _register_conditional_middleware(self) -> None:
+        self._ensure_dependencies()
+        if not self.config:
+            return
+        _get_adapter, _, _depends, _ = get_acb_modules_for_middleware()
+        self._middleware_registry[MiddlewarePosition.CSRF] = CSRFMiddleware
+        self._middleware_options[MiddlewarePosition.CSRF] = {
+            "secret": self.config.app.secret_key.get_secret_value(),
+            "cookie_name": f"{getattr(self.config.app, 'token_id', '_fb_')}_csrf",
+            "cookie_secure": self.config.deployed,
+        }
+        if _get_adapter("auth"):
+            self._middleware_registry[MiddlewarePosition.SESSION] = SessionMiddleware
+            self._middleware_options[MiddlewarePosition.SESSION] = {
+                "secret_key": self.config.app.secret_key.get_secret_value(),
+                "session_cookie": f"{getattr(self.config.app, 'token_id', '_fb_')}_app",
+                "https_only": self.config.deployed,
+            }
+        if self.config.deployed or getattr(self.config.debug, "production", False):
+            self._middleware_registry[MiddlewarePosition.SECURITY_HEADERS] = (
+                SecureHeadersMiddleware
+            )
+
+    def initialize(self) -> None:
+        if self._initialized:
+            return
+        self._register_default_middleware()
+        self._register_conditional_middleware()
+        self._initialized = True
+
+    def register_middleware(
+        self,
+        middleware_class: MiddlewareClass,
+        position: MiddlewarePosition,
+        **options: t.Any,
+    ) -> None:
+        self._middleware_registry[position] = middleware_class
+        if options:
+            self._middleware_options[position] = options
+
+    def add_custom_middleware(
+        self, middleware: Middleware, position: MiddlewarePosition
+    ) -> None:
+        self._custom_middleware[position] = middleware
+
+    def build_stack(self) -> list[Middleware]:
+        if not self._initialized:
+            self.initialize()
+        middleware_stack: dict[MiddlewarePosition, Middleware] = {}
+        for position, middleware_class in self._middleware_registry.items():
+            options = self._middleware_options.get(position, {})
+            middleware_stack[position] = Middleware(middleware_class, **options)
+        middleware_stack.update(self._custom_middleware)
+
+        return [
+            middleware_stack[position] for position in sorted(middleware_stack.keys())
+        ]
+
+    def get_middleware_info(self) -> dict[str, t.Any]:
+        if not self._initialized:
+            self.initialize()
+
+        return {
+            "registered": {
+                pos.name: cls.__name__ for pos, cls in self._middleware_registry.items()
+            },
+            "custom": {
+                pos.name: str(middleware)
+                for pos, middleware in self._custom_middleware.items()
+            },
+            "positions": get_middleware_positions(),
+        }
+
+
+def middlewares() -> list[Middleware]:
+    return MiddlewareStackManager().build_stack()

@@ -142,11 +142,15 @@ def config() -> Config:
 
     config.__dict__["app"] = AppConfig()
 
-    config.logger = type(
-        "LoggerConfig",
-        (object,),
-        {"log_level": "INFO", "format": "simple", "level_per_module": {}},
-    )()
+    setattr(
+        config,
+        "logger",
+        type(
+            "LoggerConfig",
+            (object,),
+            {"log_level": "INFO", "format": "simple", "level_per_module": {}},
+        )(),
+    )
 
     return config
 

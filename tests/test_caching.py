@@ -16,8 +16,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 from fastblocks.caching import (
     Rule,
-    cachable_methods,
-    cachable_status_codes,
+    cacheable_methods,
+    cacheable_status_codes,
     deserialize_response,
     generate_cache_key,
     get_cache_key,
@@ -93,11 +93,11 @@ def mock_hash() -> t.Any:
 
 
 class TestCachingConstants:
-    def test_cachable_methods(self) -> None:
-        """Test the cachable_methods constant."""
-        assert isinstance(cachable_methods, list | frozenset | set)
-        assert "GET" in cachable_methods
-        assert "HEAD" in cachable_methods
+    def test_cacheable_methods(self) -> None:
+        """Test the cacheable_methods constant."""
+        assert isinstance(cacheable_methods, list | frozenset | set)
+        assert "GET" in cacheable_methods
+        assert "HEAD" in cacheable_methods
 
     def test_invalidating_methods(self) -> None:
         """Test the invalidating_methods constant."""
@@ -107,17 +107,17 @@ class TestCachingConstants:
         assert "DELETE" in invalidating_methods
         assert "PATCH" in invalidating_methods
 
-    def test_cachable_status_codes(self) -> None:
-        """Test the cachable_status_codes constant."""
-        assert isinstance(cachable_status_codes, list | frozenset | set)
-        assert 200 in cachable_status_codes
-        assert 301 in cachable_status_codes
-        assert 404 in cachable_status_codes
-        assert 500 not in cachable_status_codes
+    def test_cacheable_status_codes(self) -> None:
+        """Test the cacheable_status_codes constant."""
+        assert isinstance(cacheable_status_codes, list | frozenset | set)
+        assert 200 in cacheable_status_codes
+        assert 301 in cacheable_status_codes
+        assert 404 in cacheable_status_codes
+        assert 500 not in cacheable_status_codes
 
 
 class TestCachingExceptions:
-    def test_request_not_cachable_exception(self) -> None:
+    def test_request_not_cacheable_exception(self) -> None:
         """Test the RequestNotCachable exception."""
         # Create a mock request
         mock_request = MagicMock()
@@ -129,7 +129,7 @@ class TestCachingExceptions:
         assert exception.request is mock_request
         assert isinstance(exception, Exception)
 
-    def test_response_not_cachable_exception(self) -> None:
+    def test_response_not_cacheable_exception(self) -> None:
         """Test the ResponseNotCachable exception."""
         # Create a mock response
         mock_response = MagicMock()

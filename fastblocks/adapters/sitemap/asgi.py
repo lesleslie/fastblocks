@@ -1,6 +1,10 @@
-from acb.depends import depends
-from asgi_sitemaps import Sitemap as AsgiSitemap
-from asgi_sitemaps import SitemapApp as AsgiSitemapApp
+from contextlib import suppress
+
+from ...dependencies import get_acb_subset
+
+depends = get_acb_subset("depends")[0]
+from asgi_sitemaps import Sitemap as AsgiSitemap  # type: ignore[import-untyped]
+from asgi_sitemaps import SitemapApp as AsgiSitemapApp  # type: ignore[import-untyped]
 
 from ._base import SitemapBase, SitemapBaseSettings
 
@@ -8,7 +12,7 @@ from ._base import SitemapBase, SitemapBaseSettings
 class SitemapSettings(SitemapBaseSettings): ...
 
 
-class Sitemap(AsgiSitemap[str], SitemapBase):
+class Sitemap(AsgiSitemap[str], SitemapBase):  # type: ignore[misc]
     sitemap: AsgiSitemapApp | None = None
 
     @depends.inject
@@ -27,4 +31,5 @@ class Sitemap(AsgiSitemap[str], SitemapBase):
         self.sitemap = AsgiSitemapApp(self, domain=self.config.app.domain)
 
 
-depends.set(Sitemap)
+with suppress(Exception):
+    depends.set(Sitemap)

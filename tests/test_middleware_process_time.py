@@ -22,8 +22,18 @@ async def test_process_time_middleware_normal_request() -> None:
     # Mock the logger
     mock_logger = MagicMock()
 
-    # Create the middleware with a mocked logger
-    with patch("acb.depends.depends.get", return_value=mock_logger):
+    # Create the middleware with a mocked logger using the new dependency system
+    with patch(
+        "fastblocks.middleware.get_acb_modules_for_middleware"
+    ) as mock_get_modules:
+        # Mock the return value for _get_acb_modules() call in ProcessTimeHeaderMiddleware
+        # _get_acb_modules returns (get_adapter, Config, depends, Logger)
+        mock_depends = type(
+            "MockDepends",
+            (),
+            {"get": lambda self, x: mock_logger if x == "logger" else None},
+        )()
+        mock_get_modules.return_value = (None, None, mock_depends, None)
         middleware = ProcessTimeHeaderMiddleware(mock_app)
 
         # Call the middleware
@@ -54,8 +64,18 @@ async def test_process_time_middleware_exception() -> None:
     # Mock the logger
     mock_logger = MagicMock()
 
-    # Create the middleware with a mocked logger
-    with patch("acb.depends.depends.get", return_value=mock_logger):
+    # Create the middleware with a mocked logger using the new dependency system
+    with patch(
+        "fastblocks.middleware.get_acb_modules_for_middleware"
+    ) as mock_get_modules:
+        # Mock the return value for _get_acb_modules() call in ProcessTimeHeaderMiddleware
+        # _get_acb_modules returns (get_adapter, Config, depends, Logger)
+        mock_depends = type(
+            "MockDepends",
+            (),
+            {"get": lambda self, x: mock_logger if x == "logger" else None},
+        )()
+        mock_get_modules.return_value = (None, None, mock_depends, None)
         middleware = ProcessTimeHeaderMiddleware(mock_app)
 
         # Call the middleware and expect an exception
@@ -92,8 +112,18 @@ async def test_process_time_middleware_performance() -> None:
     # Mock the logger
     mock_logger = MagicMock()
 
-    # Create the middleware with a mocked logger
-    with patch("acb.depends.depends.get", return_value=mock_logger):
+    # Create the middleware with a mocked logger using the new dependency system
+    with patch(
+        "fastblocks.middleware.get_acb_modules_for_middleware"
+    ) as mock_get_modules:
+        # Mock the return value for _get_acb_modules() call in ProcessTimeHeaderMiddleware
+        # _get_acb_modules returns (get_adapter, Config, depends, Logger)
+        mock_depends = type(
+            "MockDepends",
+            (),
+            {"get": lambda self, x: mock_logger if x == "logger" else None},
+        )()
+        mock_get_modules.return_value = (None, None, mock_depends, None)
         middleware = ProcessTimeHeaderMiddleware(mock_app)
 
         # Call the middleware

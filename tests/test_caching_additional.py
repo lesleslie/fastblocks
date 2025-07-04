@@ -360,7 +360,7 @@ class TestCacheResponderClass:
         # Verify the responder
         assert responder.app == mock_app
         assert responder.rules == rules
-        assert responder.is_response_cachable
+        assert responder.is_response_cacheable
         assert responder.request is None
 
     @pytest.mark.asyncio

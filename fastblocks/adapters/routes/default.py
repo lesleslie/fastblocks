@@ -1,10 +1,25 @@
 from contextlib import suppress
 from importlib import import_module
 
-from acb.adapters import get_adapters, get_installed_adapter, import_adapter, root_path
-from acb.config import Config
-from acb.debug import debug
-from acb.depends import depends
+from ...dependencies import get_acb_subset
+
+(
+    get_adapters,
+    get_installed_adapter,
+    import_adapter,
+    root_path,
+    Config,
+    debug,
+    depends,
+) = get_acb_subset(
+    "get_adapters",
+    "get_installed_adapter",
+    "import_adapter",
+    "root_path",
+    "Config",
+    "debug",
+    "depends",
+)
 from anyio import Path as AsyncPath
 from asgi_htmx import HtmxRequest
 from jinja2.exceptions import TemplateNotFound
@@ -16,7 +31,7 @@ from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 
 from ._base import RoutesBase, RoutesBaseSettings
 
-Templates = import_adapter()
+Templates = None
 
 base_routes_path = AsyncPath(root_path / "routes.py")
 
@@ -26,7 +41,7 @@ class RoutesSettings(RoutesBaseSettings): ...
 
 class Index(HTTPEndpoint):
     config: Config = depends()
-    templates: Templates = depends()
+    templates: "Templates" = depends()
 
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)
@@ -47,7 +62,7 @@ class Index(HTTPEndpoint):
 
 
 class Block(HTTPEndpoint):
-    templates: Templates = depends()
+    templates: "Templates" = depends()
 
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)
@@ -112,4 +127,5 @@ class Routes(RoutesBase):
         debug(self.routes)
 
 
-depends.set(Routes)
+with suppress(Exception):
+    depends.set(Routes)

@@ -1,3 +1,5 @@
+import asyncio
+import re
 import typing as t
 from ast import literal_eval
 from contextlib import suppress
@@ -6,13 +8,12 @@ from importlib import import_module
 from importlib.util import find_spec
 from inspect import isclass
 from pathlib import Path
-from re import search
 
-from acb import Adapter
-from acb.adapters import get_adapter, import_adapter
-from acb.config import Config
-from acb.debug import debug
-from acb.depends import depends
+from ...dependencies import get_acb_subset
+
+Adapter, get_adapter, import_adapter, Config, debug, depends = get_acb_subset(
+    "Adapter", "get_adapter", "import_adapter", "Config", "debug", "depends"
+)
 from anyio import Path as AsyncPath
 from jinja2 import TemplateNotFound
 from jinja2.ext import Extension, i18n, loopcontrols
@@ -23,7 +24,121 @@ from starlette_async_jinja import AsyncJinja2Templates
 
 from ._base import TemplatesBase, TemplatesBaseSettings
 
-Cache, Storage, Models = import_adapter()
+try:
+    Cache, Storage, Models = import_adapter()
+except Exception:
+    Cache = Storage = Models = None
+
+_TEMPLATE_REPLACEMENTS = [
+    (b"{{", b"[["),
+    (b"}}", b"]]"),
+    (b"{%", b"[%"),
+    (b"%}", b"%]"),
+]
+_HTTP_TO_HTTPS = (b"http://", b"https://")
+
+_ATTR_PATTERN_CACHE: dict[str, re.Pattern[str]] = {}
+
+
+def _get_attr_pattern(attr: str) -> re.Pattern[str]:
+    if attr not in _ATTR_PATTERN_CACHE:
+        escaped_attr = re.escape(f"{attr}=")
+        _ATTR_PATTERN_CACHE[attr] = re.compile(escaped_attr)
+    return _ATTR_PATTERN_CACHE[attr]
+
+
+def _apply_template_replacements(source: bytes, deployed: bool = False) -> bytes:
+    for old_pattern, new_pattern in _TEMPLATE_REPLACEMENTS:
+        source = source.replace(old_pattern, new_pattern)
+    if deployed:
+        source = source.replace(*_HTTP_TO_HTTPS)
+
+    return source
+
+
+class BaseTemplateLoader(AsyncBaseLoader):
+    config: Config = depends()
+    cache: Cache = depends()
+    storage: Storage = depends()
+
+    def get_supported_extensions(self) -> tuple[str, ...]:
+        return ("html", "css", "js")
+
+    async def _list_templates_for_extensions(
+        self, extensions: tuple[str, ...]
+    ) -> list[str]:
+        found: set[str] = set()
+        for searchpath in self.searchpath:
+            for ext in extensions:
+                async for p in searchpath.rglob(f"*.{ext}"):
+                    found.add(str(p))
+        return sorted(found)
+
+    def _normalize_template(
+        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+    ) -> str | AsyncPath:
+        if template is None:
+            template = environment_or_template
+        assert template is not None
+        return template
+
+    async def _find_template_path_parallel(
+        self, template: str | AsyncPath
+    ) -> AsyncPath | None:
+        async def check_path(searchpath: AsyncPath) -> AsyncPath | None:
+            path = searchpath / template
+            if await path.is_file():
+                return path
+            return None
+
+        tasks = [check_path(searchpath) for searchpath in self.searchpath]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, AsyncPath):
+                return result
+        return None
+
+    async def _find_storage_path_parallel(
+        self, template: str | AsyncPath
+    ) -> tuple[AsyncPath, AsyncPath] | None:
+        async def check_storage_path(
+            searchpath: AsyncPath,
+        ) -> tuple[AsyncPath, AsyncPath] | None:
+            path = searchpath / template
+            storage_path = Templates.get_storage_path(path)
+            if storage_path and await self.storage.templates.exists(storage_path):
+                return path, storage_path
+            return None
+
+        tasks = [check_storage_path(searchpath) for searchpath in self.searchpath]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, tuple):
+                return result
+        return None
+
+    async def _find_cache_path_parallel(
+        self, template: str | AsyncPath
+    ) -> tuple[AsyncPath, AsyncPath, str] | None:
+        async def check_cache_path(
+            searchpath: AsyncPath,
+        ) -> tuple[AsyncPath, AsyncPath, str] | None:
+            path = searchpath / template if searchpath else AsyncPath(template)
+            storage_path = Templates.get_storage_path(path)
+            cache_key = Templates.get_cache_key(storage_path)
+            if storage_path and await self.cache.exists(cache_key):
+                return path, storage_path, cache_key
+            return None
+
+        tasks = [check_cache_path(searchpath) for searchpath in self.searchpath]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, tuple):
+                return result
+        return None
 
 
 class LoaderProtocol(t.Protocol):
@@ -40,23 +155,12 @@ class LoaderProtocol(t.Protocol):
     async def list_templates_async(self) -> list[str]: ...
 
 
-class FileSystemLoader(AsyncBaseLoader):
-    config: Config = depends()
-    cache: Cache = depends()
-    storage: Storage = depends()
-
+class FileSystemLoader(BaseTemplateLoader):
     async def get_source_async(
         self, environment_or_template: t.Any, template: str | AsyncPath | None = None
     ) -> SourceType:
-        if template is None:
-            template = environment_or_template
-        assert template is not None
-        path: AsyncPath | None = None
-        for searchpath in self.searchpath:
-            path = searchpath / template
-            debug(path)
-            if await path.is_file():
-                break
+        template = self._normalize_template(environment_or_template, template)
+        path = await self._find_template_path_parallel(template)
         if path is None:
             raise TemplateNotFound(str(template))
         storage_path = Templates.get_storage_path(path)
@@ -98,34 +202,20 @@ class FileSystemLoader(AsyncBaseLoader):
         return (resp.decode(), str(storage_path), uptodate)
 
     async def list_templates_async(self) -> list[str]:
-        found: set[str] = set()
-        for searchpath in self.searchpath:
-            for ext in ("html", "css", "js"):
-                found.update([str(p) async for p in searchpath.rglob(f"*.{ext}")])
-        return sorted(found)
+        return await self._list_templates_for_extensions(
+            self.get_supported_extensions()
+        )
 
 
-class StorageLoader(AsyncBaseLoader):
-    config: Config = depends()
-    cache: Cache = depends()
-    storage: Storage = depends()
-
+class StorageLoader(BaseTemplateLoader):
     async def get_source_async(
         self, environment_or_template: t.Any, template: str | AsyncPath | None = None
     ) -> tuple[str, str, t.Callable[[], t.Awaitable[bool]]]:
-        if template is None:
-            template = environment_or_template
-        assert template is not None
-        path: AsyncPath | None = None
-        storage_path: AsyncPath | None = None
-        for searchpath in self.searchpath:
-            path = searchpath / template
-            storage_path = Templates.get_storage_path(path)
-            debug(storage_path)
-            if storage_path and await self.storage.templates.exists(storage_path):
-                break
-        if path is None or storage_path is None:
+        template = self._normalize_template(environment_or_template, template)
+        result = await self._find_storage_path_parallel(template)
+        if result is None:
             raise TemplateNotFound(str(template))
+        _, storage_path = result
         try:
             resp = await self.storage.templates.open(storage_path)
             await self.cache.set(Templates.get_cache_key(storage_path), resp)
@@ -149,39 +239,20 @@ class StorageLoader(AsyncBaseLoader):
                 paths = await self.storage.templates.list(
                     Templates.get_storage_path(searchpath)
                 )
-                found.extend([p for p in paths if p.endswith((".html", ".css", ".js"))])
+                found.extend(p for p in paths if p.endswith((".html", ".css", ".js")))
         found.sort()
         return found
 
 
-class RedisLoader(AsyncBaseLoader):
-    config: Config = depends()
-    cache: Cache = depends()
-    storage: Storage = depends()
-
+class RedisLoader(BaseTemplateLoader):
     async def get_source_async(
         self, environment_or_template: t.Any, template: str | AsyncPath | None = None
     ) -> tuple[str, str | None, t.Callable[[], t.Awaitable[bool]]]:
-        if template is None:
-            template = environment_or_template
-        assert template is not None
-        template_path: str | AsyncPath = template
-        path: AsyncPath | None = None
-        cache_key: str | None = None
-        storage_path: AsyncPath | None = None
-        for searchpath in self.searchpath:
-            path = (
-                searchpath / template_path if searchpath else AsyncPath(template_path)
-            )
-            storage_path = Templates.get_storage_path(path)
-            cache_key = Templates.get_cache_key(storage_path)
-            debug(storage_path)
-            debug(cache_key)
-            if storage_path and await self.cache.exists(cache_key):
-                debug(path)
-                break
-        if path is None or cache_key is None or storage_path is None:
+        template = self._normalize_template(environment_or_template, template)
+        result = await self._find_cache_path_parallel(template)
+        if result is None:
             raise TemplateNotFound(str(template))
+        path, _, cache_key = result
         resp = await self.cache.get(cache_key)
         if not resp:
             raise TemplateNotFound(path.name)
@@ -203,10 +274,7 @@ class RedisLoader(AsyncBaseLoader):
         return found
 
 
-class PackageLoader(AsyncBaseLoader):
-    config: Config = depends()
-    cache: Cache = depends()
-    storage: Storage = depends()
+class PackageLoader(BaseTemplateLoader):
     _template_root: AsyncPath
     _adapter: str
     package_name: str
@@ -240,7 +308,7 @@ class PackageLoader(AsyncBaseLoader):
         loader = spec.loader
         self._loader = loader
         if spec.submodule_search_locations:
-            roots.extend([Path(s) for s in spec.submodule_search_locations])
+            roots.extend(Path(s) for s in spec.submodule_search_locations)
         elif spec.origin is not None:
             roots.append(Path(spec.origin))
         for root in roots:
@@ -271,13 +339,7 @@ class PackageLoader(AsyncBaseLoader):
         async def uptodate() -> bool:
             return await path.is_file() and (await path.stat()).st_mtime == mtime
 
-        replace = [("{{", "[["), ("}}", "]]"), ("{%", "[%"), ("%}", "%]")]
-        if self.config.deployed:
-            replace.append(("http://", "https://"))
-        for r in replace:
-            source = source.replace(
-                bytes(r[0], encoding="utf8"), bytes(r[1], encoding="utf8")
-            )
+        source = _apply_template_replacements(source, self.config.deployed)
         storage_path = Templates.get_storage_path(path)
         _storage_path: list[str] = list(storage_path.parts)
         _storage_path[0] = "_templates"
@@ -354,13 +416,34 @@ class TemplatesSettings(TemplatesBaseSettings):
 
 class Templates(TemplatesBase):
     app: AsyncJinja2Templates | None = None
-    admin: AsyncJinja2Templates | None = None
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.filters: dict[str, t.Callable[..., t.Any]] = {}
         self.enabled_admin = get_adapter("admin")
         self.enabled_app = get_adapter("app")
+        self._admin = None
+        self._admin_initialized = False
+
+    @property
+    def admin(self) -> AsyncJinja2Templates | None:
+        if not self._admin_initialized and self.enabled_admin:
+            import asyncio
+
+            loop = asyncio.get_event_loop()
+            if hasattr(self, "_admin_cache") and hasattr(self, "admin_searchpaths"):
+                self._admin = loop.run_until_complete(
+                    self.init_envs(
+                        self.admin_searchpaths, admin=True, cache=self._admin_cache
+                    )
+                )
+            self._admin_initialized = True
+        return self._admin
+
+    @admin.setter
+    def admin(self, value: AsyncJinja2Templates | None) -> None:
+        self._admin = value
+        self._admin_initialized = True
 
     def get_loader(self, template_paths: list[AsyncPath]) -> ChoiceLoader:
         searchpaths: list[AsyncPath] = []
@@ -453,11 +536,11 @@ class Templates(TemplatesBase):
         app_adapter = t.cast(Adapter, self.enabled_app)
         self.app_searchpaths = await self.get_searchpaths(app_adapter)
         self.app = await self.init_envs(self.app_searchpaths, cache=cache)
+        self._admin = None
+        self._admin_initialized = False
         if self.enabled_admin:
             self.admin_searchpaths = await self.get_searchpaths(self.enabled_admin)
-            self.admin = await self.init_envs(
-                self.admin_searchpaths, admin=True, cache=cache
-            )
+            self._admin_cache = cache
         if self.app and self.app.env.loader and hasattr(self.app.env.loader, "loaders"):
             for loader in self.app.env.loader.loaders:
                 self.logger.debug(f"{loader.__class__.__name__} initialized")
@@ -474,9 +557,10 @@ class Templates(TemplatesBase):
         parser = HTMLParser()
         parser.feed(html)
         soup = parser.get_starttag_text()
+        attr_pattern = _get_attr_pattern(attr)
         _attr = f"{attr}="
         for s in soup.split():
-            if search(_attr, s):
+            if attr_pattern.search(s):
                 attr_value = s.replace(_attr, "").strip('"')
                 return attr_value
         return None
@@ -497,7 +581,6 @@ class Templates(TemplatesBase):
         status_code: int = 200,
         headers: dict[str, str] | None = None,
     ) -> t.Any:
-        """Render a template with the given context."""
         if context is None:
             context = {}
         if headers is None:
@@ -553,4 +636,5 @@ class Templates(TemplatesBase):
         return _extensions
 
 
-depends.set(Templates)
+with suppress(Exception):
+    depends.set(Templates)

@@ -1,7 +1,6 @@
 """Tests for the FastBlocks exceptions."""
 
 import sys
-import types
 import typing as t
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
@@ -32,33 +31,14 @@ def mock_templates() -> MagicMock:
 
 @pytest.fixture
 def mock_depends(mock_templates: MagicMock) -> t.Generator[MagicMock]:
-    """Create a mock depends object."""
-    # Create mock depends module
-    mock_depends = types.ModuleType("acb.depends")
+    """Create a mock depends object for the new dependency system."""
+    # Create mock depends object
     mock_depends_obj = MagicMock()
+    mock_depends_obj.get = MagicMock(return_value=mock_templates)
 
-    # Set up the get method to return our mock templates regardless of arguments
-    get_mock = MagicMock(return_value=mock_templates)
-    mock_depends_obj.get = get_mock
-
-    # Use setattr to avoid typing issues
-    setattr(mock_depends, "depends", mock_depends_obj)
-
-    # Save the original module
-    original_depends = sys.modules.get("acb.depends")
-
-    # Replace with our mock
-    sys.modules["acb.depends"] = mock_depends
-
-    # Patch the depends.get function directly in the exceptions module
-    with patch("fastblocks.exceptions.depends.get", return_value=mock_templates):
+    # Patch the new safe_depends_get function
+    with patch("fastblocks.exceptions.safe_depends_get", return_value=mock_templates):
         yield mock_depends_obj
-
-    # Restore the original module
-    if original_depends:
-        sys.modules["acb.depends"] = original_depends
-    else:
-        del sys.modules["acb.depends"]
 
 
 @pytest.mark.asyncio

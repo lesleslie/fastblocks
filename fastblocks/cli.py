@@ -109,50 +109,58 @@ def dev(granian: bool = False) -> None:
         )
 
 
+def _display_adapters() -> None:
+    from acb.adapters import get_adapters
+
+    console.print("[bold green]Available Adapters:[/bold green]")
+    adapters = get_adapters()
+    if not adapters:
+        console.print("  [dim]No adapters found[/dim]")
+        return
+    categories = {}
+    for adapter in adapters:
+        if adapter.category not in categories:
+            categories[adapter.category] = []
+        categories[adapter.category].append(adapter)
+    for category in sorted(categories.keys()):
+        console.print(f"\n  [bold cyan]{category.upper()}:[/bold cyan]")
+        for adapter in sorted(categories[category], key=lambda a: a.name):
+            _display_adapter_info(adapter)
+
+
+def _display_adapter_info(adapter: t.Any) -> None:
+    status = "[green]✓[/green]" if adapter.installed else "[red]✗[/red]"
+    enabled = "[yellow]enabled[/yellow]" if adapter.enabled else "[dim]disabled[/dim]"
+    console.print(f"    {status} [white]{adapter.name}[/white] - {enabled}")
+    if adapter.module:
+        console.print(f"      [dim]{adapter.module}[/dim]")
+
+
+def _display_default_config() -> None:
+    console.print("\n[bold green]FastBlocks Default Configuration:[/bold green]")
+    for category, default_name in default_adapters.items():
+        console.print(f"  [cyan]{category}[/cyan]: [white]{default_name}[/white]")
+
+
+def _display_actions() -> None:
+    console.print("\n[bold green]FastBlocks Actions:[/bold green]")
+    try:
+        from fastblocks.actions.minify import minify
+
+        console.print("  [cyan]minify[/cyan]:")
+        console.print(f"    [white]- css[/white] ([dim]{minify.css.__name__}[/dim])")
+        console.print(f"    [white]- js[/white] ([dim]{minify.js.__name__}[/dim])")
+    except ImportError:
+        console.print("  [dim]Minify actions not available[/dim]")
+
+
 @cli.command()
 def components() -> None:
     try:
-        from acb.adapters import get_adapters
-
         console.print("\n[bold blue]FastBlocks Components[/bold blue]\n")
-        console.print("[bold green]Available Adapters:[/bold green]")
-        adapters = get_adapters()
-        if adapters:
-            categories = {}
-            for adapter in adapters:
-                if adapter.category not in categories:
-                    categories[adapter.category] = []
-                categories[adapter.category].append(adapter)
-            for category in sorted(categories.keys()):
-                console.print(f"\n  [bold cyan]{category.upper()}:[/bold cyan]")
-                for adapter in sorted(categories[category], key=lambda a: a.name):
-                    status = "[green]✓[/green]" if adapter.installed else "[red]✗[/red]"
-                    enabled = (
-                        "[yellow]enabled[/yellow]"
-                        if adapter.enabled
-                        else "[dim]disabled[/dim]"
-                    )
-                    console.print(
-                        f"    {status} [white]{adapter.name}[/white] - {enabled}"
-                    )
-                    if adapter.module:
-                        console.print(f"      [dim]{adapter.module}[/dim]")
-        else:
-            console.print("  [dim]No adapters found[/dim]")
-        console.print("\n[bold green]FastBlocks Default Configuration:[/bold green]")
-        for category, default_name in default_adapters.items():
-            console.print(f"  [cyan]{category}[/cyan]: [white]{default_name}[/white]")
-        console.print("\n[bold green]FastBlocks Actions:[/bold green]")
-        try:
-            from fastblocks.actions.minify import minify
-
-            console.print("  [cyan]minify[/cyan]:")
-            console.print(
-                f"    [white]- css[/white] ([dim]{minify.css.__name__}[/dim])"
-            )
-            console.print(f"    [white]- js[/white] ([dim]{minify.js.__name__}[/dim])")
-        except ImportError:
-            console.print("  [dim]Minify actions not available[/dim]")
+        _display_adapters()
+        _display_default_config()
+        _display_actions()
     except Exception as e:
         console.print(f"[red]Error displaying components: {e}[/red]")
         console.print("[dim]Make sure you're in a FastBlocks project directory[/dim]")
@@ -174,7 +182,6 @@ def create(
         str, typer.Option(prompt=True, help="Application domain")
     ] = "example.com",
 ) -> None:
-    """Create a new FastBlocks application project."""
     app_path = apps_path / app_name
     app_path.mkdir(exist_ok=True)
     os.chdir(app_path)

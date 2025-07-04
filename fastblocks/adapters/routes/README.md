@@ -25,7 +25,7 @@ The Routes adapter allows you to:
 
 | Implementation | Description |
 |----------------|-------------|
-| `main` | Default routes implementation |
+| `default` | Default routes implementation |
 
 ## Usage
 

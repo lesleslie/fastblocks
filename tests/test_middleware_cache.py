@@ -1,7 +1,6 @@
 """Tests for the CacheMiddleware."""
 
 import sys
-import typing as t
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -71,8 +70,8 @@ async def test_cache_middleware_duplicate_detection() -> None:
     # Mock the cache
     mock_cache = MagicMock()
 
-    # Create the middleware with a mocked cache
-    with patch("acb.depends.depends.get", return_value=mock_cache):
+    # Create the middleware with a mocked cache using the new dependency system
+    with patch("fastblocks.exceptions.safe_depends_get", return_value=mock_cache):
         # Attempting to create another CacheMiddleware should raise DuplicateCaching
         with pytest.raises(DuplicateCaching):
             CacheMiddleware(mock_app)
@@ -92,8 +91,8 @@ async def test_cache_middleware_non_http_request() -> None:
     # Mock the cache
     mock_cache = MagicMock()
 
-    # Create the middleware with a mocked cache
-    with patch("acb.depends.depends.get", return_value=mock_cache):
+    # Create the middleware with a mocked cache using the new dependency system
+    with patch("fastblocks.exceptions.safe_depends_get", return_value=mock_cache):
         middleware = CacheMiddleware(mock_app)
 
         # Call the middleware
@@ -131,24 +130,13 @@ async def test_cache_middleware_http_request() -> None:
     # Create logger mock using the MockLogger from conftest
     from acb.logger import Logger
 
-    mock_logger = Logger()
+    Logger()
 
-    # Create a proper mock CacheResponder that acts like the real class
-    class MockCacheResponder:
-        def __init__(self, app: t.Any, *, rules: t.Any) -> None:
-            self.app = app
-            self.rules = rules
-            self.logger = mock_logger
-            self.cache = mock_cache
-
-        async def __call__(self, scope: t.Any, receive: t.Any, send: t.Any) -> None:
-            # Mock the caching behavior - just pass through to app
-            # This avoids calling get_from_cache which has logger issues
-            await self.app(scope, receive, send)
-
-    # Create the middleware with mocked dependencies
-    with patch("acb.depends.depends.get", return_value=mock_cache):
-        with patch("fastblocks.caching.CacheResponder", MockCacheResponder):
+    # Create the middleware with mocked dependencies using the new dependency system
+    with patch("fastblocks.exceptions.safe_depends_get", return_value=mock_cache):
+        with patch(
+            "fastblocks.caching.get_from_cache", return_value=None
+        ) as mock_get_cache:
             middleware = CacheMiddleware(mock_app)
 
             # Call the middleware
@@ -156,6 +144,9 @@ async def test_cache_middleware_http_request() -> None:
 
             # Verify that the scope was updated with the middleware instance
             assert mock_scope["__starlette_caches__"] is middleware
+
+            # Verify that get_from_cache was called during the process
+            mock_get_cache.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -177,8 +168,8 @@ async def test_cache_middleware_duplicate_in_scope() -> None:
     # Mock the cache
     mock_cache = MagicMock()
 
-    # Create the middleware with a mocked cache
-    with patch("acb.depends.depends.get", return_value=mock_cache):
+    # Create the middleware with a mocked cache using the new dependency system
+    with patch("fastblocks.exceptions.safe_depends_get", return_value=mock_cache):
         middleware = CacheMiddleware(mock_app)
 
         # Call the middleware and expect a DuplicateCaching exception

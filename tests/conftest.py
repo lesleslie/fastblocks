@@ -1535,18 +1535,9 @@ def patch_depends():
 # pyright: reportUnusedFunction=false
 
 
-def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
-    """Set up the FastBlocks module structure with all necessary submodules.
-
-    This function creates mock modules for fastblocks package structure
-    to ensure imports work correctly during testing. It only creates modules
-    that don't already exist to avoid overriding real implementations.
-
-    It also adds mock classes and functions to the modules to satisfy imports
-    in the test files.
-    """
-    # Create the main module structure
-    module_structure = {
+def _create_module_structure() -> dict[str, types.ModuleType]:
+    """Create the FastBlocks module structure dictionary."""
+    return {
         "fastblocks": types.ModuleType("fastblocks"),
         "fastblocks.exceptions": types.ModuleType("fastblocks.exceptions"),
         "fastblocks.middleware": types.ModuleType("fastblocks.middleware"),
@@ -1589,7 +1580,9 @@ def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
         ),
     }
 
-    # Set up each module
+
+def _setup_module_components(module_structure: dict[str, types.ModuleType]) -> None:
+    """Set up components for each module in the structure."""
     _setup_exceptions_module(module_structure["fastblocks.exceptions"])
     _setup_middleware_module(module_structure["fastblocks.middleware"])
     _setup_templates_base_module(
@@ -1604,14 +1597,13 @@ def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
     _setup_admin_base_module(module_structure["fastblocks.adapters.admin._base"])
     _setup_routes_module(module_structure["fastblocks.adapters.routes"])
 
-    # Add mock classes and functions to the modules
-    # Exceptions module
-    exceptions_module = module_structure["fastblocks.exceptions"]
+
+def _setup_exception_classes(exceptions_module: types.ModuleType) -> None:
+    """Set up exception classes in the exceptions module."""
     exceptions_module.StarletteCachesException = type(
         "StarletteCachesException", (Exception,), {}
     )
 
-    # Create exception classes with proper inheritance
     exceptions_module.RequestNotCachable = type(
         "RequestNotCachable",
         (exceptions_module.StarletteCachesException,),
@@ -1629,16 +1621,17 @@ def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
         "MissingCaching", (exceptions_module.StarletteCachesException,), {}
     )
 
-    # Add the depends module to exceptions
     exceptions_module.depends = MagicMock()
     exceptions_module.depends.get = MagicMock()
 
-    # Create a special mock for handle_exception that will work with the tests
+
+def _create_mock_handle_exception(exceptions_module: types.ModuleType) -> None:
+    """Create a mock handle_exception function for the exceptions module."""
+
     class MockHandleException:
         async def __call__(self, request, exc):
             from starlette.responses import PlainTextResponse
 
-            # Return PlainTextResponse for HTMX requests
             if request.scope.get("htmx", False):
                 status_code = getattr(exc, "status_code", 500)
                 if status_code == 404:
@@ -1650,43 +1643,33 @@ def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
                 else:
                     return PlainTextResponse(f"Error: {exc}", status_code=status_code)
 
-            # For non-HTMX requests, return the template response
             templates = exceptions_module.depends.get()
 
-            # Actually call the render_template method with the expected arguments
-            # This will properly record the call for assertion in the test
             if hasattr(templates, "app") and hasattr(templates.app, "render_template"):
-                # Call the render_template method with the expected arguments
                 templates.app.render_template(
                     request,
                     "index.html",
                     status_code=getattr(exc, "status_code", 500),
                     context={"page": "404"},
                 )
-
-                # Return the mock response that was set up in the test
                 return templates.app.render_template.return_value
 
-            return MagicMock()  # Fallback
+            return MagicMock()
 
-    # Use our custom mock class
     exceptions_module.handle_exception = MockHandleException()
 
-    # Caching module
-    caching_module = module_structure["fastblocks.caching"]
+
+def _setup_caching_module(caching_module: types.ModuleType) -> None:
+    """Set up the caching module with constants and functions."""
     caching_module.CacheControlResponder = type("CacheControlResponder", (), {})
     caching_module.CacheResponder = type("CacheResponder", (), {})
-
-    # Rule class will be set below when importing real functions
     caching_module.CacheDirectives = type("CacheDirectives", (), {})
 
-    # Add constants
     caching_module.cachable_methods = ["GET", "HEAD"]
     caching_module.cachable_status_codes = [200, 301, 302, 304, 307, 308, 404]
     caching_module.invalidating_methods = ["POST", "PUT", "DELETE", "PATCH"]
-    caching_module.one_year = 31536000  # 365 days in seconds
+    caching_module.one_year = 31536000
 
-    # Import real functions from the caching module
     try:
         from fastblocks.caching import (
             Rule,
@@ -1707,7 +1690,6 @@ def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
             set_in_cache,
         )
 
-        # Use real functions
         caching_module.get_from_cache = get_from_cache
         caching_module.set_in_cache = set_in_cache
         caching_module.get_cache_key = get_cache_key
@@ -1725,10 +1707,8 @@ def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
         caching_module.patch_cache_control = patch_cache_control
         caching_module.request_matches_rule = request_matches_rule
         caching_module.response_matches_rule = response_matches_rule
-        # Use real Rule class instead of MockRule
         caching_module.Rule = Rule
     except ImportError:
-        # Fallback to mocks if real module can't be imported
         caching_module.get_from_cache = AsyncMock()
         caching_module.set_in_cache = AsyncMock()
         caching_module.get_cache_key = AsyncMock()
@@ -1745,14 +1725,17 @@ def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
         caching_module.request_matches_rule = MagicMock()
         caching_module.response_matches_rule = MagicMock()
 
-    # Set up module paths and inheritance
+
+def _register_modules(module_structure: dict[str, types.ModuleType]) -> None:
+    """Register modules in sys.modules and set up module paths."""
     for module_name, module in module_structure.items():
         module.__path__ = [f"/mock/path/to/{module_name.replace('.', '/')}"]
-        # Only add the module if it doesn't already exist
         if module_name not in sys.modules:
             sys.modules[module_name] = module
 
-    # Link parent modules to child modules
+
+def _link_parent_child_modules(module_structure: dict[str, types.ModuleType]) -> None:
+    """Link parent modules to child modules."""
     for module_name, module in module_structure.items():
         if "._" in module_name:
             parent_name = module_name.rsplit("._", 1)[0]
@@ -1760,24 +1743,77 @@ def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
             if parent_name in module_structure:
                 setattr(module_structure[parent_name], attr_name, module)
 
-    # Add imports from child modules to parent modules
-    for parent_name in (
+
+def _setup_parent_module_imports(module_structure: dict[str, types.ModuleType]) -> None:
+    """Add imports from child modules to parent modules."""
+    parent_modules = [
         "fastblocks.adapters.templates",
         "fastblocks.adapters.admin",
         "fastblocks.adapters.app",
         "fastblocks.adapters.auth",
         "fastblocks.adapters.routes",
         "fastblocks.adapters.sitemap",
-    ):
-        if parent_name in module_structure:
-            parent = module_structure[parent_name]
-            # Import classes from _base
-            base_module_name = f"{parent_name}._base"
-            if base_module_name in module_structure:
-                base_module = module_structure[base_module_name]
-                for attr_name in dir(base_module):
-                    if not attr_name.startswith("_") or attr_name == "__all__":
-                        setattr(parent, attr_name, getattr(base_module, attr_name))
+    ]
+
+    for parent_name in parent_modules:
+        _setup_single_parent_module(module_structure, parent_name)
+
+
+def _setup_single_parent_module(
+    module_structure: dict[str, types.ModuleType], parent_name: str
+) -> None:
+    """Set up imports for a single parent module."""
+    if parent_name not in module_structure:
+        return
+
+    parent = module_structure[parent_name]
+    base_module_name = f"{parent_name}._base"
+
+    if base_module_name not in module_structure:
+        return
+
+    base_module = module_structure[base_module_name]
+    _copy_public_attributes(parent, base_module)
+
+
+def _copy_public_attributes(
+    parent: types.ModuleType, base_module: types.ModuleType
+) -> None:
+    """Copy public attributes from base module to parent."""
+    for attr_name in dir(base_module):
+        if _is_public_attribute(attr_name):
+            setattr(parent, attr_name, getattr(base_module, attr_name))
+
+
+def _is_public_attribute(attr_name: str) -> bool:
+    """Check if an attribute should be considered public."""
+    return not attr_name.startswith("_") or attr_name == "__all__"
+
+
+def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
+    """Set up the FastBlocks module structure with all necessary submodules.
+
+    This function creates mock modules for fastblocks package structure
+    to ensure imports work correctly during testing. It only creates modules
+    that don't already exist to avoid overriding real implementations.
+
+    It also adds mock classes and functions to the modules to satisfy imports
+    in the test files.
+    """
+    module_structure = _create_module_structure()
+
+    _setup_module_components(module_structure)
+
+    exceptions_module = module_structure["fastblocks.exceptions"]
+    _setup_exception_classes(exceptions_module)
+    _create_mock_handle_exception(exceptions_module)
+
+    caching_module = module_structure["fastblocks.caching"]
+    _setup_caching_module(caching_module)
+
+    _register_modules(module_structure)
+    _link_parent_child_modules(module_structure)
+    _setup_parent_module_imports(module_structure)
 
 
 def _setup_exceptions_module(exceptions_module: ModuleType) -> None:
@@ -1971,44 +2007,72 @@ def _create_cache_middleware_factory(middleware_module: ModuleType) -> t.Callabl
     """Create a factory function for the cache middleware."""
 
     def create_cache_middleware_that_uses_depends():
-        class PatchableCacheMiddleware:
-            def __init__(self, app, cache=None, rules=None) -> None:
-                self.app = app
-                # Use the provided cache if given, otherwise use depends.get()
-                if cache is not None:
-                    self.cache = cache
-                else:
-                    # Use middleware_module.depends.get so it can be patched
-                    self.cache = middleware_module.depends.get(MagicMock)
-                self.rules = rules or [MagicMock()]
-
-                # Check for duplicate middleware
-                if hasattr(app, "middleware") and app.middleware:
-                    for m in app.middleware:
-                        if isinstance(m, PatchableCacheMiddleware):
-                            from fastblocks.exceptions import DuplicateCaching
-
-                            raise DuplicateCaching("Duplicate CacheMiddleware detected")
-
-            async def __call__(self, scope, receive, send):
-                if scope.get("type") != "http":
-                    return await self.app(scope, receive, send)
-
-                # Check for duplicate in scope
-                if "__starlette_caches__" in scope:
-                    from fastblocks.exceptions import DuplicateCaching
-
-                    raise DuplicateCaching("Duplicate CacheMiddleware in scope")
-
-                scope["__starlette_caches__"] = self
-
-                # Use the middleware module's CacheResponder (can be patched in tests)
-                responder = middleware_module.CacheResponder(self.app, rules=self.rules)
-                return await responder(scope, receive, send)
-
-        return PatchableCacheMiddleware
+        return _create_patchable_cache_middleware_class(middleware_module)
 
     return create_cache_middleware_that_uses_depends
+
+
+def _create_patchable_cache_middleware_class(middleware_module: ModuleType) -> type:
+    """Create the PatchableCacheMiddleware class."""
+
+    class PatchableCacheMiddleware:
+        def __init__(self, app, cache=None, rules=None) -> None:
+            self.app = app
+            self.cache = _get_cache_for_middleware(middleware_module, cache)
+            self.rules = rules or [MagicMock()]
+            _check_for_duplicate_middleware(app)
+
+        async def __call__(self, scope, receive, send):
+            return await _handle_cache_middleware_request(
+                self, scope, receive, send, middleware_module
+            )
+
+    return PatchableCacheMiddleware
+
+
+def _get_cache_for_middleware(middleware_module: ModuleType, cache: t.Any) -> t.Any:
+    """Get the cache instance for middleware."""
+    if cache is not None:
+        return cache
+    return middleware_module.depends.get(MagicMock)
+
+
+def _check_for_duplicate_middleware(app: t.Any) -> None:
+    """Check for duplicate cache middleware."""
+    if not (hasattr(app, "middleware") and app.middleware):
+        return
+
+    for m in app.middleware:
+        if m.__class__.__name__ == "PatchableCacheMiddleware":
+            from fastblocks.exceptions import DuplicateCaching
+
+            raise DuplicateCaching("Duplicate CacheMiddleware detected")
+
+
+async def _handle_cache_middleware_request(
+    middleware: t.Any,
+    scope: dict,
+    receive: t.Any,
+    send: t.Any,
+    middleware_module: ModuleType,
+) -> t.Any:
+    """Handle a request through the cache middleware."""
+    if scope.get("type") != "http":
+        return await middleware.app(scope, receive, send)
+
+    _check_for_duplicate_in_scope(scope)
+    scope["__starlette_caches__"] = middleware
+
+    responder = middleware_module.CacheResponder(middleware.app, rules=middleware.rules)
+    return await responder(scope, receive, send)
+
+
+def _check_for_duplicate_in_scope(scope: dict) -> None:
+    """Check for duplicate cache middleware in scope."""
+    if "__starlette_caches__" in scope:
+        from fastblocks.exceptions import DuplicateCaching
+
+        raise DuplicateCaching("Duplicate CacheMiddleware in scope")
 
 
 def _setup_middleware_module(middleware_module: ModuleType) -> None:
@@ -2632,25 +2696,39 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
         if not self.searchpath:
             raise MockTemplateNotFound(template)
 
-        if self.storage and hasattr(self.storage, "templates"):
-            with suppress(Exception):
-                if self.storage.templates.exists(f"templates/{template}"):
-                    content_bytes = self.storage.templates.open(f"templates/{template}")
+        # Try storage first
+        storage_result = await self._try_storage_source(template)
+        if storage_result:
+            return storage_result
 
-                    if isinstance(content_bytes, bytes):
-                        content = content_bytes.decode(self.encoding)
-                    else:
-                        content = str(content_bytes)
+        # Try searchpaths
+        searchpath_result = await self._try_searchpath_source(template)
+        if searchpath_result:
+            return searchpath_result
 
-                    if self.cache:
-                        cache_key = f"template:{template}"
-                        self.cache.set(cache_key, content)
+        raise MockTemplateNotFound(template)
 
-                    return content, template, lambda: True
+    async def _try_storage_source(
+        self, template: str
+    ) -> tuple[str, str, t.Callable[[], bool]] | None:
+        """Try to get template from storage."""
+        if not (self.storage and hasattr(self.storage, "templates")):
+            return None
 
-        for i in range(len(self.searchpath)):
-            path = self.searchpath[i]
+        with suppress(Exception):
+            if self.storage.templates.exists(f"templates/{template}"):
+                content_bytes = self.storage.templates.open(f"templates/{template}")
+                content = self._decode_content(content_bytes)
+                self._cache_content(template, content)
+                return content, template, lambda: True
 
+        return None
+
+    async def _try_searchpath_source(
+        self, template: str
+    ) -> tuple[str, str, t.Callable[[], bool]] | None:
+        """Try to get template from searchpaths."""
+        for path in self.searchpath:
             if isinstance(path, str):
                 path = Path(path)
 
@@ -2659,7 +2737,19 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
                 content = open(template_path).read()
                 return content, str(template_path), lambda: True
 
-        raise MockTemplateNotFound(template)
+        return None
+
+    def _decode_content(self, content_bytes: t.Any) -> str:
+        """Decode content bytes to string."""
+        if isinstance(content_bytes, bytes):
+            return content_bytes.decode(self.encoding)
+        return str(content_bytes)
+
+    def _cache_content(self, template: str, content: str) -> None:
+        """Cache the template content."""
+        if self.cache:
+            cache_key = f"template:{template}"
+            self.cache.set(cache_key, content)
 
     async def list_templates_async(self) -> list[str]:
         templates = set()
@@ -2702,48 +2792,77 @@ class MockRedisLoader(MockAsyncBaseLoader):
     async def get_source_async(
         self, template: str | t.Any
     ) -> tuple[str, str, t.Callable[[], bool]]:
-        if self.cache:
-            cache_key = f"template:{template}"
-            exists = await self.cache.exists(cache_key)
+        # Try cache first
+        cache_result = await self._try_cache_source(template)
+        if cache_result:
+            return cache_result
 
-            if exists:
-                cached = await self.cache.get(cache_key)
-
-                def cache_uptodate() -> bool:
-                    return True
-
-                return (
-                    cached.decode() if isinstance(cached, bytes) else str(cached),
-                    f"templates/{template}",
-                    cache_uptodate,
-                )
-
-        if self.storage and hasattr(self.storage, "templates"):
-            with suppress(Exception):
-                exists = await self.storage.templates.exists(f"templates/{template}")
-
-                if exists:
-                    content_bytes = await self.storage.templates.open(
-                        f"templates/{template}"
-                    )
-
-                    if isinstance(content_bytes, bytes):
-                        content = content_bytes.decode(self.encoding)
-                    else:
-                        content = str(content_bytes)
-
-                    if self.cache:
-                        cache_key = f"template:{template}"
-                        await self.cache.set(cache_key, content)
-
-                    async def storage_uptodate() -> bool:
-                        return True
-
-                    return content, f"templates/{template}", storage_uptodate  # type: ignore
+        # Try storage
+        storage_result = await self._try_storage_source_redis(template)
+        if storage_result:
+            return storage_result
 
         from jinja2 import TemplateNotFound
 
         raise TemplateNotFound(template)
+
+    async def _try_cache_source(
+        self, template: str
+    ) -> tuple[str, str, t.Callable[[], bool]] | None:
+        """Try to get template from cache."""
+        if not self.cache:
+            return None
+
+        cache_key = f"template:{template}"
+        exists = await self.cache.exists(cache_key)
+
+        if not exists:
+            return None
+
+        cached = await self.cache.get(cache_key)
+        content = cached.decode() if isinstance(cached, bytes) else str(cached)
+
+        def cache_uptodate() -> bool:
+            return True
+
+        return content, f"templates/{template}", cache_uptodate
+
+    async def _try_storage_source_redis(
+        self, template: str
+    ) -> tuple[str, str, t.Callable[[], bool]] | None:
+        """Try to get template from storage."""
+        if not (self.storage and hasattr(self.storage, "templates")):
+            return None
+
+        with suppress(Exception):
+            template_path = f"templates/{template}"
+            exists = await self.storage.templates.exists(template_path)
+
+            if not exists:
+                return None
+
+            content_bytes = await self.storage.templates.open(template_path)
+            content = self._decode_content_redis(content_bytes)
+            await self._cache_content_redis(template, content)
+
+            async def storage_uptodate() -> bool:
+                return True
+
+            return content, template_path, storage_uptodate  # type: ignore
+
+        return None
+
+    def _decode_content_redis(self, content_bytes: t.Any) -> str:
+        """Decode content bytes to string."""
+        if isinstance(content_bytes, bytes):
+            return content_bytes.decode(self.encoding)
+        return str(content_bytes)
+
+    async def _cache_content_redis(self, template: str, content: str) -> None:
+        """Cache the template content."""
+        if self.cache:
+            cache_key = f"template:{template}"
+            await self.cache.set(cache_key, content)
 
     async def list_templates_async(self) -> list[str]:
         found: list[str] = []

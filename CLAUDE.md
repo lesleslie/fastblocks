@@ -30,7 +30,11 @@ fastblocks/
 │   └── templates/   # Template engine adapters
 ├── applications.py  # FastBlocks application class
 ├── middleware.py    # ASGI middleware components
-└── caching.py       # Caching system
+├── caching.py       # Caching system
+├── cli.py           # Command-line interface
+├── dependencies.py  # Dependency injection system
+├── initializers.py  # Application initialization
+└── exceptions.py    # Custom exception classes
 ```
 
 ## Development Commands
@@ -68,6 +72,22 @@ pyright
 
 # Run full pre-commit checks
 pre-commit run --all-files
+```
+
+### FastBlocks CLI Commands
+
+```bash
+# Create a new FastBlocks project
+python -m fastblocks create
+
+# Run development server with hot reload
+python -m fastblocks dev
+
+# Run production server
+python -m fastblocks run
+
+# Show available components and adapters
+python -m fastblocks components
 ```
 
 ### Testing with Crackerjack

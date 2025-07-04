@@ -1,18 +1,22 @@
 import typing as t
 from contextvars import ContextVar
 
-from acb.config import AdapterBase, Config, Settings
-from acb.depends import depends
 from asgi_htmx import HtmxRequest
 from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import UnauthenticatedUser
+
+from ...dependencies import get_acb_subset
+
+AdapterBase, Config, Settings, depends = get_acb_subset(
+    "AdapterBase", "Config", "Settings", "depends"
+)
 
 
 class AuthBaseSettings(Settings):
     token_id: str | None = None
 
     @depends.inject
-    def __init__(self, config: Config = depends(), **data: t.Any) -> None:
+    def __init__(self, config: t.Any = depends(), **data: t.Any) -> None:
         super().__init__(**data)
         self.token_id = self.token_id or getattr(config.app, "token_id", "_fb_")
 

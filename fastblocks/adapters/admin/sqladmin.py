@@ -1,14 +1,19 @@
 import typing as t
 from contextlib import suppress
 
-from acb.adapters import import_adapter
-from acb.depends import depends
+from ...dependencies import get_acb_subset
+
+import_adapter, depends = get_acb_subset("import_adapter", "depends")
 from starlette.applications import Starlette
 from fastblocks.applications import FastBlocks
 
 from ._base import AdminBase, AdminBaseSettings
 
-Auth, Storage, Models, Sql, Templates = import_adapter()
+Auth = None
+Storage = None
+Models = None
+Sql = None
+Templates = None
 
 
 class AdminSettings(AdminBaseSettings): ...
@@ -39,4 +44,5 @@ class Admin(AdminBase):
                     self._sqladmin.add_view(model)
 
 
-depends.set(Admin)
+with suppress(Exception):
+    depends.set(Admin)
