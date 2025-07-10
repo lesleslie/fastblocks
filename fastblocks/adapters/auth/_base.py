@@ -5,11 +5,8 @@ from asgi_htmx import HtmxRequest
 from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import UnauthenticatedUser
 
-from ...dependencies import get_acb_subset
-
-AdapterBase, Config, Settings, depends = get_acb_subset(
-    "AdapterBase", "Config", "Settings", "depends"
-)
+from acb.config import AdapterBase, Config, Settings
+from acb.depends import depends
 
 
 class AuthBaseSettings(Settings):

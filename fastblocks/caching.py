@@ -20,10 +20,8 @@ GetAdapterFunc = t.Callable[[str], t.Any]
 ImportAdapterFunc = t.Callable[[str | list[str] | None], t.Any]
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from .dependencies import (
-    get_acb_modules_for_caching,
-    get_cache_adapter,
-)
+from acb.depends import depends
+from acb.adapters import get_adapter
 from .exceptions import RequestNotCachable, ResponseNotCachable
 
 
@@ -51,7 +49,7 @@ def _get_hasher():
 def get_cache() -> t.Any:
     global _CacheClass
     if _CacheClass is None:
-        _CacheClass = get_cache_adapter()
+        _CacheClass = get_adapter("cache")
     return _CacheClass
 
 
@@ -197,7 +195,6 @@ async def set_in_cache(
     logger: t.Any = None,
 ) -> None:
     if cache is None or logger is None:
-        _, _, _, depends, _Logger = get_acb_modules_for_caching()
         if cache is None:
             cache = depends.get("cache")
         if logger is None:
@@ -253,7 +250,6 @@ async def get_from_cache(
     logger: t.Any = None,
 ) -> Response | None:
     if cache is None or logger is None:
-        _, _, _, depends, _Logger = get_acb_modules_for_caching()
         if cache is None:
             cache = depends.get("cache")
         if logger is None:
@@ -299,7 +295,6 @@ async def delete_from_cache(
     url: URL, *, vary: Headers, cache: t.Any = None, logger: t.Any = None
 ) -> None:
     if cache is None or logger is None:
-        _, _, _, depends, _Logger = get_acb_modules_for_caching()
         if cache is None:
             cache = depends.get("cache")
         if logger is None:
@@ -352,7 +347,6 @@ async def learn_cache_key(
     logger: t.Any = None,
 ) -> str:
     if cache is None or logger is None:
-        _, _, _, depends, _Logger = get_acb_modules_for_caching()
         if cache is None:
             cache = depends.get("cache")
         if logger is None:
@@ -388,7 +382,6 @@ async def get_cache_key(
     request: Request, method: str, cache: t.Any = None, logger: t.Any = None
 ) -> str | None:
     if cache is None or logger is None:
-        _, _, _, depends, _Logger = get_acb_modules_for_caching()
         if cache is None:
             cache = depends.get("cache")
         if logger is None:
@@ -421,13 +414,11 @@ def generate_cache_key(
     config: t.Any = None,
 ) -> str | None:
     if config is None:
-        _, _, _Config, depends, _ = get_acb_modules_for_caching()
         config = depends.get("config")
 
     if method not in cacheable_methods:
         return None
 
-    _, _, _, _, _ = get_acb_modules_for_caching()
 
     vary_values = [
         f"{header}:{value}"
@@ -516,14 +507,12 @@ class CacheResponder:
         self.app = app
         self.rules = rules
         try:
-            _, _, _, depends, _ = get_acb_modules_for_caching()
             self.logger = depends.get("logger")
         except Exception:
             import logging
 
             self.logger = logging.getLogger("fastblocks.cache")
         try:
-            _, _, _, depends, _ = get_acb_modules_for_caching()
             self.cache = depends.get("cache")
         except Exception:
             self.cache = None
@@ -601,7 +590,6 @@ class CacheControlResponder:
         self.app = app
         self.kwargs = kwargs
         try:
-            _, _, _, depends, _Logger = get_acb_modules_for_caching()
             self.logger = depends.get("logger")
         except Exception:
             import logging

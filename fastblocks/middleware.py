@@ -22,7 +22,7 @@ from .caching import (
     Rule,
     delete_from_cache,
 )
-from .dependencies import get_acb_modules_for_middleware
+from acb.depends import depends
 
 MiddlewareCallable = t.Callable[[ASGIApp], ASGIApp]
 MiddlewareClass = type[t.Any]
@@ -100,7 +100,6 @@ class CurrentRequestMiddleware:
 class SecureHeadersMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
-        _, _, depends, _ = get_acb_modules_for_middleware()
         try:
             self.logger = depends.get("logger")
         except Exception:
@@ -123,7 +122,6 @@ class SecureHeadersMiddleware:
 class ProcessTimeHeaderMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
-        _, _, depends, _ = get_acb_modules_for_middleware()
         try:
             self.logger = depends.get("logger")
         except Exception:
@@ -171,7 +169,6 @@ class CacheKeyManager:
         if self.cache is None:
             from .exceptions import safe_depends_get
 
-            _, _, _, _ = get_acb_modules_for_middleware()
             self.cache = safe_depends_get("cache", self._cache_dict)
         return self.cache
 
@@ -315,7 +312,6 @@ class MiddlewareStackManager:
 
     def _ensure_dependencies(self) -> None:
         if self.config is None or self.logger is None:
-            _get_adapter, _, depends, _Logger = get_acb_modules_for_middleware()
             if self.config is None:
                 self.config = depends.get("config")
             if self.logger is None:
@@ -339,14 +335,14 @@ class MiddlewareStackManager:
         self._ensure_dependencies()
         if not self.config:
             return
-        _get_adapter, _, _depends, _ = get_acb_modules_for_middleware()
+        from acb.adapters import get_adapter
         self._middleware_registry[MiddlewarePosition.CSRF] = CSRFMiddleware
         self._middleware_options[MiddlewarePosition.CSRF] = {
             "secret": self.config.app.secret_key.get_secret_value(),
             "cookie_name": f"{getattr(self.config.app, 'token_id', '_fb_')}_csrf",
             "cookie_secure": self.config.deployed,
         }
-        if _get_adapter("auth"):
+        if get_adapter("auth"):
             self._middleware_registry[MiddlewarePosition.SESSION] = SessionMiddleware
             self._middleware_options[MiddlewarePosition.SESSION] = {
                 "secret_key": self.config.app.secret_key.get_secret_value(),

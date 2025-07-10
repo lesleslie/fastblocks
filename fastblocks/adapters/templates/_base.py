@@ -4,27 +4,11 @@ from anyio import Path as AsyncPath
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ...dependencies import get_acb_subset
-
-(
-    Adapter,
-    pkg_registry,
-    get_adapters,
-    root_path,
-    AdapterBase,
-    Config,
-    Settings,
-    depends,
-) = get_acb_subset(
-    "Adapter",
-    "pkg_registry",
-    "get_adapters",
-    "root_path",
-    "AdapterBase",
-    "Config",
-    "Settings",
-    "depends",
-)
+# Direct ACB imports - ACB is always available
+from acb import Adapter, pkg_registry
+from acb.adapters import get_adapters, root_path
+from acb.config import AdapterBase, Config, Settings
+from acb.depends import depends
 
 
 async def safe_await(func_or_value: t.Any) -> t.Any:
@@ -95,24 +79,31 @@ class TemplatesBase(AdapterBase):
 
     async def get_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
         searchpaths = []
-        searchpaths.extend(
-            self.get_searchpath(adapter, root_path / "templates" / adapter.category)
-        )
-        if adapter.category == "app":
+        # Handle root_path which might be a function or Path object
+        if callable(root_path):
+            base_root = AsyncPath(root_path())
+        else:
+            base_root = AsyncPath(root_path)
+        if adapter and hasattr(adapter, 'category'):
+            searchpaths.extend(
+                self.get_searchpath(adapter, base_root / "templates" / adapter.category)
+            )
+        if adapter and hasattr(adapter, 'category') and adapter.category == "app":
             for a in [
                 a
                 for a in get_adapters()
-                if a.category not in ("app", "admin", "secret")
+                if a and hasattr(a, 'category') and a.category not in ("app", "admin", "secret")
             ]:
                 exists_result = await safe_await((a.path / "_templates").exists)
                 if exists_result:
                     searchpaths.append(a.path / "_templates")
-        for path in (p.path for p in pkg_registry.get()):
-            searchpaths.extend(
-                self.get_searchpath(
-                    adapter, path / "adapters" / adapter.category / "_templates"
+        for pkg in pkg_registry.get():
+            if pkg and hasattr(pkg, 'path') and adapter and hasattr(adapter, 'category'):
+                searchpaths.extend(
+                    self.get_searchpath(
+                        adapter, pkg.path / "adapters" / adapter.category / "_templates"
+                    )
                 )
-            )
         return searchpaths
 
     @staticmethod

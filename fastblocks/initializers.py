@@ -10,7 +10,11 @@ import typing as t
 from starception import install_error_handler
 from starlette.applications import Starlette
 
-from .dependencies import get_acb_subset
+from acb.config import Config, AdapterBase
+from acb import register_pkg
+from acb.adapters import get_installed_adapter
+from acb.depends import depends
+# Note: Logger and InterceptHandler are available through depends.get() if needed
 
 
 class ApplicationInitializer:
@@ -33,18 +37,27 @@ class ApplicationInitializer:
         self._configure_logging()
 
     def _load_acb_modules(self) -> None:
-        self._acb_modules = get_acb_subset(
-            "register_pkg",
-            "get_installed_adapter",
-            "Config",
-            "AdapterBase",
-            "InterceptHandler",
-            "Logger",
-            "depends",
+        # Get Logger and InterceptHandler from depends if available
+        try:
+            logger_class = depends.get("logger").__class__
+            # Import InterceptHandler directly from acb.logger
+            from acb.logger import InterceptHandler
+            interceptor_class = InterceptHandler
+        except Exception:
+            logger_class = None
+            interceptor_class = None
+        
+        self._acb_modules = (
+            register_pkg,
+            get_installed_adapter,
+            Config,
+            AdapterBase,
+            interceptor_class,
+            logger_class,
+            depends,
         )
 
     def _setup_dependencies(self) -> None:
-        depends = self._acb_modules[6]
         self.config = self.kwargs.get("config") or depends.get("config")
         self.logger = self.kwargs.get("logger") or depends.get("logger")
         self.depends = depends
@@ -93,13 +106,16 @@ class ApplicationInitializer:
         object.__setattr__(self.app, "models", models)
 
     def _configure_logging(self) -> None:
-        get_installed_adapter = self._acb_modules[1]
-        InterceptHandler = self._acb_modules[4]
         if get_installed_adapter("logfire"):
             from logfire import instrument_starlette  # type: ignore[import-untyped]
 
             instrument_starlette(self.app)
-        for logger_name in ("uvicorn", "uvicorn.access", "granian", "granian.access"):
-            server_logger = logging.getLogger(logger_name)
-            server_logger.handlers.clear()
-            server_logger.addHandler(InterceptHandler())
+        # Configure logging handlers if InterceptHandler is available
+        interceptor_class = self._acb_modules[4]  # InterceptHandler class from _load_acb_modules
+        if interceptor_class:
+            for logger_name in ("uvicorn", "uvicorn.access", "granian", "granian.access"):
+                server_logger = logging.getLogger(logger_name)
+                server_logger.handlers.clear()
+                server_logger.addHandler(interceptor_class())
+                server_logger.setLevel(logging.DEBUG)
+                server_logger.propagate = False  # Prevent propagation to avoid duplicates

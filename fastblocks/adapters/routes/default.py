@@ -1,25 +1,10 @@
 from contextlib import suppress
 from importlib import import_module
 
-from ...dependencies import get_acb_subset
-
-(
-    get_adapters,
-    get_installed_adapter,
-    import_adapter,
-    root_path,
-    Config,
-    debug,
-    depends,
-) = get_acb_subset(
-    "get_adapters",
-    "get_installed_adapter",
-    "import_adapter",
-    "root_path",
-    "Config",
-    "debug",
-    "depends",
-)
+from acb.adapters import get_adapters, get_installed_adapter, import_adapter, root_path
+from acb.config import Config
+from acb.debug import debug
+from acb.depends import depends
 from anyio import Path as AsyncPath
 from asgi_htmx import HtmxRequest
 from jinja2.exceptions import TemplateNotFound
@@ -31,18 +16,33 @@ from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 
 from ._base import RoutesBase, RoutesBaseSettings
 
-Templates = None
+# Import Templates adapter using traditional pattern
+try:
+    Templates = import_adapter("templates")
+except Exception:
+    Templates = None
 
-base_routes_path = AsyncPath(root_path / "routes.py")
+# root_path is already an AsyncPath object from ACB
+base_routes_path = root_path / "routes.py"
 
 
 class RoutesSettings(RoutesBaseSettings): ...
 
 
-class Index(HTTPEndpoint):
+class FastBlocksEndpoint(HTTPEndpoint):
+    """Base class for HTTPEndpoint with FastBlocks dependency injection support"""
+    # Use ACB's depends() pattern for dependency injection
     config: Config = depends()
-    templates: "Templates" = depends()
+    # Get templates instance explicitly from depends.get to ensure we get the initialized singleton
+    
+    def __init__(self, scope, receive, send):
+        super().__init__(scope, receive, send)
+        # Get the templates instance explicitly to ensure we get the initialized singleton
+        self.templates = depends.get("templates")
 
+class Index(FastBlocksEndpoint):
+
+    @depends.inject
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)
         page = request.path_params.get("page") or "home"
@@ -54,21 +54,20 @@ class Index(HTTPEndpoint):
             headers["hx-push-url"] = "/" if page == "home" else page
         debug(page, template)
         try:
-            return await self.templates.app.render_template(
+            return await self.templates.render_template(
                 request, template, headers=headers, context=dict(page=page.lstrip("/"))
             )
         except TemplateNotFound:
             raise HTTPException(status_code=404)
 
 
-class Block(HTTPEndpoint):
-    templates: "Templates" = depends()
+class Block(FastBlocksEndpoint):
 
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)
         block = f"blocks/{request.path_params['block']}.html"
         try:
-            return await self.templates.app.render_template(request, block)
+            return await self.templates.render_template(request, block)
         except TemplateNotFound:
             raise HTTPException(status_code=404)
 

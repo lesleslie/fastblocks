@@ -8,16 +8,17 @@ from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
 from starlette.types import ASGIApp, ExceptionHandler, Lifespan
 
-from .dependencies import get_acb_modules_for_applications
+# Direct ACB imports - ACB is always available
+from acb.config import AdapterBase, Config
+from acb.depends import depends
+# Note: Logger and InterceptHandler are available through depends.get() if needed
 from .initializers import ApplicationInitializer
 from .middleware import MiddlewarePosition
 
 
 class FastBlocksSettings:
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
-        _, _, _Config, AdapterBase, _InterceptHandler, _Logger, _depends = (
-            get_acb_modules_for_applications()
-        )
+        # Direct ACB usage - AdapterBase is always available
         if AdapterBase not in cls.__bases__:
             cls.__bases__ = (AdapterBase,) + cls.__bases__
         super().__init_subclass__(**kwargs)
@@ -208,15 +209,7 @@ class FastBlocks(Starlette):
         return middleware_list
 
     def _get_dependencies(self, config: t.Any, logger: t.Any) -> tuple[t.Any, t.Any]:
-        (
-            _register_pkg,
-            _get_installed_adapter,
-            _Config,
-            _AdapterBase,
-            _InterceptHandler,
-            _Logger,
-            depends,
-        ) = get_acb_modules_for_applications()
+        # Direct ACB access - components are always available through depends
         if config is None:
             config = depends.get("config")
         if logger is None:

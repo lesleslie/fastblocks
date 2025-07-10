@@ -3,10 +3,24 @@ import os
 import signal
 import typing as t
 from enum import Enum
+from importlib.metadata import version as get_version
 from pathlib import Path
 from subprocess import DEVNULL
 from subprocess import run as execute
 from typing import Annotated
+import logging
+
+# Configure uvicorn logging early, before importing uvicorn
+try:
+    from acb.logger import InterceptHandler
+    for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+        logger = logging.getLogger(logger_name)
+        logger.handlers.clear()
+        logger.addHandler(InterceptHandler())
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False
+except ImportError:
+    pass
 
 import nest_asyncio
 import typer
@@ -78,7 +92,7 @@ def run(docker: bool = False, granian: bool = False, host: str = "127.0.0.1") ->
 
             Granian("main:app", address=host, interface=Interfaces.ASGI).serve()
         else:
-            uvicorn.run(app=run_args["app"], host=host, lifespan="on")
+            uvicorn.run(app=run_args["app"], host=host, lifespan="on", log_config=None)
 
 
 @cli.command()
@@ -106,6 +120,7 @@ def dev(granian: bool = False) -> None:
             reload_includes=["*.py", str(Path.cwd()), str(fastblocks_path)],
             reload_excludes=["tmp/*", "settings/*", "templates/*"],
             lifespan="on",
+            log_config=None,  # Disable uvicorn's default logging config
         )
 
 
@@ -236,3 +251,12 @@ def create(
         "\n[dim]Use [white]`python -m fastblocks components`[/white] to see available adapters and actions.[/dim]"
     )
     raise SystemExit()
+
+
+@cli.command()
+def version() -> None:
+    try:
+        __version__ = get_version("fastblocks")
+        console.print(f"FastBlocks v{__version__}")
+    except Exception:
+        console.print("Unable to determine FastBlocks version")

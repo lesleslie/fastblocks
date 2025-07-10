@@ -1,6 +1,4 @@
-from ...dependencies import get_acb_subset
-
-AdapterBase, Settings = get_acb_subset("AdapterBase", "Settings")
+from acb.config import AdapterBase, Settings
 
 
 class AdminBaseSettings(Settings):

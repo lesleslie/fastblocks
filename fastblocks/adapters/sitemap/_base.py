@@ -2,9 +2,7 @@ import typing as t
 from dataclasses import dataclass
 from datetime import datetime
 
-from ...dependencies import get_acb_subset
-
-AdapterBase, Settings = get_acb_subset("AdapterBase", "Settings")
+from acb.config import AdapterBase, Settings
 
 
 @dataclass

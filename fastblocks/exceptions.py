@@ -10,7 +10,8 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
 
-from .dependencies import get_acb_subset
+# Direct ACB imports - ACB is always available
+from acb.depends import depends
 
 _templates_cache = None
 
@@ -123,9 +124,7 @@ def safe_depends_get(
 ) -> t.Any:
     if key not in cache_dict:
         try:
-            _, _, _, depends, _ = get_acb_subset(
-                "hash", "import_adapter", "Config", "depends", "Logger"
-            )
+            # Direct ACB access - depends is always available
             cache_dict[key] = depends.get(key)
         except Exception:
             cache_dict[key] = default

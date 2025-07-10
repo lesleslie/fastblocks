@@ -2,9 +2,15 @@ import typing as t
 
 from starlette.routing import Router
 
-from ...dependencies import get_acb_subset
+# Direct ACB imports - ACB is always available
+from acb.config import AdapterBase
+from acb.depends import depends
 
-AdapterBase, AppConfigSettings = get_acb_subset("AdapterBase", "AppSettings")
+# Get AppSettings from config if available
+try:
+    AppConfigSettings = depends.get("config").app.__class__
+except Exception:
+    AppConfigSettings = object
 
 
 class AppBaseSettings(AppConfigSettings):
