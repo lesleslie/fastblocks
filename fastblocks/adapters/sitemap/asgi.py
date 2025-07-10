@@ -1,9 +1,6 @@
 from contextlib import suppress
-import typing as t
 
-from ...dependencies import get_acb_subset
-
-depends = get_acb_subset("depends")[0]
+from acb.depends import depends
 from asgi_sitemaps import Sitemap as AsgiSitemap  # type: ignore[import-untyped]
 from asgi_sitemaps import SitemapApp as AsgiSitemapApp  # type: ignore[import-untyped]
 

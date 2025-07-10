@@ -12,8 +12,8 @@ from pathlib import Path
 from acb import Adapter
 from acb.adapters import get_adapter, import_adapter
 from acb.config import Config
-from acb.depends import depends
 from acb.debug import debug
+from acb.depends import depends
 from anyio import Path as AsyncPath
 from jinja2 import TemplateNotFound
 from jinja2.ext import Extension, i18n, loopcontrols
@@ -28,7 +28,6 @@ try:
     Cache, Storage, Models = import_adapter()
 except Exception:
     Cache = Storage = Models = None
-
 
 _TEMPLATE_REPLACEMENTS = [
     (b"{{", b"[["),
@@ -61,10 +60,11 @@ class BaseTemplateLoader(AsyncBaseLoader):
     config: Config = depends()
     cache: Cache = depends()
     storage: Storage = depends()
-    
-    def __init__(self, searchpath: AsyncPath | t.Sequence[AsyncPath] | None = None) -> None:
-        super().__init__(searchpath)
-        # Ensure dependencies are resolved at instantiation time
+
+    def __init__(
+        self, searchpath: AsyncPath | t.Sequence[AsyncPath] | None = None
+    ) -> None:
+        super().__init__(searchpath or [])
         if self.storage is None:
             try:
                 self.storage = depends.get("storage")
@@ -72,14 +72,17 @@ class BaseTemplateLoader(AsyncBaseLoader):
                 self.storage = get_adapter("storage")
         if self.cache is None:
             try:
-                self.cache = depends.get("cache")  
+                self.cache = depends.get("cache")
             except Exception:
                 self.cache = get_adapter("cache")
-        if self.config is None:
+        if not hasattr(self, "config"):
             try:
                 self.config = depends.get("config")
             except Exception:
-                self.config = get_adapter("config")
+                config_adapter = get_adapter("config")
+                self.config = (
+                    config_adapter if isinstance(config_adapter, Config) else Config()
+                )
 
     def get_supported_extensions(self) -> tuple[str, ...]:
         return ("html", "css", "js")
@@ -148,7 +151,11 @@ class BaseTemplateLoader(AsyncBaseLoader):
             path = searchpath / template if searchpath else AsyncPath(template)
             storage_path = Templates.get_storage_path(path)
             cache_key = Templates.get_cache_key(storage_path)
-            if storage_path and self.cache is not None and await self.cache.exists(cache_key):
+            if (
+                storage_path
+                and self.cache is not None
+                and await self.cache.exists(cache_key)
+            ):
                 return path, storage_path, cache_key
             return None
 
@@ -176,6 +183,45 @@ class LoaderProtocol(t.Protocol):
 
 
 class FileSystemLoader(BaseTemplateLoader):
+    async def _check_storage_exists(self, storage_path: AsyncPath) -> bool:
+        if self.storage is not None:
+            return await self.storage.templates.exists(storage_path)
+        return False
+
+    async def _sync_from_storage(
+        self, path: AsyncPath, storage_path: AsyncPath
+    ) -> tuple[bytes, int]:
+        local_stat = await path.stat()
+        local_mtime = int(local_stat.st_mtime)
+        local_size = local_stat.st_size
+        storage_stat = await self.storage.templates.stat(storage_path)
+        storage_mtime = int(round(storage_stat.get("mtime")))
+        storage_size = storage_stat.get("size")
+
+        if local_mtime < storage_mtime and local_size != storage_size:
+            resp = await self.storage.templates.open(storage_path)
+            await path.write_bytes(resp)
+        else:
+            resp = await path.read_bytes()
+            if local_size != storage_size:
+                await self.storage.templates.write(storage_path, resp)
+        return resp, local_mtime
+
+    async def _read_and_store_template(
+        self, path: AsyncPath, storage_path: AsyncPath
+    ) -> bytes:
+        try:
+            resp = await path.read_bytes()
+            if self.storage is not None:
+                await self.storage.templates.write(storage_path, resp)
+            return resp
+        except FileNotFoundError:
+            raise TemplateNotFound(path.name)
+
+    async def _cache_template(self, storage_path: AsyncPath, resp: bytes) -> None:
+        if self.cache is not None:
+            await self.cache.set(Templates.get_cache_key(storage_path), resp)
+
     async def get_source_async(
         self, environment_or_template: t.Any, template: str | AsyncPath | None = None
     ) -> SourceType:
@@ -185,35 +231,17 @@ class FileSystemLoader(BaseTemplateLoader):
             raise TemplateNotFound(str(template))
         storage_path = Templates.get_storage_path(path)
         debug(path)
+
         fs_exists = await path.exists()
-        storage_exists = False
-        if self.storage is not None:
-            storage_exists = await self.storage.templates.exists(storage_path)
+        storage_exists = await self._check_storage_exists(storage_path)
         local_mtime = 0
-        resp: bytes
+
         if storage_exists and fs_exists and (not self.config.deployed):
-            local_stat = await path.stat()
-            local_mtime = int(local_stat.st_mtime)
-            local_size = local_stat.st_size
-            storage_stat = await self.storage.templates.stat(storage_path)
-            storage_mtime = int(round(storage_stat.get("mtime")))
-            storage_size = storage_stat.get("size")
-            if local_mtime < storage_mtime and local_size != storage_size:
-                resp = await self.storage.templates.open(storage_path)
-                await path.write_bytes(resp)
-            else:
-                resp = await path.read_bytes()
-                if local_size != storage_size:
-                    await self.storage.templates.write(storage_path, resp)
+            resp, local_mtime = await self._sync_from_storage(path, storage_path)
         else:
-            try:
-                resp = await path.read_bytes()
-                if self.storage is not None:
-                    await self.storage.templates.write(storage_path, resp)
-            except FileNotFoundError:
-                raise TemplateNotFound(path.name)
-        if self.cache is not None:
-            await self.cache.set(Templates.get_cache_key(storage_path), resp)
+            resp = await self._read_and_store_template(path, storage_path)
+
+        await self._cache_template(storage_path, resp)
 
         async def uptodate() -> bool:
             return int((await path.stat()).st_mtime) == local_mtime
@@ -285,9 +313,12 @@ class RedisLoader(BaseTemplateLoader):
     async def list_templates_async(self) -> list[str]:
         found: list[str] = []
         for ext in ("html", "css", "js"):
-            scan_result = await self.cache.scan(f"*.{ext}") if self.cache is not None else []
+            scan_result = (
+                await self.cache.scan(f"*.{ext}") if self.cache is not None else []
+            )
             if hasattr(scan_result, "__aiter__"):
-                found.extend([k async for k in scan_result])
+                async for k in scan_result:  # type: ignore
+                    found.append(k)
             else:
                 found.extend(scan_result)
         found.sort()
@@ -426,15 +457,11 @@ class TemplatesSettings(TemplatesBaseSettings):
     context_processors: list[str] = []
 
     def __init__(self, **data: t.Any) -> None:
-        # Initialize without dependency injection for ACB compatibility
-        # The base class __init__ can cause issues when called by ACB
         from pydantic import BaseModel
+
         BaseModel.__init__(self, **data)
-        
-        # Set default values
-        if not hasattr(self, 'cache_timeout'):
+        if not hasattr(self, "cache_timeout"):
             self.cache_timeout = 300
-        
         try:
             models = depends.get("models")
             self.globals["models"] = models
@@ -554,37 +581,56 @@ class Templates(TemplatesBase):
             templates.env.globals[k] = v  # type: ignore[assignment]
         return templates
 
-    async def init(self, cache: t.Any | None = None) -> None:
+    def _resolve_cache(self, cache: t.Any | None) -> t.Any | None:
         if cache is None:
             try:
                 cache = depends.get("cache")
             except Exception:
                 cache = None
-        app_adapter = t.cast(Adapter, self.enabled_app)
-        self.app_searchpaths = await self.get_searchpaths(app_adapter)
-        self.app = await self.init_envs(self.app_searchpaths, cache=cache)
-        
-        # Register this initialized instance with ACB depends to ensure singleton behavior
-        depends.set("templates", self)
-        
-        self._admin = None
-        self._admin_initialized = False
+        return cache
+
+    async def _setup_admin_templates(self, cache: t.Any | None) -> None:
         if self.enabled_admin:
             self.admin_searchpaths = await self.get_searchpaths(self.enabled_admin)
             self._admin_cache = cache
+
+    def _log_loader_info(self) -> None:
         if self.app and self.app.env.loader and hasattr(self.app.env.loader, "loaders"):
             for loader in self.app.env.loader.loaders:
                 self.logger.debug(f"{loader.__class__.__name__} initialized")
+
+    def _log_extension_info(self) -> None:
         if self.app and hasattr(self.app.env, "extensions"):
             for ext in self.app.env.extensions:
                 self.logger.debug(f"{ext.split('.')[-1]} loaded")
+
+    async def _clear_debug_cache(self, cache: t.Any | None) -> None:
         if getattr(self.config.debug, "templates", False):
             try:
-                for namespace in ("templates", "_templates", "bccache", "template", "test"):
+                for namespace in (
+                    "templates",
+                    "_templates",
+                    "bccache",
+                    "template",
+                    "test",
+                ):
                     await cache.clear(namespace)
                 self.logger.debug("Templates cache cleared")
             except (NotImplementedError, AttributeError) as e:
                 self.logger.debug(f"Cache clear not supported: {e}")
+
+    async def init(self, cache: t.Any | None = None) -> None:
+        cache = self._resolve_cache(cache)
+        app_adapter = t.cast(Adapter, self.enabled_app)
+        self.app_searchpaths = await self.get_searchpaths(app_adapter)
+        self.app = await self.init_envs(self.app_searchpaths, cache=cache)
+        depends.set("templates", self)
+        self._admin = None
+        self._admin_initialized = False
+        await self._setup_admin_templates(cache)
+        self._log_loader_info()
+        self._log_extension_info()
+        await self._clear_debug_cache(cache)
 
     @staticmethod
     def get_attr(html: str, attr: str) -> str | None:
@@ -672,5 +718,4 @@ class Templates(TemplatesBase):
 
 
 with suppress(Exception):
-    # Register the Templates class with ACB depends system
     depends.set(Templates)

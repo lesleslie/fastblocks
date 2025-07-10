@@ -5,13 +5,11 @@ from dataclasses import dataclass
 from enum import Enum
 from operator import itemgetter
 
+from acb.depends import depends
 from asgi_htmx import HtmxRequest
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
-
-# Direct ACB imports - ACB is always available
-from acb.depends import depends
 
 _templates_cache = None
 
@@ -124,7 +122,6 @@ def safe_depends_get(
 ) -> t.Any:
     if key not in cache_dict:
         try:
-            # Direct ACB access - depends is always available
             cache_dict[key] = depends.get(key)
         except Exception:
             cache_dict[key] = default

@@ -2,9 +2,8 @@ import hashlib
 import typing as t
 from urllib.parse import quote_plus
 
-from ...dependencies import get_acb_subset
-
-Config, depends = get_acb_subset("Config", "depends")
+from acb.config import Config
+from acb.depends import depends
 from fastblocks.actions.minify import minify
 
 _minification_cache = {}
@@ -36,7 +35,7 @@ class Filters:
     config: Config = depends()
 
     @classmethod
-    def get_templates(cls):
+    def get_templates(cls) -> t.Any:
         if not hasattr(cls, "_templates"):
             cls._templates = depends.get("templates")
         return cls._templates

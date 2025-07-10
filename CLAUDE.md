@@ -10,9 +10,10 @@ FastBlocks is an asynchronous web application framework, inspired by FastAPI and
 
 - **Starlette Foundation**: FastBlocks extends Starlette's application class and middleware system
 - **ACB Integration**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), providing dependency injection, configuration management, and pluggable components
-- **Template-Focused**: Advanced asynchronous Jinja2 template system with fragments and partials support
+- **Template-Focused**: Advanced asynchronous Jinja2 template system with fragments and partials support using jinja2-async-environment
 - **Adapters Pattern**: Pluggable components for authentication, admin interfaces, routing, templates, etc.
 - **HTMX Integration**: First-class support for HTMX to create dynamic interfaces with server-side rendering
+- **Direct ACB Imports** (v0.13.2+): Simplified dependency injection using direct ACB imports instead of wrapper system
 
 ## Directory Structure
 
@@ -31,10 +32,10 @@ fastblocks/
 ├── applications.py  # FastBlocks application class
 ├── middleware.py    # ASGI middleware components
 ├── caching.py       # Caching system
-├── cli.py           # Command-line interface
-├── dependencies.py  # Dependency injection system
+├── cli.py           # Command-line interface (with uvicorn logging fixes)
 ├── initializers.py  # Application initialization
-└── exceptions.py    # Custom exception classes
+├── exceptions.py    # Custom exception classes
+└── main.py          # Lazy loading app and logger components
 ```
 
 ## Development Commands
@@ -183,3 +184,73 @@ These standards align with the project's pre-commit hooks:
 - **Ruff**: Handles formatting and additional linting
 
 By following these guidelines during code generation, AI assistants will produce code that passes all quality checks without requiring manual fixes.
+
+## Recent Changes and Best Practices (v0.13.2+)
+
+### Dependency Management (Breaking Change)
+FastBlocks now uses **direct ACB imports** instead of the wrapper system:
+
+```python
+# OLD pattern (removed in v0.13.2)
+from ...dependencies import get_acb_subset
+get_adapter, import_adapter, Config, depends = get_acb_subset(...)
+
+# NEW pattern (current)
+from acb.adapters import get_adapter, import_adapter
+from acb.config import Config
+from acb.depends import depends
+```
+
+### Template System Enhancements
+- **Null Safety**: Template adapters now gracefully handle None dependencies with automatic fallbacks
+- **Enhanced Error Handling**: Better error messages and recovery in template loading
+- **Redis Bytecode Cache**: Fixed string/bytes handling in jinja2-async-environment integration
+
+### CLI and Development Experience
+- **Uvicorn Logging**: Fixed duplicate logging with `log_config=None` and `propagate=False`
+- **Template Reload Exclusions**: Templates directory excluded from file watching to prevent conflicts
+- **Signal Handling**: Improved graceful shutdown with proper SIGINT/SIGTERM handling
+
+### Lazy Loading Pattern
+FastBlocks uses lazy loading for improved startup performance:
+
+```python
+from fastblocks import app, logger  # These are LazyApp and LazyLogger instances
+
+# They initialize on first use
+@app.get("/")  # Triggers app initialization
+async def index():
+    logger.info("Request handled")  # Triggers logger initialization
+```
+
+### Integration with Latest ACB (0.16.17+)
+- Compatible with ACB's static adapter mappings
+- Works with enhanced memory cache aiocache interface
+- Supports library mode detection for better configuration
+
+### Template Uptodate Fix
+After recent jinja2-async-environment fixes, template reloading no longer produces RuntimeWarnings about unawaited coroutines. The uptodate functions now properly return coroutines when called.
+
+### Best Practices for Development
+1. **Always use direct ACB imports** - no more wrapper functions
+2. **Handle None dependencies** - template loaders should fallback gracefully
+3. **Use lazy loading** - import app and logger from fastblocks main module
+4. **Configure uvicorn properly** - set log_config=None in production
+5. **Exclude templates from reload** - prevents file watching conflicts
+
+## Task Completion Requirements
+
+**MANDATORY: Before marking any task as complete, AI assistants MUST:**
+
+1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-agent` to run all quality checks and tests with AI-optimized output
+2. **Fix any issues found**: Address all formatting, linting, type checking, and test failures
+3. **Re-run verification**: Ensure crackerjack passes completely (all hooks pass, all tests pass)
+4. **Document verification**: Mention that crackerjack verification was completed successfully
+
+**Why this is critical:**
+- Ensures all code meets project quality standards
+- Prevents broken code from being committed
+- Maintains consistency with project development workflow
+- Catches issues early before they become problems
+
+**Never skip crackerjack verification** - it's the project's standard quality gate.

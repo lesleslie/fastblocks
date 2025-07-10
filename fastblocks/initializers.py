@@ -7,14 +7,12 @@ of a FastBlocks application, separating concerns from the main application class
 import logging
 import typing as t
 
-from starception import install_error_handler
-from starlette.applications import Starlette
-
-from acb.config import Config, AdapterBase
 from acb import register_pkg
 from acb.adapters import get_installed_adapter
+from acb.config import AdapterBase, Config
 from acb.depends import depends
-# Note: Logger and InterceptHandler are available through depends.get() if needed
+from starception import install_error_handler
+from starlette.applications import Starlette
 
 
 class ApplicationInitializer:
@@ -37,16 +35,14 @@ class ApplicationInitializer:
         self._configure_logging()
 
     def _load_acb_modules(self) -> None:
-        # Get Logger and InterceptHandler from depends if available
         try:
             logger_class = depends.get("logger").__class__
-            # Import InterceptHandler directly from acb.logger
             from acb.logger import InterceptHandler
+
             interceptor_class = InterceptHandler
         except Exception:
             logger_class = None
             interceptor_class = None
-        
         self._acb_modules = (
             register_pkg,
             get_installed_adapter,
@@ -110,12 +106,16 @@ class ApplicationInitializer:
             from logfire import instrument_starlette  # type: ignore[import-untyped]
 
             instrument_starlette(self.app)
-        # Configure logging handlers if InterceptHandler is available
-        interceptor_class = self._acb_modules[4]  # InterceptHandler class from _load_acb_modules
+        interceptor_class = self._acb_modules[4]
         if interceptor_class:
-            for logger_name in ("uvicorn", "uvicorn.access", "granian", "granian.access"):
+            for logger_name in (
+                "uvicorn",
+                "uvicorn.access",
+                "granian",
+                "granian.access",
+            ):
                 server_logger = logging.getLogger(logger_name)
                 server_logger.handlers.clear()
                 server_logger.addHandler(interceptor_class())
                 server_logger.setLevel(logging.DEBUG)
-                server_logger.propagate = False  # Prevent propagation to avoid duplicates
+                server_logger.propagate = False

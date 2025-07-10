@@ -1,12 +1,11 @@
 import typing as t
 from contextvars import ContextVar
 
+from acb.config import AdapterBase, Settings
+from acb.depends import depends
 from asgi_htmx import HtmxRequest
 from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import UnauthenticatedUser
-
-from acb.config import AdapterBase, Config, Settings
-from acb.depends import depends
 
 
 class AuthBaseSettings(Settings):

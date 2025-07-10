@@ -1,9 +1,7 @@
 import typing as t
 from contextlib import suppress
 
-from ...dependencies import get_acb_subset
-
-import_adapter, depends = get_acb_subset("import_adapter", "depends")
+from acb.depends import depends
 from starlette.applications import Starlette
 from fastblocks.applications import FastBlocks
 

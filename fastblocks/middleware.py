@@ -5,6 +5,7 @@ from contextvars import ContextVar
 from enum import IntEnum
 from time import perf_counter
 
+from acb.depends import depends
 from asgi_htmx import HtmxMiddleware
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
@@ -22,7 +23,6 @@ from .caching import (
     Rule,
     delete_from_cache,
 )
-from acb.depends import depends
 
 MiddlewareCallable = t.Callable[[ASGIApp], ASGIApp]
 MiddlewareClass = type[t.Any]
@@ -336,6 +336,7 @@ class MiddlewareStackManager:
         if not self.config:
             return
         from acb.adapters import get_adapter
+
         self._middleware_registry[MiddlewarePosition.CSRF] = CSRFMiddleware
         self._middleware_options[MiddlewarePosition.CSRF] = {
             "secret": self.config.app.secret_key.get_secret_value(),

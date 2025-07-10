@@ -1,8 +1,7 @@
 import typing as t
 
-from ...dependencies import get_acb_subset
-
-import_adapter, depends = get_acb_subset("import_adapter", "depends")
+from acb.adapters import import_adapter
+from acb.depends import depends
 from starlette.routing import Route
 from fastblocks.adapters.sitemap._base import SitemapProtocol
 

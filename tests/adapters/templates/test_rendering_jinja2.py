@@ -45,6 +45,7 @@ class MockAsyncJinja2Templates:
 
     async def TemplateResponse(
         self,
+        request: t.Any,
         name: str,
         context: dict[str, t.Any],
         status_code: int = 200,

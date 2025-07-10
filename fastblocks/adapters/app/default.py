@@ -3,21 +3,12 @@ from base64 import b64encode
 from contextlib import asynccontextmanager, suppress
 from time import perf_counter
 
+from acb.adapters import get_adapter, import_adapter
+from acb.depends import depends
+from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks.applications import FastBlocks
 
-# Direct ACB imports - ACB is always available
-from acb.adapters import get_adapter, import_adapter
-from acb.config import Config
-from acb.depends import depends
 from ._base import AppBase, AppBaseSettings
-
-# Import real ACB config to ensure we get the actual config
-try:
-    from acb.config import Config as RealConfig
-    from acb.depends import depends as real_depends
-except ImportError:
-    RealConfig = Config
-    real_depends = depends
 
 main_start = perf_counter()
 
@@ -42,121 +33,135 @@ class AppSettings(AppBaseSettings):
 
 
 class FastBlocksApp(FastBlocks):
-    """The actual FastBlocks application"""
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(lifespan=self.lifespan, **kwargs)
-    
+
     async def init(self) -> None:
-        """Initialize the FastBlocks application"""
-        # Simplified init for the wrapper
         pass
-    
-    async def post_startup(self) -> None:
-        """Display app banner and startup information after startup"""
+
+    def _get_startup_time(self) -> float:
+        startup_time = getattr(self, "_startup_time", None)
+        if startup_time is None or startup_time <= 0:
+            import time
+
+            init_start = getattr(self, "_init_start_time", None)
+            if init_start:
+                startup_time = time.time() - init_start
+            else:
+                startup_time = 0.001
+        return startup_time
+
+    def _get_debug_enabled(self, config: t.Any) -> list[str]:
+        debug_enabled = []
+        if hasattr(config, "debug"):
+            for key, value in vars(config.debug).items():
+                if value and key != "production":
+                    debug_enabled.append(key)
+        return debug_enabled
+
+    def _get_color_constants(self) -> dict[str, str]:
+        return {
+            "GREEN": "\033[92m",
+            "BLUE": "\033[94m",
+            "YELLOW": "\033[93m",
+            "CYAN": "\033[96m",
+            "RESET": "\033[0m",
+            "BOLD": "\033[1m",
+        }
+
+    def _format_info_lines(
+        self,
+        config: t.Any,
+        colors: dict[str, str],
+        debug_enabled: list[str],
+        startup_time: float,
+    ) -> list[str]:
+        app_title = getattr(config.app, "title", "Welcome to FastBlocks")
+        app_domain = getattr(config.app, "domain", "localhost")
+        debug_str = ", ".join(debug_enabled) if debug_enabled else "disabled"
+
+        return [
+            f"{colors['CYAN']}{colors['BOLD']}{app_title}{colors['RESET']}",
+            f"{colors['BLUE']}Domain: {app_domain}{colors['RESET']}",
+            f"{colors['YELLOW']}Debug: {debug_str}{colors['RESET']}",
+            f"{colors['YELLOW']}══════════════════════════════════════════════════{colors['RESET']}",
+            f"{colors['GREEN']}🚀 FastBlocks Application Ready{colors['RESET']}",
+            f"{colors['YELLOW']}⚡ Startup time: {startup_time * 1000:.2f}ms{colors['RESET']}",
+            f"{colors['CYAN']}🌐 Server running on http://127.0.0.1:8000{colors['RESET']}",
+            f"{colors['YELLOW']}══════════════════════════════════════════════════{colors['RESET']}",
+        ]
+
+    def _clean_and_center_line(self, line: str, colors: dict[str, str]) -> str:
+        line_clean = line
+        for color in colors.values():
+            line_clean = line_clean.replace(color, "")
+        line_width = len(line_clean)
+        padding = max(0, (90 - line_width) // 2)
+        return " " * padding + line
+
+    async def _display_fancy_startup(self) -> None:
+        from acb.depends import depends
+        from aioconsole import aprint
+        from pyfiglet import Figlet
+
+        config = depends.get("config")
+        app_name = getattr(config.app, "name", "FastBlocks")
+        startup_time = self._get_startup_time()
+        debug_enabled = self._get_debug_enabled(config)
+        colors = self._get_color_constants()
+        banner = Figlet(font="slant", width=90, justify="center").renderText(
+            app_name.upper()
+        )
+        await aprint(f"\n\n{banner}\n")
+        info_lines = self._format_info_lines(
+            config, colors, debug_enabled, startup_time
+        )
+        for line in info_lines:
+            centered_line = self._clean_and_center_line(line, colors)
+            print(centered_line)
+        print()
+
+    def _display_simple_startup(self) -> None:
         try:
-            from aioconsole import aprint
-            from pyfiglet import Figlet
             from acb.depends import depends
-            
-            # Get app config
+
             config = depends.get("config")
-            app_name = getattr(config.app, 'name', 'FastBlocks')
-            app_title = getattr(config.app, 'title', 'Welcome to FastBlocks')
-            app_domain = getattr(config.app, 'domain', 'localhost')
-            
-            # Calculate startup time 
-            startup_time = getattr(self, '_startup_time', None)
-            if startup_time is None or startup_time <= 0:
-                # Fallback startup time calculation
-                import time
-                init_start = getattr(self, '_init_start_time', None)
-                if init_start:
-                    startup_time = time.time() - init_start
-                else:
-                    startup_time = 0.001  # Default fallback
-            
-            # Display figlet banner using original format (width=90, justify="center")
-            fig = Figlet(font="slant", width=90, justify="center")
-            banner = fig.renderText(app_name.upper())
-            await aprint(f"\n\n{banner}\n")
-            
-            # Color codes
-            GREEN = '\033[92m'
-            BLUE = '\033[94m'
-            YELLOW = '\033[93m'
-            CYAN = '\033[96m'
-            RESET = '\033[0m'
-            BOLD = '\033[1m'
-            
-            # Get debug state info
-            debug_enabled = []
-            if hasattr(config, 'debug'):
-                for key, value in vars(config.debug).items():
-                    if value and key != 'production':
-                        debug_enabled.append(key)
-            debug_state = f"Debug: {', '.join(debug_enabled) if debug_enabled else 'disabled'}"
-            
-            # Center the info text with colors using the same width as figlet (90)
-            info_lines = [
-                f"{CYAN}{BOLD}{app_title}{RESET}",
-                f"{BLUE}Domain: {app_domain}{RESET}",
-                f"{YELLOW}Debug: {', '.join(debug_enabled) if debug_enabled else 'disabled'}{RESET}",
-                f"{YELLOW}══════════════════════════════════════════════════{RESET}",
-                f"{GREEN}🚀 FastBlocks Application Ready{RESET}",
-                f"{YELLOW}⚡ Startup time: {startup_time*1000:.2f}ms{RESET}",
-                f"{CYAN}🌐 Server running on http://127.0.0.1:8000{RESET}",
-                f"{YELLOW}══════════════════════════════════════════════════{RESET}"
-            ]
-            
-            for line in info_lines:
-                # Calculate line width without ANSI codes
-                line_clean = line.replace(GREEN, '').replace(BLUE, '').replace(YELLOW, '').replace(CYAN, '').replace(RESET, '').replace(BOLD, '')
-                line_width = len(line_clean)
-                # Use the same centering logic as figlet (width=90)
-                padding = max(0, (90 - line_width) // 2)
-                centered_line = ' ' * padding + line
-                print(centered_line)
+            app_name = getattr(config.app, "name", "FastBlocks")
+            startup_time = self._get_startup_time()
+            print("\n  ══════════════════════════════════════════════════")
+            print(f"  🚀 {app_name.upper()} Application Ready")
+            print(f"  ⚡ Startup time: {startup_time * 1000:.2f}ms")
+            print("  🌐 Server running on http://127.0.0.1:8000")
+            print("  ══════════════════════════════════════════════════")
             print()
-            
-        except Exception as e:
-            # Fallback to simple text banner if pyfiglet fails
-            try:
-                from acb.depends import depends
-                config = depends.get("config")
-                app_name = getattr(config.app, 'name', 'FastBlocks')
-                startup_time = getattr(self, '_startup_time', None)
-                if startup_time is None or startup_time <= 0:
-                    startup_time = 0.001
-                print(f"\n  ══════════════════════════════════════════════════")
-                print(f"  🚀 {app_name.upper()} Application Ready")
-                print(f"  ⚡ Startup time: {startup_time*1000:.2f}ms")
-                print(f"  🌐 Server running on http://127.0.0.1:8000") 
-                print(f"  ══════════════════════════════════════════════════")
-                print()
-            except Exception:
-                print(f"\n  🚀 FastBlocks Application Ready")
-                print()
-    
+        except Exception:
+            print("\n  🚀 FastBlocks Application Ready")
+            print()
+
+    async def post_startup(self) -> None:
+        try:
+            await self._display_fancy_startup()
+        except Exception:
+            self._display_simple_startup()
+
     @asynccontextmanager
     async def lifespan(self, app: "FastBlocks") -> t.AsyncIterator[None]:
-        """Lifespan context manager for FastBlocks application startup and shutdown."""
         try:
-            # Startup sequence - simplified for wrapper
-            if hasattr(self, 'logger'):
-                self.logger.info("FastBlocks application starting up")
+            logger = getattr(self, "logger", None)
+            if logger:
+                logger.info("FastBlocks application starting up")
         except Exception as e:
-            if hasattr(self, 'logger'):
-                self.logger.error(f"Error during startup: {e}")
+            logger = getattr(self, "logger", None)
+            if logger:
+                logger.error(f"Error during startup: {e}")
             raise e
         yield
-        # Shutdown sequence
-        if hasattr(self, 'logger'):
-            self.logger.info("FastBlocks application shutting down")
+        logger = getattr(self, "logger", None)
+        if logger:
+            logger.info("FastBlocks application shutting down")
 
 
 class App(AppBase):
-    """ACB adapter that wraps the FastBlocks application"""
-    # ACB adapter fields  
     router: t.Any = None
     middleware_manager: t.Any = None
     templates: t.Any = None
@@ -165,16 +170,10 @@ class App(AppBase):
     middleware_stack: t.Any = None
     user_middleware: t.Any = None
     fastblocks_app: t.Any = None
-    
-    
+
     def __init__(self, **kwargs: t.Any) -> None:
-        # Initialize AdapterBase
         super().__init__(**kwargs)
-        
-        # Create the actual FastBlocks application
         self.fastblocks_app = FastBlocksApp()
-        
-        # Initialize ACB adapter fields
         self.router = None
         self.middleware_manager = None
         self.templates = None
@@ -183,79 +182,66 @@ class App(AppBase):
         self.middleware_stack = None
         self.user_middleware = []
         self.state = None
-    
+
     @property
-    def logger(self):
-        """Ensure logger is available by providing a fallback."""
-        if hasattr(super(), 'logger'):
-            try:
+    def logger(self) -> t.Any:
+        if hasattr(super(), "logger"):
+            with suppress(Exception):
                 return super().logger
-            except Exception:
-                pass
-        # Fallback to getting logger from dependencies
         try:
             Logger = depends.get("logger")
             return Logger
         except Exception:
-            # Ultimate fallback to standard logging
             import logging
+
             return logging.getLogger(self.__class__.__name__)
 
+    @logger.setter
+    def logger(self, value: t.Any) -> None:
+        pass
+
+    @logger.deleter
+    def logger(self) -> None:
+        pass
+
     async def init(self) -> None:
-        # Track startup time
         import time
+
         self._init_start_time = time.time()
-        
-        # Initialize the FastBlocks application
         await self.fastblocks_app.init()
-        
-        # Set the required ACB adapter fields
         try:
             self.templates = depends.get("templates")
         except Exception:
             self.templates = None
-            
         try:
             self.models = depends.get("models")
         except Exception:
             self.models = None
-            
         try:
             routes_adapter = depends.get("routes")
             self.router = routes_adapter
-            # Also add routes to the FastBlocks app
             self.fastblocks_app.routes.extend(routes_adapter.routes)
         except Exception:
             self.router = None
-            
-        # Set additional required fields from the FastBlocks app
         self.middleware_manager = None
         self.exception_handlers = self.fastblocks_app.exception_handlers
-        self.middleware_stack = self.fastblocks_app.middleware_stack  
+        self.middleware_stack = self.fastblocks_app.middleware_stack
         self.user_middleware = self.fastblocks_app.user_middleware
         self.state = self.fastblocks_app.state
-        
-        # Calculate startup time
         import time
+
         self._startup_time = time.time() - self._init_start_time
-        
-        # Pass startup time to the FastBlocks app
         self.fastblocks_app._startup_time = self._startup_time
         self.fastblocks_app._init_start_time = self._init_start_time
-        
-        # Call post_startup to display banner and startup info
         await self.post_startup()
 
-    def __call__(self, scope, receive, send):
-        """Make the adapter callable like a Starlette app"""
+    def __call__(self, scope: Scope, receive: Receive, send: Send) -> ASGIApp:
         return self.fastblocks_app(scope, receive, send)
-    
-    def __getattr__(self, name):
-        """Delegate attribute access to the FastBlocks app"""
+
+    def __getattr__(self, name: str):
         return getattr(self.fastblocks_app, name)
 
     async def post_startup(self) -> None:
-        # Delegate to the FastBlocks app
         await self.fastblocks_app.post_startup()
 
     def _setup_admin_adapter(self, app: FastBlocks) -> None:

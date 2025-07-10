@@ -13,16 +13,15 @@ from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
 from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
+from starlette.types import Receive, Scope, Send
 
 from ._base import RoutesBase, RoutesBaseSettings
 
-# Import Templates adapter using traditional pattern
 try:
     Templates = import_adapter("templates")
 except Exception:
     Templates = None
 
-# root_path is already an AsyncPath object from ACB
 base_routes_path = root_path / "routes.py"
 
 
@@ -30,18 +29,14 @@ class RoutesSettings(RoutesBaseSettings): ...
 
 
 class FastBlocksEndpoint(HTTPEndpoint):
-    """Base class for HTTPEndpoint with FastBlocks dependency injection support"""
-    # Use ACB's depends() pattern for dependency injection
     config: Config = depends()
-    # Get templates instance explicitly from depends.get to ensure we get the initialized singleton
-    
-    def __init__(self, scope, receive, send):
+
+    def __init__(self, scope: Scope, receive: Receive, send: Send) -> None:
         super().__init__(scope, receive, send)
-        # Get the templates instance explicitly to ensure we get the initialized singleton
         self.templates = depends.get("templates")
 
-class Index(FastBlocksEndpoint):
 
+class Index(FastBlocksEndpoint):
     @depends.inject
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)
@@ -62,7 +57,6 @@ class Index(FastBlocksEndpoint):
 
 
 class Block(FastBlocksEndpoint):
-
     async def get(self, request: HtmxRequest) -> Response:
         debug(request)
         block = f"blocks/{request.path_params['block']}.html"

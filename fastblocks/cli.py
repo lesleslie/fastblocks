@@ -1,26 +1,25 @@
 import asyncio
+import logging
 import os
 import signal
 import typing as t
+from contextlib import suppress
 from enum import Enum
 from importlib.metadata import version as get_version
 from pathlib import Path
 from subprocess import DEVNULL
 from subprocess import run as execute
 from typing import Annotated
-import logging
 
-# Configure uvicorn logging early, before importing uvicorn
-try:
+with suppress(ImportError):
     from acb.logger import InterceptHandler
+
     for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
         logger = logging.getLogger(logger_name)
         logger.handlers.clear()
         logger.addHandler(InterceptHandler())
         logger.setLevel(logging.DEBUG)
         logger.propagate = False
-except ImportError:
-    pass
 
 import nest_asyncio
 import typer
@@ -120,7 +119,7 @@ def dev(granian: bool = False) -> None:
             reload_includes=["*.py", str(Path.cwd()), str(fastblocks_path)],
             reload_excludes=["tmp/*", "settings/*", "templates/*"],
             lifespan="on",
-            log_config=None,  # Disable uvicorn's default logging config
+            log_config=None,
         )
 
 

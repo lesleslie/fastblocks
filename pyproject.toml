@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.13.2"
+version = "0.13.3"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -20,6 +20,7 @@ keywords = [
     "sqlmodel",
     "starlette",
 ]
+license.text = "BSD-3-Clause"
 maintainers = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
@@ -42,9 +43,10 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "anyio>=4.9.0",
-    "asgi-htmx>=0.1.0",
-    "brotli-asgi>=1.4.0",
+    "acb[cache,monitoring,requests,storage]",
+    "anyio>=4.9",
+    "asgi-htmx>=0.1",
+    "brotli-asgi>=1.4",
     "granian[reload]>=2.4.1",
     "minify-html>=0.16.4",
     "pydantic>=2.11.7",
@@ -54,37 +56,32 @@ dependencies = [
     "secure>=1.0.1",
     "starception>=1.2.1",
     "starlette>=0.47.1",
-    "starlette-async-jinja>=1.11.0",
-    "starlette-csrf>=3.0.0",
-    "uvicorn>=0.35.0",
-    "acb[cache,monitoring,requests,storage]",
-    "typer>=0.16.0",
+    "starlette-async-jinja>=1.11.2",
+    "starlette-csrf>=3",
+    "typer>=0.16",
+    "uvicorn>=0.35",
 ]
 
-[project.license]
-text = "BSD-3-Clause"
-
-[project.optional-dependencies]
-admin = [
+optional-dependencies.admin = [
     "sqladmin>=0.20.1",
 ]
-dev = [
-    "crackerjack>=0.22.3",
+optional-dependencies.dev = [
+    "crackerjack>=0.22.5",
     "pytest>=8.4.1",
-    "pytest-asyncio>=1.0.0",
-    "pytest-benchmark>=5.1.0",
+    "pytest-asyncio>=1",
+    "pytest-benchmark>=5.1",
     "pytest-cov>=6.2.1",
     "pytest-mock>=3.14.1",
-    "pytest-timeout>=2.4.0",
-    "pytest-xdist>=3.8.0",
+    "pytest-timeout>=2.4",
+    "pytest-xdist>=3.8",
     "pyyaml>=6.0.2",
 ]
-monitoring = [
-    "logfire[starlette]>=3.21.1",
+optional-dependencies.monitoring = [
+    "logfire[starlette]>=3.23",
     "sentry-sdk[starlette]>=2.32",
     "urllib3>=2.5",
 ]
-sitemap = [
+optional-dependencies.sitemap = [
     "asgi-sitemaps>=1",
 ]
 
@@ -96,45 +93,36 @@ unsafe-fixes = true
 show-fixes = true
 output-format = "full"
 
-[tool.ruff.format]
-docstring-code-format = true
-
-[tool.ruff.lint]
-extend-select = [
+format.docstring-code-format = true
+lint.extend-select = [
     "C901",
     "D",
     "F",
     "I",
     "UP",
 ]
-ignore = [
-    "D105",
-    "UP040",
-    "D101",
-    "D103",
-    "D106",
-    "D104",
-    "F821",
+lint.ignore = [
     "D100",
+    "D101",
     "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
     "D107",
     "E402",
+    "F821",
+    "UP040",
 ]
-fixable = [
+lint.fixable = [
     "ALL",
 ]
-unfixable = []
-
-[tool.ruff.lint.isort]
-no-lines-before = [
+lint.unfixable = [  ]
+lint.isort.no-lines-before = [
     "first-party",
 ]
-
-[tool.ruff.lint.mccabe]
-max-complexity = 13
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+lint.mccabe.max-complexity = 13
+lint.pydocstyle.convention = "google"
 
 [tool.codespell]
 skip = "*/data/*"
@@ -242,23 +230,23 @@ deps-file = "pyproject.toml"
 exclude-deps = [
     "pytest-benchmark",
     "pytest-xdist",
-    "pytest-mock",
-    "google-crc32c",
-    "pytest-cov",
-    "pydantic-settings",
-    "pytest-timeout",
-    "autotyping",
-    "pyfiglet",
     "pyyaml",
-    "inflection",
-    "keyring",
-    "pdm",
     "pre-commit",
+    "pytest-mock",
+    "uv",
+    "keyring",
+    "pytest-timeout",
     "pdm-bump",
+    "pytest",
+    "google-crc32c",
+    "pdm",
+    "pytest-cov",
+    "pyfiglet",
+    "autotyping",
     "tomli-w",
     "pytest-asyncio",
-    "uv",
-    "pytest",
+    "pydantic-settings",
+    "inflection",
 ]
 
 [tool.refurb]
@@ -270,15 +258,15 @@ target = [
     "fastblocks",
 ]
 skips = [
-    "B404",
-    "B602",
-    "B704",
-    "B603",
-    "B607",
-    "B301",
     "B311",
     "B101",
     "B403",
+    "B602",
+    "B301",
+    "B603",
+    "B404",
+    "B607",
+    "B704",
 ]
 
 [tool.vulture]

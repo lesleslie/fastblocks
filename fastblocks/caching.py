@@ -18,10 +18,10 @@ from starlette.responses import Response
 HashFunc = t.Callable[[t.Any], str]
 GetAdapterFunc = t.Callable[[str], t.Any]
 ImportAdapterFunc = t.Callable[[str | list[str] | None], t.Any]
+from acb.adapters import get_adapter
+from acb.depends import depends
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from acb.depends import depends
-from acb.adapters import get_adapter
 from .exceptions import RequestNotCachable, ResponseNotCachable
 
 
@@ -418,7 +418,6 @@ def generate_cache_key(
 
     if method not in cacheable_methods:
         return None
-
 
     vary_values = [
         f"{header}:{value}"

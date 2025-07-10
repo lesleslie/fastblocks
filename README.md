@@ -222,6 +222,7 @@ FastBlocks combines the development speed of modern frameworks with the infrastr
   - [Creating a New Project](#creating-a-new-project)
   - [Running Your Application](#running-your-application)
   - [CLI Options](#cli-options)
+- [Migration Guide](#migration-guide)
 - [Examples](#examples)
 - [Documentation](#documentation)
 - [License](#license)
@@ -537,7 +538,7 @@ from acb.adapters import import_adapter
 from acb.depends import depends
 from acb.config import Config
 
-# Import adapters
+# Import adapters using the new direct import pattern
 Templates = import_adapter("templates")
 Cache = import_adapter("cache")
 
@@ -578,6 +579,8 @@ routes = [
 ]
 ```
 
+**Note**: This example uses the new v0.13.2+ import patterns. The template system automatically handles dependency resolution with fallbacks, so if cache is unavailable, the function will still work correctly.
+
 ## Architecture Overview
 
 ### Relationship with Starlette
@@ -607,6 +610,32 @@ FastBlocks is built on top of [Asynchronous Component Base (ACB)](https://github
 - **Component Architecture**: FastBlocks extends ACB's component architecture with web-specific components like templates, routing, and HTMX integration.
 
 - **Adapter Pattern**: FastBlocks uses ACB's adapter pattern to create pluggable components for authentication, admin interfaces, templates, etc.
+
+#### Direct ACB Integration (v0.13.2+)
+
+Recent improvements include simplified dependency management through direct ACB imports:
+
+```python
+# Direct ACB imports for better performance
+from acb.adapters import import_adapter
+from acb.depends import depends
+from acb.config import Config
+
+# Get adapters directly from ACB
+Templates = import_adapter("templates")
+App = import_adapter("app")
+
+# Access configuration and dependencies
+config = depends.get(Config)
+```
+
+**Benefits of Direct Integration:**
+
+- **Performance**: Eliminates wrapper overhead for faster adapter access
+- **Type Safety**: Better type annotations and IDE support
+- **Error Handling**: Enhanced error recovery with automatic fallbacks
+- **Maintainability**: Aligned with ACB patterns for easier maintenance
+- **Future-Proof**: Direct compatibility with ACB framework evolution
 
 This separation allows FastBlocks to focus on web application concerns while leveraging ACB's robust component architecture for the underlying infrastructure.
 
@@ -660,6 +689,8 @@ FastBlocks uses an enhanced asynchronous Jinja2 template system designed specifi
 - **Custom Delimiters**: Uses `[[` and `]]` for variables instead of `{{` and `}}` to avoid conflicts with JavaScript frameworks
 - **Bytecode Caching**: Redis-based bytecode caching for improved performance
 - **Built-in Filters**: Includes filters for minification, URL encoding, and more
+- **Null Safety**: Enhanced dependency resolution with automatic fallbacks for missing components
+- **Error Recovery**: Graceful handling of cache, storage, and dependency failures
 
 #### Basic Template Usage
 
@@ -804,6 +835,36 @@ FastBlocks includes several useful filters:
 - **minify_js**: Minifies JavaScript content
 - **minify_css**: Minifies CSS content
 - **map_src**: URL-encodes strings for use in URLs
+
+#### Enhanced Dependency Resolution
+
+Version 0.13.2 introduces robust dependency resolution with automatic fallbacks:
+
+```python
+from acb.adapters import import_adapter
+from acb.depends import depends
+
+Templates = import_adapter("templates")
+
+@depends.inject
+async def my_view(request, templates: Templates = depends()):
+    # FastBlocks automatically handles:
+    # 1. Primary dependency resolution via depends.get()
+    # 2. Fallback to get_adapter() if primary fails
+    # 3. Null safety checks throughout the template system
+    # 4. Graceful error handling for missing dependencies
+
+    return await templates.app.render_template(
+        request, "my_template.html", context={"data": "value"}
+    )
+```
+
+The template system now includes:
+
+- **Automatic Fallbacks**: If cache or storage dependencies are unavailable, the system continues with file-based templates
+- **Null Safety**: All operations check for null dependencies and provide sensible defaults
+- **Error Recovery**: Template loading failures are handled gracefully with meaningful error messages
+- **Dependency Order**: `depends.get()` is tried first, followed by `get_adapter()` fallback
 
 ### Routing
 
@@ -1154,6 +1215,32 @@ FastBlocks uses a pluggable adapter system for various components:
 - **Templates**: Template engine adapters (Jinja2)
 - **Sitemap**: Sitemap generation
 
+#### Application Initialization Improvements (v0.13.2)
+
+The FastBlocks application initialization process has been streamlined for better performance and reliability:
+
+```python
+from acb.adapters import import_adapter
+from acb.depends import depends
+
+# Get the application instance
+App = import_adapter("app")
+app = depends.get(App)
+
+# The app is now pre-configured with:
+# - Enhanced middleware stack management
+# - Optimized dependency resolution
+# - Improved error handling
+# - Lazy loading for optional components
+```
+
+**Key Improvements:**
+
+- **Faster Startup**: Lazy loading of non-critical components reduces initialization time
+- **Better Error Handling**: Clear error messages for configuration issues and missing dependencies
+- **Middleware Optimization**: Position-based middleware management with caching
+- **Memory Efficiency**: Reduced memory footprint through optimized component loading
+
 For more information about adapters, see the [Adapters Documentation](./fastblocks/adapters/README.md).
 
 ## Actions
@@ -1248,6 +1335,11 @@ Run your application in development mode with hot-reloading:
 python -m fastblocks dev
 ```
 
+The development server includes enhanced features:
+- **Optimized Logging**: Uvicorn logging is integrated with ACB's InterceptHandler for cleaner output
+- **Smart Reloading**: Excludes `tmp/*`, `settings/*`, and `templates/*` directories from reload monitoring for better performance
+- **Template Development**: Templates are excluded from reload to prevent unnecessary restarts during template development
+
 Run your application in production mode:
 
 ```bash
@@ -1297,6 +1389,73 @@ python -m fastblocks components
 ```
 
 Show available FastBlocks components and their status.
+
+## Migration Guide
+
+### Updating from Version 0.13.1 to 0.13.2
+
+Version 0.13.2 introduces simplified dependency management with direct ACB imports. While existing code will continue to work, we recommend updating to the new patterns for better performance and maintainability.
+
+#### Import Pattern Changes
+
+**Before (v0.13.1 and earlier):**
+```python
+# Old wrapper-based imports
+from fastblocks.dependencies import Templates, App
+from fastblocks.config import config
+```
+
+**After (v0.13.2+):**
+```python
+# Direct ACB imports (recommended)
+from acb.adapters import import_adapter
+from acb.depends import depends
+from acb.config import Config
+
+Templates = import_adapter("templates")
+App = import_adapter("app")
+config = depends.get(Config)
+```
+
+#### Route Handler Updates
+
+**Before:**
+```python
+@depends.inject
+async def homepage(request, templates=depends(Templates)):
+    return await templates.render_template(request, "index.html")
+```
+
+**After:**
+```python
+@depends.inject
+async def homepage(request, templates: Templates = depends()):
+    return await templates.app.render_template(request, "index.html")
+```
+
+#### Benefits of the New Pattern
+
+1. **Better Performance**: Direct ACB access eliminates wrapper overhead
+2. **Improved Type Safety**: Explicit type annotations with adapters
+3. **Enhanced Error Handling**: Built-in fallback mechanisms for missing dependencies
+4. **Future Compatibility**: Aligned with ACB framework patterns
+
+#### Template System Improvements
+
+Version 0.13.2 includes enhanced null safety in template loaders:
+
+- Automatic fallback when dependencies are unavailable
+- Improved error messages for missing templates
+- Better handling of cache and storage failures
+- Enhanced dependency resolution order
+
+#### CLI Enhancements
+
+The CLI now includes:
+
+- Optimized uvicorn logging configuration
+- Template reload exclusions for better development experience
+- Enhanced error reporting for configuration issues
 
 ## Examples
 

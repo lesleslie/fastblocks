@@ -1,19 +1,16 @@
 import typing as t
 
-from starlette.routing import Router
-
-# Direct ACB imports - ACB is always available
 from acb.config import AdapterBase
 from acb.depends import depends
+from starlette.routing import Router
 
-# Get AppSettings from config if available
 try:
     AppConfigSettings = depends.get("config").app.__class__
 except Exception:
     AppConfigSettings = object
 
 
-class AppBaseSettings(AppConfigSettings):
+class AppBaseSettings(AppConfigSettings):  # type: ignore[misc]
     name: str = "fastblocks"
     style: str = "bulma"
     theme: str = "light"

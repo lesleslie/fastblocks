@@ -2,29 +2,15 @@
 
 from __future__ import annotations
 
-import sys
-from typing import Any
+from contextlib import suppress
 
 from . import exceptions
 
-# Register FastBlocks as a package with ACB so its adapters can be discovered
-try:
+with suppress(ImportError):
     from acb import register_pkg
+
     register_pkg()
-except ImportError:
-    # ACB not available, skip registration
-    pass
 
-# Import actions - required for FastBlocks with ACB
-from . import actions
-
-# Import applications - required for FastBlocks with ACB
-from . import applications
-
-# Import caching - required for FastBlocks with ACB
-from . import caching
-
-# Import middleware - required for FastBlocks with ACB
-from . import middleware
+from . import actions, applications, caching, middleware
 
 __all__ = ["actions", "applications", "caching", "exceptions", "middleware"]

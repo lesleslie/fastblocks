@@ -275,7 +275,7 @@ def _create_depends_class(Config: type) -> t.Any:
 
     depends = Depends()
     depends.inject = lambda f: f
-    depends.set = lambda cls: cls
+    depends.set = lambda key, value: value
     return depends
 
 
@@ -1477,7 +1477,7 @@ def mock_acb():  # noqa: C901
     depends.injectable = injectable
     depends.provider = provider
     depends.inject = lambda f: f
-    depends.set = lambda cls: cls
+    depends.set = lambda key, value: value
 
     # Add all classes and functions to modules
     module_structure["acb.config"].Config = Config
