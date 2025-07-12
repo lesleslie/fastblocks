@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.13.3"
+version = "0.14.0"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -46,6 +46,7 @@ dependencies = [
     "acb[cache,monitoring,requests,storage]",
     "anyio>=4.9",
     "asgi-htmx>=0.1",
+    "asgi-sitemaps>=1",
     "brotli-asgi>=1.4",
     "granian[reload]>=2.4.1",
     "minify-html>=0.16.4",
@@ -63,10 +64,10 @@ dependencies = [
 ]
 
 optional-dependencies.admin = [
-    "sqladmin>=0.20.1",
+    "sqladmin>=0.21",
 ]
 optional-dependencies.dev = [
-    "crackerjack>=0.22.5",
+    "crackerjack>=0.22.8",
     "pytest>=8.4.1",
     "pytest-asyncio>=1",
     "pytest-benchmark>=5.1",
@@ -75,9 +76,10 @@ optional-dependencies.dev = [
     "pytest-timeout>=2.4",
     "pytest-xdist>=3.8",
     "pyyaml>=6.0.2",
+    "refurb>=2.1",
 ]
 optional-dependencies.monitoring = [
-    "logfire[starlette]>=3.23",
+    "logfire[starlette]>=3.24",
     "sentry-sdk[starlette]>=2.32",
     "urllib3>=2.5",
 ]
@@ -228,25 +230,25 @@ paths = [
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest-benchmark",
+    "pytest",
+    "uv",
+    "pytest-timeout",
+    "autotyping",
+    "google-crc32c",
     "pytest-xdist",
     "pyyaml",
-    "pre-commit",
-    "pytest-mock",
-    "uv",
-    "keyring",
-    "pytest-timeout",
-    "pdm-bump",
-    "pytest",
-    "google-crc32c",
-    "pdm",
-    "pytest-cov",
-    "pyfiglet",
-    "autotyping",
-    "tomli-w",
-    "pytest-asyncio",
-    "pydantic-settings",
     "inflection",
+    "pyfiglet",
+    "tomli-w",
+    "pre-commit",
+    "pydantic-settings",
+    "pytest-asyncio",
+    "pytest-benchmark",
+    "pdm-bump",
+    "pdm",
+    "pytest-mock",
+    "keyring",
+    "pytest-cov",
 ]
 
 [tool.refurb]
@@ -258,15 +260,15 @@ target = [
     "fastblocks",
 ]
 skips = [
+    "B403",
+    "B301",
+    "B704",
     "B311",
     "B101",
-    "B403",
-    "B602",
-    "B301",
+    "B607",
     "B603",
     "B404",
-    "B607",
-    "B704",
+    "B602",
 ]
 
 [tool.vulture]

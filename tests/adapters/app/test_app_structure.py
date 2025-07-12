@@ -28,7 +28,7 @@ class TestAppStructure:
         sys.modules["fastblocks"] = types.ModuleType("fastblocks")
         sys.modules["fastblocks.adapters"] = types.ModuleType("fastblocks.adapters")
         sys.modules["fastblocks.adapters.app"] = types.ModuleType(
-            "fastblocks.adapters.app"
+            "fastblocks.adapters.app",
         )
 
         base_module = types.ModuleType("fastblocks.adapters.app._base")
@@ -53,9 +53,9 @@ class TestAppStructure:
         setattr(base_module, "AppBase", AppBase)
         sys.modules["fastblocks.adapters.app._base"] = base_module
 
-        AppBaseType = getattr(base_module, "AppBase")
-        AppBaseSettingsType = getattr(base_module, "AppBaseSettings")
-        AppProtocolType = getattr(base_module, "AppProtocol")
+        AppBaseType = base_module.AppBase
+        AppBaseSettingsType = base_module.AppBaseSettings
+        AppProtocolType = base_module.AppProtocol
 
         assert hasattr(AppBaseSettingsType, "name")
         assert hasattr(AppBaseSettingsType, "style")
@@ -73,7 +73,7 @@ class TestAppStructure:
         sys.modules["fastblocks"] = types.ModuleType("fastblocks")
         sys.modules["fastblocks.adapters"] = types.ModuleType("fastblocks.adapters")
         sys.modules["fastblocks.adapters.app"] = types.ModuleType(
-            "fastblocks.adapters.app"
+            "fastblocks.adapters.app",
         )
 
         base_module = types.ModuleType("fastblocks.adapters.app._base")
@@ -121,8 +121,8 @@ class TestAppStructure:
         depends_spy = MagicMock()
         setattr(depends_module, "set", depends_spy)
 
-        AppType = getattr(default_module, "App")
-        AppSettingsType = getattr(default_module, "AppSettings")
+        AppType = default_module.App
+        AppSettingsType = default_module.AppSettings
 
         depends_spy(AppType)
 

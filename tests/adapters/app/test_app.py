@@ -47,7 +47,7 @@ class TestAppBaseSettings:
         sys.modules["fastblocks"] = types.ModuleType("fastblocks")
         sys.modules["fastblocks.adapters"] = types.ModuleType("fastblocks.adapters")
         sys.modules["fastblocks.adapters.app"] = types.ModuleType(
-            "fastblocks.adapters.app"
+            "fastblocks.adapters.app",
         )
 
         base_module = types.ModuleType("fastblocks.adapters.app._base")
@@ -69,7 +69,7 @@ class TestAppBaseSettings:
         setattr(base_module, "AppBaseSettings", AppBaseSettings)
         sys.modules["fastblocks.adapters.app._base"] = base_module
 
-        AppBaseSettingsType = getattr(base_module, "AppBaseSettings")
+        AppBaseSettingsType = base_module.AppBaseSettings
 
         settings = AppBaseSettingsType()
 
@@ -89,7 +89,7 @@ class TestAppBase:
         sys.modules["fastblocks"] = types.ModuleType("fastblocks")
         sys.modules["fastblocks.adapters"] = types.ModuleType("fastblocks.adapters")
         sys.modules["fastblocks.adapters.app"] = types.ModuleType(
-            "fastblocks.adapters.app"
+            "fastblocks.adapters.app",
         )
 
         base_module = types.ModuleType("fastblocks.adapters.app._base")
@@ -102,7 +102,7 @@ class TestAppBase:
         setattr(base_module, "AppBase", AppBase)
         sys.modules["fastblocks.adapters.app._base"] = base_module
 
-        AppBaseType = getattr(base_module, "AppBase")
+        AppBaseType = base_module.AppBase
 
         assert hasattr(AppBaseType, "router")
         assert AppBaseType.router is mock_router

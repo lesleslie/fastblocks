@@ -3,7 +3,7 @@
 import types
 
 try:
-    from . import jinja2  # noqa: F401
+    from . import jinja2
 except (ImportError, TypeError):
     jinja2 = types.ModuleType("jinja2")
 

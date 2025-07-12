@@ -19,9 +19,9 @@ class ApplicationInitializer:
     def __init__(self, app: Starlette, **kwargs: t.Any) -> None:
         self.app = app
         self.kwargs = kwargs
-        self.config: t.Any = None
-        self.logger: t.Any = None
-        self.depends: t.Any = None
+        self.config: t.Any | None = None
+        self.logger: t.Any | None = None
+        self.depends: t.Any | None = None
         self._acb_modules: tuple[t.Any, ...] = ()
 
     def initialize(self) -> None:
@@ -36,10 +36,10 @@ class ApplicationInitializer:
 
     def _load_acb_modules(self) -> None:
         try:
-            logger_class = depends.get("logger").__class__
+            logger_class: type[t.Any] | None = depends.get("logger").__class__
             from acb.logger import InterceptHandler
 
-            interceptor_class = InterceptHandler
+            interceptor_class: type[t.Any] | None = InterceptHandler
         except Exception:
             logger_class = None
             interceptor_class = None
@@ -54,13 +54,23 @@ class ApplicationInitializer:
         )
 
     def _setup_dependencies(self) -> None:
-        self.config = self.kwargs.get("config") or depends.get("config")
-        self.logger = self.kwargs.get("logger") or depends.get("logger")
+        self.config = (
+            self.kwargs.get("config")
+            if self.kwargs.get("config") is not None
+            else depends.get("config")
+        )
+        self.logger = (
+            self.kwargs.get("logger")
+            if self.kwargs.get("logger") is not None
+            else depends.get("logger")
+        )
         self.depends = depends
 
     def _configure_error_handling(self) -> None:
         if not getattr(self.config, "deployed", False) or not getattr(
-            getattr(self.config, "debug", None), "production", False
+            getattr(self.config, "debug", None),
+            "production",
+            False,
         ):
             install_error_handler()
 
@@ -77,11 +87,16 @@ class ApplicationInitializer:
             self.app,
             debug=self.app.debug,
             routes=[],
-            middleware=self.kwargs.get("middleware") or [],
+            middleware=self.kwargs.get("middleware")
+            if self.kwargs.get("middleware") is not None
+            else [],
             lifespan=self.kwargs.get("lifespan"),
-            exception_handlers=self.kwargs.get("exception_handlers") or {},
+            exception_handlers=self.kwargs.get("exception_handlers")
+            if self.kwargs.get("exception_handlers") is not None
+            else {},
         )
-        self.app.user_middleware = list(self.kwargs.get("middleware") or [])
+        middleware = self.kwargs.get("middleware")
+        self.app.user_middleware = list(middleware) if middleware is not None else []
 
     def _configure_exception_handlers(self) -> None:
         from .exceptions import handle_exception

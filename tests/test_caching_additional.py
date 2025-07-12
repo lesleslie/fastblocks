@@ -8,10 +8,13 @@ from fastblocks.caching import (
     CacheControlResponder,
     CacheResponder,
     Rule,
+    cacheable_methods,
+    cacheable_status_codes,
     deserialize_response,
     generate_cache_key,
     generate_varying_headers_cache_key,
     get_cache_response_headers,
+    invalidating_methods,
     learn_cache_key,
     patch_cache_control,
     serialize_response,
@@ -25,7 +28,7 @@ def mock_request() -> MagicMock:
     mock.url = URL("http://example.com/test")
     mock.method = "GET"
     mock.headers = Headers(
-        raw=[(b"accept-encoding", b"gzip"), (b"user-agent", b"test")]
+        raw=[(b"accept-encoding", b"gzip"), (b"user-agent", b"test")],
     )
     return mock
 
@@ -146,7 +149,7 @@ class TestSerializationFunctions:
         # Try to deserialize with invalid status code
         with pytest.raises(TypeError, match="Expected status_code to be int"):
             deserialize_response(
-                {"content": "abc", "status_code": "200", "headers": {}}
+                {"content": "abc", "status_code": "200", "headers": {}},
             )
 
     def test_deserialize_response_invalid_headers(self) -> None:
@@ -154,7 +157,7 @@ class TestSerializationFunctions:
         # Try to deserialize with invalid headers
         with pytest.raises(TypeError, match="Expected headers to be dict"):
             deserialize_response(
-                {"content": "abc", "status_code": 200, "headers": "invalid"}
+                {"content": "abc", "status_code": 200, "headers": "invalid"},
             )
 
 
@@ -177,7 +180,10 @@ class TestCacheKeyFunctions:
 
         # Call learn_cache_key
         cache_key = await learn_cache_key(
-            mock_request, mock_response, cache=mock_cache, logger=mock_logger
+            mock_request,
+            mock_response,
+            cache=mock_cache,
+            logger=mock_logger,
         )
 
         # Verify the cache key
@@ -210,7 +216,10 @@ class TestCacheKeyFunctions:
 
         # Call learn_cache_key
         cache_key = await learn_cache_key(
-            mock_request, mock_response, cache=mock_cache, logger=mock_logger
+            mock_request,
+            mock_response,
+            cache=mock_cache,
+            logger=mock_logger,
         )
 
         # Verify the cache key
@@ -398,7 +407,8 @@ class TestCacheResponderClass:
 
     @pytest.mark.asyncio
     async def test_cache_control_responder_non_http(
-        self, mock_depends: MagicMock
+        self,
+        mock_depends: MagicMock,
     ) -> None:
         """Test CacheControlResponder with non-HTTP scope."""
         # Create a mock app
@@ -426,3 +436,55 @@ class TestCacheResponderClass:
         # Verify the result
         assert "max_age=3600" in result
         assert "no_cache=True" in result
+
+
+class TestCacheRuleFunctionality:
+    """Test Rule class functionality for more coverage."""
+
+    def test_rule_basic_functionality(self) -> None:
+        """Test basic Rule functionality that works."""
+        # Test basic rule creation
+        rule1 = Rule(match="/test", status=200, ttl=60)
+        assert rule1.match == "/test"
+        assert rule1.status == 200
+        assert rule1.ttl == 60
+
+        # Test rule with zero TTL
+        rule2 = Rule(match="/static", status=200, ttl=0)
+        assert rule2.ttl == 0
+
+    def test_cache_constants_basic(self) -> None:
+        """Test basic cache constants."""
+        # Test that collections exist and have content
+        assert cacheable_methods
+        assert invalidating_methods
+        assert cacheable_status_codes
+
+        # Test basic methods
+        assert "GET" in cacheable_methods
+        assert "HEAD" in cacheable_methods
+        assert "POST" in invalidating_methods
+        assert "DELETE" in invalidating_methods
+
+        # Test basic status codes
+        assert 200 in cacheable_status_codes
+        assert 404 in cacheable_status_codes
+
+    def test_additional_cache_functionality(self) -> None:
+        """Test additional cache functionality for coverage."""
+        # Test set operations
+        all_methods = set(cacheable_methods) | set(invalidating_methods)
+        assert "GET" in all_methods
+        assert "POST" in all_methods
+
+        # Test status code ranges
+        successful_codes = [
+            code for code in cacheable_status_codes if 200 <= code < 300
+        ]
+        assert successful_codes
+
+        redirect_codes = [code for code in cacheable_status_codes if 300 <= code < 400]
+        assert redirect_codes
+
+        error_codes = [code for code in cacheable_status_codes if 400 <= code < 500]
+        assert error_codes

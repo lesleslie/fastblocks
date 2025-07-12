@@ -17,12 +17,6 @@ class MockLogger:
         self.debug = MagicMock()
 
 
-class MockProcessTimeHeaderMiddleware:
-    def __init__(self, app: t.Any) -> None:
-        self.app = app
-        self.logger = MockLogger()
-
-
 class MockCacheMiddleware:
     def __init__(self, app: t.Any) -> None:
         self.app = app
@@ -40,8 +34,9 @@ class MockCacheMiddleware:
 
             for middleware in app.middleware:
                 if isinstance(middleware, MockCacheMiddleware):
+                    msg = "Multiple CacheMiddleware instances detected"
                     raise DuplicateCaching(
-                        "Multiple CacheMiddleware instances detected"
+                        msg,
                     )
 
             app.middleware.append(self)
@@ -109,25 +104,6 @@ def clean_modules() -> t.Generator[None]:
 
 @pytest.mark.unit
 class TestMiddleware:
-    def test_process_time_middleware_initialization(self) -> None:
-        sys.modules["fastblocks"] = types.ModuleType("fastblocks")
-
-        middleware_module = types.ModuleType("fastblocks.middleware")
-        setattr(middleware_module, "Logger", MagicMock(return_value=MockLogger()))
-        setattr(
-            middleware_module,
-            "ProcessTimeHeaderMiddleware",
-            MockProcessTimeHeaderMiddleware,
-        )
-        sys.modules["fastblocks.middleware"] = middleware_module
-
-        app = Mock()
-
-        middleware = MockProcessTimeHeaderMiddleware(app=app)
-
-        assert middleware.app is app
-        assert hasattr(middleware, "logger")
-
     def test_cache_middleware_initialization(self) -> None:
         mock_cache = MagicMock()
 
@@ -190,7 +166,10 @@ class TestMiddleware:
         app = Mock()
 
         middleware = MockCacheControlMiddleware(
-            app=app, max_age=300, public=True, must_revalidate=True
+            app=app,
+            max_age=300,
+            public=True,
+            must_revalidate=True,
         )
 
         assert middleware.app is app
@@ -212,7 +191,10 @@ class TestMiddleware:
         response.headers = {}
 
         processed_response = MockCacheControlMiddleware(
-            app=app, max_age=300, public=True, must_revalidate=True
+            app=app,
+            max_age=300,
+            public=True,
+            must_revalidate=True,
         ).process_response(response)
 
         assert processed_response is response

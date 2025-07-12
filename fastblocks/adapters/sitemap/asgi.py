@@ -25,7 +25,8 @@ class Sitemap(AsgiSitemap[str], SitemapBase):  # type: ignore[misc]
 
     async def init(self) -> None:
         if not self.config.app.domain:
-            raise ValueError("`domain` must be set in AppSettings")
+            msg = "`domain` must be set in AppSettings"
+            raise ValueError(msg)
         self.sitemap = AsgiSitemapApp(self, domain=self.config.app.domain)
 
 

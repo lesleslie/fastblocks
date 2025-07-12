@@ -18,7 +18,13 @@ class SitemapURL:
 
 class SitemapBaseSettings(Settings):
     change_freq: t.Literal[
-        "always", "hourly", "daily", "weekly", "monthly", "yearly", "never"
+        "always",
+        "hourly",
+        "daily",
+        "weekly",
+        "monthly",
+        "yearly",
+        "never",
     ] = "hourly"
 
 

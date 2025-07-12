@@ -1,16 +1,11 @@
 import typing as t
 
 from acb.config import AdapterBase
-from acb.depends import depends
+from acb.config import AppSettings as AppConfigSettings
 from starlette.routing import Router
 
-try:
-    AppConfigSettings = depends.get("config").app.__class__
-except Exception:
-    AppConfigSettings = object
 
-
-class AppBaseSettings(AppConfigSettings):  # type: ignore[misc]
+class AppBaseSettings(AppConfigSettings):
     name: str = "fastblocks"
     style: str = "bulma"
     theme: str = "light"
@@ -24,3 +19,7 @@ class AppProtocol(t.Protocol):
 
 class AppBase(AdapterBase):
     router: Router | None
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.router = None

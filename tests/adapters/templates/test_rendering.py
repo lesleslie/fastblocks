@@ -28,13 +28,13 @@ class TestTemplateRendering:
     @pytest.fixture
     def mock_templates(self, templates: TemplatesBase) -> TemplatesBase:
         custom_response = HTMLResponse(
-            "<html><body>Custom template response</body></html>"
+            "<html><body>Custom template response</body></html>",
         )
         templates.app.set_response("custom.html", custom_response)
         return templates
 
     @pytest.mark.parametrize(
-        "template_name,expected_content",
+        ("template_name", "expected_content"),
         [
             ("page.html", "<html><body>page.html: title, content, items</body></html>"),
             ("custom.html", "<html><body>Custom template response</body></html>"),
@@ -55,7 +55,9 @@ class TestTemplateRendering:
             "items": [1, 2, 3],
         }
         response = await mock_templates.app.render_template(
-            http_request, template_name, context
+            http_request,
+            template_name,
+            context,
         )
         assert response.body.decode() == expected_content
 
@@ -67,7 +69,9 @@ class TestTemplateRendering:
         template_context: TemplateContext,
     ) -> None:
         response = await mock_templates.app.render_template(
-            http_request, "test.html", template_context
+            http_request,
+            "test.html",
+            template_context,
         )
         content = response.body.decode()
         assert "test.html" in content
@@ -100,7 +104,10 @@ class TestTemplateErrors:
     )
     @pytest.mark.asyncio
     async def test_template_not_found(
-        self, mock_templates: TemplatesBase, http_request: Request, template_name: str
+        self,
+        mock_templates: TemplatesBase,
+        http_request: Request,
+        template_name: str,
     ) -> None:
         with pytest.raises(TemplateNotFound):
             await mock_templates.app.render_template(http_request, template_name)
@@ -118,7 +125,7 @@ class TestTemplateCaching:
         self,
         templates: TemplatesBase,
         http_request: Request,
-        cached_template: Path,  # noqa
+        cached_template: Path,
         cache: Any,
     ) -> None:
         response1 = await templates.app.render_template(http_request, "cached.html")
@@ -132,7 +139,7 @@ class TestTemplateCaching:
 
 class TestTemplateHelpers:
     @pytest.mark.parametrize(
-        "input_text,expected_length",
+        ("input_text", "expected_length"),
         [
             ("Short text", 20),
             (
@@ -142,7 +149,10 @@ class TestTemplateHelpers:
         ],
     )
     def test_truncate_filter(
-        self, templates: TemplatesWithFilters, input_text: str, expected_length: int
+        self,
+        templates: TemplatesWithFilters,
+        input_text: str,
+        expected_length: int,
     ) -> None:
         result = templates.filters["truncate"](input_text, expected_length)
         if len(input_text) > expected_length:
@@ -152,7 +162,7 @@ class TestTemplateHelpers:
             assert result == input_text
 
     @pytest.mark.parametrize(
-        "file_size,expected_output",
+        ("file_size", "expected_output"),
         [
             (512, "0.5 KB"),
             (1024 * 1024, "1.0 MB"),
@@ -161,7 +171,10 @@ class TestTemplateHelpers:
         ],
     )
     def test_filesize_filter(
-        self, templates: TemplatesWithFilters, file_size: int, expected_output: str
+        self,
+        templates: TemplatesWithFilters,
+        file_size: int,
+        expected_output: str,
     ) -> None:
         result = templates.filters["filesize"](file_size)
         assert result == expected_output

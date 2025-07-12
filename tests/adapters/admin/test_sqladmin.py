@@ -34,7 +34,9 @@ def mock_acb(mocker: MockerFixture) -> t.Any:
 @pytest.mark.unit
 class TestAdminBase:
     def test_admin_base_settings(
-        self, monkeypatch: pytest.MonkeyPatch, mock_acb: t.Any
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        mock_acb: t.Any,
     ) -> None:
         from fastblocks.adapters.admin._base import AdminBaseSettings
 

@@ -13,8 +13,8 @@ async def safe_await(func_or_value: t.Any) -> t.Any:
     if callable(func_or_value):
         try:
             result = func_or_value()
-            if hasattr(result, "__await__") and callable(getattr(result, "__await__")):
-                return await t.cast(t.Awaitable[t.Any], result)
+            if hasattr(result, "__await__") and callable(result.__await__):  # type: ignore[misc]
+                return await t.cast("t.Awaitable[t.Any]", result)
             return result
         except Exception:
             return True
@@ -30,7 +30,10 @@ T = t.TypeVar("T")
 
 class TemplateRenderer(t.Protocol):
     async def render_template(
-        self, request: Request, template: TemplatePath, _: TemplateContext | None = None
+        self,
+        request: Request,
+        template: TemplatePath,
+        _: TemplateContext | None = None,
     ) -> TemplateResponse: ...
 
 
@@ -83,7 +86,9 @@ class TemplatesBase(AdapterBase):
             base_root = AsyncPath(root_path)
         if adapter and hasattr(adapter, "category"):
             searchpaths.extend(
-                self.get_searchpath(adapter, base_root / "templates" / adapter.category)
+                self.get_searchpath(
+                    adapter, base_root / "templates" / adapter.category
+                ),
             )
         if adapter and hasattr(adapter, "category") and adapter.category == "app":
             for a in [
@@ -105,8 +110,9 @@ class TemplatesBase(AdapterBase):
             ):
                 searchpaths.extend(
                     self.get_searchpath(
-                        adapter, pkg.path / "adapters" / adapter.category / "_templates"
-                    )
+                        adapter,
+                        pkg.path / "adapters" / adapter.category / "_templates",
+                    ),
                 )
         return searchpaths
 

@@ -40,7 +40,6 @@ def mock_acb():
 
             def __init__(self) -> None:
                 """Initialize adapter."""
-                pass
 
         # Add AdapterBase to acb.config
         acb_config_module.AdapterBase = AdapterBase
@@ -115,7 +114,7 @@ def mock_acb():
         ):
             acb_modules[name] = sys.modules[name]
 
-    yield acb_modules
+    return acb_modules
 
     # No need to cleanup since we're only replacing existing modules
 
@@ -123,8 +122,7 @@ def mock_acb():
 @pytest.fixture
 def ensure_adapter_modules_fixture() -> dict:
     """Ensure adapter modules exist."""
-    modules = ensure_adapter_modules()
-    yield modules
+    return ensure_adapter_modules()
 
 
 @pytest.fixture
@@ -180,7 +178,8 @@ class TestAppCoverage:
 
         # Register mock modules
         with patch.dict(
-            "sys.modules", {"fastblocks.adapters.app._base": mock_base_module}
+            "sys.modules",
+            {"fastblocks.adapters.app._base": mock_base_module},
         ):
             # Create app adapter instance
             app = AppAdapter()

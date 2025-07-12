@@ -27,12 +27,13 @@ class TestSitemapRoutes:
                 sys.modules.pop(mod, None)
 
     def test_sitemap_routes_creation(
-        self, mock_sitemap_routes: dict[str, dict[str, str]]
+        self,
+        mock_sitemap_routes: dict[str, dict[str, str]],
     ) -> None:
         sys.modules["fastblocks"] = types.ModuleType("fastblocks")
         sys.modules["fastblocks.adapters"] = types.ModuleType("fastblocks.adapters")
         sys.modules["fastblocks.adapters.sitemap"] = types.ModuleType(
-            "fastblocks.adapters.sitemap"
+            "fastblocks.adapters.sitemap",
         )
 
         routes_module = types.ModuleType("fastblocks.adapters.sitemap._routes")
@@ -47,7 +48,8 @@ class TestSitemapRoutes:
         assert "route2" in routes
 
         routes_dict: dict[str, dict[str, str]] = t.cast(
-            dict[str, dict[str, str]], routes
+            "dict[str, dict[str, str]]",
+            routes,
         )
 
         if "route1" in routes_dict:

@@ -19,7 +19,8 @@ class MockAsyncPath:
         return self._path
 
     def __truediv__(
-        self, other: t.Union[str, Path, "MockAsyncPath"]
+        self,
+        other: t.Union[str, Path, "MockAsyncPath"],
     ) -> "MockAsyncPath":
         other_str = str(other)
         if self._path.endswith("/"):
@@ -54,9 +55,12 @@ class MockBaseLoader:
         self.encoding = "utf-8"
 
     async def get_source_async(
-        self, environment: t.Any = None, template: str = ""
+        self,
+        environment: t.Any = None,
+        template: str = "",
     ) -> tuple[str, str, t.Callable[[], bool]]:
-        raise NotImplementedError("Subclasses must implement get_source_async")
+        msg = "Subclasses must implement get_source_async"
+        raise NotImplementedError(msg)
 
     async def list_templates_async(self) -> list[str]:
         return []
@@ -79,7 +83,9 @@ class MockFileSystemLoader(MockBaseLoader):
         self._templates = {}
 
     async def get_source_async(
-        self, environment: t.Any = None, template: str = ""
+        self,
+        environment: t.Any = None,
+        template: str = "",
     ) -> tuple[str, str, t.Callable[[], bool]]:
         if template in self._templates:
             return (
@@ -88,7 +94,8 @@ class MockFileSystemLoader(MockBaseLoader):
                 lambda: True,
             )
 
-        raise FileNotFoundError(f"Template {template} not found")
+        msg = f"Template {template} not found"
+        raise FileNotFoundError(msg)
 
 
 class MockRedisLoader(MockBaseLoader):
@@ -109,13 +116,16 @@ class MockRedisLoader(MockBaseLoader):
         }
 
     async def get_source_async(
-        self, environment: t.Any = None, template: str = ""
+        self,
+        environment: t.Any = None,
+        template: str = "",
     ) -> tuple[str, str, t.Callable[[], bool]]:
         if template in self._templates:
             template_path = AsyncPath("templates") / template
             return self._templates[template], str(template_path), lambda: True
 
-        raise FileNotFoundError(f"Template {template} not found")
+        msg = f"Template {template} not found"
+        raise FileNotFoundError(msg)
 
 
 class MockChoiceLoader(MockBaseLoader):
@@ -135,7 +145,9 @@ class MockChoiceLoader(MockBaseLoader):
         self.config = config
 
     async def get_source_async(
-        self, environment: t.Any = None, template: str = ""
+        self,
+        environment: t.Any = None,
+        template: str = "",
     ) -> tuple[str, str, t.Callable[[], bool]]:
         for loader in self.loaders:
             try:
@@ -143,7 +155,8 @@ class MockChoiceLoader(MockBaseLoader):
             except FileNotFoundError:
                 continue
 
-        raise FileNotFoundError(f"Template {template} not found in any loader")
+        msg = f"Template {template} not found in any loader"
+        raise FileNotFoundError(msg)
 
 
 @pytest.fixture
@@ -167,7 +180,10 @@ def mock_storage() -> AsyncMock:
 
 @pytest.mark.asyncio
 async def test_choice_loader_get_source_async_first_loader_exists(
-    config: MockConfig, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: MockConfig,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     fs_loader = MockFileSystemLoader(
         searchpath=[MockAsyncPath(tmp_path)],
@@ -207,7 +223,10 @@ async def test_choice_loader_get_source_async_first_loader_exists(
 
 @pytest.mark.asyncio
 async def test_choice_loader_get_source_async_second_loader_exists(
-    config: MockConfig, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: MockConfig,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     fs_loader = MockFileSystemLoader(
         searchpath=[MockAsyncPath(tmp_path)],

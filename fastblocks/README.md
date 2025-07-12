@@ -44,7 +44,6 @@ FastBlocks' component-based architecture provides several significant advantages
 - [Middleware](#middleware)
   - [Default Middleware Stack](#default-middleware-stack)
   - [Available Middleware Components](#available-middleware-components)
-    - [ProcessTimeHeaderMiddleware](#processtimeheadermiddleware)
     - [CSRFMiddleware](#csrfmiddleware)
     - [SessionMiddleware](#sessionmiddleware)
     - [HtmxMiddleware](#htmxmiddleware)
@@ -122,7 +121,6 @@ FastBlocks builds on Starlette's middleware system, which follows the ASGI speci
 ```python
 # Default middleware stack
 middleware = [
-    ProcessTimeHeaderMiddleware,  # Performance monitoring
     CSRFMiddleware,               # CSRF protection
     SessionMiddleware,            # Session management
     HtmxMiddleware,               # HTMX request processing
@@ -133,18 +131,6 @@ middleware = [
 ```
 
 ### Available Middleware Components
-
-#### ProcessTimeHeaderMiddleware
-
-Measures and logs the time taken to process each request.
-
-```python
-from fastblocks.middleware import ProcessTimeHeaderMiddleware
-from starlette.applications import Starlette
-
-app = Starlette()
-app = ProcessTimeHeaderMiddleware(app)
-```
 
 #### CSRFMiddleware
 

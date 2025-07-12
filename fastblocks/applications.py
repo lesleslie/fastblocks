@@ -17,7 +17,7 @@ from .middleware import MiddlewarePosition
 class FastBlocksSettings:
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
         if AdapterBase not in cls.__bases__:
-            cls.__bases__ = (AdapterBase,) + cls.__bases__
+            cls.__bases__ = (AdapterBase, *cls.__bases__)
         super().__init_subclass__(**kwargs)
 
 
@@ -41,7 +41,10 @@ class MiddlewareManager:
         self.user_middleware: list[Middleware] = []
 
     def add_user_middleware(
-        self, middleware_class: t.Any, *args: t.Any, **kwargs: t.Any
+        self,
+        middleware_class: t.Any,
+        *args: t.Any,
+        **kwargs: t.Any,
     ) -> None:
         position = kwargs.pop("position", None)
 
@@ -58,7 +61,10 @@ class MiddlewareManager:
         self._middleware_stack_cache = None
 
     def add_system_middleware(
-        self, middleware_class: t.Any, position: MiddlewarePosition, **kwargs: t.Any
+        self,
+        middleware_class: t.Any,
+        position: MiddlewarePosition,
+        **kwargs: t.Any,
     ) -> None:
         self._system_middleware[position] = (middleware_class, kwargs)
         self._middleware_stack_cache = None
@@ -82,7 +88,7 @@ class MiddlewareManager:
                 "args": middleware.args,
                 "kwargs": middleware.kwargs,
             }
-        elif isinstance(middleware, tuple) and len(middleware) >= 2:
+        if isinstance(middleware, tuple) and len(middleware) >= 2:
             cls, kwargs = middleware[0], middleware[1]
             return {
                 "class": cls.__name__ if hasattr(cls, "__name__") else str(cls),
@@ -101,12 +107,12 @@ class FastBlocks(Starlette):
     _middleware_position_map: dict[MiddlewarePosition, int]
 
     def __init__(
-        self: AppType,
+        self,
         middleware: t.Sequence[Middleware] | None = None,
         exception_handlers: t.Mapping[t.Any, ExceptionHandler] | None = None,
-        lifespan: Lifespan["AppType"] | None = None,
-        config: t.Any = None,
-        logger: t.Any = None,
+        lifespan: Lifespan["t.Self"] | None = None,
+        config: t.Any | None = None,
+        logger: t.Any | None = None,
     ) -> None:
         initializer = ApplicationInitializer(
             self,
@@ -128,7 +134,10 @@ class FastBlocks(Starlette):
         set_editor("pycharm")
 
     def add_middleware(
-        self, middleware_class: t.Any, *args: t.Any, **kwargs: t.Any
+        self,
+        middleware_class: t.Any,
+        *args: t.Any,
+        **kwargs: t.Any,
     ) -> None:
         self.middleware_manager.add_user_middleware(middleware_class, *args, **kwargs)
 
@@ -157,10 +166,16 @@ class FastBlocks(Starlette):
         self.middleware_manager._middleware_stack_cache = value
 
     def add_system_middleware(
-        self, middleware_class: type, *, position: MiddlewarePosition, **options: t.Any
+        self,
+        middleware_class: type,
+        *,
+        position: MiddlewarePosition,
+        **options: t.Any,
     ) -> None:
         self.middleware_manager.add_system_middleware(
-            middleware_class, position, **options
+            middleware_class,
+            position,
+            **options,
         )
 
     def _extract_middleware_info(self, middleware: t.Any) -> tuple[str, type] | None:
@@ -201,7 +216,7 @@ class FastBlocks(Starlette):
             if info:
                 middleware_list.append(info)
         middleware_list.append(
-            ("ServerErrorMiddleware", t.cast(type, ServerErrorMiddleware))
+            ("ServerErrorMiddleware", t.cast("type", ServerErrorMiddleware)),
         )
         return middleware_list
 
@@ -233,13 +248,15 @@ class FastBlocks(Starlette):
                 ServerErrorMiddleware,
                 handler=error_handler,
                 debug=self.debug,
-            )
+            ),
         ]
         middleware_list.extend(self.user_middleware)
         return middleware_list
 
     def _apply_system_middleware_overrides(
-        self, system_middleware: list[t.Any], logger: t.Any
+        self,
+        system_middleware: list[t.Any],
+        logger: t.Any,
     ) -> list[t.Any]:
         if not (hasattr(self, "_system_middleware") and self._system_middleware):
             return system_middleware
@@ -261,7 +278,9 @@ class FastBlocks(Starlette):
         return modified_system_middleware
 
     def _apply_middleware_to_app(
-        self, middleware_list: list[t.Any], logger: t.Any
+        self,
+        middleware_list: list[t.Any],
+        logger: t.Any,
     ) -> ASGIApp:
         app = self.router
         for cls, args, kwargs in reversed(middleware_list):
@@ -271,7 +290,9 @@ class FastBlocks(Starlette):
         return app
 
     def build_middleware_stack(
-        self, config: t.Any = None, logger: t.Any = None
+        self,
+        config: t.Any | None = None,
+        logger: t.Any | None = None,
     ) -> ASGIApp:
         if self._middleware_stack_cache is not None:
             return t.cast(t.Any, self._middleware_stack_cache)
@@ -284,7 +305,8 @@ class FastBlocks(Starlette):
         middleware_list = self._build_base_middleware_list(error_handler)
         system_middleware = middlewares()
         system_middleware = self._apply_system_middleware_overrides(
-            system_middleware, logger
+            system_middleware,
+            logger,
         )
 
         middleware_list.extend(system_middleware)
@@ -293,7 +315,7 @@ class FastBlocks(Starlette):
                 ExceptionMiddleware,
                 handlers=exception_handlers,
                 debug=self.debug,
-            )
+            ),
         )
 
         app = self._apply_middleware_to_app(middleware_list, logger)

@@ -11,7 +11,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def ensure_cli_module():  # noqa: C901
+def ensure_cli_module():
     """Ensure the CLI module is importable for tests."""
     # Create a placeholder cli module if it doesn't exist
     if "fastblocks.cli" not in sys.modules:
@@ -62,7 +62,9 @@ def ensure_cli_module():  # noqa: C901
             return {"docker": docker}
 
         def mock_dev(
-            server: str = "uvicorn", port: int = 8000, host: str = "127.0.0.1"
+            server: str = "uvicorn",
+            port: int = 8000,
+            host: str = "127.0.0.1",
         ):
             """Run the application in development mode."""
             return {"server": server, "port": port, "host": host}
@@ -72,14 +74,15 @@ def ensure_cli_module():  # noqa: C901
             return {"app_name": app_name, "domain": domain}
 
         def mock_create(
-            app_name: str, style: str = "bulma", domain: str = "example.com"
+            app_name: str,
+            style: str = "bulma",
+            domain: str = "example.com",
         ):
             """Create new FastBlocks application."""
             return {"app_name": app_name, "style": style, "domain": domain}
 
         def mock_setup_signal_handlers() -> None:
             """Set up signal handlers."""
-            pass
 
         # Add attributes to cli module
         cli_module.app = mock_app
@@ -129,7 +132,10 @@ def mock_acb():
     # Setup mock classes
     class MockAdapter:
         def __init__(
-            self, name: str = "test", category: str = "app", path: t.Any = None
+            self,
+            name: str = "test",
+            category: str = "app",
+            path: t.Any = None,
         ) -> None:
             self.name = name
             self.category = category
@@ -228,7 +234,6 @@ class TestCLICoverage:
 
             # For our mock implementation, just make sure the run was called
             # The run function in the mock doesn't actually use uvicorn
-            pass
 
     def test_dev_with_uvicorn(self, ensure_cli_module: None) -> None:
         """Test dev command with uvicorn."""

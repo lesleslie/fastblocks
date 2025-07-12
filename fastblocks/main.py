@@ -19,19 +19,24 @@ def get_app():
             and (current_dir / "pyproject.toml").exists()
         )
         if is_dev_mode:
-            raise RuntimeError(
+            msg = (
                 "FastBlocks cannot be run from its own package directory. "
                 "Please run from your application directory."
+            )
+            raise RuntimeError(
+                msg,
             )
         try:
             register_pkg()
         except Exception as e:
-            raise RuntimeError(f"Failed to register FastBlocks adapters: {e}") from e
+            msg = f"Failed to register FastBlocks adapters: {e}"
+            raise RuntimeError(msg) from e
         try:
             _app_instance = depends.get("app")
         except Exception as e:
+            msg = f"Failed to get app adapter: {e}. Make sure adapters are properly registered and configured."
             raise RuntimeError(
-                f"Failed to get app adapter: {e}. Make sure adapters are properly registered and configured."
+                msg,
             ) from e
         try:
             _logger_instance = depends.get("logger")
@@ -40,7 +45,7 @@ def get_app():
 
             _logger_instance = logging.getLogger("fastblocks")
             _logger_instance.warning(
-                f"Failed to get logger adapter, using fallback: {e}"
+                f"Failed to get logger adapter, using fallback: {e}",
             )
     return _app_instance
 
@@ -65,8 +70,8 @@ class LazyLogger:
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
         logger = get_logger()
-        if hasattr(logger, "__call__"):
-            call_method = getattr(logger, "__call__")
+        if callable(logger):
+            call_method = logger.__call__
             return call_method(*args, **kwargs)
         return logger
 

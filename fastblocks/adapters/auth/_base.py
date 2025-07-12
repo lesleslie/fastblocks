@@ -32,7 +32,9 @@ class CurrentUser(t.Protocol):
     def email(self) -> EmailStr | None: ...
 
     def is_authenticated(
-        self, request: HtmxRequest | None = None, config: t.Any = None
+        self,
+        request: HtmxRequest | None = None,
+        config: t.Any = None,
     ) -> bool | int | str: ...
 
 
@@ -51,7 +53,8 @@ class AuthProtocol(t.Protocol):
 
 class AuthBase(AdapterBase):
     _current_user: ContextVar[t.Any] = ContextVar(
-        "current_user", default=UnauthenticatedUser()
+        "current_user",
+        default=UnauthenticatedUser(),
     )
 
     @property
@@ -65,7 +68,10 @@ class AuthBase(AdapterBase):
     @staticmethod
     async def authenticate(request: HtmxRequest) -> bool: ...
 
-    def __init__(self, secret_key: SecretStr, user_model: t.Any) -> None: ...
+    def __init__(
+        self, secret_key: SecretStr, user_model: t.Any, **kwargs: t.Any
+    ) -> None:
+        super().__init__(**kwargs)
 
     async def init(self) -> None: ...
 

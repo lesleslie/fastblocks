@@ -51,7 +51,9 @@ def clean_modules() -> t.Generator[None]:
 @pytest.mark.unit
 class TestDecorators:
     def test_cached_decorator_creates_middleware(
-        self, clean_modules: None, mocker: MockerFixture
+        self,
+        clean_modules: None,
+        mocker: MockerFixture,
     ) -> None:
         sys.modules["fastblocks"] = types.ModuleType("fastblocks")
 
@@ -69,7 +71,8 @@ class TestDecorators:
 
         class CachedDecorator:
             def __call__(
-                self, cache: t.Any = None
+                self,
+                cache: t.Any = None,
             ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
                 def decorator(
                     endpoint: t.Callable[..., t.Any],
@@ -77,7 +80,9 @@ class TestDecorators:
                     middleware_spy(endpoint, cache=cache)
 
                     async def wrapper(
-                        request: t.Any, *args: t.Any, **kwargs: t.Any
+                        request: t.Any,
+                        *args: t.Any,
+                        **kwargs: t.Any,
                     ) -> t.Any:
                         return await endpoint(request, *args, **kwargs)
 
@@ -91,7 +96,7 @@ class TestDecorators:
         setattr(decorators_module, "CacheMiddleware", middleware_spy)
         sys.modules["fastblocks.decorators"] = decorators_module
 
-        cached_func = getattr(decorators_module, "cached")
+        cached_func = decorators_module.cached
 
         mock_cache = MagicMock()
 
@@ -111,7 +116,9 @@ class TestDecorators:
         assert kwargs["cache"] is mock_cache
 
     def test_cache_control_decorator_creates_middleware(
-        self, clean_modules: None, mocker: MockerFixture
+        self,
+        clean_modules: None,
+        mocker: MockerFixture,
     ) -> None:
         sys.modules["fastblocks"] = types.ModuleType("fastblocks")
 
@@ -149,7 +156,9 @@ class TestDecorators:
                     )
 
                     async def wrapper(
-                        request: t.Any, *args: t.Any, **kwargs: t.Any
+                        request: t.Any,
+                        *args: t.Any,
+                        **kwargs: t.Any,
                     ) -> t.Any:
                         return await endpoint(request, *args, **kwargs)
 
@@ -163,7 +172,7 @@ class TestDecorators:
         setattr(decorators_module, "CacheControlMiddleware", middleware_spy)
         sys.modules["fastblocks.decorators"] = decorators_module
 
-        cache_control_func = getattr(decorators_module, "cache_control")
+        cache_control_func = decorators_module.cache_control
 
         async def endpoint(request: t.Any) -> str:
             return "response"

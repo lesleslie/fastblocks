@@ -96,7 +96,8 @@ class TestSafeAwait:
 
         # Create a callable that raises an exception
         def callable() -> None:
-            raise ValueError("error")
+            msg = "error"
+            raise ValueError(msg)
 
         # Call safe_await
         result = await safe_await(callable)
@@ -156,7 +157,9 @@ class TestTemplatesBase:
         return base
 
     def test_get_searchpath_default_style(
-        self, templates_base: Any, mock_adapter: Any
+        self,
+        templates_base: Any,
+        mock_adapter: Any,
     ) -> None:
         """Test get_searchpath with default style."""
         path = AsyncPath("/templates")
@@ -170,7 +173,9 @@ class TestTemplatesBase:
         assert str(searchpaths[3]).endswith("templates/base")
 
     def test_get_searchpath_custom_style(
-        self, templates_base: Any, mock_adapter: Any
+        self,
+        templates_base: Any,
+        mock_adapter: Any,
     ) -> None:
         """Test get_searchpath with custom style."""
         templates_base.config.app.style = "custom"

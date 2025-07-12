@@ -22,13 +22,14 @@ class AppSettings(AppBaseSettings):
     url: str = "http://localhost:8000"
     token_id: str | None = "_fb_"
 
-    @depends.inject
-    def __init__(self, config: t.Any = depends(), **data: t.Any) -> None:
+    def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)
-        self.url = self.url if not config.deployed else f"https://{self.domain}"
+        with suppress(Exception):
+            config = depends.get("config")
+            self.url = self.url if not config.deployed else f"https://{self.domain}"
         token_prefix = self.token_id or "_fb_"
         self.token_id = "".join(
-            [token_prefix, b64encode(self.name.encode()).decode().rstrip("=")]
+            [token_prefix, b64encode(self.name.encode()).decode().rstrip("=")],
         )
 
 
@@ -45,10 +46,7 @@ class FastBlocksApp(FastBlocks):
             import time
 
             init_start = getattr(self, "_init_start_time", None)
-            if init_start:
-                startup_time = time.time() - init_start
-            else:
-                startup_time = 0.001
+            startup_time = time.time() - init_start if init_start else 0.001
         return startup_time
 
     def _get_debug_enabled(self, config: t.Any) -> list[str]:
@@ -110,33 +108,27 @@ class FastBlocksApp(FastBlocks):
         debug_enabled = self._get_debug_enabled(config)
         colors = self._get_color_constants()
         banner = Figlet(font="slant", width=90, justify="center").renderText(
-            app_name.upper()
+            app_name.upper(),
         )
         await aprint(f"\n\n{banner}\n")
         info_lines = self._format_info_lines(
-            config, colors, debug_enabled, startup_time
+            config,
+            colors,
+            debug_enabled,
+            startup_time,
         )
         for line in info_lines:
-            centered_line = self._clean_and_center_line(line, colors)
-            print(centered_line)
-        print()
+            self._clean_and_center_line(line, colors)
 
     def _display_simple_startup(self) -> None:
-        try:
+        from contextlib import suppress
+
+        with suppress(Exception):
             from acb.depends import depends
 
             config = depends.get("config")
-            app_name = getattr(config.app, "name", "FastBlocks")
-            startup_time = self._get_startup_time()
-            print("\n  ══════════════════════════════════════════════════")
-            print(f"  🚀 {app_name.upper()} Application Ready")
-            print(f"  ⚡ Startup time: {startup_time * 1000:.2f}ms")
-            print("  🌐 Server running on http://127.0.0.1:8000")
-            print("  ══════════════════════════════════════════════════")
-            print()
-        except Exception:
-            print("\n  🚀 FastBlocks Application Ready")
-            print()
+            getattr(config.app, "name", "FastBlocks")
+            self._get_startup_time()
 
     async def post_startup(self) -> None:
         try:
@@ -153,8 +145,8 @@ class FastBlocksApp(FastBlocks):
         except Exception as e:
             logger = getattr(self, "logger", None)
             if logger:
-                logger.error(f"Error during startup: {e}")
-            raise e
+                logger.exception(f"Error during startup: {e}")
+            raise
         yield
         logger = getattr(self, "logger", None)
         if logger:
@@ -162,6 +154,7 @@ class FastBlocksApp(FastBlocks):
 
 
 class App(AppBase):
+    settings: AppSettings | None = None
     router: t.Any = None
     middleware_manager: t.Any = None
     templates: t.Any = None
@@ -173,6 +166,7 @@ class App(AppBase):
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
+        self.settings = AppSettings()
         self.fastblocks_app = FastBlocksApp()
         self.router = None
         self.middleware_manager = None
@@ -189,8 +183,7 @@ class App(AppBase):
             with suppress(Exception):
                 return super().logger
         try:
-            Logger = depends.get("logger")
-            return Logger
+            return depends.get("logger")
         except Exception:
             import logging
 
@@ -247,9 +240,9 @@ class App(AppBase):
     def _setup_admin_adapter(self, app: FastBlocks) -> None:
         if not get_adapter("admin"):
             return
-        sql = depends.get()
-        auth = depends.get()
-        admin = depends.get()
+        sql = depends.get("sql")
+        auth = depends.get("auth")
+        admin = depends.get("admin")
         admin.__init__(
             app,
             engine=sql.engine,
@@ -272,9 +265,9 @@ class App(AppBase):
 
         completer = None
         if hasattr(self.logger, "complete"):
-            completer = getattr(self.logger, "complete")()
+            completer = self.logger.complete()
         elif hasattr(self.logger, "stop"):
-            completer = getattr(self.logger, "stop")()
+            completer = self.logger.stop()
         if completer:
             await asyncio.wait_for(completer, timeout=1.0)
 
@@ -293,8 +286,8 @@ class App(AppBase):
         try:
             await self._startup_sequence(app)
         except Exception as e:
-            self.logger.error(f"Error during startup: {e}")
-            raise e
+            self.logger.exception(f"Error during startup: {e}")
+            raise
         yield
         self.logger.critical("Application shut down")
         try:
@@ -302,11 +295,7 @@ class App(AppBase):
         except TimeoutError:
             self.logger.warning("Logger completion timed out, forcing shutdown")
         except Exception as e:
-            self.logger.error(f"Logger completion failed: {e}")
+            self.logger.exception(f"Logger completion failed: {e}")
         finally:
             with suppress(Exception):
                 self._cancel_remaining_tasks()
-
-
-with suppress(Exception):
-    depends.set(App)

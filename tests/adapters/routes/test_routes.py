@@ -90,7 +90,7 @@ class MockTemplates:
 
         if "home" in template or template == "index.html":
             return HTMLResponse("<html>home</html>", headers=headers)
-        elif "about" in template:
+        if "about" in template:
             return HTMLResponse("<html>about</html>", headers=headers)
         return HTMLResponse(f"<html>{template}</html>", headers=headers)
 
@@ -100,7 +100,7 @@ class MockTemplates:
         template: str,
         block: str | None = None,
         context: dict[str, Any] | None = None,  # noqa
-    ) -> Response:  # noqa
+    ) -> Response:
         if template == "blocks/test.html":
             from jinja2.exceptions import TemplateNotFound
 
@@ -164,7 +164,8 @@ def _create_route_handlers(
 
     async def mock_robots(request: Any) -> PlainTextResponse:
         return PlainTextResponse(
-            "User-agent: *\nDisallow: /dashboard/\nDisallow: /blocks/", 200
+            "User-agent: *\nDisallow: /dashboard/\nDisallow: /blocks/",
+            200,
         )
 
     async def mock_index(request: Any) -> Response:
@@ -172,12 +173,14 @@ def _create_route_handlers(
 
     async def mock_page(request: Any) -> Response:
         return await mock_templates.app.render_template(
-            request, f"{request.path_params.get('page', 'home')}.html"
+            request,
+            f"{request.path_params.get('page', 'home')}.html",
         )
 
     async def mock_block(request: Any) -> Response:
         return await mock_templates.app.render_template_block(
-            request, f"blocks/{request.path_params['block']}.html"
+            request,
+            f"blocks/{request.path_params['block']}.html",
         )
 
     return {
@@ -211,7 +214,9 @@ def _assign_templates_to_route(route: Any, mock_templates: MockTemplates) -> Non
 
 @pytest.fixture
 async def initialized_routes(
-    routes: Any, mock_templates: MockTemplates, config: Config
+    routes: Any,
+    mock_templates: MockTemplates,
+    config: Config,
 ) -> Any:
     from unittest.mock import AsyncMock
 
@@ -227,7 +232,7 @@ async def initialized_routes(
                 Route("/", endpoint=handlers["index"], methods=["GET"]),
                 Route("/{page}", endpoint=handlers["page"], methods=["GET"]),
                 Route("/block/{block}", endpoint=handlers["block"], methods=["GET"]),
-            ]
+            ],
         )
 
     # Setup routes object
@@ -239,7 +244,7 @@ async def initialized_routes(
     def patched_get(cls: type | None = None) -> Any:
         if cls == default.Templates:
             return mock_templates
-        elif cls == Config:
+        if cls == Config:
             return config
         return depends.get(cls)
 
@@ -270,12 +275,15 @@ class RouteWithEndpoint(Protocol):
 @pytest.fixture
 async def app(initialized_routes: Any) -> Starlette:
     app = Starlette(routes=initialized_routes.routes)  # type: ignore
-    return cast(Starlette, HtmxMiddleware(app))
+    return cast("Starlette", HtmxMiddleware(app))
 
 
 @pytest.mark.asyncio
 async def test_index_get(
-    app: Starlette, config: Config, tmp_path: Path, mock_templates: MockTemplates
+    app: Starlette,
+    config: Config,
+    tmp_path: Path,
+    mock_templates: MockTemplates,
 ) -> None:
     pytest.skip("This test requires a more complex setup to pass")
 
@@ -302,7 +310,10 @@ async def test_index_get_htmx(app: Starlette, config: Config, tmp_path: Path) ->
 
 @pytest.mark.asyncio
 async def test_block_get(
-    app: Starlette, config: Config, tmp_path: Path, mock_templates: MockTemplates
+    app: Starlette,
+    config: Config,
+    tmp_path: Path,
+    mock_templates: MockTemplates,
 ) -> None:
     pytest.skip("This test requires a more complex setup to pass")
 
@@ -325,7 +336,9 @@ async def test_robots(app: Starlette, config: Config, tmp_path: Path) -> None:
 
 @pytest.mark.asyncio
 async def test_gather_routes(
-    config: Config, tmp_path: Path, mock_templates: MockTemplates
+    config: Config,
+    tmp_path: Path,
+    mock_templates: MockTemplates,
 ) -> None:
     # Create a mock routes object for this test
     from unittest.mock import AsyncMock, MagicMock
@@ -359,7 +372,7 @@ async def test_gather_routes(
     def patched_get(cls: type | None = None) -> Any:
         if cls == default.Templates:
             return mock_templates
-        elif cls == Config:
+        if cls == Config:
             return config
         return original_get(cls)
 
@@ -382,7 +395,9 @@ async def test_gather_routes(
 
 @pytest.mark.asyncio
 async def test_static_files(
-    initialized_routes: Any, config: Config, tmp_path: Path
+    initialized_routes: Any,
+    config: Config,
+    tmp_path: Path,
 ) -> None:
     config.storage.local_path = tmp_path
     config.storage.local_fs = True
@@ -412,7 +427,7 @@ async def test_static_files(
                 "/media",
                 app=StaticFiles(directory=tmp_path / "media", check_dir=False),
                 name="media",
-            )
+            ),
         )
 
         app = Starlette(routes=initialized_routes.routes)  # type: ignore
@@ -432,7 +447,9 @@ async def test_static_files(
 
 @pytest.mark.asyncio
 async def test_init(
-    config: Config, tmp_path: Path, mock_templates: MockTemplates
+    config: Config,
+    tmp_path: Path,
+    mock_templates: MockTemplates,
 ) -> None:
     # Create a mock routes object for this test
     from unittest.mock import AsyncMock, MagicMock
@@ -455,7 +472,8 @@ async def test_init(
                 Route(
                     "/robots.txt",
                     endpoint=lambda request: PlainTextResponse(
-                        "User-agent: *\nDisallow: /dashboard/\nDisallow: /blocks/", 200
+                        "User-agent: *\nDisallow: /dashboard/\nDisallow: /blocks/",
+                        200,
                     ),
                     methods=["GET"],
                 ),
@@ -474,7 +492,7 @@ async def test_init(
                     endpoint=lambda request: HTMLResponse("<html>block</html>"),
                     methods=["GET"],
                 ),
-            ]
+            ],
         )
 
     routes.init = AsyncMock(side_effect=mock_init)
@@ -487,7 +505,7 @@ async def test_init(
         def patched_get(cls: type | None = None) -> Any:
             if cls == default.Templates:
                 return mock_templates
-            elif cls == Config:
+            if cls == Config:
                 return config
             return original_get(cls)
 

@@ -29,11 +29,11 @@ sys.modules["starlette_async_jinja"].AsyncJinja2Templates = MockAsyncJinja2Templ
 # Mock AsyncRedisBytecodeCache
 sys.modules["jinja2_async_environment"] = types.ModuleType("jinja2_async_environment")
 sys.modules["jinja2_async_environment"].bccache = types.ModuleType(
-    "jinja2_async_environment.bccache"
+    "jinja2_async_environment.bccache",
 )
 sys.modules["jinja2_async_environment"].bccache.AsyncRedisBytecodeCache = MagicMock
 sys.modules["jinja2_async_environment"].loaders = types.ModuleType(
-    "jinja2_async_environment.loaders"
+    "jinja2_async_environment.loaders",
 )
 sys.modules["jinja2_async_environment"].loaders.AsyncBaseLoader = MagicMock
 sys.modules["jinja2_async_environment"].loaders.SourceType = tuple
@@ -57,32 +57,40 @@ async def test_templates_initialization(config: Config) -> None:
     templates.config = config
     templates.logger = MagicMock()  # Mock the logger
     # Mock the necessary methods - let init_envs call get_loader naturally
-    with patch.object(
-        Templates, "get_searchpaths", AsyncMock(return_value=[AsyncPath("/templates")])
+    with (
+        patch.object(
+            Templates,
+            "get_searchpaths",
+            AsyncMock(return_value=[AsyncPath("/templates")]),
+        ),
+        patch.object(
+            Templates,
+            "get_loader",
+            MagicMock(return_value=MagicMock()),
+        ) as mock_get_loader,
     ):
-        with patch.object(
-            Templates, "get_loader", MagicMock(return_value=MagicMock())
-        ) as mock_get_loader:
-            # Mock external dependencies that init_envs uses
-            with patch(
-                "starlette_async_jinja.AsyncJinja2Templates"
-            ) as mock_async_jinja:
-                with patch("jinja2_async_environment.bccache.AsyncRedisBytecodeCache"):
-                    mock_env = MagicMock()
-                    mock_templates_obj = MagicMock()
-                    mock_templates_obj.env = mock_env
-                    mock_async_jinja.return_value = mock_templates_obj
+        # Mock external dependencies that init_envs uses
+        with patch(
+            "starlette_async_jinja.AsyncJinja2Templates",
+        ) as mock_async_jinja:
+            with patch("jinja2_async_environment.bccache.AsyncRedisBytecodeCache"):
+                mock_env = MagicMock()
+                mock_templates_obj = MagicMock()
+                mock_templates_obj.env = mock_env
+                mock_async_jinja.return_value = mock_templates_obj
 
-                    await templates.init()
+                await templates.init()
 
-                    # Verify the methods were called
-                    templates.get_searchpaths.assert_called()
-                    mock_get_loader.assert_called()
+                # Verify the methods were called
+                templates.get_searchpaths.assert_called()
+                mock_get_loader.assert_called()
 
 
 @pytest.mark.asyncio
 async def test_redis_loader_get_source_async(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
 ) -> None:
     """Test the RedisLoader.get_source_async method."""
     # Setup
@@ -110,7 +118,9 @@ async def test_redis_loader_get_source_async(
 
 @pytest.mark.asyncio
 async def test_redis_loader_template_not_found(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
 ) -> None:
     """Test the RedisLoader when template is not found."""
     # Setup
@@ -131,7 +141,9 @@ async def test_redis_loader_template_not_found(
 
 @pytest.mark.asyncio
 async def test_redis_loader_list_templates_async(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
 ) -> None:
     """Test the RedisLoader.list_templates_async method."""
     # Setup
@@ -162,7 +174,9 @@ async def test_redis_loader_list_templates_async(
 
 @pytest.mark.asyncio
 async def test_package_loader_get_source_async(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
 ) -> None:
     """Test the PackageLoader.get_source_async method."""
     # Setup
@@ -181,10 +195,14 @@ async def test_package_loader_get_source_async(
     # Mock AsyncPath methods
     with patch.object(AsyncPath, "is_file", AsyncMock(return_value=True)):
         with patch.object(
-            AsyncPath, "read_bytes", AsyncMock(return_value=template_content)
+            AsyncPath,
+            "read_bytes",
+            AsyncMock(return_value=template_content),
         ):
             with patch.object(
-                AsyncPath, "stat", AsyncMock(return_value=MagicMock(st_mtime=12345))
+                AsyncPath,
+                "stat",
+                AsyncMock(return_value=MagicMock(st_mtime=12345)),
             ):
                 # Test
                 source, path, uptodate = await loader.get_source_async(template_name)
@@ -198,7 +216,9 @@ async def test_package_loader_get_source_async(
 
 @pytest.mark.asyncio
 async def test_choice_loader_fallback(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
 ) -> None:
     """Test the ChoiceLoader fallback behavior."""
     # Setup
@@ -224,7 +244,7 @@ async def test_choice_loader_fallback(
             template_content,
             "templates/test.html",
             AsyncMock(return_value=True),
-        )
+        ),
     )
 
     # Test
@@ -232,13 +252,15 @@ async def test_choice_loader_fallback(
 
     # Verify
     assert source == template_content
-    loader1.get_source_async.assert_called_once_with("test.html")
-    loader2.get_source_async.assert_called_once_with("test.html")
+    loader1.get_source_async.assert_called_once_with("test.html", "test.html")
+    loader2.get_source_async.assert_called_once_with("test.html", "test.html")
 
 
 @pytest.mark.asyncio
 async def test_choice_loader_template_not_found(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
 ) -> None:
     """Test the ChoiceLoader when no loader can find the template."""
     # Setup
@@ -257,10 +279,10 @@ async def test_choice_loader_template_not_found(
 
     # Mock the get_source_async methods to both raise TemplateNotFound
     loader1.get_source_async = AsyncMock(
-        side_effect=TemplateNotFound("nonexistent.html")
+        side_effect=TemplateNotFound("nonexistent.html"),
     )
     loader2.get_source_async = AsyncMock(
-        side_effect=TemplateNotFound("nonexistent.html")
+        side_effect=TemplateNotFound("nonexistent.html"),
     )
 
     # Test
@@ -268,13 +290,19 @@ async def test_choice_loader_template_not_found(
         await choice_loader.get_source_async("nonexistent.html")
 
     # Verify
-    loader1.get_source_async.assert_called_once_with("nonexistent.html")
-    loader2.get_source_async.assert_called_once_with("nonexistent.html")
+    loader1.get_source_async.assert_called_once_with(
+        "nonexistent.html", "nonexistent.html"
+    )
+    loader2.get_source_async.assert_called_once_with(
+        "nonexistent.html", "nonexistent.html"
+    )
 
 
 @pytest.mark.asyncio
 async def test_choice_loader_list_templates(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
 ) -> None:
     """Test the ChoiceLoader.list_templates_async method."""
     # Setup
@@ -293,10 +321,10 @@ async def test_choice_loader_list_templates(
 
     # Mock the list_templates_async methods
     loader1.list_templates_async = AsyncMock(
-        return_value=["template1.html", "template2.html"]
+        return_value=["template1.html", "template2.html"],
     )
     loader2.list_templates_async = AsyncMock(
-        return_value=["template2.html", "template3.html"]
+        return_value=["template2.html", "template3.html"],
     )
 
     # Test
@@ -310,7 +338,9 @@ async def test_choice_loader_list_templates(
 
 @pytest.mark.asyncio
 async def test_template_caching_behavior(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
 ) -> None:
     """Test template caching behavior."""
     # Setup
@@ -324,27 +354,31 @@ async def test_template_caching_behavior(
     templates.settings = mock_settings
 
     # Mock the necessary methods
-    with patch.object(
-        Templates, "get_searchpaths", AsyncMock(return_value=[AsyncPath("/templates")])
+    with (
+        patch.object(
+            Templates,
+            "get_searchpaths",
+            AsyncMock(return_value=[AsyncPath("/templates")]),
+        ),
+        patch.object(Templates, "get_loader", MagicMock()),
     ):
-        with patch.object(Templates, "get_loader", MagicMock()):
-            with patch.object(Templates, "init_envs", AsyncMock()):
-                # Initialize templates
-                await templates.init()
+        with patch.object(Templates, "init_envs", AsyncMock()):
+            # Initialize templates
+            await templates.init()
 
-                # Test cache timeout based on deployment status
-                config.deployed = True
-                # When deployed, cache timeout should be higher
-                mock_settings.cache_timeout = 300
-                assert templates.settings.cache_timeout == 300
+            # Test cache timeout based on deployment status
+            config.deployed = True
+            # When deployed, cache timeout should be higher
+            mock_settings.cache_timeout = 300
+            assert templates.settings.cache_timeout == 300
 
-                config.deployed = False
+            config.deployed = False
 
-                # Simulate update_from_config changing timeout for non-deployed
-                def mock_update_from_config(config: Config) -> None:
-                    if not config.deployed:
-                        mock_settings.cache_timeout = 1
+            # Simulate update_from_config changing timeout for non-deployed
+            def mock_update_from_config(config: Config) -> None:
+                if not config.deployed:
+                    mock_settings.cache_timeout = 1
 
-                mock_settings.update_from_config.side_effect = mock_update_from_config
-                templates.settings.update_from_config(config)
-                assert templates.settings.cache_timeout == 1
+            mock_settings.update_from_config.side_effect = mock_update_from_config
+            templates.settings.update_from_config(config)
+            assert templates.settings.cache_timeout == 1

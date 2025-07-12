@@ -21,11 +21,11 @@ sys.modules["starlette_async_jinja"] = types.ModuleType("starlette_async_jinja")
 # Mock AsyncRedisBytecodeCache
 sys.modules["jinja2_async_environment"] = types.ModuleType("jinja2_async_environment")
 sys.modules["jinja2_async_environment"].bccache = types.ModuleType(
-    "jinja2_async_environment.bccache"
+    "jinja2_async_environment.bccache",
 )
 sys.modules["jinja2_async_environment"].bccache.AsyncRedisBytecodeCache = MagicMock
 sys.modules["jinja2_async_environment"].loaders = types.ModuleType(
-    "jinja2_async_environment.loaders"
+    "jinja2_async_environment.loaders",
 )
 sys.modules["jinja2_async_environment"].loaders.AsyncBaseLoader = MagicMock
 sys.modules["jinja2_async_environment"].loaders.SourceType = tuple
@@ -112,7 +112,9 @@ async def test_template_rendering_with_filters(
             "filesize": 1024 * 500,
         }
         response = await templates.render_template(
-            request=http_request, template="test.html", context=context
+            request=http_request,
+            template="test.html",
+            context=context,
         )
 
         # Verify response
@@ -142,7 +144,7 @@ async def test_template_not_found_handling(
 
     # Mock the TemplateResponse to raise TemplateNotFound
     templates.app.TemplateResponse = AsyncMock(
-        side_effect=TemplateNotFound("nonexistent.html")
+        side_effect=TemplateNotFound("nonexistent.html"),
     )
 
     # Test

@@ -15,7 +15,10 @@ from tests.conftest import (
 
 @pytest.mark.asyncio
 async def test_redis_loader_get_source_async_cache_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     RedisLoader(
         encoding="utf-8",
@@ -44,7 +47,10 @@ async def test_redis_loader_get_source_async_cache_exists(
 
 @pytest.mark.asyncio
 async def test_redis_loader_get_source_async_cache_not_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     RedisLoader(
         encoding="utf-8",
@@ -63,7 +69,9 @@ async def test_redis_loader_get_source_async_cache_not_exists(
 
 @pytest.mark.asyncio
 async def test_redis_loader_get_source_async_storage_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
 ) -> None:
     RedisLoader(
         encoding="utf-8",
@@ -93,7 +101,10 @@ async def test_redis_loader_get_source_async_storage_exists(
 
 @pytest.mark.asyncio
 async def test_redis_loader_list_templates_async(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     RedisLoader(
         encoding="utf-8",
@@ -116,7 +127,10 @@ async def test_redis_loader_list_templates_async(
 
 @pytest.mark.asyncio
 async def test_package_loader_get_source_async_file_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     package_path = tmp_path / "package"
     package_path.mkdir()
@@ -160,7 +174,10 @@ async def test_package_loader_get_source_async_file_exists(
 
 @pytest.mark.asyncio
 async def test_package_loader_get_source_async_file_not_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     package_path = tmp_path / "package"
     package_path.mkdir()
@@ -189,7 +206,10 @@ async def test_package_loader_get_source_async_file_not_exists(
 
 @pytest.mark.asyncio
 async def test_package_loader_list_templates_async(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     package_path = tmp_path / "package"
     package_path.mkdir()

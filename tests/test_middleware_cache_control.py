@@ -8,8 +8,12 @@ import pytest
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
-from starlette.types import Scope
+from typing import TYPE_CHECKING
+
 from fastblocks.middleware import CacheControlMiddleware
+
+if TYPE_CHECKING:
+    from starlette.types import Scope
 
 
 @pytest.mark.asyncio
@@ -48,7 +52,10 @@ async def test_cache_control_middleware_initialization_with_custom_parameters() 
 
     # Create the middleware with custom parameters
     middleware = CacheControlMiddleware(
-        mock_app, max_age=300, public=True, must_revalidate=True
+        mock_app,
+        max_age=300,
+        public=True,
+        must_revalidate=True,
     )
 
     # Verify the app was set correctly
@@ -140,7 +147,10 @@ async def test_cache_control_middleware_process_response_private() -> None:
 
     # Create the middleware with private directive
     middleware = CacheControlMiddleware(
-        mock_app, max_age=300, private=True, must_revalidate=True
+        mock_app,
+        max_age=300,
+        private=True,
+        must_revalidate=True,
     )
 
     # Call process_response

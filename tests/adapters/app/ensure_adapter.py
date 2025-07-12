@@ -59,11 +59,9 @@ def create_adapter_modules() -> dict[str, types.ModuleType]:  # noqa: C901
 
         def startup(self) -> None:
             """Start the app."""
-            pass
 
         def shutdown(self) -> None:
             """Shutdown the app."""
-            pass
 
     # Add classes to base module
     base_module.AppBaseSettings = AppBaseSettings
@@ -92,7 +90,6 @@ def create_adapter_modules() -> dict[str, types.ModuleType]:  # noqa: C901
         async def init(self) -> None:
             """Initialize app adapter."""
             # This would normally set up templates, routes, etc.
-            pass
 
         def register_post_startup(self, hook: t.Callable) -> None:
             """Register post-startup hook."""

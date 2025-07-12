@@ -74,7 +74,10 @@ def mock_main_dependencies(mocker: MockerFixture, mock_acb: t.Any) -> dict[str, 
 @pytest.mark.unit
 class TestMainModule:
     def test_main_initialization(
-        self, mocker: MockerFixture, mock_acb: t.Any, clean_modules: None
+        self,
+        mocker: MockerFixture,
+        mock_acb: t.Any,
+        clean_modules: None,
     ) -> None:
         mock_register_pkg = mocker.MagicMock()
         mock_app = mocker.MagicMock()

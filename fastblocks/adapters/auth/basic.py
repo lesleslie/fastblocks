@@ -31,7 +31,9 @@ class CurrentUser:
     def email(self) -> EmailStr | None: ...
 
     def is_authenticated(
-        self, request: HtmxRequest | None = None, config: t.Any = None
+        self,
+        request: HtmxRequest | None = None,
+        config: t.Any = None,
     ) -> bool | int | str: ...
 
 
@@ -49,7 +51,8 @@ class Auth(AuthBase):
                 return False
             decoded = base64.b64decode(credentials).decode("ascii")
         except (ValueError, UnicodeDecodeError, binascii.Error):
-            raise AuthenticationError("Invalid basic auth credentials")
+            msg = "Invalid basic auth credentials"
+            raise AuthenticationError(msg)
         username, _, _ = decoded.partition(":")
         request.state.auth_credentials = (
             AuthCredentials(["authenticated"]),
@@ -73,8 +76,8 @@ class Auth(AuthBase):
                 SessionMiddleware,
                 secret_key=self.secret_key.get_secret_value(),
                 session_cookie=f"{self.token_id}_admin",
-                https_only=True if self.config.deployed else False,
-            )
+                https_only=bool(self.config.deployed),
+            ),
         ]
 
     async def login(self, request: HtmxRequest) -> bool: ...

@@ -1,6 +1,8 @@
 """Test configuration for FastBlocks."""
 # pyright: reportAttributeAccessIssue=false, reportFunctionMemberAccess=false, reportMissingParameterType=false, reportUnknownParameterType=false, reportArgumentType=false, reportMissingTypeArgument=false
 
+from __future__ import annotations
+
 import asyncio
 import functools
 import json
@@ -8,7 +10,6 @@ import os
 import sys
 import types
 import typing as t
-from collections.abc import Callable
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
@@ -18,7 +19,11 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
-from starlette.types import Message, Scope
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from starlette.types import Message, Scope
 
 
 def _create_mock_debug_settings() -> type:
@@ -52,7 +57,7 @@ def _create_asyncio_mock_functions() -> tuple[Callable, Callable, Callable]:
     return mock_build_settings, mock_asyncio_run, mock_load_yml_settings
 
 
-def _create_mock_yaml_functions() -> tuple[Callable, Callable]:  # noqa: F841
+def _create_mock_yaml_functions() -> tuple[Callable, Callable]:
     """Create mock functions for YAML operations."""
 
     # Create patch for ACB's yaml.dump method to avoid file writes
@@ -68,7 +73,7 @@ def _create_mock_yaml_functions() -> tuple[Callable, Callable]:  # noqa: F841
 
 
 # Use the function to prevent unused warning
-_create_mock_yaml_functions()  # noqa: F841
+_create_mock_yaml_functions()
 
 
 def _is_minify_action_test() -> bool:
@@ -117,7 +122,7 @@ def _create_acb_modules() -> tuple[dict[str, ModuleType], type]:
     # that might try to access the filesystem
     mock_acb_module = types.ModuleType("acb")
     mock_acb_module.__path__ = [
-        "/mock/path/to/acb"
+        "/mock/path/to/acb",
     ]  # Add __path__ to make it a package
 
     mock_acb_config = types.ModuleType("acb.config")
@@ -158,7 +163,6 @@ def _setup_acb_module(mock_acb_module: ModuleType) -> None:
     # Add register_pkg function
     def register_pkg() -> None:
         """Mock implementation of register_pkg."""
-        pass
 
     mock_acb_module.Adapter = Adapter
     mock_acb_module.pkg_registry = MagicMock()
@@ -175,7 +179,7 @@ def _setup_acb_adapters(mock_acb_adapters: ModuleType) -> None:
             MagicMock(),
             MagicMock(),
             MagicMock(),
-        )
+        ),
     )
     from pathlib import Path
 
@@ -259,7 +263,7 @@ def _create_depends_class(Config: type) -> t.Any:
             if mock_cls is not None and hasattr(mock_cls, "__name__"):
                 if mock_cls.__name__ == "Config":
                     return Config()
-                elif mock_cls.__name__ == "Logger":
+                if mock_cls.__name__ == "Logger":
                     logger_mock = MagicMock()
                     logger_mock.debug = MagicMock()
                     return logger_mock
@@ -290,7 +294,10 @@ def _create_acb_classes(MockDebugSettings: type) -> tuple[type, type, type, t.An
 
 
 def _setup_acb_config(
-    mock_acb_config: ModuleType, Config: type, Settings: type, AdapterBase: type
+    mock_acb_config: ModuleType,
+    Config: type,
+    Settings: type,
+    AdapterBase: type,
 ) -> None:
     """Set up the ACB config module with necessary classes."""
     mock_acb_config.Config = Config
@@ -303,7 +310,7 @@ def _setup_acb_depends(mock_acb_depends: ModuleType, depends: t.Any) -> None:
     # Make depends directly accessible as a module attribute
     mock_acb_depends.depends = depends
     # Also set it as the default export for from acb.depends import depends
-    setattr(mock_acb_depends, "__call__", depends.__call__)
+    mock_acb_depends.__call__ = depends.__call__
 
 
 def _setup_acb_actions_encode(mock_acb_actions_encode: ModuleType) -> None:
@@ -337,9 +344,7 @@ def _setup_acb_actions_hash(mock_acb_actions_hash: ModuleType) -> None:
 
         def __call__(self, content: t.Any) -> str:
             """Mock hash function."""
-            if isinstance(content, str):
-                return f"hash_{len(content)}"
-            elif isinstance(content, bytes):
+            if isinstance(content, str | bytes):
                 return f"hash_{len(content)}"
             return "hash_mock"
 
@@ -361,7 +366,7 @@ def _setup_acb_logger(mock_acb_logger: ModuleType) -> None:
         def __init__(self, name: str = "test_logger", **kwargs: t.Any) -> None:
             self.name = name
 
-        def bind(self, **kwargs: t.Any) -> "MockLogger":
+        def bind(self, **kwargs: t.Any) -> MockLogger:
             # Return self explicitly typed as MockLogger to fix pyright error
             return t.cast("MockLogger", self)
 
@@ -389,7 +394,6 @@ def _setup_acb_debug(mock_acb_debug: ModuleType) -> None:
 
     def debug(*args: t.Any, **kwargs: t.Any) -> None:
         """Mock debug function that does nothing."""
-        pass
 
     mock_acb_debug.debug = debug
 
@@ -435,7 +439,8 @@ _patch_acb_modules()
 def pytest_configure(config) -> None:
     """Register custom markers."""
     config.addinivalue_line(
-        "markers", "cli_coverage: mark test as measuring CLI coverage"
+        "markers",
+        "cli_coverage: mark test as measuring CLI coverage",
     )
 
     # Patch anyio.Path to use our MockAsyncPath implementation for existing code that still uses it
@@ -451,7 +456,7 @@ def pytest_configure(config) -> None:
 
 
 class MockAsyncPath:
-    def __init__(self, path: t.Union[str, Path, "MockAsyncPath"] = "") -> None:
+    def __init__(self, path: str | Path | MockAsyncPath = "") -> None:
         if isinstance(path, MockAsyncPath):
             self._path = path._path
         else:
@@ -472,23 +477,21 @@ class MockAsyncPath:
         """Make MockAsyncPath hashable so it can be used in dataclasses."""
         return self._hash
 
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, MockAsyncPath):
             return self._path == other._path
         if isinstance(other, str | Path):
             return self._path == str(other)
         return False
 
-    def __truediv__(
-        self, other: t.Union[str, Path, "MockAsyncPath"]
-    ) -> "MockAsyncPath":
+    def __truediv__(self, other: str | Path | MockAsyncPath) -> MockAsyncPath:
         other_str = str(other)
         if self._path.endswith("/"):
             return MockAsyncPath(f"{self._path}{other_str}")
         return MockAsyncPath(f"{self._path}/{other_str}")
 
     @property
-    def parent(self) -> "MockAsyncPath":
+    def parent(self) -> MockAsyncPath:
         parent_path = "/".join(self._path.split("/")[:-1])
         if not parent_path:
             parent_path = "/"
@@ -511,7 +514,7 @@ class MockAsyncPath:
     def parts(self) -> tuple[str, ...]:
         parts = [part for part in self._path.split("/") if part]
         if self._path.startswith("/"):
-            return ("/",) + tuple(parts)
+            return ("/", *tuple(parts))
         return tuple(parts)
 
     async def exists(self) -> bool:
@@ -525,13 +528,10 @@ class MockAsyncPath:
 
     async def mkdir(self, parents: bool = False, exist_ok: bool = False) -> None:
         """Mock implementation of mkdir."""
-        return None
+        pass
 
-    def with_suffix(self, suffix: str) -> "MockAsyncPath":
-        if "." in self._path:
-            base = self._path.rsplit(".", 1)[0]
-        else:
-            base = self._path
+    def with_suffix(self, suffix: str) -> MockAsyncPath:
+        base = self._path.rsplit(".", 1)[0] if "." in self._path else self._path
         return MockAsyncPath(f"{base}{suffix}")
 
     def iterdir(self):
@@ -554,8 +554,28 @@ class MockAsyncPath:
 
         return AsyncIterator()
 
-    async def glob(self, pattern: str) -> list["MockAsyncPath"]:
+    async def glob(self, pattern: str) -> list[MockAsyncPath]:
         return []
+
+    def rglob(self, pattern: str):
+        """Mock implementation of rglob that returns an async iterator."""
+
+        class AsyncIterator:
+            def __init__(self, items=None) -> None:
+                self.items = items or []
+                self.index = 0
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                if self.index >= len(self.items):
+                    raise StopAsyncIteration
+                item = self.items[self.index]
+                self.index += 1
+                return item
+
+        return AsyncIterator()
 
     def read_text(self, encoding: str = "utf-8") -> str:
         """Mock implementation of read_text."""
@@ -578,7 +598,10 @@ class MockAsyncPath:
 
 class MockAdapter:
     def __init__(
-        self, name: str = "test", category: str = "app", path: t.Any = None
+        self,
+        name: str = "test",
+        category: str = "app",
+        path: t.Any = None,
     ) -> None:
         self.name = name
         self.category = category
@@ -652,11 +675,9 @@ class MockTemplateFilters:
 
     @staticmethod
     def filesize(size: int) -> str:
-        if size < 1024:
+        if size < 1024 or size < 1024 * 1024:
             return f"{size / 1024:.1f} KB"
-        elif size < 1024 * 1024:
-            return f"{size / 1024:.1f} KB"
-        elif size < 1024 * 1024 * 1024:
+        if size < 1024 * 1024 * 1024:
             return f"{size / (1024 * 1024):.1f} MB"
         return f"{size / (1024 * 1024 * 1024):.1f} GB"
 
@@ -664,8 +685,8 @@ class MockTemplateFilters:
 class MockTemplateRenderer:
     def __init__(
         self,
-        storage: t.Optional["MockStorage"] = None,
-        cache: t.Optional["MockCache"] = None,
+        storage: MockStorage | None = None,
+        cache: MockCache | None = None,
     ) -> None:
         self.templates: dict[str, str] = {
             "page.html": "<html><body>page.html: title, content, items</body></html>",
@@ -739,16 +760,16 @@ class MockTemplateRenderer:
 class MockTemplates:
     def __init__(
         self,
-        config: t.Optional["MockConfig"] = None,
-        storage: t.Any = None,
-        cache: t.Any = None,
+        config: MockConfig | None = None,
+        storage: t.Any | None = None,
+        cache: t.Any | None = None,
     ) -> None:
         self.storage = storage
         self.cache = cache
         self.config = config or MockConfig()
 
         if not hasattr(self.config, "app"):
-            setattr(self.config, "app", SimpleNamespace(style="test_style"))
+            self.config.app = SimpleNamespace(style="test_style")
         elif not hasattr(self.config.app, "style"):
             self.config.app.style = "test_style"
 
@@ -781,7 +802,8 @@ class MockTemplates:
 
         with patch("fastblocks.adapters.templates._base.root_path", adapter.path):
             return self.get_searchpath(
-                adapter, adapter.path / "templates" / adapter.category
+                adapter,
+                adapter.path / "templates" / adapter.category,
             )
 
     def get_storage_path(self, path: str | Path) -> str:
@@ -870,11 +892,11 @@ class MockAdapters:
 
         if adapter_name == "cache":
             return (mock_cache, mock_storage, mock_models)
-        elif adapter_name == "storage":
+        if adapter_name == "storage":
             return (mock_storage, mock_models, None)
-        elif adapter_name == "templates":
+        if adapter_name == "templates":
             return (mock_templates, None, None)
-        elif adapter_name == "routes":
+        if adapter_name == "routes":
             mock_routes = MagicMock()
             return (mock_routes, None, None)
         return (MagicMock(), MagicMock(), MagicMock())
@@ -888,11 +910,11 @@ class MockAdapters:
     def get_adapter(self, adapter_name: str) -> t.Any:
         if adapter_name == "cache":
             return MockCache()
-        elif adapter_name == "storage":
+        if adapter_name == "storage":
             return MockStorage()
-        elif adapter_name == "templates":
+        if adapter_name == "templates":
             return MockTemplates(MockConfig(), MockStorage(), MockCache())
-        elif adapter_name == "routes":
+        if adapter_name == "routes":
             return MagicMock()
         return MagicMock()
 
@@ -941,9 +963,7 @@ class MockActions:
                 pass
 
             def hash(self, content: t.Any) -> str:
-                if isinstance(content, str):
-                    return f"hash_{len(content)}"
-                elif isinstance(content, bytes):
+                if isinstance(content, str | bytes):
                     return f"hash_{len(content)}"
                 return "hash_mock"
 
@@ -971,9 +991,9 @@ class MockDepends:
             return self.dependencies.get(name, MagicMock())
 
         self.depends = depends_func
-        setattr(self.depends, "inject", inject_func)
-        setattr(self.depends, "set", set_func)
-        setattr(self.depends, "get", get_func)
+        self.depends.inject = inject_func
+        self.depends.set = set_func
+        self.depends.get = get_func
 
 
 class MockDependsInjector:
@@ -993,7 +1013,10 @@ class MockDependsInjector:
 
 class MockTemplatesBaseSettings:
     def __init__(
-        self, config: t.Any = None, cache_timeout: int = 300, **values: t.Any
+        self,
+        config: t.Any = None,
+        cache_timeout: int = 300,
+        **values: t.Any,
     ) -> None:
         self.cache_timeout = cache_timeout
         if config:
@@ -1027,7 +1050,7 @@ class MockLogger:
             def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
                 self.name = kwargs.get("name", "mock_logger")
 
-            def bind(self, **kwargs: t.Any) -> "LoggerClass":
+            def bind(self, **kwargs: t.Any) -> LoggerClass:
                 return self
 
             def debug(self, message: str, *args: t.Any, **kwargs: t.Any) -> None:
@@ -1064,13 +1087,16 @@ class MockSitemap:
 
     async def add_url(self, url: str, **kwargs: t.Any) -> None:
         if not url.startswith(("/", "http")):
-            raise ValueError(f"Invalid URL format: {url}")
+            msg = f"Invalid URL format: {url}"
+            raise ValueError(msg)
 
         if " " in url:
-            raise ValueError(f"URL contains invalid characters: {url}")
+            msg = f"URL contains invalid characters: {url}"
+            raise ValueError(msg)
 
         if url.startswith("ftp:"):
-            raise ValueError(f"Unsupported URL protocol: {url}")
+            msg = f"Unsupported URL protocol: {url}"
+            raise ValueError(msg)
 
         change_freq = kwargs.get("change_freq", "hourly")
 
@@ -1084,13 +1110,15 @@ class MockSitemap:
             "never",
         )
         if change_freq not in valid_freqs:
-            raise ValueError(f"Invalid change frequency: {change_freq}")
+            msg = f"Invalid change frequency: {change_freq}"
+            raise ValueError(msg)
 
         priority = kwargs.get("priority", 0.5)
 
         if not isinstance(priority, int | float) or priority < 0.0 or priority > 1.0:
+            msg = f"Invalid priority value: {priority}. Must be between 0.0 and 1.0"
             raise ValueError(
-                f"Invalid priority value: {priority}. Must be between 0.0 and 1.0"
+                msg,
             )
 
         last_modified = kwargs.get("last_modified", datetime.now())
@@ -1128,12 +1156,14 @@ class MockSitemap:
 
         if path is None:
             if hasattr(self.config, "storage") and hasattr(
-                self.config.storage, "local_path"
+                self.config.storage,
+                "local_path",
             ):
                 path = Path(self.config.storage.local_path) / "sitemap.xml"
             else:
+                msg = "No path provided and no default path available in config"
                 raise ValueError(
-                    "No path provided and no default path available in config"
+                    msg,
                 )
 
         if hasattr(path, "_path"):
@@ -1224,24 +1254,31 @@ def mock_path() -> MockAsyncPath:
 def mock_import_adapter(monkeypatch: pytest.MonkeyPatch) -> None:
     def mock_import(*args: t.Any, **kwargs: t.Any) -> t.Any:
         adapter_name = args[0] if args else kwargs.get("adapter_name", "")
-
-        if adapter_name == "cache":
-            return (MockCache(), None, None)
-        elif adapter_name == "storage":
-            return (MockStorage(), None, None)
-        elif adapter_name == "models":
-            return (MockModels(), None, None)
-        elif adapter_name == "templates":
-            mock_templates = MockTemplates(MockConfig(), MockStorage(), MockCache())
-            return (mock_templates, None, None)
-        elif adapter_name == "routes":
-            mock_routes = MagicMock()
-            return (mock_routes, None, None)
-
-        return (MagicMock(), MagicMock(), MagicMock())
+        return _get_mock_adapter(adapter_name)
 
     monkeypatch.setattr("acb.adapters.import_adapter", mock_import)
+    _patch_fastblocks_modules(monkeypatch, mock_import)
 
+
+def _get_mock_adapter(adapter_name: str) -> tuple[t.Any, t.Any, t.Any]:
+    """Get the appropriate mock adapter based on name."""
+    return {
+        "cache": (MockCache(), None, None),
+        "storage": (MockStorage(), None, None),
+        "models": (MockModels(), None, None),
+        "templates": (
+            MockTemplates(MockConfig(), MockStorage(), MockCache()),
+            None,
+            None,
+        ),
+        "routes": (MagicMock(), None, None),
+    }.get(adapter_name, (MagicMock(), MagicMock(), MagicMock()))
+
+
+def _patch_fastblocks_modules(
+    monkeypatch: pytest.MonkeyPatch, mock_import: t.Callable
+) -> None:
+    """Patch import_adapter in all fastblocks.adapters modules."""
     for module_name in list(sys.modules.keys()):
         if module_name.startswith("fastblocks.adapters"):
             module = sys.modules[module_name]
@@ -1276,7 +1313,8 @@ def mock_jinja2_templates() -> t.Any:
 
         def get_template(self, template_name: str) -> t.Any:
             if template_name not in self.templates:
-                raise Exception(f"Template not found: {template_name}")
+                msg = f"Template not found: {template_name}"
+                raise Exception(msg)
 
             return template_name
 
@@ -1307,7 +1345,11 @@ def mock_adapter() -> type:
 
 class SitemapURL:
     def __init__(
-        self, loc: str, change_freq: str, priority: float, last_modified: datetime
+        self,
+        loc: str,
+        change_freq: str,
+        priority: float,
+        last_modified: datetime,
     ) -> None:
         self.loc = loc
         self.change_freq = change_freq
@@ -1402,10 +1444,9 @@ def mock_acb():  # noqa: C901
 
         def init(self) -> None:
             """Mock initialization - does nothing."""
-            pass
 
         @classmethod
-        def get_instance(cls) -> "Config":
+        def get_instance(cls) -> Config:
             """Get singleton instance."""
             return cls()
 
@@ -1464,7 +1505,7 @@ def mock_acb():  # noqa: C901
             if hasattr(cls, "__name__"):
                 if cls.__name__ == "Config":
                     return Config()
-                elif cls.__name__ == "Logger":
+                if cls.__name__ == "Logger":
                     # Return a logger mock with callable debug method
                     logger_mock = MagicMock()
                     logger_mock.debug = MagicMock()
@@ -1498,14 +1539,14 @@ def mock_acb():  # noqa: C901
     module_structure["acb.adapters"].AdapterBase = AdapterBase
     module_structure["acb.adapters"].get_adapter = MagicMock(return_value=None)
     module_structure["acb.adapters"].get_installed_adapter = MagicMock(
-        return_value=None
+        return_value=None,
     )
     module_structure["acb.adapters"].import_adapter = MagicMock(
         side_effect=lambda adapter_name="templates": (
             MagicMock(),
             MagicMock(),
             MagicMock(),
-        )
+        ),
     )
 
     # Register mock modules
@@ -1544,39 +1585,39 @@ def _create_module_structure() -> dict[str, types.ModuleType]:
         "fastblocks.caching": types.ModuleType("fastblocks.caching"),
         "fastblocks.adapters": types.ModuleType("fastblocks.adapters"),
         "fastblocks.adapters.templates": types.ModuleType(
-            "fastblocks.adapters.templates"
+            "fastblocks.adapters.templates",
         ),
         "fastblocks.adapters.templates._base": types.ModuleType(
-            "fastblocks.adapters.templates._base"
+            "fastblocks.adapters.templates._base",
         ),
         "fastblocks.adapters.templates._filters": types.ModuleType(
-            "fastblocks.adapters.templates._filters"
+            "fastblocks.adapters.templates._filters",
         ),
         "fastblocks.adapters.templates.jinja2": types.ModuleType(
-            "fastblocks.adapters.templates.jinja2"
+            "fastblocks.adapters.templates.jinja2",
         ),
         "fastblocks.adapters.admin": types.ModuleType("fastblocks.adapters.admin"),
         "fastblocks.adapters.admin._base": types.ModuleType(
-            "fastblocks.adapters.admin._base"
+            "fastblocks.adapters.admin._base",
         ),
         "fastblocks.adapters.app": types.ModuleType("fastblocks.adapters.app"),
         "fastblocks.adapters.app._base": types.ModuleType(
-            "fastblocks.adapters.app._base"
+            "fastblocks.adapters.app._base",
         ),
         "fastblocks.adapters.auth": types.ModuleType("fastblocks.adapters.auth"),
         "fastblocks.adapters.auth._base": types.ModuleType(
-            "fastblocks.adapters.auth._base"
+            "fastblocks.adapters.auth._base",
         ),
         "fastblocks.adapters.routes": types.ModuleType("fastblocks.adapters.routes"),
         "fastblocks.adapters.routes._base": types.ModuleType(
-            "fastblocks.adapters.routes._base"
+            "fastblocks.adapters.routes._base",
         ),
         "fastblocks.adapters.sitemap": types.ModuleType("fastblocks.adapters.sitemap"),
         "fastblocks.adapters.sitemap._base": types.ModuleType(
-            "fastblocks.adapters.sitemap._base"
+            "fastblocks.adapters.sitemap._base",
         ),
         "fastblocks.adapters.sitemap._routes": types.ModuleType(
-            "fastblocks.adapters.sitemap._routes"
+            "fastblocks.adapters.sitemap._routes",
         ),
     }
 
@@ -1586,13 +1627,13 @@ def _setup_module_components(module_structure: dict[str, types.ModuleType]) -> N
     _setup_exceptions_module(module_structure["fastblocks.exceptions"])
     _setup_middleware_module(module_structure["fastblocks.middleware"])
     _setup_templates_base_module(
-        module_structure["fastblocks.adapters.templates._base"]
+        module_structure["fastblocks.adapters.templates._base"],
     )
     _setup_templates_filters_module(
-        module_structure["fastblocks.adapters.templates._filters"]
+        module_structure["fastblocks.adapters.templates._filters"],
     )
     _setup_templates_jinja2_module(
-        module_structure["fastblocks.adapters.templates.jinja2"]
+        module_structure["fastblocks.adapters.templates.jinja2"],
     )
     _setup_admin_base_module(module_structure["fastblocks.adapters.admin._base"])
     _setup_routes_module(module_structure["fastblocks.adapters.routes"])
@@ -1601,7 +1642,9 @@ def _setup_module_components(module_structure: dict[str, types.ModuleType]) -> N
 def _setup_exception_classes(exceptions_module: types.ModuleType) -> None:
     """Set up exception classes in the exceptions module."""
     exceptions_module.StarletteCachesException = type(
-        "StarletteCachesException", (Exception,), {}
+        "StarletteCachesException",
+        (Exception,),
+        {},
     )
 
     exceptions_module.RequestNotCachable = type(
@@ -1615,10 +1658,14 @@ def _setup_exception_classes(exceptions_module: types.ModuleType) -> None:
         {"__init__": lambda self, response: setattr(self, "response", response)},
     )
     exceptions_module.DuplicateCaching = type(
-        "DuplicateCaching", (exceptions_module.StarletteCachesException,), {}
+        "DuplicateCaching",
+        (exceptions_module.StarletteCachesException,),
+        {},
     )
     exceptions_module.MissingCaching = type(
-        "MissingCaching", (exceptions_module.StarletteCachesException,), {}
+        "MissingCaching",
+        (exceptions_module.StarletteCachesException,),
+        {},
     )
 
     exceptions_module.depends = MagicMock()
@@ -1636,12 +1683,12 @@ def _create_mock_handle_exception(exceptions_module: types.ModuleType) -> None:
                 status_code = getattr(exc, "status_code", 500)
                 if status_code == 404:
                     return PlainTextResponse(
-                        "Content not found", status_code=status_code
+                        "Content not found",
+                        status_code=status_code,
                     )
-                elif status_code >= 500:
+                if status_code >= 500:
                     return PlainTextResponse("Server error", status_code=status_code)
-                else:
-                    return PlainTextResponse(f"Error: {exc}", status_code=status_code)
+                return PlainTextResponse(f"Error: {exc}", status_code=status_code)
 
             templates = exceptions_module.depends.get()
 
@@ -1760,7 +1807,8 @@ def _setup_parent_module_imports(module_structure: dict[str, types.ModuleType]) 
 
 
 def _setup_single_parent_module(
-    module_structure: dict[str, types.ModuleType], parent_name: str
+    module_structure: dict[str, types.ModuleType],
+    parent_name: str,
 ) -> None:
     """Set up imports for a single parent module."""
     if parent_name not in module_structure:
@@ -1777,7 +1825,8 @@ def _setup_single_parent_module(
 
 
 def _copy_public_attributes(
-    parent: types.ModuleType, base_module: types.ModuleType
+    parent: types.ModuleType,
+    base_module: types.ModuleType,
 ) -> None:
     """Copy public attributes from base module to parent."""
     for attr_name in dir(base_module):
@@ -1790,7 +1839,7 @@ def _is_public_attribute(attr_name: str) -> bool:
     return not attr_name.startswith("_") or attr_name == "__all__"
 
 
-def _setup_fastblocks_module_structure() -> None:  # noqa: F811, C901
+def _setup_fastblocks_module_structure() -> None:
     """Set up the FastBlocks module structure with all necessary submodules.
 
     This function creates mock modules for fastblocks package structure
@@ -1822,12 +1871,8 @@ def _setup_exceptions_module(exceptions_module: ModuleType) -> None:
     class DuplicateCaching(Exception):
         """Exception raised when duplicate caching middleware is detected."""
 
-        pass
-
     class MissingCaching(Exception):
         """Exception raised when caching middleware is missing."""
-
-        pass
 
     # Add exception classes to the module
     exceptions_module.DuplicateCaching = DuplicateCaching
@@ -1894,20 +1939,6 @@ def _create_secure_headers_middleware(mock_secure_headers: MagicMock) -> type:
     return MockSecureHeadersMiddleware
 
 
-def _create_process_time_header_middleware(MockLogger: type) -> type:
-    """Create the MockProcessTimeHeaderMiddleware class."""
-
-    class MockProcessTimeHeaderMiddleware:
-        def __init__(self, app) -> None:
-            self.app = app
-            self.logger = MockLogger()
-
-        async def __call__(self, scope, receive, send, logger=None):
-            return await self.app(scope, receive, send)
-
-    return MockProcessTimeHeaderMiddleware
-
-
 def _create_cache_control_middleware() -> type:
     """Create the MockCacheControlMiddleware class."""
 
@@ -1949,16 +1980,14 @@ def _create_cache_control_middleware() -> type:
 
 
 def _create_mock_middleware_classes(
-    mock_secure_headers: MagicMock, MockLogger: type
+    mock_secure_headers: MagicMock,
+    MockLogger: type,
 ) -> dict:
     """Create mock middleware classes."""
     return {
         "CurrentRequestMiddleware": _create_current_request_middleware(),
         "SecureHeadersMiddleware": _create_secure_headers_middleware(
-            mock_secure_headers
-        ),
-        "ProcessTimeHeaderMiddleware": _create_process_time_header_middleware(
-            MockLogger
+            mock_secure_headers,
         ),
         "CacheControlMiddleware": _create_cache_control_middleware(),
     }
@@ -1973,7 +2002,8 @@ def _create_cache_helper_classes() -> dict:
             if "__starlette_caches__" not in request.scope:
                 from fastblocks.exceptions import MissingCaching
 
-                raise MissingCaching("No CacheMiddleware in scope")
+                msg = "No CacheMiddleware in scope"
+                raise MissingCaching(msg)
             self.middleware = request.scope["__starlette_caches__"]
 
         async def invalidate_cache_for(self, url, headers=None) -> None:
@@ -1986,14 +2016,16 @@ def _create_cache_helper_classes() -> dict:
             if "__starlette_caches__" not in request.scope:
                 from fastblocks.exceptions import MissingCaching
 
-                raise MissingCaching("No CacheMiddleware in scope")
+                msg = "No CacheMiddleware in scope"
+                raise MissingCaching(msg)
 
             middleware = request.scope["__starlette_caches__"]
             # Check if it's a proper middleware object (has app attribute)
             if not hasattr(middleware, "app"):
                 from fastblocks.exceptions import MissingCaching
 
-                raise MissingCaching("Invalid middleware type in scope")
+                msg = "Invalid middleware type in scope"
+                raise MissingCaching(msg)
 
             self.middleware = middleware
 
@@ -2024,7 +2056,11 @@ def _create_patchable_cache_middleware_class(middleware_module: ModuleType) -> t
 
         async def __call__(self, scope, receive, send):
             return await _handle_cache_middleware_request(
-                self, scope, receive, send, middleware_module
+                self,
+                scope,
+                receive,
+                send,
+                middleware_module,
             )
 
     return PatchableCacheMiddleware
@@ -2046,7 +2082,8 @@ def _check_for_duplicate_middleware(app: t.Any) -> None:
         if m.__class__.__name__ == "PatchableCacheMiddleware":
             from fastblocks.exceptions import DuplicateCaching
 
-            raise DuplicateCaching("Duplicate CacheMiddleware detected")
+            msg = "Duplicate CacheMiddleware detected"
+            raise DuplicateCaching(msg)
 
 
 async def _handle_cache_middleware_request(
@@ -2072,7 +2109,8 @@ def _check_for_duplicate_in_scope(scope: dict) -> None:
     if "__starlette_caches__" in scope:
         from fastblocks.exceptions import DuplicateCaching
 
-        raise DuplicateCaching("Duplicate CacheMiddleware in scope")
+        msg = "Duplicate CacheMiddleware in scope"
+        raise DuplicateCaching(msg)
 
 
 def _setup_middleware_module(middleware_module: ModuleType) -> None:
@@ -2094,7 +2132,8 @@ def _setup_middleware_module(middleware_module: ModuleType) -> None:
 
     # Create mock middleware classes
     middleware_classes = _create_mock_middleware_classes(
-        mock_secure_headers, MockLogger
+        mock_secure_headers,
+        MockLogger,
     )
 
     # Create cache helper classes
@@ -2104,7 +2143,7 @@ def _setup_middleware_module(middleware_module: ModuleType) -> None:
     def mock_delete_from_cache(*args, **kwargs) -> None:
         pass
 
-    def mock_get_request():
+    def mock_get_request() -> None:
         return None
 
     # Set up the middleware module
@@ -2115,7 +2154,7 @@ def _setup_middleware_module(middleware_module: ModuleType) -> None:
 
     # Create and set the cache middleware factory
     middleware_module.CacheMiddleware = _create_cache_middleware_factory(
-        middleware_module
+        middleware_module,
     )()
 
     # Add middleware classes
@@ -2145,7 +2184,7 @@ def _setup_routes_module(routes_module: ModuleType) -> None:
     mock_default.RoutesAdapter = MagicMock()
 
     # Set the default attribute on the routes module
-    setattr(routes_module, "default", mock_default)
+    routes_module.default = mock_default
 
 
 def _setup_admin_base_module(admin_base: ModuleType) -> None:
@@ -2170,9 +2209,9 @@ def _setup_admin_base_module(admin_base: ModuleType) -> None:
             super().__init__(**kwargs)
             self.settings = MockAdminBaseSettings()
 
-    setattr(admin_base, "AdapterBase", MockAdapterBase)
-    setattr(admin_base, "AdminBaseSettings", MockAdminBaseSettings)
-    setattr(admin_base, "AdminBase", AdminBase)
+    admin_base.AdapterBase = MockAdapterBase
+    admin_base.AdminBaseSettings = MockAdminBaseSettings
+    admin_base.AdminBase = AdminBase
 
 
 def _setup_templates_base_module(templates_base: ModuleType) -> None:
@@ -2210,7 +2249,9 @@ def _setup_base_imports(templates_base: ModuleType, mock_depends) -> None:
     templates_base.AdapterBase = MagicMock()
     templates_base.Config = MockConfig
     templates_base.Settings = type(
-        "Settings", (), {"__init__": lambda self, **kwargs: None}
+        "Settings",
+        (),
+        {"__init__": lambda self, **kwargs: None},
     )
     templates_base.depends = mock_depends
 
@@ -2239,7 +2280,7 @@ def _setup_safe_await(templates_base: ModuleType) -> None:
             try:
                 result = func_or_value()
                 if hasattr(result, "__await__") and callable(
-                    getattr(result, "__await__")
+                    result.__await__,
                 ):
                     return await result  # type: ignore[misc]
                 return result
@@ -2335,8 +2376,9 @@ def _setup_templates_base_class(templates_base: ModuleType) -> None:
             searchpaths = []
             searchpaths.extend(
                 self.get_searchpath(
-                    adapter, templates_base.root_path / "templates" / adapter.category
-                )
+                    adapter,
+                    templates_base.root_path / "templates" / adapter.category,
+                ),
             )
             return searchpaths
 
@@ -2377,7 +2419,7 @@ def _setup_jinja2_basic_attributes(templates_jinja2: ModuleType) -> None:
     templates_jinja2.search = MagicMock(return_value=MagicMock())
     templates_jinja2.get_adapter = MagicMock(return_value=MagicMock())
     templates_jinja2.import_adapter = MagicMock(
-        return_value=(MockCache(), MockStorage(), MockModels())
+        return_value=(MockCache(), MockStorage(), MockModels()),
     )
     templates_jinja2.Config = MockConfig
     templates_jinja2.debug = MagicMock()
@@ -2476,7 +2518,6 @@ def _create_templates_class() -> type:
 
         def _add_filters(self, env: t.Any) -> None:
             """Mock _add_filters method."""
-            pass
 
         async def render_template(
             self,
@@ -2489,7 +2530,9 @@ def _create_templates_class() -> type:
             return HTMLResponse("Mock template rendered")
 
         async def init_envs(
-            self, template_paths: list[t.Any] = None, **kwargs: t.Any
+            self,
+            template_paths: list[t.Any] | None = None,
+            **kwargs: t.Any,
         ) -> t.Any:
             """Mock init_envs method."""
             if template_paths:
@@ -2518,14 +2561,14 @@ def _create_templates_class() -> type:
 
 def _setup_jinja2_loaders(templates_jinja2: ModuleType) -> None:
     """Set up loaders for the templates jinja2 module."""
-    setattr(templates_jinja2, "FileSystemLoader", MockFileSystemLoader)
-    setattr(templates_jinja2, "RedisLoader", MockRedisLoader)
-    setattr(templates_jinja2, "StorageLoader", MockStorageLoader)
-    setattr(templates_jinja2, "ChoiceLoader", MockChoiceLoader)
-    setattr(templates_jinja2, "PackageLoader", MockPackageLoader)
-    setattr(templates_jinja2, "DictLoader", MockDictLoader)
-    setattr(templates_jinja2, "FunctionLoader", MockFunctionLoader)
-    setattr(templates_jinja2, "PrefixLoader", MockPrefixLoader)
+    templates_jinja2.FileSystemLoader = MockFileSystemLoader
+    templates_jinja2.RedisLoader = MockRedisLoader
+    templates_jinja2.StorageLoader = MockStorageLoader
+    templates_jinja2.ChoiceLoader = MockChoiceLoader
+    templates_jinja2.PackageLoader = MockPackageLoader
+    templates_jinja2.DictLoader = MockDictLoader
+    templates_jinja2.FunctionLoader = MockFunctionLoader
+    templates_jinja2.PrefixLoader = MockPrefixLoader
 
 
 def _setup_templates_jinja2_module(templates_jinja2: ModuleType) -> None:
@@ -2607,9 +2650,9 @@ def _create_mock_filters_class(mock_minify):
         def filesize(size: int) -> str:
             if size < 1024:
                 return f"{size} B"
-            elif size < 1024 * 1024:
+            if size < 1024 * 1024:
                 return f"{size / 1024:.1f} KB"
-            elif size < 1024 * 1024 * 1024:
+            if size < 1024 * 1024 * 1024:
                 return f"{size / (1024 * 1024):.1f} MB"
             return f"{size / (1024 * 1024 * 1024):.1f} GB"
 
@@ -2617,12 +2660,14 @@ def _create_mock_filters_class(mock_minify):
 
 
 def _setup_filters_module_attributes(
-    templates_filters: ModuleType, mock_minify, filters_class
+    templates_filters: ModuleType,
+    mock_minify,
+    filters_class,
 ) -> None:
     """Set up the filters module attributes."""
-    setattr(templates_filters, "minify", mock_minify)
-    setattr(templates_filters, "Filters", filters_class)
-    setattr(templates_filters, "t", t)
+    templates_filters.minify = mock_minify
+    templates_filters.Filters = filters_class
+    templates_filters.t = t
 
     # Note: Template filter tests that need minify mocking should use their own fixtures
     # (see test_filters_mock.py) rather than global mocking that interferes with real minify tests
@@ -2650,12 +2695,13 @@ class MockAsyncBaseLoader:
         self.encoding = "utf-8"
 
     async def get_source_async(
-        self, template: str | t.Any
+        self,
+        template: str | t.Any,
     ) -> tuple[str, str, t.Callable[[], bool]]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def list_templates_async(self) -> list[str]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class MockFileSystemLoader(MockAsyncBaseLoader):
@@ -2691,7 +2737,8 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
         raise MockTemplateNotFound(template)
 
     async def get_source_async(
-        self, template: str | t.Any
+        self,
+        template: str | t.Any,
     ) -> tuple[str, str, t.Callable[[], bool]]:
         if not self.searchpath:
             raise MockTemplateNotFound(template)
@@ -2709,7 +2756,8 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
         raise MockTemplateNotFound(template)
 
     async def _try_storage_source(
-        self, template: str
+        self,
+        template: str,
     ) -> tuple[str, str, t.Callable[[], bool]] | None:
         """Try to get template from storage."""
         if not (self.storage and hasattr(self.storage, "templates")):
@@ -2725,7 +2773,8 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
         return None
 
     async def _try_searchpath_source(
-        self, template: str
+        self,
+        template: str,
     ) -> tuple[str, str, t.Callable[[], bool]] | None:
         """Try to get template from searchpaths."""
         for path in self.searchpath:
@@ -2790,7 +2839,8 @@ class MockRedisLoader(MockAsyncBaseLoader):
         self.config = config
 
     async def get_source_async(
-        self, template: str | t.Any
+        self,
+        template: str | t.Any,
     ) -> tuple[str, str, t.Callable[[], bool]]:
         # Try cache first
         cache_result = await self._try_cache_source(template)
@@ -2807,7 +2857,8 @@ class MockRedisLoader(MockAsyncBaseLoader):
         raise TemplateNotFound(template)
 
     async def _try_cache_source(
-        self, template: str
+        self,
+        template: str,
     ) -> tuple[str, str, t.Callable[[], bool]] | None:
         """Try to get template from cache."""
         if not self.cache:
@@ -2828,7 +2879,8 @@ class MockRedisLoader(MockAsyncBaseLoader):
         return content, f"templates/{template}", cache_uptodate
 
     async def _try_storage_source_redis(
-        self, template: str
+        self,
+        template: str,
     ) -> tuple[str, str, t.Callable[[], bool]] | None:
         """Try to get template from storage."""
         if not (self.storage and hasattr(self.storage, "templates")):
@@ -2890,7 +2942,8 @@ class MockStorageLoader(MockAsyncBaseLoader):
         self.config = config
 
     async def get_source_async(
-        self, template: str | t.Any
+        self,
+        template: str | t.Any,
     ) -> tuple[str, str, t.Callable[[], bool]]:
         if not self.storage or not hasattr(self.storage, "templates"):
             raise MockTemplateNotFound(template)
@@ -2927,8 +2980,7 @@ class MockStorageLoader(MockAsyncBaseLoader):
             return []
 
         try:
-            templates = self.storage.templates.list(Path("templates"))
-            return templates
+            return self.storage.templates.list(Path("templates"))
         except Exception:
             return []
 
@@ -2950,7 +3002,8 @@ class MockChoiceLoader(MockAsyncBaseLoader):
         self.config = config
 
     async def get_source_async(
-        self, template: str | t.Any
+        self,
+        template: str | t.Any,
     ) -> tuple[str, str, t.Callable[[], bool]]:
         for loader in self.loaders:
             try:
@@ -2997,7 +3050,8 @@ class MockPackageLoader(MockAsyncBaseLoader):
         self.config = config
 
     async def get_source_async(
-        self, template: str | t.Any
+        self,
+        template: str | t.Any,
     ) -> tuple[str, str, t.Callable[[], bool]]:
         # Simulate real PackageLoader behavior
         path = self._template_root / template
@@ -3018,7 +3072,8 @@ class MockPackageLoader(MockAsyncBaseLoader):
             replace.append(("http://", "https://"))
         for r in replace:
             source = source.replace(
-                bytes(r[0], encoding="utf8"), bytes(r[1], encoding="utf8")
+                bytes(r[0], encoding="utf8"),
+                bytes(r[1], encoding="utf8"),
             )
 
         # Simulate storage_path and cache_key generation (simplified)
@@ -3052,7 +3107,8 @@ class MockDictLoader(MockAsyncBaseLoader):
         self.config = config
 
     async def get_source_async(
-        self, template: str | t.Any
+        self,
+        template: str | t.Any,
     ) -> tuple[str, str, t.Callable[[], bool]]:
         if template not in self.templates:
             raise MockTemplateNotFound(template)
@@ -3081,7 +3137,8 @@ class MockFunctionLoader(MockAsyncBaseLoader):
         self.config = config
 
     async def get_source_async(
-        self, template: str | t.Any
+        self,
+        template: str | t.Any,
     ) -> tuple[str, str, t.Callable[[], bool]]:
         content = self.load_func(template)
         return content, template, lambda: True
@@ -3109,7 +3166,8 @@ class MockPrefixLoader(MockAsyncBaseLoader):
         self.config = config
 
     async def get_source_async(
-        self, template: str | t.Any
+        self,
+        template: str | t.Any,
     ) -> tuple[str, str, t.Callable[[], bool]]:
         if self.delimiter not in template:
             raise MockTemplateNotFound(template)
@@ -3133,5 +3191,5 @@ class MockPrefixLoader(MockAsyncBaseLoader):
 
 
 # Use the function to prevent unused warning - call at end after all classes are defined
-_setup_fastblocks_module_structure()  # noqa: F841
+_setup_fastblocks_module_structure()
 # Now only creates modules that don't already exist

@@ -22,8 +22,10 @@ async def safe_uptodate(uptodate_func: t.Any) -> bool:
     if callable(uptodate_func):
         try:
             result = uptodate_func()
-            if hasattr(result, "__await__") and callable(getattr(result, "__await__")):
-                return bool(await t.cast(t.Awaitable[t.Any], result))
+            if hasattr(result, "__await__") and callable(
+                getattr(result, "__await__", None)
+            ):
+                return bool(await t.cast("t.Awaitable[t.Any]", result))
             return bool(result)
         except Exception:
             return True
@@ -37,7 +39,10 @@ class MockUptodate:
 
 @pytest.mark.asyncio
 async def test_file_system_loader_get_source_async_file_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     FilesystemLoader(
         searchpath=[AsyncPath(tmp_path)].copy(),
@@ -65,7 +70,10 @@ async def test_file_system_loader_get_source_async_file_exists(
 
 @pytest.mark.asyncio
 async def test_file_system_loader_get_source_async_file_not_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     FilesystemLoader(
         searchpath=[AsyncPath(tmp_path)].copy(),
@@ -80,7 +88,10 @@ async def test_file_system_loader_get_source_async_file_not_exists(
 
 @pytest.mark.asyncio
 async def test_file_system_loader_get_source_async_storage_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     FilesystemLoader(
         searchpath=[AsyncPath(tmp_path)].copy(),
@@ -109,7 +120,10 @@ async def test_file_system_loader_get_source_async_storage_exists(
 
 @pytest.mark.asyncio
 async def test_file_system_loader_get_source_async_storage_exists_deployed(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     config.deployed = True
 
@@ -142,7 +156,10 @@ async def test_file_system_loader_get_source_async_storage_exists_deployed(
 
 @pytest.mark.asyncio
 async def test_file_system_loader_list_templates_async(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     (tmp_path / "test1.html").write_text("<html><body>Test 1</body></html>")
     (tmp_path / "test2.html").write_text("<html><body>Test 2</body></html>")
@@ -165,7 +182,10 @@ async def test_file_system_loader_list_templates_async(
 
 @pytest.mark.asyncio
 async def test_single_path_loader(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     FilesystemLoader(
         searchpath=[AsyncPath(tmp_path)],
@@ -193,7 +213,10 @@ async def test_single_path_loader(
 
 @pytest.mark.asyncio
 async def test_storage_loader_get_source_async_storage_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     MockStorageLoader(
         encoding="utf-8",
@@ -221,7 +244,10 @@ async def test_storage_loader_get_source_async_storage_exists(
 
 @pytest.mark.asyncio
 async def test_storage_loader_get_source_async_storage_not_exists(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     MockStorageLoader(
         encoding="utf-8",
@@ -237,7 +263,10 @@ async def test_storage_loader_get_source_async_storage_not_exists(
 
 @pytest.mark.asyncio
 async def test_storage_loader_list_templates_async(
-    config: Config, mock_cache: AsyncMock, mock_storage: AsyncMock, tmp_path: Path
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+    tmp_path: Path,
 ) -> None:
     MockStorageLoader(
         encoding="utf-8",

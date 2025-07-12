@@ -1,181 +1,274 @@
-# FastBlocks Actions
+# FastBlocks: Actions
 
-> **FastBlocks Documentation**: [Main](../../README.md) | [Core Features](../README.md) | [Actions](./README.md) | [Adapters](../adapters/README.md)
+Actions are modular, self-contained utility functions that perform specific tasks in the FastBlocks framework. They follow semantic patterns and are designed to streamline common operations in web application development.
 
-Actions in FastBlocks are utility functions that perform specific tasks. They are designed to be reusable, self-contained, and easily accessible throughout your application.
+## Table of Contents
 
-## Relationship with ACB
+- [Overview](#overview)
+- [Available Actions](#available-actions)
+  - [Gather](#gather)
+  - [Sync](#sync)
+  - [Minify](#minify)
+- [Action Philosophy](#action-philosophy)
+- [Best Practices](#best-practices)
+- [Creating Custom Actions](#creating-custom-actions)
 
-FastBlocks actions build on [ACB's action system](https://github.com/lesleslie/acb/blob/main/acb/actions/README.md) but with a different focus:
+## Overview
 
-- **ACB Actions**: Focus on general-purpose utilities like compression, encoding, and hashing
-- **FastBlocks Actions**: Focus on web-specific utilities like HTML/CSS/JS minification
+FastBlocks actions provide utility functions for web application tasks like component gathering, synchronization, and optimization. They are:
 
-Both use the same pattern of self-contained, automatically discovered utility functions, but serve different purposes in the application stack.
+- **Semantic**: Follow verb-based naming with operation-specific methods
+- **Adapter-aware**: Use protocols and dynamic imports to work with adapters
+- **Self-contained**: Each action focuses on specific functionality
+- **Async-friendly**: Built for async/await patterns
+- **Error-resilient**: Include comprehensive error handling and retry logic
 
 ## Available Actions
 
-| Action | Description | Functions |
-|--------|-------------|-----------|
-| [Minify](#minify) | Minifies HTML, CSS, and JavaScript | `minify.html()`, `minify.css()`, `minify.js()` |
+FastBlocks comes with several built-in actions for web application development:
 
-## Minify
+| Action | Description | Key Methods |
+|--------|-------------|-------------|
+| **Gather** | Component discovery and collection | `gather.routes()`, `gather.templates()`, `gather.middleware()`, `gather.models()`, `gather.application()` |
+| **Sync** | Bidirectional synchronization | `sync.templates()`, `sync.settings()`, `sync.cache()` |
+| **Minify** | Code and asset optimization | `minify.html()`, `minify.css()`, `minify.js()` |
 
-The `minify` action provides functions to minify HTML, CSS, and JavaScript content, reducing file size and improving load times.
+### Gather
 
-### Usage
+The Gather action consolidates component discovery patterns throughout FastBlocks, providing unified interfaces for collecting routes, templates, middleware, models, and application components.
 
+#### Key Features:
+- **Parallel processing** with concurrency control
+- **Standardized error handling** and retry logic
+- **Unified caching** strategies across components
+- **Adapter integration** through protocols
+
+#### Usage Example:
+```python
+from fastblocks.actions.gather import gather
+
+# Gather routes from adapters and base files
+routes_result = await gather.routes()
+print(f"Found {routes_result.total_routes} routes")
+
+# Gather template components
+templates_result = await gather.templates()
+print(f"Loaded {len(templates_result.loaders)} template loaders")
+
+# Gather middleware stack
+middleware_result = await gather.middleware()
+print(f"Built stack with {middleware_result.total_middleware} components")
+
+# Gather models from various sources
+models_result = await gather.models()
+print(f"Discovered {models_result.total_models} models")
+
+# Gather application components
+app_result = await gather.application()
+print(f"Loaded {app_result.total_components} application components")
+```
+
+**[→ Read the full Gather documentation](./gather/README.md)**
+
+### Sync
+
+The Sync action provides bidirectional synchronization between filesystem and cloud storage with intelligent conflict resolution and cache consistency management.
+
+#### Key Features:
+- **Bidirectional sync** with configurable conflict resolution
+- **Incremental sync** based on modification times and content hashes
+- **Atomic operations** with backup capability
+- **Cache coordination** and invalidation
+
+#### Usage Example:
+```python
+from fastblocks.actions.sync import sync
+
+# Sync templates between filesystem and storage
+templates_result = await sync.templates()
+print(f"Synced {len(templates_result.synced_items)} templates")
+
+# Sync settings with config reload
+settings_result = await sync.settings(reload_config=True)
+print(f"Synced settings for {len(settings_result.adapters_affected)} adapters")
+
+# Refresh cache layers for consistency
+cache_result = await sync.cache(operation="refresh")
+print(f"Refreshed {len(cache_result.invalidated_keys)} cache entries")
+```
+
+**[→ Read the full Sync documentation](./sync/README.md)**
+
+### Minify
+
+The Minify action provides code and asset optimization for web applications, reducing file sizes for better performance.
+
+#### Key Features:
+- **HTML minification** with whitespace and comment removal
+- **CSS optimization** with redundancy elimination
+- **JavaScript compression** with safe transformations
+- **Preserves functionality** while reducing size
+
+#### Usage Example:
 ```python
 from fastblocks.actions.minify import minify
 
 # Minify HTML content
-html_content = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Example</title>
-</head>
-<body>
-    <h1>Hello, World!</h1>
-</body>
-</html>
-"""
+html_content = "<html><body>  <h1>Hello</h1>  </body></html>"
 minified_html = minify.html(html_content)
 
-# Minify CSS content
-css_content = """
-body {
-    font-family: Arial, sans-serif;
-    color: #333;
-    margin: 0;
-    padding: 20px;
-}
-"""
+# Minify CSS
+css_content = "body { margin: 0; padding: 0; }"
 minified_css = minify.css(css_content)
 
-# Minify JavaScript content
-js_content = """
-function greet(name) {
-    console.log('Hello, ' + name + '!');
-}
-"""
+# Minify JavaScript
+js_content = "function hello() { console.log('Hello, World!'); }"
 minified_js = minify.js(js_content)
 ```
 
-### API Reference
+**[→ Read the full Minify documentation](./minify/README.md)**
 
-#### `minify.html(html: str) -> str`
+## Action Philosophy
 
-Minifies HTML content by removing unnecessary whitespace, comments, and optimizing markup.
+FastBlocks actions follow a semantic pattern inspired by ACB's action system:
 
-- **Parameters**:
-  - `html` (str): The HTML content to minify
-- **Returns**:
-  - `str`: The minified HTML content
+### Semantic Naming
+- **Actions are verbs**: `gather`, `sync`, `minify`
+- **Methods are operations**: `.routes()`, `.templates()`, `.cache()`
+- **Clear intent**: Each method has a specific, obvious purpose
 
-#### `minify.css(css: str) -> str`
+### Adapter Awareness
+Actions work with adapters through protocols and dynamic imports:
 
-Minifies CSS content by removing whitespace, comments, and optimizing style rules.
+```python
+# ✅ Good: Dynamic import via protocol
+storage = depends.get("storage")
+await storage.templates.read(path)
 
-- **Parameters**:
-  - `css` (str): The CSS content to minify
-- **Returns**:
-  - `str`: The minified CSS content
+# ✅ Good: Dynamic class import
+module = __import__("fastblocks.adapters.templates.jinja2", fromlist=["ChoiceLoader"])
+ChoiceLoader = getattr(module, "ChoiceLoader")
 
-#### `minify.js(js: str) -> str`
+# ❌ Avoid: Direct adapter imports
+from fastblocks.adapters.templates.jinja2 import ChoiceLoader
+```
 
-Minifies JavaScript content by removing whitespace, comments, and optimizing code.
+### Error Resilience
+All actions include:
+- **Comprehensive error handling** with meaningful messages
+- **Retry logic** with exponential backoff
+- **Partial success** strategies for batch operations
+- **Graceful degradation** when optional components fail
 
-- **Parameters**:
-  - `js` (str): The JavaScript content to minify
-- **Returns**:
-  - `str`: The minified JavaScript content
+## Best Practices
 
-### Implementation Details
+### 1. Use Semantic Interfaces
+```python
+# ✅ Semantic and clear
+await gather.routes()
+await sync.templates()
+await minify.css(content)
 
-The minify action uses the following libraries:
+# ❌ Generic and unclear
+await process_components("routes")
+await transfer_files("templates", "bidirectional")
+```
 
-- **HTML**: [minify-html](https://github.com/wilsonzlin/minify-html) (compatible with v0.16.4+)
-- **CSS**: [rcssmin](https://github.com/ndparker/rcssmin) (compatible with v1.2.1+)
-- **JavaScript**: [rjsmin](https://github.com/ndparker/rjsmin) (compatible with v1.2.4+)
+### 2. Handle Results Properly
+```python
+result = await gather.templates()
 
-These dependencies are automatically installed when you install FastBlocks with the required extras:
+if result.has_errors:
+    logger.warning(f"Template gathering had {len(result.errors)} errors")
 
-```bash
-pdm add "fastblocks[minify]"
-# or
-pip install "fastblocks[minify]"
+for error in result.errors:
+    logger.error(f"Template error: {error}")
+
+print(f"Successfully gathered {result.total_components} template components")
+```
+
+### 3. Use Strategy Configuration
+```python
+from fastblocks.actions.gather import GatherStrategy
+
+strategy = GatherStrategy(
+    parallel=True,
+    max_concurrent=5,
+    timeout=30.0,
+    error_strategy=ErrorStrategy.PARTIAL_SUCCESS
+)
+
+result = await gather.routes(strategy=strategy)
+```
+
+### 4. Leverage Caching
+```python
+# Actions automatically cache results based on parameters
+result1 = await gather.routes()  # Executes gathering
+result2 = await gather.routes()  # Returns cached result
+
+# Clear cache when needed
+from fastblocks.actions.gather.strategies import clear_cache
+clear_cache("routes:base:adapters")
 ```
 
 ## Creating Custom Actions
 
-You can create your own actions by adding Python modules to the `actions` directory:
+FastBlocks follows the ACB semantic action pattern. Create custom actions by:
 
+### 1. Directory Structure
+```
+myproject/
+├── actions/
+│   ├── __init__.py
+│   └── validate/
+│       ├── __init__.py
+│       └── README.md
+```
+
+### 2. Action Implementation
 ```python
-# fastblocks/actions/validate.py
+# myproject/actions/validate/__init__.py
+__all__ = ["validate"]
+
 class Validate:
+    """Semantic validate action for data validation operations."""
+
     @staticmethod
     def email(email: str) -> bool:
-        """Validate an email address"""
+        """Validate an email address."""
         import re
-        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return bool(re.match(pattern, email))
 
+    @staticmethod
+    async def url(url: str) -> bool:
+        """Validate a URL by checking accessibility."""
+        # Implementation with async HTTP check
+        return True
+
+# Export semantic action instance
 validate = Validate()
 ```
 
-Then you can use your custom action in your application:
-
+### 3. Usage
 ```python
-from fastblocks.actions.validate import validate
+from myproject.actions.validate import validate
 
-is_valid = validate.email("user@example.com")
+is_valid_email = validate.email("user@example.com")
+is_accessible = await validate.url("https://example.com")
 ```
 
-### Best Practices for Custom Actions
+### 4. Documentation
+Create a `README.md` following the pattern of existing actions with:
+- Clear overview and features
+- Usage examples with code
+- API reference with parameters and return types
+- Performance considerations
+- Related actions
 
-1. **Keep actions focused**: Each action should perform a specific, well-defined task
-2. **Make actions stateless**: Actions should not maintain state between calls
-3. **Use descriptive names**: Action names should clearly indicate their purpose
-4. **Document your actions**: Include docstrings and type hints
-5. **Add tests**: Ensure your actions work correctly with unit tests
+## Related Resources
 
-### Testing Custom Actions
-
-To create tests for your custom actions, add test files to the `tests/actions/` directory:
-
-```python
-# tests/actions/validate/test_validate.py
-import pytest
-from fastblocks.actions.validate import validate
-
-def test_email_validation_valid():
-    """Test that valid email addresses pass validation."""
-    valid_emails = [
-        "user@example.com",
-        "firstname.lastname@example.com",
-        "email@subdomain.example.com",
-        "user+tag@example.com"
-    ]
-    for email in valid_emails:
-        assert validate.email(email) is True
-
-def test_email_validation_invalid():
-    """Test that invalid email addresses fail validation."""
-    invalid_emails = [
-        "plainaddress",
-        "@missingusername.com",
-        "user@.com",
-        "user@domain"
-    ]
-    for email in invalid_emails:
-        assert validate.email(email) is False
-```
-
-Run your tests with pytest:
-
-```bash
-python -m pytest tests/actions/validate/test_validate.py -v
-```
-
-For more information on testing, see the [Testing Documentation](../../../tests/TESTING.md).
+- [ACB Actions Documentation](https://github.com/fastblocks/acb/tree/main/acb/actions)
+- [FastBlocks Adapters Documentation](../adapters/README.md)
+- [FastBlocks Core Documentation](../README.md)

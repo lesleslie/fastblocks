@@ -198,22 +198,19 @@ def test_fastblocks_exception_to_error_context() -> None:
         details={"field": "email"},
     ).to_error_context("custom_id")
 
-    assert (
-        context.error_id == "custom_id"
-        and context.category == ErrorCategory.VALIDATION
-        and context.severity == ErrorSeverity.WARNING
-        and context.message == "Test message"
-        and context.details == {"field": "email"}
-    )
+    assert context.error_id == "custom_id"
+    assert context.category == ErrorCategory.VALIDATION
+    assert context.severity == ErrorSeverity.WARNING
+    assert context.message == "Test message"
+    assert context.details == {"field": "email"}
 
 
 def test_fastblocks_exception_to_error_context_default_id() -> None:
     """Test FastBlocksException to_error_context with default ID."""
     context = FastBlocksException("Test message").to_error_context()
 
-    assert (
-        context.error_id == "fastblocksexception" and context.message == "Test message"
-    )
+    assert context.error_id == "fastblocksexception"
+    assert context.message == "Test message"
 
 
 def test_configuration_error() -> None:

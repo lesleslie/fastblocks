@@ -313,41 +313,62 @@ class TestMinify:
 
     def _assert_html_basic_attributes(self, minified_html: str) -> None:
         """Assert basic HTML attributes are preserved."""
-        assert "lang=" in minified_html and "en" in minified_html
-        assert "charset=" in minified_html and "UTF-8" in minified_html
-        assert "name=" in minified_html and "viewport" in minified_html
-        assert "content=" in minified_html and "width=device-width" in minified_html
-        assert "id=" in minified_html and "main" in minified_html
-        assert "class=" in minified_html and "container" in minified_html
-        assert "data-test=" in minified_html and "value" in minified_html
+        assert "lang=" in minified_html
+        assert "en" in minified_html
+        assert "charset=" in minified_html
+        assert "UTF-8" in minified_html
+        assert "name=" in minified_html
+        assert "viewport" in minified_html
+        assert "content=" in minified_html
+        assert "width=device-width" in minified_html
+        assert "id=" in minified_html
+        assert "main" in minified_html
+        assert "class=" in minified_html
+        assert "container" in minified_html
+        assert "data-test=" in minified_html
+        assert "value" in minified_html
 
     def _assert_html_link_attributes(self, minified_html: str) -> None:
         """Assert link attributes are preserved."""
-        assert "href=" in minified_html and "https://example.com" in minified_html
-        assert "target=" in minified_html and "_blank" in minified_html
-        assert "rel=" in minified_html and "noopener" in minified_html
+        assert "href=" in minified_html
+        assert "https://example.com" in minified_html
+        assert "target=" in minified_html
+        assert "_blank" in minified_html
+        assert "rel=" in minified_html
+        assert "noopener" in minified_html
 
     def _assert_html_image_attributes(self, minified_html: str) -> None:
         """Assert image attributes are preserved."""
-        assert "src=" in minified_html and "image.jpg" in minified_html
-        assert "alt=" in minified_html and "Test image" in minified_html
-        assert "width=" in minified_html and "100" in minified_html
-        assert "height=" in minified_html and "100" in minified_html
+        assert "src=" in minified_html
+        assert "image.jpg" in minified_html
+        assert "alt=" in minified_html
+        assert "Test image" in minified_html
+        assert "width=" in minified_html
+        assert "100" in minified_html
+        assert "height=" in minified_html
+        assert "100" in minified_html
 
     def _assert_html_form_attributes(self, minified_html: str) -> None:
         """Assert form attributes are preserved."""
-        assert "action=" in minified_html and "/submit" in minified_html
-        assert "method=" in minified_html and "post" in minified_html
-        assert "button" in minified_html and "Submit" in minified_html
+        assert "action=" in minified_html
+        assert "/submit" in minified_html
+        assert "method=" in minified_html
+        assert "post" in minified_html
+        assert "button" in minified_html
+        assert "Submit" in minified_html
 
     def _assert_html_input_attributes(self, minified_html: str) -> None:
         """Assert input attributes are preserved."""
-        assert "name=" in minified_html and "username" in minified_html
-        assert "placeholder=" in minified_html and "Username" in minified_html
+        assert "name=" in minified_html
+        assert "username" in minified_html
+        assert "placeholder=" in minified_html
+        assert "Username" in minified_html
         assert "required" in minified_html
         assert "type=password" in minified_html
-        assert "name=" in minified_html and "password" in minified_html
-        assert "placeholder=" in minified_html and "Password" in minified_html
+        assert "name=" in minified_html
+        assert "password" in minified_html
+        assert "placeholder=" in minified_html
+        assert "Password" in minified_html
 
     def test_css_minification_with_media_queries(self) -> None:
         css_content: str = (

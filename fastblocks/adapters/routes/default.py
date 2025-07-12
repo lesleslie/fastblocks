@@ -42,7 +42,7 @@ class Index(FastBlocksEndpoint):
         debug(request)
         page = request.path_params.get("page") or "home"
         template = "index.html"
-        headers = dict(vary="hx-request")
+        headers = {"vary": "hx-request"}
         if htmx := request.scope["htmx"]:
             debug(htmx)
             template = f"{page.lstrip('/')}.html"
@@ -50,7 +50,10 @@ class Index(FastBlocksEndpoint):
         debug(page, template)
         try:
             return await self.templates.render_template(
-                request, template, headers=headers, context=dict(page=page.lstrip("/"))
+                request,
+                template,
+                headers=headers,
+                context={"page": page.lstrip("/")},
             )
         except TemplateNotFound:
             raise HTTPException(status_code=404)
@@ -99,7 +102,7 @@ class Routes(RoutesBase):
                 Route("/", Index, methods=["GET"]),
                 Route("/{page}", Index, methods=["GET"]),
                 Route("/block/{block}", Block, methods=["GET"]),
-            ]
+            ],
         )
         for adapter in get_adapters():
             routes_path = adapter.path.parent / "_routes.py"
@@ -115,7 +118,7 @@ class Routes(RoutesBase):
                     "/media",
                     app=StaticFiles(directory=self.config.storage.local_path / "media"),
                     name="media",
-                )
+                ),
             )
         debug(self.routes)
 

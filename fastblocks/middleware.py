@@ -3,7 +3,6 @@ import typing as t
 from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
 from enum import IntEnum
-from time import perf_counter
 
 from acb.depends import depends
 from asgi_htmx import HtmxMiddleware
@@ -31,13 +30,12 @@ from .exceptions import MissingCaching
 
 
 class MiddlewarePosition(IntEnum):
-    PROCESS_TIME = 0
-    CSRF = 1
-    SESSION = 2
-    HTMX = 3
-    CURRENT_REQUEST = 4
-    COMPRESSION = 5
-    SECURITY_HEADERS = 6
+    CSRF = 0
+    SESSION = 1
+    HTMX = 2
+    CURRENT_REQUEST = 3
+    COMPRESSION = 4
+    SECURITY_HEADERS = 5
 
 
 class MiddlewareUtils:
@@ -90,7 +88,7 @@ class CurrentRequestMiddleware:
             MiddlewareUtils.WEBSOCKET,
         ):
             await self.app(scope, receive, send)
-            return
+            return None
         local_scope = _request_ctx_var.set(scope)
         response = await self.app(scope, receive, send)
         _request_ctx_var.reset(local_scope)
@@ -117,28 +115,7 @@ class SecureHeadersMiddleware:
             await send(message)
 
         await self.app(scope, receive, send_with_secure_headers)
-
-
-class ProcessTimeHeaderMiddleware:
-    def __init__(self, app: ASGIApp) -> None:
-        self.app = app
-        try:
-            self.logger = depends.get("logger")
-        except Exception:
-            self.logger = None
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        start_time = perf_counter()
-        try:
-            await self.app(scope, receive, send)
-        except Exception as exc:
-            if self.logger:
-                self.logger.exception(exc)
-            raise
-        finally:
-            process_time = perf_counter() - start_time
-            if self.logger:
-                self.logger.debug(f"Request processed in {process_time:.6f} s")
+        return None
 
 
 class CacheValidator:
@@ -147,13 +124,17 @@ class CacheValidator:
 
     def check_for_duplicate_middleware(self, app: ASGIApp) -> None:
         if hasattr(app, "middleware"):
-            middleware = getattr(app, "middleware")
+            middleware_attr = app.middleware  # type: ignore[attr-defined]
+            if callable(middleware_attr):
+                return
+            middleware = middleware_attr
             for middleware_item in middleware:
                 if isinstance(middleware_item, CacheMiddleware):
                     from .exceptions import DuplicateCaching
 
+                    msg = "CacheMiddleware detected in middleware stack"
                     raise DuplicateCaching(
-                        "CacheMiddleware detected in middleware stack"
+                        msg,
                     )
 
     def is_duplicate_in_scope(self, scope: Scope) -> bool:
@@ -161,7 +142,7 @@ class CacheValidator:
 
 
 class CacheKeyManager:
-    def __init__(self, cache: t.Any = None) -> None:
+    def __init__(self, cache: t.Any | None = None) -> None:
         self.cache = cache
         self._cache_dict = {}
 
@@ -175,7 +156,11 @@ class CacheKeyManager:
 
 class CacheMiddleware:
     def __init__(
-        self, app: ASGIApp, *, cache: t.Any = None, rules: Sequence[Rule] | None = None
+        self,
+        app: ASGIApp,
+        *,
+        cache: t.Any | None = None,
+        rules: Sequence[Rule] | None = None,
     ) -> None:
         self.app = app
 
@@ -197,12 +182,15 @@ class CacheMiddleware:
         if self.validator.is_duplicate_in_scope(scope):
             from .exceptions import DuplicateCaching
 
-            raise DuplicateCaching(
+            msg = (
                 "Another `CacheMiddleware` was detected in the middleware stack.\n"
                 "HINT: this exception probably occurred because:\n"
                 "- You wrapped an application around `CacheMiddleware` multiple times.\n"
                 "- You tried to apply `@cached()` onto an endpoint, but the application "
                 "is already wrapped around a `CacheMiddleware`."
+            )
+            raise DuplicateCaching(
+                msg,
             )
         scope[scope_name] = self
         responder = CacheResponder(self.app, rules=self.rules)
@@ -213,20 +201,25 @@ class _BaseCacheMiddlewareHelper:
     def __init__(self, request: Request) -> None:
         self.request = request
         if scope_name not in request.scope:
+            msg = "No CacheMiddleware instance found in the ASGI scope. Did you forget to wrap the ASGI application with `CacheMiddleware`?"
             raise MissingCaching(
-                "No CacheMiddleware instance found in the ASGI scope. Did you forget to wrap the ASGI application with `CacheMiddleware`?"
+                msg,
             )
         middleware = request.scope[scope_name]
         if not isinstance(middleware, CacheMiddleware):
+            msg = f"A scope variable named {scope_name!r} was found, but it does not contain a `CacheMiddleware` instance. It is likely that an incompatible middleware was added to the middleware stack."
             raise MissingCaching(
-                f"A scope variable named {scope_name!r} was found, but it does not contain a `CacheMiddleware` instance. It is likely that an incompatible middleware was added to the middleware stack."
+                msg,
             )
         self.middleware = middleware
 
 
 class CacheHelper(_BaseCacheMiddlewareHelper):
     async def invalidate_cache_for(
-        self, url: str | URL, *, headers: Mapping[str, str] | None = None
+        self,
+        url: str | URL,
+        *,
+        headers: Mapping[str, str] | None = None,
     ) -> None:
         if not isinstance(url, URL):
             url = self.request.url_for(url)
@@ -279,7 +272,7 @@ class CacheControlMiddleware:
         await responder(scope, receive, send)
 
     def process_response(self, response: t.Any) -> None:
-        cache_control_parts = []
+        cache_control_parts: list[str] = []
         if getattr(self, "public", False):
             cache_control_parts.append("public")
         elif getattr(self, "private", False):
@@ -302,7 +295,11 @@ def get_middleware_positions() -> dict[str, int]:
 
 
 class MiddlewareStackManager:
-    def __init__(self, config: t.Any = None, logger: t.Any = None) -> None:
+    def __init__(
+        self,
+        config: t.Any | None = None,
+        logger: t.Any | None = None,
+    ) -> None:
         self.config = config
         self.logger = logger
         self._middleware_registry: dict[MiddlewarePosition, MiddlewareClass] = {}
@@ -323,11 +320,10 @@ class MiddlewareStackManager:
     def _register_default_middleware(self) -> None:
         self._middleware_registry.update(
             {
-                MiddlewarePosition.PROCESS_TIME: ProcessTimeHeaderMiddleware,
                 MiddlewarePosition.HTMX: HtmxMiddleware,
                 MiddlewarePosition.CURRENT_REQUEST: CurrentRequestMiddleware,
                 MiddlewarePosition.COMPRESSION: BrotliMiddleware,
-            }
+            },
         )
         self._middleware_options[MiddlewarePosition.COMPRESSION] = {"quality": 3}
 
@@ -373,7 +369,9 @@ class MiddlewareStackManager:
             self._middleware_options[position] = options
 
     def add_custom_middleware(
-        self, middleware: Middleware, position: MiddlewarePosition
+        self,
+        middleware: Middleware,
+        position: MiddlewarePosition,
     ) -> None:
         self._custom_middleware[position] = middleware
 

@@ -1247,6 +1247,8 @@ For more information about adapters, see the [Adapters Documentation](./fastbloc
 
 Actions are utility functions that perform specific tasks:
 
+- **Gather**: Discover and consolidate routes, templates, middleware, models, and application components
+- **Sync**: Bidirectional synchronization of templates, settings, and cache across environments
 - **Minify**: HTML, CSS, and JavaScript minification
 
 For more information about actions, see the [Actions Documentation](./fastblocks/actions/README.md).

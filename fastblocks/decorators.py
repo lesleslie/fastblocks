@@ -13,17 +13,23 @@ _T = t.TypeVar("_T", bound=ASGIApp)
 
 class _MiddlewareFactory(t.Protocol[_P]):
     def __call__(
-        self, app: ASGIApp, *args: _P.args, **kwargs: _P.kwargs
+        self,
+        app: ASGIApp,
+        *args: _P.args,
+        **kwargs: _P.kwargs,
     ) -> ASGIApp: ...
 
 
 def _wrap_in_middleware[T: ASGIApp](app: T, middleware: ASGIApp) -> T:
-    return t.cast(T, functools.wraps(app, updated=())(middleware))
+    return t.cast("T", functools.wraps(app, updated=())(middleware))
 
 
 class _CacheMiddlewareDecorator:
     def __call__(
-        self, *, cache: t.Any, rules: Sequence[Rule] | None = None
+        self,
+        *,
+        cache: t.Any,
+        rules: Sequence[Rule] | None = None,
     ) -> t.Callable[[_T], _T]:
         def wrap(app: _T) -> _T:
             middleware = CacheMiddleware(app, cache=cache, rules=rules)
@@ -43,4 +49,4 @@ class _CacheControlMiddlewareDecorator:
 
 cached = _CacheMiddlewareDecorator()
 cache_control = _CacheControlMiddlewareDecorator()
-__all__ = ["cached", "cache_control", "_MiddlewareFactory"]
+__all__ = ["_MiddlewareFactory", "cache_control", "cached"]

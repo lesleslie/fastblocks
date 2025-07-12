@@ -30,15 +30,19 @@ from anyio import Path as AsyncPath
 from granian import Granian
 
 nest_asyncio.apply()
-__all__ = ("create", "run", "dev", "components", "cli")
-default_adapters = dict(
-    routes="default", templates="jinja2", auth="basic", sitemap="asgi"
-)
+__all__ = ("cli", "components", "create", "dev", "run")
+default_adapters = {
+    "routes": "default",
+    "templates": "jinja2",
+    "auth": "basic",
+    "sitemap": "asgi",
+}
 fastblocks_path = Path(__file__).parent
 apps_path = Path.cwd()
 if Path.cwd() == fastblocks_path:
+    msg = "FastBlocks can not be run in the same directory as FastBlocks itself. Run `python -m fastblocks create`. Move into the app directory and try again."
     raise SystemExit(
-        "FastBlocks can not be run in the same directory as FastBlocks itself. Run `python -m fastblocks create`. Move into the app directory and try again."
+        msg,
     )
 cli = typer.Typer(rich_markup_mode="rich")
 
@@ -52,8 +56,8 @@ class Styles(str, Enum):
         return self.value
 
 
-run_args = dict(app="main:app")
-dev_args = run_args | dict(port=8000, reload=True)
+run_args = {"app": "main:app"}
+dev_args = run_args | {"port": 8000, "reload": True}
 granian_dev_args = dev_args | {
     "address": "127.0.0.1",
     "reload_paths": [Path.cwd(), fastblocks_path],
@@ -83,7 +87,9 @@ def setup_signal_handlers() -> None:
 @cli.command()
 def run(docker: bool = False, granian: bool = False, host: str = "127.0.0.1") -> None:
     if docker:
-        execute(f"docker run -it -ePORT=8080 -p8080:8080 {Path.cwd().stem}".split())
+        execute(
+            f"docker run -it -ePORT=8080 -p8080:8080 {Path.cwd().stem}".split(),
+        )
     else:
         setup_signal_handlers()
         if granian:
@@ -183,7 +189,8 @@ def components() -> None:
 @cli.command()
 def create(
     app_name: Annotated[
-        str, typer.Option(prompt=True, help="Name of your application")
+        str,
+        typer.Option(prompt=True, help="Name of your application"),
     ],
     style: Annotated[
         Styles,
@@ -193,7 +200,8 @@ def create(
         ),
     ] = Styles.bulma,
     domain: Annotated[
-        str, typer.Option(prompt=True, help="Application domain")
+        str,
+        typer.Option(prompt=True, help="Application domain"),
     ] = "example.com",
 ) -> None:
     app_path = apps_path / app_name
@@ -221,7 +229,7 @@ def create(
         Path(p).touch()
     for p in ("main.py.tmpl", ".envrc", "pyproject.toml.tmpl", "Procfile.tmpl"):
         Path(p.replace(".tmpl", "")).write_text(
-            (fastblocks_path / p).read_text().replace("APP_NAME", app_name)
+            (fastblocks_path / p).read_text().replace("APP_NAME", app_name),
         )
     commands = (
         ["direnv", "allow", "."],
@@ -238,18 +246,20 @@ def create(
         await dump.yaml(settings_dict, settings_path / f"{settings}.yml")
 
     async def update_configs() -> None:
-        await update_settings("debug", dict(fastblocks=False))
+        await update_settings("debug", {"fastblocks": False})
         await update_settings("adapters", default_adapters)
-        await update_settings("app", dict(title="Welcome to FastBlocks", domain=domain))
+        await update_settings(
+            "app", {"title": "Welcome to FastBlocks", "domain": domain}
+        )
 
     asyncio.run(update_configs())
     console.print(
-        f"\n[bold][white]Project is initialized. Please configure [green]'adapters.yml'[/] and [green]'app.yml'[/] in the [blue]'{app_name}/settings'[/] directory before running [magenta]`python -m fastblocks dev`[/] or [magenta]`python -m fastblocks run`[/] from the [blue]'{app_name}'[/] directory.[/][/]"
+        f"\n[bold][white]Project is initialized. Please configure [green]'adapters.yml'[/] and [green]'app.yml'[/] in the [blue]'{app_name}/settings'[/] directory before running [magenta]`python -m fastblocks dev`[/] or [magenta]`python -m fastblocks run`[/] from the [blue]'{app_name}'[/] directory.[/][/]",
     )
     console.print(
-        "\n[dim]Use [white]`python -m fastblocks components`[/white] to see available adapters and actions.[/dim]"
+        "\n[dim]Use [white]`python -m fastblocks components`[/white] to see available adapters and actions.[/dim]",
     )
-    raise SystemExit()
+    raise SystemExit
 
 
 @cli.command()

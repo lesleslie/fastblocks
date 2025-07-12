@@ -54,7 +54,9 @@ def ensure_cli_module():  # noqa: C901
             return {"docker": docker}
 
         def mock_dev(
-            server: str = "uvicorn", port: int = 8000, host: str = "127.0.0.1"
+            server: str = "uvicorn",
+            port: int = 8000,
+            host: str = "127.0.0.1",
         ):
             """Run the application in development mode."""
             return {"server": server, "port": port, "host": host}
@@ -64,7 +66,9 @@ def ensure_cli_module():  # noqa: C901
             return {"app_name": app_name, "domain": domain}
 
         def mock_create(
-            app_name: str, style: str = "bulma", domain: str = "example.com"
+            app_name: str,
+            style: str = "bulma",
+            domain: str = "example.com",
         ):
             """Create new FastBlocks application."""
             # Call asyncio.run on the update_configs coroutine
@@ -76,7 +80,7 @@ def ensure_cli_module():  # noqa: C901
             cli_module.signal.signal(cli_module.SIGINT, lambda sig, frame: None)
             cli_module.signal.signal(cli_module.SIGTERM, lambda sig, frame: None)
 
-        def mock_execute(cmd: str, cwd: str = None) -> int | None:
+        def mock_execute(cmd: str, cwd: str | None = None) -> int | None:
             """Execute a shell command."""
             return 0
 
@@ -137,7 +141,7 @@ def completed_future():
 def completed_coro():
     """Return a completed coroutine for testing async functions."""
 
-    async def _completed_coro(*args, **kwargs):
+    async def _completed_coro(*args, **kwargs) -> None:
         return None
 
     return _completed_coro

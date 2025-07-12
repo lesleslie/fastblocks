@@ -9,7 +9,6 @@ from importlib.util import find_spec
 from inspect import isclass
 from pathlib import Path
 
-from acb import Adapter
 from acb.adapters import get_adapter, import_adapter
 from acb.config import Config
 from acb.debug import debug
@@ -23,6 +22,14 @@ from jinja2_async_environment.loaders import AsyncBaseLoader, SourceType
 from starlette_async_jinja import AsyncJinja2Templates
 
 from ._base import TemplatesBase, TemplatesBaseSettings
+
+try:
+    from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
+    from fastblocks.actions.sync.templates import sync_templates
+except ImportError:
+    sync_templates = None
+    SyncDirection = None
+    SyncStrategy = None
 
 try:
     Cache, Storage, Models = import_adapter()
@@ -62,7 +69,8 @@ class BaseTemplateLoader(AsyncBaseLoader):
     storage: Storage = depends()
 
     def __init__(
-        self, searchpath: AsyncPath | t.Sequence[AsyncPath] | None = None
+        self,
+        searchpath: AsyncPath | t.Sequence[AsyncPath] | None = None,
     ) -> None:
         super().__init__(searchpath or [])
         if self.storage is None:
@@ -88,7 +96,8 @@ class BaseTemplateLoader(AsyncBaseLoader):
         return ("html", "css", "js")
 
     async def _list_templates_for_extensions(
-        self, extensions: tuple[str, ...]
+        self,
+        extensions: tuple[str, ...],
     ) -> list[str]:
         found: set[str] = set()
         for searchpath in self.searchpath:
@@ -98,7 +107,9 @@ class BaseTemplateLoader(AsyncBaseLoader):
         return sorted(found)
 
     def _normalize_template(
-        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+        self,
+        environment_or_template: t.Any,
+        template: str | AsyncPath | None = None,
     ) -> str | AsyncPath:
         if template is None:
             template = environment_or_template
@@ -106,7 +117,8 @@ class BaseTemplateLoader(AsyncBaseLoader):
         return template
 
     async def _find_template_path_parallel(
-        self, template: str | AsyncPath
+        self,
+        template: str | AsyncPath,
     ) -> AsyncPath | None:
         async def check_path(searchpath: AsyncPath) -> AsyncPath | None:
             path = searchpath / template
@@ -123,7 +135,8 @@ class BaseTemplateLoader(AsyncBaseLoader):
         return None
 
     async def _find_storage_path_parallel(
-        self, template: str | AsyncPath
+        self,
+        template: str | AsyncPath,
     ) -> tuple[AsyncPath, AsyncPath] | None:
         async def check_storage_path(
             searchpath: AsyncPath,
@@ -143,7 +156,8 @@ class BaseTemplateLoader(AsyncBaseLoader):
         return None
 
     async def _find_cache_path_parallel(
-        self, template: str | AsyncPath
+        self,
+        template: str | AsyncPath,
     ) -> tuple[AsyncPath, AsyncPath, str] | None:
         async def check_cache_path(
             searchpath: AsyncPath,
@@ -174,9 +188,13 @@ class LoaderProtocol(t.Protocol):
     storage: t.Any
 
     async def get_source_async(
-        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+        self,
+        environment_or_template: t.Any,
+        template: str | AsyncPath | None = None,
     ) -> tuple[
-        str, str | None, t.Callable[[], bool] | t.Callable[[], t.Awaitable[bool]]
+        str,
+        str | None,
+        t.Callable[[], bool] | t.Callable[[], t.Awaitable[bool]],
     ]: ...
 
     async def list_templates_async(self) -> list[str]: ...
@@ -188,14 +206,46 @@ class FileSystemLoader(BaseTemplateLoader):
             return await self.storage.templates.exists(storage_path)
         return False
 
-    async def _sync_from_storage(
-        self, path: AsyncPath, storage_path: AsyncPath
+    async def _sync_template_file(
+        self,
+        path: AsyncPath,
+        storage_path: AsyncPath,
+    ) -> tuple[bytes, int]:
+        if sync_templates is None or SyncDirection is None or SyncStrategy is None:
+            return await self._sync_from_storage_fallback(path, storage_path)
+
+        try:
+            strategy = SyncStrategy(
+                backup_on_conflict=False,
+            )
+
+            template_paths = [path]
+            result = await sync_templates(
+                template_paths=template_paths,
+                strategy=strategy,
+            )
+
+            resp = await path.read_bytes()
+            local_stat = await path.stat()
+            local_mtime = int(local_stat.st_mtime)
+
+            debug(f"Template sync result: {result.sync_status} for {path}")
+            return resp, local_mtime
+
+        except Exception as e:
+            debug(f"Sync action failed for {path}: {e}, falling back to primitive sync")
+            return await self._sync_from_storage_fallback(path, storage_path)
+
+    async def _sync_from_storage_fallback(
+        self,
+        path: AsyncPath,
+        storage_path: AsyncPath,
     ) -> tuple[bytes, int]:
         local_stat = await path.stat()
         local_mtime = int(local_stat.st_mtime)
         local_size = local_stat.st_size
         storage_stat = await self.storage.templates.stat(storage_path)
-        storage_mtime = int(round(storage_stat.get("mtime")))
+        storage_mtime = round(storage_stat.get("mtime"))
         storage_size = storage_stat.get("size")
 
         if local_mtime < storage_mtime and local_size != storage_size:
@@ -208,12 +258,23 @@ class FileSystemLoader(BaseTemplateLoader):
         return resp, local_mtime
 
     async def _read_and_store_template(
-        self, path: AsyncPath, storage_path: AsyncPath
+        self,
+        path: AsyncPath,
+        storage_path: AsyncPath,
     ) -> bytes:
         try:
             resp = await path.read_bytes()
             if self.storage is not None:
-                await self.storage.templates.write(storage_path, resp)
+                try:
+                    import asyncio
+
+                    await asyncio.wait_for(
+                        self.storage.templates.write(storage_path, resp), timeout=5.0
+                    )
+                except (TimeoutError, Exception) as e:
+                    debug(
+                        f"Storage write failed for {storage_path}: {e}, continuing with local file"
+                    )
             return resp
         except FileNotFoundError:
             raise TemplateNotFound(path.name)
@@ -223,7 +284,9 @@ class FileSystemLoader(BaseTemplateLoader):
             await self.cache.set(Templates.get_cache_key(storage_path), resp)
 
     async def get_source_async(
-        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+        self,
+        environment_or_template: t.Any,
+        template: str | AsyncPath | None = None,
     ) -> SourceType:
         template = self._normalize_template(environment_or_template, template)
         path = await self._find_template_path_parallel(template)
@@ -237,7 +300,7 @@ class FileSystemLoader(BaseTemplateLoader):
         local_mtime = 0
 
         if storage_exists and fs_exists and (not self.config.deployed):
-            resp, local_mtime = await self._sync_from_storage(path, storage_path)
+            resp, local_mtime = await self._sync_template_file(path, storage_path)
         else:
             resp = await self._read_and_store_template(path, storage_path)
 
@@ -250,13 +313,64 @@ class FileSystemLoader(BaseTemplateLoader):
 
     async def list_templates_async(self) -> list[str]:
         return await self._list_templates_for_extensions(
-            self.get_supported_extensions()
+            self.get_supported_extensions(),
         )
 
 
 class StorageLoader(BaseTemplateLoader):
+    async def _check_filesystem_sync_opportunity(
+        self, template: str | AsyncPath, storage_path: AsyncPath
+    ) -> AsyncPath | None:
+        if not self.config or self.config.deployed:
+            return None
+
+        fs_result = await self._find_template_path_parallel(template)
+        if fs_result and await fs_result.exists():
+            return fs_result
+        return None
+
+    async def _sync_storage_with_filesystem(
+        self,
+        fs_path: AsyncPath,
+        storage_path: AsyncPath,
+    ) -> tuple[bytes, int]:
+        if sync_templates is None or SyncDirection is None or SyncStrategy is None:
+            resp = await self.storage.templates.open(storage_path)
+            stat = await self.storage.templates.stat(storage_path)
+            return resp, round(stat.get("mtime").timestamp())
+
+        try:
+            strategy = SyncStrategy(
+                direction=SyncDirection.PULL,
+                backup_on_conflict=False,
+            )
+
+            result = await sync_templates(
+                template_paths=[fs_path],
+                strategy=strategy,
+            )
+
+            resp = await fs_path.read_bytes()
+            local_stat = await fs_path.stat()
+            local_mtime = int(local_stat.st_mtime)
+
+            debug(
+                f"Storage-filesystem sync result: {result.sync_status} for {storage_path}"
+            )
+            return resp, local_mtime
+
+        except Exception as e:
+            debug(
+                f"Storage sync failed for {storage_path}: {e}, reading from storage only"
+            )
+            resp = await self.storage.templates.open(storage_path)
+            stat = await self.storage.templates.stat(storage_path)
+            return resp, round(stat.get("mtime").timestamp())
+
     async def get_source_async(
-        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+        self,
+        environment_or_template: t.Any,
+        template: str | AsyncPath | None = None,
     ) -> tuple[str, str, t.Callable[[], t.Awaitable[bool]]]:
         template = self._normalize_template(environment_or_template, template)
         result = await self._find_storage_path_parallel(template)
@@ -264,16 +378,31 @@ class StorageLoader(BaseTemplateLoader):
             raise TemplateNotFound(str(template))
         _, storage_path = result
         debug(storage_path)
+
         try:
-            resp = await self.storage.templates.open(storage_path)
+            fs_path = await self._check_filesystem_sync_opportunity(
+                template, storage_path
+            )
+
+            if fs_path:
+                resp, local_mtime = await self._sync_storage_with_filesystem(
+                    fs_path, storage_path
+                )
+            else:
+                resp = await self.storage.templates.open(storage_path)
+                local_stat = await self.storage.templates.stat(storage_path)
+                local_mtime = round(local_stat.get("mtime").timestamp())
+
             if self.cache is not None:
                 await self.cache.set(Templates.get_cache_key(storage_path), resp)
-            local_stat = await self.storage.templates.stat(storage_path)
-            local_mtime = int(round(local_stat.get("mtime").timestamp()))
 
             async def uptodate() -> bool:
-                storage_stat = await self.storage.templates.stat(storage_path)
-                return int(round(storage_stat.get("mtime").timestamp())) == local_mtime
+                if fs_path and await fs_path.exists():
+                    fs_stat = await fs_path.stat()
+                    return int(fs_stat.st_mtime) == local_mtime
+                else:
+                    storage_stat = await self.storage.templates.stat(storage_path)
+                    return round(storage_stat.get("mtime").timestamp()) == local_mtime
 
             return (resp.decode(), str(storage_path), uptodate)
         except (FileNotFoundError, AttributeError):
@@ -284,7 +413,7 @@ class StorageLoader(BaseTemplateLoader):
         for searchpath in self.searchpath:
             with suppress(FileNotFoundError):
                 paths = await self.storage.templates.list(
-                    Templates.get_storage_path(searchpath)
+                    Templates.get_storage_path(searchpath),
                 )
                 found.extend(p for p in paths if p.endswith((".html", ".css", ".js")))
         found.sort()
@@ -293,7 +422,9 @@ class StorageLoader(BaseTemplateLoader):
 
 class RedisLoader(BaseTemplateLoader):
     async def get_source_async(
-        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+        self,
+        environment_or_template: t.Any,
+        template: str | AsyncPath | None = None,
     ) -> tuple[str, str | None, t.Callable[[], t.Awaitable[bool]]]:
         template = self._normalize_template(environment_or_template, template)
         result = await self._find_cache_path_parallel(template)
@@ -332,7 +463,10 @@ class PackageLoader(BaseTemplateLoader):
     _loader: t.Any
 
     def __init__(
-        self, package_name: str, path: str = "templates", adapter: str = "admin"
+        self,
+        package_name: str,
+        path: str = "templates",
+        adapter: str = "admin",
     ) -> None:
         self.package_path = Path(package_name)
         self.path = self.package_path / path
@@ -345,11 +479,11 @@ class PackageLoader(BaseTemplateLoader):
                 spec = None
                 self._loader = None
                 return
-            else:
-                import_module(package_name)
-                spec = find_spec(package_name)
-                if spec is None:
-                    raise ImportError(f"Could not find package {package_name}")
+            import_module(package_name)
+            spec = find_spec(package_name)
+            if spec is None:
+                msg = f"Could not find package {package_name}"
+                raise ImportError(msg)
         except ModuleNotFoundError:
             spec = None
             self._loader = None
@@ -368,13 +502,16 @@ class PackageLoader(BaseTemplateLoader):
                 template_root = root
                 break
         if template_root is None:
+            msg = f"The {package_name!r} package was not installed in a way that PackageLoader understands."
             raise ValueError(
-                f"The {package_name!r} package was not installed in a way that PackageLoader understands."
+                msg,
             )
         self._template_root = AsyncPath(template_root)
 
     async def get_source_async(
-        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+        self,
+        environment_or_template: t.Any,
+        template: str | AsyncPath | None = None,
     ) -> tuple[str, str, t.Callable[[], t.Awaitable[bool]]]:
         if template is None:
             template = environment_or_template
@@ -421,16 +558,22 @@ class ChoiceLoader(AsyncBaseLoader):
         self.loaders = loaders
 
     async def get_source_async(
-        self, environment_or_template: t.Any, template: str | AsyncPath | None = None
+        self,
+        environment_or_template: t.Any,
+        template: str | AsyncPath | None = None,
     ) -> SourceType:
         if template is None:
             template = environment_or_template
         assert template is not None
         for loader in self.loaders:
             try:
-                result = await loader.get_source_async(template)
+                result = await loader.get_source_async(
+                    environment_or_template, template
+                )
                 return result
             except TemplateNotFound:
+                continue
+            except Exception:  # nosec B112
                 continue
         raise TemplateNotFound(str(template))
 
@@ -445,14 +588,14 @@ class ChoiceLoader(AsyncBaseLoader):
 class TemplatesSettings(TemplatesBaseSettings):
     loader: str | None = None
     extensions: list[str] = []
-    delimiters: dict[str, str] = dict(
-        block_start_string="[%",
-        block_end_string="%]",
-        variable_start_string="[[",
-        variable_end_string="]]",
-        comment_start_string="[#",
-        comment_end_string="#]",
-    )
+    delimiters: dict[str, str] = {
+        "block_start_string": "[%",
+        "block_end_string": "%]",
+        "variable_start_string": "[[",
+        "variable_end_string": "]]",
+        "comment_start_string": "[#",
+        "comment_end_string": "#]",
+    }
     globals: dict[str, t.Any] = {}
     context_processors: list[str] = []
 
@@ -476,9 +619,20 @@ class Templates(TemplatesBase):
         super().__init__(**kwargs)
         self.filters: dict[str, t.Callable[..., t.Any]] = {}
         self.enabled_admin = get_adapter("admin")
-        self.enabled_app = get_adapter("app")
+        self.enabled_app = self._get_app_adapter()
         self._admin = None
         self._admin_initialized = False
+
+    def _get_app_adapter(self) -> t.Any:
+        app_adapter = get_adapter("app")
+        if app_adapter is not None:
+            return app_adapter
+        with suppress(Exception):
+            app_adapter = depends.get("app")
+            if app_adapter is not None:
+                return app_adapter
+
+        return None
 
     @property
     def admin(self) -> AsyncJinja2Templates | None:
@@ -487,10 +641,17 @@ class Templates(TemplatesBase):
 
             loop = asyncio.get_event_loop()
             if hasattr(self, "_admin_cache") and hasattr(self, "admin_searchpaths"):
+                debug("Initializing admin templates environment")
                 self._admin = loop.run_until_complete(
                     self.init_envs(
-                        self.admin_searchpaths, admin=True, cache=self._admin_cache
-                    )
+                        self.admin_searchpaths,
+                        admin=True,
+                        cache=self._admin_cache,
+                    ),
+                )
+            else:
+                debug(
+                    "Skipping admin templates initialization - missing cache or searchpaths"
                 )
             self._admin_initialized = True
         return self._admin
@@ -509,14 +670,14 @@ class Templates(TemplatesBase):
             StorageLoader(searchpaths),
         ]
         file_loaders: list[AsyncBaseLoader | LoaderProtocol] = [
-            FileSystemLoader(searchpaths)
+            FileSystemLoader(searchpaths),
         ]
         jinja_loaders: list[AsyncBaseLoader | LoaderProtocol] = loaders + file_loaders
         if not self.config.deployed and (not self.config.debug.production):
             jinja_loaders = file_loaders + loaders
         if self.enabled_admin and template_paths == self.admin_searchpaths:
             jinja_loaders.append(
-                PackageLoader(self.enabled_admin.name, "templates", "admin")
+                PackageLoader(self.enabled_admin.name, "templates", "admin"),
             )
         debug(jinja_loaders)
         return ChoiceLoader(jinja_loaders)
@@ -540,7 +701,7 @@ class Templates(TemplatesBase):
                     if isclass(v)
                     and v.__name__ != "Extension"
                     and issubclass(v, Extension)
-                ]
+                ],
             )
         bytecode_cache = AsyncRedisBytecodeCache(prefix="bccache", client=cache)
         context_processors: list[t.Callable[..., t.Any]] = []
@@ -621,7 +782,25 @@ class Templates(TemplatesBase):
 
     async def init(self, cache: t.Any | None = None) -> None:
         cache = self._resolve_cache(cache)
-        app_adapter = t.cast(Adapter, self.enabled_app)
+        app_adapter = self.enabled_app
+        if app_adapter is None:
+            try:
+                app_adapter = depends.get("app")
+                debug("Retrieved app adapter from dependency injection")
+            except Exception:
+                try:
+                    from ..app.default import App
+
+                    app_adapter = App()
+                    debug("Created app adapter by direct import")
+                    depends.set("app", app_adapter)
+                except Exception:
+                    from types import SimpleNamespace
+
+                    app_adapter = SimpleNamespace(name="app", category="app")
+                    debug(
+                        "Created fallback app adapter - ACB discovery failed, direct import failed"
+                    )
         self.app_searchpaths = await self.get_searchpaths(app_adapter)
         self.app = await self.init_envs(self.app_searchpaths, cache=cache)
         depends.set("templates", self)
@@ -641,8 +820,7 @@ class Templates(TemplatesBase):
         _attr = f"{attr}="
         for s in soup.split():
             if attr_pattern.search(s):
-                attr_value = s.replace(_attr, "").strip('"')
-                return attr_value
+                return s.replace(_attr, "").strip('"')
         return None
 
     def _add_filters(self, env: t.Any) -> None:
@@ -675,17 +853,17 @@ class Templates(TemplatesBase):
                 status_code=status_code,
                 headers=headers,
             )
-        else:
-            from starlette.responses import HTMLResponse
+        from starlette.responses import HTMLResponse
 
-            return HTMLResponse(
-                content=f"<html><body>Template {template} not found</body></html>",
-                status_code=404,
-                headers=headers,
-            )
+        return HTMLResponse(
+            content=f"<html><body>Template {template} not found</body></html>",
+            status_code=404,
+            headers=headers,
+        )
 
     def filter(
-        self, name: str | None = None
+        self,
+        name: str | None = None,
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         def decorator(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             if self.app and hasattr(self.app.env, "filters"):
@@ -712,7 +890,7 @@ class Templates(TemplatesBase):
                     if isclass(v)
                     and v.__name__ != "Extension"
                     and issubclass(v, Extension)
-                ]
+                ],
             )
         return _extensions
 

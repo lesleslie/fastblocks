@@ -35,7 +35,6 @@ def backup_file(file_path: Path) -> Path:
     backup_path = file_path.with_suffix(file_path.suffix + ".bak")
     if not backup_path.exists():
         shutil.copy2(file_path, backup_path)
-        print(f"Created backup at {backup_path}")
     return backup_path
 
 
@@ -44,11 +43,8 @@ def restore_from_backup(file_path: Path) -> bool:
     backup_path = file_path.with_suffix(file_path.suffix + ".bak")
     if backup_path.exists():
         shutil.copy2(backup_path, file_path)
-        print(f"Restored {file_path} from backup")
         return True
-    else:
-        print(f"No backup found for {file_path}")
-        return False
+    return False
 
 
 def patch_acb_init(file_path: Path) -> bool:
@@ -68,11 +64,8 @@ def patch_acb_init(file_path: Path) -> bool:
     if re.search(register_pkg_pattern, content):
         patched_content = re.sub(register_pkg_pattern, replacement, content)
         file_path.write_text(patched_content)
-        print(f"Successfully patched register_pkg() in {file_path}")
         return True
-    else:
-        print(f"Could not find register_pkg() function in {file_path}")
-        return False
+    return False
 
 
 def patch_acb_actions(file_path: Path) -> bool:
@@ -88,59 +81,49 @@ def patch_acb_actions(file_path: Path) -> bool:
     if re.search(register_actions_pattern, content):
         patched_content = re.sub(register_actions_pattern, replacement, content)
         file_path.write_text(patched_content)
-        print(f"Successfully patched register_actions() in {file_path}")
         return True
-    else:
-        print(f"Could not find register_actions() function in {file_path}")
-        return False
+    return False
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Patch ACB module for tests")
     parser.add_argument("--restore", action="store_true", help="Restore from backup")
     parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose output"
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose output",
     )
     args = parser.parse_args()
 
     acb_init_path, acb_actions_init_path = find_acb_modules()
 
     if not acb_init_path:
-        print("ACB module not found in site-packages")
         return 1
 
     if not acb_actions_init_path:
-        print("ACB actions module not found in site-packages")
         return 1
 
     if args.verbose:
-        print(f"Found ACB module at: {acb_init_path}")
-        print(f"Found ACB actions module at: {acb_actions_init_path}")
+        pass
 
     if args.restore:
         success_init = restore_from_backup(acb_init_path)
         success_actions = restore_from_backup(acb_actions_init_path)
 
         if success_init and success_actions:
-            print("ACB modules restored successfully")
             return 0
-        else:
-            print("Failed to restore one or more ACB modules")
-            return 1
-    else:
-        # Backup and patch both modules
-        backup_file(acb_init_path)
-        backup_file(acb_actions_init_path)
+        return 1
+    # Backup and patch both modules
+    backup_file(acb_init_path)
+    backup_file(acb_actions_init_path)
 
-        success_init = patch_acb_init(acb_init_path)
-        success_actions = patch_acb_actions(acb_actions_init_path)
+    success_init = patch_acb_init(acb_init_path)
+    success_actions = patch_acb_actions(acb_actions_init_path)
 
-        if success_init and success_actions:
-            print("ACB modules successfully patched")
-            return 0
-        else:
-            print("Failed to patch one or more ACB modules")
-            return 1
+    if success_init and success_actions:
+        return 0
+    return 1
 
 
 if __name__ == "__main__":

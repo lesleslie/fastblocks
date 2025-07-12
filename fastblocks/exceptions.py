@@ -51,7 +51,10 @@ class ErrorHandler(ABC):
 
     @abstractmethod
     async def handle(
-        self, exception: Exception, context: ErrorContext, request: Request
+        self,
+        exception: Exception,
+        context: ErrorContext,
+        request: Request,
     ) -> Response:
         pass
 
@@ -69,7 +72,10 @@ class ErrorHandlerRegistry:
         self._fallback_handler = handler
 
     async def handle_error(
-        self, exception: Exception, context: ErrorContext, request: Request
+        self,
+        exception: Exception,
+        context: ErrorContext,
+        request: Request,
     ) -> Response:
         for _, handler in self._handlers:
             if await handler.can_handle(exception, context):
@@ -86,11 +92,15 @@ class DefaultErrorHandler(ErrorHandler):
         return True
 
     async def handle(
-        self, exception: Exception, context: ErrorContext, request: Request
+        self,
+        exception: Exception,
+        context: ErrorContext,
+        request: Request,
     ) -> Response:
         status_code = getattr(exception, "status_code", 500)
         message = {404: "Content not found", 500: "Server error"}.get(
-            status_code, "An error occurred"
+            status_code,
+            "An error occurred",
         )
 
         if hasattr(request, "scope") and request.scope.get("htmx"):
@@ -103,7 +113,7 @@ class DefaultErrorHandler(ErrorHandler):
                     request,
                     "index.html",
                     status_code=status_code,
-                    context=dict(page=str(status_code)),
+                    context={"page": str(status_code)},
                 )
 
         return PlainTextResponse(content=message, status_code=status_code)
@@ -118,7 +128,9 @@ def register_error_handler(handler: ErrorHandler, priority: int = 0) -> None:
 
 
 def safe_depends_get(
-    key: str, cache_dict: dict[str, t.Any], default: t.Any = None
+    key: str,
+    cache_dict: dict[str, t.Any],
+    default: t.Any = None,
 ) -> t.Any:
     if key not in cache_dict:
         try:
@@ -156,7 +168,7 @@ class FastBlocksException(Exception):
         self.message = message
         self.category = category
         self.severity = severity
-        self.details = details or {}
+        self.details = details if details is not None else {}
 
     def to_error_context(self, error_id: str | None = None) -> ErrorContext:
         return ErrorContext(
@@ -209,7 +221,7 @@ class RequestNotCachable(StarletteCachesException):
     def __init__(self, request: Request) -> None:
         self.request = request
         super().__init__(
-            f"Request {request.method} {request.url.path} is not cacheable"
+            f"Request {request.method} {request.url.path} is not cacheable",
         )
 
 
@@ -217,5 +229,5 @@ class ResponseNotCachable(StarletteCachesException):
     def __init__(self, response: Response) -> None:
         self.response = response
         super().__init__(
-            f"Response with status {response.status_code} is not cacheable"
+            f"Response with status {response.status_code} is not cacheable",
         )

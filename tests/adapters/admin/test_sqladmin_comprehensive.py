@@ -22,11 +22,11 @@ async def test_admin_initialization() -> None:
     mock_templates = MagicMock()
     mock_templates.admin = MagicMock()
 
-    # Mock SqlAdminBase
+    # Mock the SqlAdminBase import from sqladmin
     mock_sqladmin_base = MagicMock()
 
     # Create the Admin instance
-    with patch("fastblocks.adapters.admin.sqladmin.SqlAdminBase", mock_sqladmin_base):
+    with patch("sqladmin.Admin", mock_sqladmin_base):
         admin = Admin(app=mock_app, templates=mock_templates, engine="mock_engine")
 
         # Verify SqlAdminBase was initialized correctly
@@ -50,7 +50,8 @@ async def test_admin_getattr() -> None:
 
     # Create the Admin instance
     with patch(
-        "fastblocks.adapters.admin.sqladmin.SqlAdminBase", return_value=mock_sqladmin
+        "sqladmin.Admin",
+        return_value=mock_sqladmin,
     ):
         admin = Admin(app=mock_app, templates=mock_templates)
 
@@ -80,12 +81,17 @@ async def test_admin_init_with_admin_models() -> None:
 
     # Create the Admin instance
     with patch(
-        "fastblocks.adapters.admin.sqladmin.SqlAdminBase", return_value=mock_sqladmin
+        "sqladmin.Admin",
+        return_value=mock_sqladmin,
     ):
         admin = Admin(app=mock_app, templates=mock_templates)
 
-        # Call init
-        await admin.init(models=mock_models)
+        # Mock depends.get to return our mock models
+        with patch(
+            "fastblocks.adapters.admin.sqladmin.depends.get", return_value=mock_models
+        ):
+            # Call init
+            await admin.init()
 
         # Verify add_view was called for each model
         assert mock_sqladmin.add_view.call_count == len(mock_admin_models)
@@ -110,12 +116,17 @@ async def test_admin_init_without_admin_models() -> None:
 
     # Create the Admin instance
     with patch(
-        "fastblocks.adapters.admin.sqladmin.SqlAdminBase", return_value=mock_sqladmin
+        "sqladmin.Admin",
+        return_value=mock_sqladmin,
     ):
         admin = Admin(app=mock_app, templates=mock_templates)
 
-        # Call init
-        await admin.init(models=mock_models)
+        # Mock depends.get to return our mock models
+        with patch(
+            "fastblocks.adapters.admin.sqladmin.depends.get", return_value=mock_models
+        ):
+            # Call init
+            await admin.init()
 
         # Verify add_view was not called
         mock_sqladmin.add_view.assert_not_called()
