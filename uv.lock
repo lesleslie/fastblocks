@@ -1228,7 +1228,7 @@ wheels = [
 
 [[package]]
 name = "fastblocks"
-version = "0.15.0"
+version = "0.15.1"
 source = { editable = "." }
 dependencies = [
     { name = "acb", extra = ["cache", "monitoring", "requests", "storage"] },
