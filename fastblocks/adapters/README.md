@@ -29,11 +29,11 @@ While ACB provides general-purpose adapters (cache, storage, database), FastBloc
 FastBlocks uses a pluggable adapter system that allows you to:
 
 1. **Swap implementations**: Change the implementation without changing your code
-2. **Configure via settings**: Select adapters through configuration
-3. **Extend with custom adapters**: Create your own adapters for specific needs
-4. **Enable multi-cloud strategies**: Swap storage, cache or auth adapters to work with different cloud providers
-5. **Create hybrid deployments**: Mix on-premise and cloud services by using different adapter implementations
-6. **Simplify migrations**: Move between infrastructure providers by changing adapters rather than rewriting application logic
+1. **Configure via settings**: Select adapters through configuration
+1. **Extend with custom adapters**: Create your own adapters for specific needs
+1. **Enable multi-cloud strategies**: Swap storage, cache or auth adapters to work with different cloud providers
+1. **Create hybrid deployments**: Mix on-premise and cloud services by using different adapter implementations
+1. **Simplify migrations**: Move between infrastructure providers by changing adapters rather than rewriting application logic
 
 ### Using Adapters
 
@@ -173,9 +173,9 @@ For more details, see the [Sitemap Adapter Documentation](./sitemap/README.md).
 You can create your own adapters by following these steps:
 
 1. Create a directory for your adapter in the `adapters` directory
-2. Create a `_base.py` file with the base class and settings
-3. Create implementation files for each specific implementation
-4. Register your adapter with the dependency injection system
+1. Create a `_base.py` file with the base class and settings
+1. Create implementation files for each specific implementation
+1. Register your adapter with the dependency injection system
 
 ### Example: Creating a Payment Adapter
 
@@ -183,9 +183,11 @@ You can create your own adapters by following these steps:
 # fastblocks/adapters/payment/_base.py
 from acb.config import Settings, AdapterBase
 
+
 class PaymentBaseSettings(Settings):
     currency: str = "USD"
     default_timeout: int = 30
+
 
 class PaymentBase(AdapterBase):
     async def charge(self, amount: float, description: str) -> str:
@@ -203,8 +205,10 @@ from ._base import PaymentBase, PaymentBaseSettings
 from pydantic import SecretStr
 import stripe
 
+
 class StripeSettings(PaymentBaseSettings):
     api_key: SecretStr = SecretStr("sk_test_default")
+
 
 class Stripe(PaymentBase):
     settings: StripeSettings | None = None
@@ -217,7 +221,7 @@ class Stripe(PaymentBase):
         response = await stripe.PaymentIntent.create(
             amount=int(amount * 100),  # Convert to cents
             currency=self.settings.currency if self.settings else "USD",
-            description=description
+            description=description,
         )
         return response.id
 ```

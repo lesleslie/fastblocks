@@ -57,7 +57,7 @@ sitemap:
 The Sitemap adapter is automatically configured when you install the `sitemap` optional dependency:
 
 ```bash
-pdm add "fastblocks[sitemap]"
+uv add "fastblocks[sitemap]"
 ```
 
 The sitemap will be automatically available at `/sitemap.xml`.
@@ -75,6 +75,7 @@ from datetime import datetime
 Sitemap = import_adapter("sitemap")
 sitemap = depends.get(Sitemap)
 
+
 # Add blog posts to sitemap
 async def add_blog_posts_to_sitemap() -> None:
     posts = await get_blog_posts_from_database()
@@ -83,8 +84,9 @@ async def add_blog_posts_to_sitemap() -> None:
             url=f"/blog/{post.slug}",
             priority=0.7,
             changefreq="weekly",
-            lastmod=post.updated_at or post.created_at
+            lastmod=post.updated_at or post.created_at,
         )
+
 
 # Call this function during application startup
 app.add_event_handler("startup", add_blog_posts_to_sitemap)
@@ -104,16 +106,13 @@ from starlette.routing import Route
 Sitemap = import_adapter("sitemap")
 sitemap = depends.get(Sitemap)
 
+
 async def get_sitemap(request) -> Response:
     sitemap_xml = await sitemap.generate()
-    return Response(
-        content=sitemap_xml,
-        media_type="application/xml"
-    )
+    return Response(content=sitemap_xml, media_type="application/xml")
 
-routes = [
-    Route("/custom-sitemap.xml", endpoint=get_sitemap)
-]
+
+routes = [Route("/custom-sitemap.xml", endpoint=get_sitemap)]
 ```
 
 ## Settings Reference
@@ -136,8 +135,9 @@ The Sitemap adapter is implemented in the following files:
 
 ```python
 import typing as t
-from acb.config import  Settings
+from acb.config import Settings
 from datetime import datetime
+
 
 class SitemapBaseSettings(Settings):
     enabled: bool = True
@@ -145,13 +145,16 @@ class SitemapBaseSettings(Settings):
     cache_timeout: int = 3600
     static_urls: list[dict[str, t.Any]] = []
 
+
 class SitemapBase(AdapterBase):
     def add_url(
         self,
         url: str,
         priority: float = 0.5,
-        changefreq: t.Literal["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"] = "weekly",
-        lastmod: datetime | None = None
+        changefreq: t.Literal[
+            "always", "hourly", "daily", "weekly", "monthly", "yearly", "never"
+        ] = "weekly",
+        lastmod: datetime | None = None,
     ) -> None:
         """Add a URL to the sitemap"""
         raise NotImplementedError()
@@ -175,8 +178,10 @@ import typing as t
 from fastblocks.adapters.sitemap._base import SitemapBase, SitemapBaseSettings
 from datetime import datetime
 
+
 class CustomSitemapSettings(SitemapBaseSettings):
     image_sitemaps: bool = False
+
 
 class CustomSitemap(SitemapBase):
     settings: CustomSitemapSettings | None = None
@@ -192,9 +197,11 @@ class CustomSitemap(SitemapBase):
         self,
         url: str,
         priority: float = 0.5,
-        changefreq: t.Literal["always", "hourly", "daily", "weekly", "monthly", "yearly", "never"] = "weekly",
+        changefreq: t.Literal[
+            "always", "hourly", "daily", "weekly", "monthly", "yearly", "never"
+        ] = "weekly",
         lastmod: datetime | None = None,
-        images: list[dict[str, str]] | None = None
+        images: list[dict[str, str]] | None = None,
     ) -> None:
         url_data = {
             "url": url,
@@ -213,28 +220,30 @@ class CustomSitemap(SitemapBase):
         xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
         if self.settings is not None and self.settings.image_sitemaps:
             xml += ' xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"'
-        xml += '>\n'
+        xml += ">\n"
 
         for url_data in self.urls:
-            xml += '  <url>\n'
+            xml += "  <url>\n"
             base_url = self.settings.base_url if self.settings is not None else ""
-            xml += f'    <loc>{base_url}{url_data["url"]}</loc>\n'
+            xml += f"    <loc>{base_url}{url_data['url']}</loc>\n"
             if "lastmod" in url_data:
-                xml += f'    <lastmod>{url_data["lastmod"]}</lastmod>\n'
-            xml += f'    <changefreq>{url_data["changefreq"]}</changefreq>\n'
-            xml += f'    <priority>{url_data["priority"]}</priority>\n'
+                xml += f"    <lastmod>{url_data['lastmod']}</lastmod>\n"
+            xml += f"    <changefreq>{url_data['changefreq']}</changefreq>\n"
+            xml += f"    <priority>{url_data['priority']}</priority>\n"
 
             if "images" in url_data:
                 for image in url_data["images"]:
-                    xml += '    <image:image>\n'
-                    xml += f'      <image:loc>{image["url"]}</image:loc>\n'
+                    xml += "    <image:image>\n"
+                    xml += f"      <image:loc>{image['url']}</image:loc>\n"
                     if "caption" in image:
-                        xml += f'      <image:caption>{image["caption"]}</image:caption>\n'
-                    xml += '    </image:image>\n'
+                        xml += (
+                            f"      <image:caption>{image['caption']}</image:caption>\n"
+                        )
+                    xml += "    </image:image>\n"
 
-            xml += '  </url>\n'
+            xml += "  </url>\n"
 
-        xml += '</urlset>'
+        xml += "</urlset>"
         return xml
 ```
 

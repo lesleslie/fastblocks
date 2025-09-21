@@ -181,8 +181,17 @@ def _setup_acb_adapters(mock_acb_adapters: ModuleType) -> None:
             MagicMock(),
         ),
     )
+    from enum import Enum
     from pathlib import Path
 
+    class AdapterStatus(Enum):
+        ALPHA = "alpha"
+        BETA = "beta"
+        STABLE = "stable"
+        DEPRECATED = "deprecated"
+        EXPERIMENTAL = "experimental"
+
+    mock_acb_adapters.AdapterStatus = AdapterStatus
     mock_acb_adapters.root_path = Path("/mock/path/to/adapters")
 
 
@@ -1536,6 +1545,16 @@ def mock_acb():  # noqa: C901
     module_structure["acb.actions.encode"].dump = dump
     module_structure["acb.actions.encode"].load = load
 
+    from enum import Enum
+
+    class AdapterStatus(Enum):
+        ALPHA = "alpha"
+        BETA = "beta"
+        STABLE = "stable"
+        DEPRECATED = "deprecated"
+        EXPERIMENTAL = "experimental"
+
+    module_structure["acb.adapters"].AdapterStatus = AdapterStatus
     module_structure["acb.adapters"].AdapterBase = AdapterBase
     module_structure["acb.adapters"].get_adapter = MagicMock(return_value=None)
     module_structure["acb.adapters"].get_installed_adapter = MagicMock(

@@ -1,9 +1,19 @@
+"""Default App Adapter for FastBlocks.
+
+Provides the main FastBlocks application instance with lifecycle management,
+startup/shutdown sequences, and adapter integration.
+
+Author: lesleslie <les@wedgwoodwebworks.com>
+Created: 2025-01-12
+"""
+
 import typing as t
 from base64 import b64encode
 from contextlib import asynccontextmanager, suppress
 from time import perf_counter
+from uuid import UUID
 
-from acb.adapters import get_adapter, import_adapter
+from acb.adapters import AdapterStatus, get_adapter, import_adapter
 from acb.depends import depends
 from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks.applications import FastBlocks
@@ -299,3 +309,7 @@ class App(AppBase):
         finally:
             with suppress(Exception):
                 self._cancel_remaining_tasks()
+
+
+MODULE_ID = UUID("01937d86-8f6e-7f70-c231-5678901234ef")
+MODULE_STATUS = AdapterStatus.STABLE

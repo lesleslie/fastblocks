@@ -6,10 +6,10 @@ from enum import Enum
 from operator import itemgetter
 
 from acb.depends import depends
-from asgi_htmx import HtmxRequest
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
+from fastblocks.htmx import HtmxRequest
 
 _templates_cache = None
 
@@ -150,10 +150,26 @@ async def handle_exception(request: HtmxRequest, exc: HTTPException) -> Response
         category=ErrorCategory.APPLICATION,
         severity=ErrorSeverity.ERROR if status_code >= 500 else ErrorSeverity.WARNING,
         message=str(exc.detail) if hasattr(exc, "detail") else f"HTTP {status_code}",
-        details={"status_code": status_code, "request_path": str(request.url.path)},
+        details={
+            "status_code": status_code,
+            "request_path": getattr(getattr(request, "url", None), "path", "/")
+            if getattr(request, "url", None)
+            else "/",
+        },
     )
+    if hasattr(request, "scope") and hasattr(request, "receive"):
+        from starlette.requests import Request
 
-    return await _error_registry.handle_error(exc, error_context, request)
+        scope = getattr(request, "scope", {})
+        receive = getattr(request, "receive", None)
+        if scope and receive:
+            starlette_request = Request(scope, receive)
+            return await _error_registry.handle_error(
+                exc, error_context, starlette_request
+            )
+    return await _error_registry.handle_error(
+        exc, error_context, t.cast(t.Any, request)
+    )
 
 
 class FastBlocksException(Exception):

@@ -37,15 +37,15 @@ from acb.adapters import import_adapter
 from fastblocks.applications import FastBlocks
 from starlette.routing import Route
 
+
 async def homepage(request) -> object:
     return await request.app.templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
 
+
 # Define your routes
-routes = [
-    Route("/", endpoint=homepage)
-]
+routes = [Route("/", endpoint=homepage)]
 
 # Create your application
 app = FastBlocks(routes=routes)
@@ -70,7 +70,6 @@ from starlette.routing import Route
 routes = [
     Route("/", Index, methods=["GET"]),
     Route("/{page}", Index, methods=["GET"]),
-
     # Block endpoint for rendering template blocks
     Route("/block/{block}", Block, methods=["GET"]),
 ]
@@ -84,14 +83,12 @@ The Routes adapter can automatically discover routes from modules:
 # myapp/routes.py
 from starlette.routing import Route
 
-async def about(request) -> object:
-    return await request.app.templates.app.render_template(
-        request, "about.html"
-    )
 
-routes = [
-    Route("/about", endpoint=about)
-]
+async def about(request) -> object:
+    return await request.app.templates.app.render_template(request, "about.html")
+
+
+routes = [Route("/about", endpoint=about)]
 ```
 
 These routes will be automatically discovered and registered with your application.
@@ -106,13 +103,13 @@ The Routes adapter is implemented in the following files:
 ### Base Class
 
 ```python
-from acb.config import  Settings
+from acb.config import Settings
 
-class RoutesBaseSettings(Settings):
-    ...
 
-class RoutesBase(AdapterBase):
-    ...
+class RoutesBaseSettings(Settings): ...
+
+
+class RoutesBase(AdapterBase): ...
 ```
 
 ### Default Implementation
@@ -138,6 +135,7 @@ from starlette.exceptions import HTTPException
 from acb.depends import depends
 from acb.config import Config
 from jinja2.exceptions import TemplateNotFound
+
 
 class Index(HTTPEndpoint):
     config: Config = depends()
@@ -170,6 +168,7 @@ from starlette.exceptions import HTTPException
 from acb.depends import depends
 from jinja2.exceptions import TemplateNotFound
 
+
 class Block(HTTPEndpoint):
     templates: t.Any = depends()
 
@@ -191,8 +190,10 @@ import typing as t
 from fastblocks.adapters.routes._base import RoutesBase, RoutesBaseSettings
 from starlette.routing import Route, Router, Mount, Host, WebSocketRoute
 
+
 class CustomRoutesSettings(RoutesBaseSettings):
     api_prefix: str = "/api"
+
 
 class CustomRoutes(RoutesBase):
     settings: CustomRoutesSettings | None = None
@@ -200,10 +201,12 @@ class CustomRoutes(RoutesBase):
 
     async def init(self) -> None:
         # Add standard routes
-        self.routes.extend([
-            Route("/favicon.ico", endpoint=self.favicon, methods=["GET"]),
-            Route("/robots.txt", endpoint=self.robots, methods=["GET"]),
-        ])
+        self.routes.extend(
+            [
+                Route("/favicon.ico", endpoint=self.favicon, methods=["GET"]),
+                Route("/robots.txt", endpoint=self.robots, methods=["GET"]),
+            ]
+        )
 
         # Add API routes with prefix
         api_routes = [

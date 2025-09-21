@@ -10,12 +10,12 @@ from typing import Any, Protocol, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
-from asgi_htmx import HtmxMiddleware
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, PlainTextResponse, Response
 from starlette.routing import Mount, Route
 from starlette.testclient import TestClient
+from fastblocks.middleware import HtmxMiddleware
 
 # We need to set up mocks before importing ACB modules
 # This is a special case where imports can't be at the top
@@ -51,8 +51,16 @@ mock_depends.inject = lambda f: f
 mock_depends.set = MagicMock()
 acb_depends_module.depends = mock_depends
 
+
 # Mock debug
-acb_debug_module.debug = lambda *args: None
+class MockDebug:
+    enabled = False
+
+    def __call__(self, *args) -> None:
+        pass
+
+
+acb_debug_module.debug = MockDebug()
 
 # Register modules
 sys.modules["acb"] = acb_module
@@ -61,11 +69,24 @@ sys.modules["acb.config"] = acb_config_module
 sys.modules["acb.depends"] = acb_depends_module
 sys.modules["acb.debug"] = acb_debug_module
 
+# Mock fastblocks modules that import debug
+import fastblocks.middleware
+
+fastblocks.middleware.debug = MockDebug()
+
 # Import ACB-dependent modules - we need to disable E402 here
 # because these imports must come after the mock setup
 from acb.config import Config  # noqa: E402
 from acb.depends import depends  # noqa: E402
-from fastblocks.adapters.routes import default  # noqa: E402
+
+# Mock the routes _base module before importing default
+routes_base_module = types.ModuleType("fastblocks.adapters.routes._base")
+routes_base_module.RoutesBase = acb_config_module.AdapterBase
+routes_base_module.RoutesBaseSettings = acb_config_module.Settings
+sys.modules["fastblocks.adapters.routes._base"] = routes_base_module
+
+# Create mock Templates class for comparison
+Templates = type("Templates", (object,), {})
 
 
 class MockTemplates:
@@ -242,7 +263,7 @@ async def initialized_routes(
 
     # Setup dependency injection
     def patched_get(cls: type | None = None) -> Any:
-        if cls == default.Templates:
+        if cls == Templates:
             return mock_templates
         if cls == Config:
             return config
@@ -370,7 +391,7 @@ async def test_gather_routes(
     original_get = depends.get
 
     def patched_get(cls: type | None = None) -> Any:
-        if cls == default.Templates:
+        if cls == Templates:
             return mock_templates
         if cls == Config:
             return config
@@ -503,7 +524,7 @@ async def test_init(
         original_get = depends.get
 
         def patched_get(cls: type | None = None) -> Any:
-            if cls == default.Templates:
+            if cls == Templates:
                 return mock_templates
             if cls == Config:
                 return config

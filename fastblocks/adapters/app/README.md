@@ -69,13 +69,14 @@ The App adapter is implemented in the following files:
 from acb.config import AdapterBase
 from acb.config import AppSettings as AppConfigSettings
 
+
 class AppBaseSettings(AppConfigSettings):
     name: str = "fastblocks"
     style: str = "bulma"
     theme: str = "light"
 
-class AppBase(AdapterBase):
-    ...
+
+class AppBase(AdapterBase): ...
 ```
 
 ## Customization
@@ -86,9 +87,11 @@ You can extend the App adapter with additional settings or functionality by crea
 # myapp/adapters/app/custom.py
 from fastblocks.adapters.app._base import AppBase, AppBaseSettings
 
+
 class CustomAppSettings(AppBaseSettings):
     logo_url: str = "/static/logo.png"
     footer_text: str = "© 2025 My Company"
+
 
 class CustomApp(AppBase):
     settings: CustomAppSettings | None = None

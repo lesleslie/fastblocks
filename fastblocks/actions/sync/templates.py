@@ -3,6 +3,7 @@
 import typing as t
 from pathlib import Path
 
+import yaml
 from acb.debug import debug
 from anyio import Path as AsyncPath
 
@@ -92,7 +93,7 @@ async def sync_templates(
     template_paths: list[AsyncPath] | None = None,
     patterns: list[str] | None = None,
     strategy: SyncStrategy | None = None,
-    storage_bucket: str = "templates",
+    storage_bucket: str | None = None,
     direction: str | None = None,
     conflict_strategy: str | None = None,
     filters: dict[str, t.Any] | None = None,
@@ -109,6 +110,9 @@ async def sync_templates(
     result._conflict_strategy = conflict_strategy
     result._filters = filters
     result._dry_run = dry_run
+
+    if storage_bucket is None:
+        storage_bucket = await _get_default_templates_bucket()
 
     try:
         adapters = await _initialize_adapters(result)
@@ -198,6 +202,24 @@ async def _initialize_adapters(result: TemplateSyncResult) -> dict[str, t.Any] |
     except Exception as e:
         result.errors.append(e)
         return None
+
+
+async def _get_default_templates_bucket() -> str:
+    try:
+        storage_config_path = AsyncPath("settings/storage.yml")
+        if await storage_config_path.exists():
+            content = await storage_config_path.read_text()
+            config = yaml.safe_load(content)
+            if isinstance(config, dict):
+                bucket_name = config.get("buckets", {}).get("templates", "templates")
+            else:
+                bucket_name = "templates"
+            debug(f"Using templates bucket from config: {bucket_name}")
+            return bucket_name
+    except Exception as e:
+        debug(f"Could not load storage config, using default: {e}")
+    debug("Using fallback templates bucket: templates")
+    return "templates"
 
 
 async def _discover_template_files(

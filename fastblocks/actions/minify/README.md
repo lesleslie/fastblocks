@@ -71,7 +71,7 @@ html_content = """
 minified_html = minify.html(html_content)
 print(f"Original size: {len(html_content)} bytes")
 print(f"Minified size: {len(minified_html)} bytes")
-print(f"Reduction: {(1 - len(minified_html)/len(html_content))*100:.1f}%")
+print(f"Reduction: {(1 - len(minified_html) / len(html_content)) * 100:.1f}%")
 ```
 
 ### CSS Minification
@@ -111,7 +111,7 @@ h1, h2, h3 {
 minified_css = minify.css(css_content)
 print(f"Original CSS: {len(css_content)} bytes")
 print(f"Minified CSS: {len(minified_css)} bytes")
-print(f"Reduction: {(1 - len(minified_css)/len(css_content))*100:.1f}%")
+print(f"Reduction: {(1 - len(minified_css) / len(css_content)) * 100:.1f}%")
 ```
 
 ### JavaScript Minification
@@ -154,7 +154,7 @@ function displayTotal(amount) {
 minified_js = minify.js(js_content)
 print(f"Original JS: {len(js_content)} bytes")
 print(f"Minified JS: {len(minified_js)} bytes")
-print(f"Reduction: {(1 - len(minified_js)/len(js_content))*100:.1f}%")
+print(f"Reduction: {(1 - len(minified_js) / len(js_content)) * 100:.1f}%")
 ```
 
 ## API Reference
@@ -171,12 +171,15 @@ def html(html: str) -> str
 ```
 
 **Parameters:**
+
 - `html` (str): The HTML content to minify
 
 **Returns:**
+
 - `str`: The minified HTML content
 
 **Features:**
+
 - Removes unnecessary whitespace between tags
 - Eliminates HTML comments
 - Minifies embedded CSS (via `minify_css=True`)
@@ -194,12 +197,15 @@ def css(css: str) -> bytearray | bytes | str
 ```
 
 **Parameters:**
+
 - `css` (str): The CSS content to minify
 
 **Returns:**
+
 - `bytearray | bytes | str`: The minified CSS content
 
 **Features:**
+
 - Removes unnecessary whitespace and newlines
 - Eliminates CSS comments
 - Optimizes media queries (converts `@media (` to `@media(`)
@@ -216,12 +222,15 @@ def js(js: str) -> bytearray | bytes | str
 ```
 
 **Parameters:**
+
 - `js` (str): The JavaScript content to minify
 
 **Returns:**
+
 - `bytearray | bytes | str`: The minified JavaScript content
 
 **Features:**
+
 - Removes unnecessary whitespace and comments
 - Preserves JavaScript semantics and functionality
 - Adds strategic newlines after closing braces for readability
@@ -236,15 +245,19 @@ def js(js: str) -> bytearray | bytes | str
 from fastblocks.actions.minify import minify
 from starlette.responses import HTMLResponse
 
+
 async def render_page(request):
     """Render and minify a page template."""
 
     # Render template (assuming Jinja2 environment)
-    html_content = await templates.render_async("page.html", {
-        "title": "My FastBlocks App",
-        "user": request.user,
-        "data": await get_page_data()
-    })
+    html_content = await templates.render_async(
+        "page.html",
+        {
+            "title": "My FastBlocks App",
+            "user": request.user,
+            "data": await get_page_data(),
+        },
+    )
 
     # Minify the rendered HTML
     minified_html = minify.html(html_content)
@@ -253,8 +266,8 @@ async def render_page(request):
         content=minified_html,
         headers={
             "Content-Type": "text/html; charset=utf-8",
-            "Content-Length": str(len(minified_html))
-        }
+            "Content-Length": str(len(minified_html)),
+        },
     )
 ```
 
@@ -263,6 +276,7 @@ async def render_page(request):
 ```python
 from pathlib import Path
 from fastblocks.actions.minify import minify
+
 
 async def build_assets():
     """Build and minify static assets."""
@@ -293,10 +307,7 @@ async def build_assets():
         output_file.write_text(minified)
         minified_js.append(output_file)
 
-    return {
-        "css_files": minified_css,
-        "js_files": minified_js
-    }
+    return {"css_files": minified_css, "js_files": minified_js}
 ```
 
 ### Middleware Integration
@@ -304,6 +315,7 @@ async def build_assets():
 ```python
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastblocks.actions.minify import minify
+
 
 class MinifyMiddleware(BaseHTTPMiddleware):
     """Middleware to automatically minify HTML responses."""
@@ -316,9 +328,9 @@ class MinifyMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Only minify HTML responses
-        if (self.minify_html and
-            response.headers.get("content-type", "").startswith("text/html")):
-
+        if self.minify_html and response.headers.get("content-type", "").startswith(
+            "text/html"
+        ):
             # Get response body
             body = b""
             async for chunk in response.body_iterator:
@@ -334,6 +346,7 @@ class MinifyMiddleware(BaseHTTPMiddleware):
 
         return response
 
+
 # Usage in FastAPI app
 app.add_middleware(MinifyMiddleware, minify_html=True)
 ```
@@ -345,15 +358,11 @@ from fastblocks.actions.minify import minify
 import asyncio
 from pathlib import Path
 
+
 async def minify_directory(input_dir: Path, output_dir: Path):
     """Minify all files in a directory."""
 
-    results = {
-        "html": [],
-        "css": [],
-        "js": [],
-        "errors": []
-    }
+    results = {"html": [], "css": [], "js": [], "errors": []}
 
     # Ensure output directory exists
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -388,8 +397,10 @@ async def minify_directory(input_dir: Path, output_dir: Path):
 
             # Calculate compression ratio
             original_size = len(content)
-            minified_size = len(minified) if 'minified' in locals() else original_size
-            ratio = (1 - minified_size / original_size) * 100 if original_size > 0 else 0
+            minified_size = len(minified) if "minified" in locals() else original_size
+            ratio = (
+                (1 - minified_size / original_size) * 100 if original_size > 0 else 0
+            )
 
             print(f"Minified {relative_path}: {ratio:.1f}% reduction")
 
@@ -398,10 +409,10 @@ async def minify_directory(input_dir: Path, output_dir: Path):
 
     return results
 
+
 # Usage
 results = await minify_directory(
-    input_dir=Path("src/templates"),
-    output_dir=Path("dist/templates")
+    input_dir=Path("src/templates"), output_dir=Path("dist/templates")
 )
 
 print(f"Minified {len(results['html'])} HTML files")
@@ -424,15 +435,15 @@ Typical compression ratios by content type:
 ```python
 # Example performance impact
 original_sizes = {
-    "main.css": 45_000,      # 45KB
-    "app.js": 120_000,       # 120KB
-    "index.html": 25_000     # 25KB
+    "main.css": 45_000,  # 45KB
+    "app.js": 120_000,  # 120KB
+    "index.html": 25_000,  # 25KB
 }
 
 minified_sizes = {
-    "main.css": 32_000,      # 32KB (29% reduction)
-    "app.js": 95_000,        # 95KB (21% reduction)
-    "index.html": 20_000     # 20KB (20% reduction)
+    "main.css": 32_000,  # 32KB (29% reduction)
+    "app.js": 95_000,  # 95KB (21% reduction)
+    "index.html": 20_000,  # 20KB (20% reduction)
 }
 
 total_original = sum(original_sizes.values())  # 190KB
@@ -458,6 +469,7 @@ total_savings = total_original - total_minified  # 43KB (23% reduction)
 # Build script integration
 from fastblocks.actions.minify import minify
 from fastblocks.actions.gather import gather
+
 
 async def build_production_assets():
     """Complete build pipeline with gathering and minification."""
@@ -498,6 +510,7 @@ async def build_production_assets():
 ```python
 from fastblocks.actions.minify import minify
 
+
 class TemplateRenderer:
     def __init__(self, minify_in_production=True):
         self.minify_in_production = minify_in_production
@@ -514,6 +527,7 @@ class TemplateRenderer:
 
     def is_production(self) -> bool:
         import os
+
         return os.getenv("ENVIRONMENT") == "production"
 ```
 
@@ -560,6 +574,7 @@ def validate_before_minify(content: str, content_type: str) -> bool:
 import time
 from fastblocks.actions.minify import minify
 
+
 def minify_with_metrics(content: str, content_type: str) -> tuple[str, dict]:
     """Minify content and return performance metrics."""
     start_time = time.time()
@@ -581,7 +596,7 @@ def minify_with_metrics(content: str, content_type: str) -> tuple[str, dict]:
         "original_size": original_size,
         "minified_size": minified_size,
         "compression_ratio": (1 - minified_size / original_size) * 100,
-        "processing_time": end_time - start_time
+        "processing_time": end_time - start_time,
     }
 
     return minified, metrics
@@ -592,6 +607,7 @@ def minify_with_metrics(content: str, content_type: str) -> tuple[str, dict]:
 ```python
 from fastblocks.actions.minify import minify
 
+
 class CachedMinifier:
     def __init__(self):
         self.cache = {}
@@ -599,6 +615,7 @@ class CachedMinifier:
     def minify_html(self, content: str) -> str:
         # Use content hash as cache key
         import hashlib
+
         content_hash = hashlib.blake2b(content.encode()).hexdigest()
 
         if content_hash in self.cache:
@@ -613,4 +630,4 @@ class CachedMinifier:
 
 - [Gather Action](../gather/README.md): Discover templates and assets before minifying
 - [Sync Action](../sync/README.md): Synchronize minified assets across environments
-- [ACB Compress Action](https://github.com/fastblocks/acb/tree/main/acb/actions/compress): Additional compression utilities
+- [ACB Compress Action](https://github.com/lesleslie/acb/tree/main/acb/actions/compress): Additional compression utilities

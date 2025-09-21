@@ -4,8 +4,8 @@ from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
 from enum import IntEnum
 
+from acb.debug import debug
 from acb.depends import depends
-from asgi_htmx import HtmxMiddleware
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
 from starlette.datastructures import URL, Headers, MutableHeaders
@@ -22,6 +22,7 @@ from .caching import (
     Rule,
     delete_from_cache,
 )
+from .htmx import HtmxDetails
 
 MiddlewareCallable = t.Callable[[ASGIApp], ASGIApp]
 MiddlewareClass = type[t.Any]
@@ -36,6 +37,49 @@ class MiddlewarePosition(IntEnum):
     CURRENT_REQUEST = 3
     COMPRESSION = 4
     SECURITY_HEADERS = 5
+
+
+class HtmxMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self._app = app
+        debug("HtmxMiddleware: Initialized FastBlocks native HTMX middleware")
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] in ("http", "websocket"):
+            htmx_details = HtmxDetails(scope)
+            scope["htmx"] = htmx_details
+            if debug.enabled:
+                method = scope.get("method", "UNKNOWN")
+                path = scope.get("path", "unknown")
+                is_htmx = bool(htmx_details)
+                debug(f"HtmxMiddleware: {method} {path} - HTMX: {is_htmx}")
+                if is_htmx:
+                    headers = htmx_details.get_all_headers()
+                    for header_name, header_value in headers.items():
+                        debug(f"HtmxMiddleware: {header_name}: {header_value}")
+        await self._app(scope, receive, send)
+
+
+class HtmxResponseMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self._app = app
+        debug("HtmxResponseMiddleware: Initialized FastBlocks HTMX response middleware")
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self._app(scope, receive, send)
+            return
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                htmx_details = scope.get("htmx")
+                if htmx_details and bool(htmx_details):
+                    debug("HtmxResponseMiddleware: Processing HTMX response")
+                    headers = list(message.get("headers", []))
+                    message["headers"] = headers
+            await send(message)
+
+        await self._app(scope, receive, send_wrapper)
 
 
 class MiddlewareUtils:

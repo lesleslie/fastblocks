@@ -54,9 +54,10 @@ def mock_depends(mock_templates: MagicMock) -> t.Generator[MagicMock]:
 @pytest.mark.asyncio
 async def test_handle_exception_htmx_request(mock_depends: MagicMock) -> None:
     """Test handle_exception with an HTMX request."""
-    # Create a mock HTMX request
+    # Create a mock HTMX request with proper scope and receive
     mock_request = MagicMock()
-    mock_request.scope = {"htmx": True}
+    mock_request.scope = {"type": "http", "htmx": True}
+    mock_request.receive = AsyncMock()
 
     # Create a mock HTTPException
     mock_exception = HTTPException(status_code=404)
@@ -73,9 +74,10 @@ async def test_handle_exception_htmx_request(mock_depends: MagicMock) -> None:
 @pytest.mark.asyncio
 async def test_handle_exception_server_error(mock_depends: MagicMock) -> None:
     """Test handle_exception with a 500 error."""
-    # Create a mock HTMX request
+    # Create a mock HTMX request with proper scope and receive
     mock_request = MagicMock()
-    mock_request.scope = {"htmx": True}
+    mock_request.scope = {"type": "http", "htmx": True}
+    mock_request.receive = AsyncMock()
 
     # Create a mock HTTPException with status_code 500
     mock_exception = HTTPException(status_code=500)
@@ -92,9 +94,10 @@ async def test_handle_exception_server_error(mock_depends: MagicMock) -> None:
 @pytest.mark.asyncio
 async def test_handle_exception_default_status_code(mock_depends: MagicMock) -> None:
     """Test handle_exception with an exception that has no status_code."""
-    # Create a mock HTMX request
+    # Create a mock HTMX request with proper scope and receive
     mock_request = MagicMock()
-    mock_request.scope = {"htmx": True}
+    mock_request.scope = {"type": "http", "htmx": True}
+    mock_request.receive = AsyncMock()
 
     # Create a mock HTTPException with status_code 500
     mock_exception = HTTPException(status_code=500)
@@ -373,7 +376,8 @@ def test_register_error_handler() -> None:
 async def test_handle_exception_with_detail() -> None:
     """Test handle_exception with exception that has detail attribute."""
     mock_request = Mock()
-    mock_request.scope = {"htmx": True}
+    mock_request.scope = {"type": "http", "htmx": True}
+    mock_request.receive = AsyncMock()
     mock_request.url.path = "/test"
 
     mock_exception = HTTPException(status_code=400)
@@ -389,7 +393,8 @@ async def test_handle_exception_with_detail() -> None:
 async def test_handle_exception_no_detail() -> None:
     """Test handle_exception with exception that has no detail attribute."""
     mock_request = Mock()
-    mock_request.scope = {"htmx": True}
+    mock_request.scope = {"type": "http", "htmx": True}
+    mock_request.receive = AsyncMock()
     mock_request.url.path = "/test"
 
     mock_exception = HTTPException(status_code=403)

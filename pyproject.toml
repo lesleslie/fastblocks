@@ -1,12 +1,12 @@
 [build-system]
-build-backend = "pdm.backend"
+build-backend = "hatchling.build"
 requires = [
-    "pdm-backend",
+    "hatchling",
 ]
 
 [project]
 name = "fastblocks"
-version = "0.14.0"
+version = "0.15.0"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -20,7 +20,6 @@ keywords = [
     "sqlmodel",
     "starlette",
 ]
-license.text = "BSD-3-Clause"
 maintainers = [
     { name = "lesleslie", email = "les@wedgwoodwebworks.com" },
 ]
@@ -45,10 +44,9 @@ classifiers = [
 dependencies = [
     "acb[cache,monitoring,requests,storage]",
     "anyio>=4.9",
-    "asgi-htmx>=0.1",
-    "asgi-sitemaps>=1",
     "brotli-asgi>=1.4",
     "granian[reload]>=2.4.1",
+    "htmy[lxml]>=0.8.2",
     "minify-html>=0.16.4",
     "pydantic>=2.11.7",
     "pyfiglet>=1.0.3",
@@ -63,11 +61,25 @@ dependencies = [
     "uvicorn>=0.35",
 ]
 
-optional-dependencies.admin = [
+[project.license]
+text = "BSD-3-Clause"
+
+[project.optional-dependencies]
+admin = [
     "sqladmin>=0.21",
 ]
-optional-dependencies.dev = [
-    "crackerjack>=0.22.8",
+monitoring = [
+    "logfire[starlette]>=3.24",
+    "sentry-sdk[starlette]>=2.32",
+    "urllib3>=2.5",
+]
+sitemap = []
+
+[dependency-groups]
+dev = [
+    "crackerjack==0.38.12",
+    "excalidraw-mcp>=0.34",
+    "penpot-mcp>=0.1.2",
     "pytest>=8.4.1",
     "pytest-asyncio>=1",
     "pytest-benchmark>=5.1",
@@ -77,33 +89,34 @@ optional-dependencies.dev = [
     "pytest-xdist>=3.8",
     "pyyaml>=6.0.2",
     "refurb>=2.1",
-]
-optional-dependencies.monitoring = [
-    "logfire[starlette]>=3.24",
-    "sentry-sdk[starlette]>=2.32",
-    "urllib3>=2.5",
-]
-optional-dependencies.sitemap = [
-    "asgi-sitemaps>=1",
+    "session-mgmt-mcp>=0.3.13",
 ]
 
 [tool.ruff]
 target-version = "py313"
 line-length = 88
+exclude = [
+    "*_test.py",
+    "test_*.py",
+    "tests/",
+]
 fix = true
 unsafe-fixes = true
 show-fixes = true
 output-format = "full"
 
-format.docstring-code-format = true
-lint.extend-select = [
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+extend-select = [
     "C901",
     "D",
     "F",
     "I",
     "UP",
 ]
-lint.ignore = [
+ignore = [
     "D100",
     "D101",
     "D102",
@@ -116,18 +129,24 @@ lint.ignore = [
     "F821",
     "UP040",
 ]
-lint.fixable = [
+fixable = [
     "ALL",
 ]
-lint.unfixable = [  ]
-lint.isort.no-lines-before = [
+unfixable = []
+
+[tool.ruff.lint.isort]
+no-lines-before = [
     "first-party",
 ]
-lint.mccabe.max-complexity = 13
-lint.pydocstyle.convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.codespell]
-skip = "*/data/*"
+skip = "*/data/*,tests/*,test_*.py,*_test.py"
 quiet-level = 3
 ignore-words-list = "crate,uptodate,nd"
 
@@ -160,6 +179,9 @@ markers = [
 timeout = 300
 timeout_method = "thread"
 addopts = "--cov=fastblocks --cov-report=term --cov-fail-under=42"
+filterwarnings = [
+    "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
+]
 
 [tool.pytest.benchmark]
 disable_gc = true
@@ -206,6 +228,9 @@ include = [
     "fastblocks",
 ]
 exclude = [
+    "*_test.py",
+    "test_*.py",
+    "tests/",
     "scratch",
 ]
 extraPaths = [
@@ -224,52 +249,81 @@ reportUnknownParameterType = "warning"
 reportPrivateUsage = false
 pythonVersion = "3.13"
 
+[tool.complexipy]
+default_pattern = "**/*.py"
+exclude_patterns = [
+    "**/tests/**",
+    "**/test_*.py",
+]
+max_complexity = 15
+
 [tool.creosote]
 paths = [
     "fastblocks",
 ]
 deps-file = "pyproject.toml"
 exclude-deps = [
-    "pytest",
-    "uv",
-    "pytest-timeout",
-    "autotyping",
-    "google-crc32c",
-    "pytest-xdist",
     "pyyaml",
     "inflection",
-    "pyfiglet",
-    "tomli-w",
+    "pytest-timeout",
+    "pyleak",
+    "uv",
     "pre-commit",
-    "pydantic-settings",
+    "hatchling",
+    "google-crc32c",
     "pytest-asyncio",
-    "pytest-benchmark",
-    "pdm-bump",
-    "pdm",
-    "pytest-mock",
-    "keyring",
     "pytest-cov",
+    "pyfiglet",
+    "pytest",
+    "tomli-w",
+    "htmy",
+    "pytest-xdist",
+    "pytest-mock",
+    "pydantic-settings",
+    "keyring",
+    "pytest-benchmark",
 ]
 
 [tool.refurb]
 enable_all = true
 quiet = true
+python_version = "3.13"
+ignore = [
+    "FURB184",
+    "FURB120",
+]
+exclude = [
+    "tests/",
+    "test_*.py",
+    "*_test.py",
+]
 
 [tool.bandit]
 target = [
     "fastblocks",
 ]
 skips = [
-    "B403",
-    "B301",
-    "B704",
-    "B311",
-    "B101",
-    "B607",
     "B603",
-    "B404",
     "B602",
+    "B607",
+    "B101",
+    "B403",
+    "B404",
+    "B311",
+    "B704",
+    "B301",
 ]
+exclude_dirs = [
+    "tests/",
+    "test_*.py",
+    "*_test.py",
+]
+
+[tool.uv]
+keyring-provider = "subprocess"
+index-url = "https://pypi.org/simple/"
+publish-url = "https://upload.pypi.org/legacy/"
+check-url = "https://pypi.org/simple/"
 
 [tool.vulture]
 min_confidence = 86

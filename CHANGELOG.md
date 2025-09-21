@@ -5,9 +5,10 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.13.2] - 2024-12-XX
+## [0.13.2] - 2024-12-15
 
 ### Added
+
 - Enhanced null safety in template loaders with robust dependency resolution fallbacks
 - Comprehensive uvicorn logging configuration with InterceptHandler integration
 - Template reload exclusions in CLI development server configuration
@@ -16,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lazy loading system for app and logger components with fallback mechanisms
 
 ### Changed
+
 - **BREAKING**: Simplified dependency management by using direct ACB imports instead of wrapper system
   - Use `from acb.adapters import import_adapter` instead of internal dependency wrappers
   - Use `from acb.depends import depends` for dependency injection
@@ -27,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced template loader dependency resolution with fallback mechanisms
 
 ### Fixed
+
 - Template loader dependency resolution when ACB adapters are not available
 - Null pointer exceptions in template loading when dependencies are missing
 - Uvicorn logging conflicts with ACB logging system
@@ -35,12 +38,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependency injection fallbacks for optional components
 
 ### Performance
+
 - Optimized template loader with parallel path checking
 - Improved bytecode caching with Redis integration
 - Enhanced middleware stack caching and position management
 - Reduced startup time with lazy loading for non-critical components
 
 ### Developer Experience
+
 - Better error messages for adapter registration failures
 - Improved CLI logging configuration for cleaner development output
 - Enhanced template reload behavior excluding settings and templates directories
@@ -52,12 +57,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Updating Import Patterns
 
 **Before (v0.13.1 and earlier):**
+
 ```python
 from fastblocks.dependencies import Templates, App
 from fastblocks.config import config
 ```
 
 **After (v0.13.2+):**
+
 ```python
 from acb.adapters import import_adapter
 from acb.depends import depends
@@ -71,6 +78,7 @@ config = depends.get(Config)
 #### Updating Route Handlers
 
 **Before:**
+
 ```python
 @depends.inject
 async def homepage(request, templates=depends(Templates)):
@@ -78,6 +86,7 @@ async def homepage(request, templates=depends(Templates)):
 ```
 
 **After:**
+
 ```python
 @depends.inject
 async def homepage(request, templates: Templates = depends()):
@@ -105,15 +114,18 @@ No configuration file changes are required. The new system maintains backward co
 ## [0.13.1] - Previous Release
 
 ### Added
+
 - Previous features and improvements
 
 ### Changed
+
 - Previous changes
 
 ### Fixed
+
 - Previous bug fixes
 
----
+______________________________________________________________________
 
 ## Release Notes
 
@@ -122,9 +134,9 @@ No configuration file changes are required. The new system maintains backward co
 This release focuses on **dependency management simplification** and **developer experience improvements**. The most significant change is the move from internal dependency wrappers to direct ACB imports, which:
 
 1. **Simplifies the codebase** by removing intermediate abstraction layers
-2. **Improves performance** through direct adapter access
-3. **Enhances maintainability** by aligning with ACB patterns
-4. **Provides better error handling** with explicit fallback mechanisms
+1. **Improves performance** through direct adapter access
+1. **Enhances maintainability** by aligning with ACB patterns
+1. **Provides better error handling** with explicit fallback mechanisms
 
 The template system has been significantly enhanced with null safety features and better dependency resolution, making FastBlocks more robust in various deployment scenarios.
 

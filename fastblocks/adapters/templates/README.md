@@ -62,18 +62,13 @@ from starlette.routing import Route
 Templates = import_adapter("templates")
 templates = depends.get(Templates)
 
-async def homepage(request):
-    context = {
-        "title": "Welcome to FastBlocks",
-        "message": "Hello, World!"
-    }
-    return await templates.app.render_template(
-        request, "index.html", context=context
-    )
 
-routes = [
-    Route("/", endpoint=homepage)
-]
+async def homepage(request):
+    context = {"title": "Welcome to FastBlocks", "message": "Hello, World!"}
+    return await templates.app.render_template(request, "index.html", context=context)
+
+
+routes = [Route("/", endpoint=homepage)]
 ```
 
 ### Template Fragments for HTMX
@@ -91,9 +86,8 @@ async def get_user_list(request):
         request, "blocks/user_list.html", context={"users": users}
     )
 
-routes = [
-    Route("/block/user_list", endpoint=get_user_list)
-]
+
+routes = [Route("/block/user_list", endpoint=get_user_list)]
 ```
 
 In your main template:
@@ -125,15 +119,11 @@ async def get_user_details(request):
 
     # Render just the user_details block from the user_profile.html template
     return await templates.app.render_template_block(
-        request,
-        "user_profile.html",
-        "user_details_block",
-        context={"user": user}
+        request, "user_profile.html", "user_details_block", context={"user": user}
     )
 
-routes = [
-    Route("/users/{user_id}/details", endpoint=get_user_details)
-]
+
+routes = [Route("/users/{user_id}/details", endpoint=get_user_details)]
 ```
 
 Template with named blocks (`user_profile.html`):
@@ -200,8 +190,7 @@ async def create_user(request):
 
     # Return success message template fragment
     return await templates.app.render_template(
-        request, "blocks/user_created.html",
-        context={"username": username}
+        request, "blocks/user_created.html", context={"username": username}
     )
 ```
 
@@ -273,8 +262,8 @@ The Templates adapter supports multiple template loaders:
 The loaders are tried in the following order:
 
 1. **RedisLoader**: Fastest, used for cached templates
-2. **CloudLoader**: Used for distributed deployments
-3. **FileSystemLoader**: Used for local development
+1. **CloudLoader**: Used for distributed deployments
+1. **FileSystemLoader**: Used for local development
 
 In development mode, the order is reversed to prioritize local file changes.
 
@@ -311,13 +300,13 @@ The Templates adapter is implemented in the following files:
 ### Base Class
 
 ```python
-from acb.config import  Settings
+from acb.config import Settings
 
-class TemplatesBaseSettings(Settings):
-    ...
 
-class TemplatesBase(AdapterBase):
-    ...
+class TemplatesBaseSettings(Settings): ...
+
+
+class TemplatesBase(AdapterBase): ...
 ```
 
 ### Jinja2 Implementation
@@ -379,10 +368,12 @@ from acb.adapters import import_adapter
 Templates = import_adapter("templates")
 templates = depends.get(Templates)
 
+
 @templates.filter()
 def uppercase(text: str) -> str:
     """Convert text to uppercase."""
     return text.upper()
+
 
 @templates.filter(name="reverse")
 def reverse_text(text: str) -> str:
@@ -401,6 +392,7 @@ def pluralize(count: int, singular: str, plural: str = None) -> str:
         return singular + "s"
     return plural
 
+
 # Register the filter
 templates.add_filter("pluralize", pluralize)
 ```
@@ -413,6 +405,7 @@ For more complex scenarios, create a dedicated filters module:
 # myapp/templates/filters.py
 import typing as t
 from datetime import datetime
+
 
 class CustomFilters:
     @staticmethod
@@ -433,6 +426,7 @@ class CustomFilters:
 
         days = int(seconds / 86400)
         return f"{days} day{'s' if days != 1 else ''} ago"
+
 
 # Then in your app initialization
 from myapp.templates.filters import CustomFilters
@@ -462,8 +456,10 @@ import typing as t
 from fastblocks.adapters.templates._base import TemplatesBase, TemplatesBaseSettings
 from jinja2 import Environment, FileSystemLoader
 
+
 class CustomTemplatesSettings(TemplatesBaseSettings):
     template_dir: str = "custom_templates"
+
 
 class CustomTemplates(TemplatesBase):
     settings: CustomTemplatesSettings | None = None
@@ -473,15 +469,16 @@ class CustomTemplates(TemplatesBase):
         # Initialize custom template environment
         if self.settings is not None:
             self.env = Environment(
-                loader=FileSystemLoader(self.settings.template_dir),
-                enable_async=True
+                loader=FileSystemLoader(self.settings.template_dir), enable_async=True
             )
 
             # Add custom filters
             if self.env is not None:
                 self.env.filters["custom_filter"] = self.custom_filter
 
-    async def render_template(self, name: str, context: dict[str, t.Any] | None = None) -> str:
+    async def render_template(
+        self, name: str, context: dict[str, t.Any] | None = None
+    ) -> str:
         if self.env is None:
             raise RuntimeError("Template environment not initialized")
         template = self.env.get_template(name)

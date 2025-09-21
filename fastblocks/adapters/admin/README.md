@@ -50,12 +50,14 @@ from acb.adapters import import_adapter
 from fastblocks.applications import FastBlocks
 from sqlmodel import SQLModel, Field
 
+
 # Define your models
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     username: str
     email: str
     is_active: bool = True
+
 
 # Create your application
 app = FastBlocks()
@@ -75,6 +77,7 @@ You can customize how models appear in the admin interface:
 ```python
 from sqladmin import ModelView
 
+
 class UserAdmin(ModelView, model=User):
     column_list = [User.id, User.username, User.email, User.is_active]
     column_searchable_list = [User.username, User.email]
@@ -85,10 +88,7 @@ class UserAdmin(ModelView, model=User):
     form_columns = [User.username, User.email, User.is_active]
 
     # Customize display names and formatting
-    column_labels = {
-        User.email: "Email Address",
-        User.is_active: "Account Status"
-    }
+    column_labels = {User.email: "Email Address", User.is_active: "Account Status"}
 
     # Format display values
     column_formatters = {
@@ -97,18 +97,15 @@ class UserAdmin(ModelView, model=User):
 
     # Add validators
     form_args = {
-        "username": {
-            "validators": [DataRequired(), Length(min=3, max=20)]
-        },
-        "email": {
-            "validators": [DataRequired(), Email()]
-        }
+        "username": {"validators": [DataRequired(), Length(min=3, max=20)]},
+        "email": {"validators": [DataRequired(), Email()]},
     }
 
     # Control access permissions
     def is_accessible(self):
         # Example: Check if user is authenticated and has admin role
         from flask_login import current_user
+
         return current_user.is_authenticated and current_user.has_role("admin")
 
     def is_visible(self):
@@ -118,14 +115,17 @@ class UserAdmin(ModelView, model=User):
     @action(
         name="activate_users",
         label="Activate selected users",
-        confirmation="Are you sure you want to activate selected users?"
+        confirmation="Are you sure you want to activate selected users?",
     )
     def action_activate_users(self, ids):
         """Custom action to bulk activate users"""
-        for model in self.session.query(self.model).filter(self.model.id.in_(ids)).all():
+        for model in (
+            self.session.query(self.model).filter(self.model.id.in_(ids)).all()
+        ):
             model.is_active = True
         self.session.commit()
         return len(ids)
+
 
 # Register the custom model view
 admin.register_model(UserAdmin)
@@ -154,7 +154,7 @@ admin.register_model(UserAdmin)
 The admin interface supports two built-in themes:
 
 1. **Bootstrap Theme** (default): Clean, responsive design based on Bootstrap 5
-2. **Material Theme**: Material Design-inspired theme with cards and elevated components
+1. **Material Theme**: Material Design-inspired theme with cards and elevated components
 
 ### Changing the Theme
 
@@ -221,11 +221,13 @@ The Admin adapter is implemented in the following files:
 ```python
 from acb.config import Settings
 
+
 class AdminBaseSettings(Settings):
     enabled: bool = True
     title: str = "FastBlocks Admin"
     logo_url: str | None = None
     style: str = "default"
+
 
 class AdminBase(AdapterBase):
     def register_model(self, model: type[object]) -> None:
@@ -259,8 +261,15 @@ from sqladmin import ModelView
 from wtforms.fields import StringField, TextAreaField
 from wtforms.widgets import ColorInput, FileInput
 
+
 class ProductAdmin(ModelView, model=Product):
-    column_list = [Product.id, Product.name, Product.price, Product.color, Product.is_available]
+    column_list = [
+        Product.id,
+        Product.name,
+        Product.price,
+        Product.color,
+        Product.is_available,
+    ]
 
     # Custom form fields
     form_overrides = {
@@ -270,13 +279,13 @@ class ProductAdmin(ModelView, model=Product):
 
     form_widget_args = {
         "color": {"widget": ColorInput()},
-        "image": {"widget": FileInput()}
+        "image": {"widget": FileInput()},
     }
 
     # Custom formatters for display
     column_formatters = {
         Product.price: lambda m, a: f"${m.price:.2f}",
-        Product.image: lambda m, a: Markup(f"<img src='{m.image}' width='100'>")
+        Product.image: lambda m, a: Markup(f"<img src='{m.image}' width='100'>"),
     }
 ```
 
@@ -291,24 +300,26 @@ class OrderAdmin(ModelView, model=Order):
         "customer": {
             "fields": (Customer.name, Customer.email),
             "order_by": (Customer.name,),
-            "page_size": 10
+            "page_size": 10,
         },
         "products": {
             "fields": (Product.name,),
             "order_by": (Product.name,),
-            "page_size": 10
-        }
+            "page_size": 10,
+        },
     }
 
     # Inline editing for order items
-    inline_models = [(
-        OrderItem,
-        {
-            "column_labels": {"quantity": "Qty"},
-            "form_columns": ["product", "quantity", "price"],
-            "form_args": {"price": {"default": 0.0}}
-        }
-    )]
+    inline_models = [
+        (
+            OrderItem,
+            {
+                "column_labels": {"quantity": "Qty"},
+                "form_columns": ["product", "quantity", "price"],
+                "form_args": {"price": {"default": 0.0}},
+            },
+        )
+    ]
 ```
 
 #### Custom Admin Actions
@@ -316,13 +327,14 @@ class OrderAdmin(ModelView, model=Order):
 ```python
 from sqladmin import action
 
+
 class UserAdmin(ModelView, model=User):
     # Standard configuration...
 
     @action(
         name="send_welcome_email",
         label="Send Welcome Email",
-        confirmation="Send welcome email to selected users?"
+        confirmation="Send welcome email to selected users?",
     )
     def send_welcome_email(self, ids):
         users = self.session.query(self.model).filter(self.model.id.in_(ids)).all()
@@ -334,7 +346,7 @@ class UserAdmin(ModelView, model=User):
     @action(
         name="export_user_data",
         label="Export User Data",
-        confirmation="Export data for selected users?"
+        confirmation="Export data for selected users?",
     )
     def export_user_data(self, ids):
         # Logic to export user data to CSV
@@ -352,12 +364,14 @@ It's crucial to protect your admin interface from unauthorized access. Here are 
 from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.authentication import AuthCredentials, BaseUser
 
+
 class AdminAuthBackend:
     async def authenticate(self, request):
         # Your authentication logic here
         if not is_authorized_admin(request):
             return None
         return AuthCredentials(["admin"]), AdminUser(request)
+
 
 # In your application startup
 app.add_middleware(AuthenticationMiddleware, backend=AdminAuthBackend())
@@ -377,8 +391,7 @@ admin:
 # In your admin adapter init
 if self.settings.secure_environments and app_env in self.settings.secure_environments:
     # Apply IP restrictions
-    app.add_middleware(IPRestrictionMiddleware,
-                       allowed_ips=self.settings.allowed_ips)
+    app.add_middleware(IPRestrictionMiddleware, allowed_ips=self.settings.allowed_ips)
 ```
 
 ### Using FastBlocks Auth Adapter Integration
@@ -408,10 +421,12 @@ from sqladmin import Admin, ModelView
 from starlette.requests import Request
 from starlette.responses import Response
 
+
 class CustomAdminSettings(AdminBaseSettings):
     dashboard_template: str = "admin/dashboard.html"
     custom_scripts: list[str] = ["admin/charts.js"]
     custom_styles: list[str] = ["admin/dashboard.css"]
+
 
 class CustomAdmin(AdminBase):
     settings: CustomAdminSettings | None = None
@@ -424,7 +439,7 @@ class CustomAdmin(AdminBase):
             title=self.settings.title,
             base_url="/admin",
             authentication_backend=self.auth_backend,
-            templates_dir="templates/admin"
+            templates_dir="templates/admin",
         )
 
         # Register custom dashboard route
@@ -444,12 +459,10 @@ class CustomAdmin(AdminBase):
                 stats = {
                     "users": self.get_user_stats(),
                     "content": self.get_content_stats(),
-                    "system": self.get_system_stats()
+                    "system": self.get_system_stats(),
                 }
                 return self.render_template(
-                    "admin/dashboard.html",
-                    request=request,
-                    stats=stats
+                    "admin/dashboard.html", request=request, stats=stats
                 )
 
             def get_user_stats(self):

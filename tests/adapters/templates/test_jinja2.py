@@ -111,7 +111,8 @@ async def test_redis_loader_get_source_async(
 
     # Verify
     assert source == template_content.decode()
-    assert await uptodate_func()
+    # uptodate_func should return a callable, not an awaitable
+    assert uptodate_func()
     mock_cache.exists.assert_called_once()
     mock_cache.get.assert_called_once()
 
@@ -252,8 +253,8 @@ async def test_choice_loader_fallback(
 
     # Verify
     assert source == template_content
-    loader1.get_source_async.assert_called_once_with("test.html", "test.html")
-    loader2.get_source_async.assert_called_once_with("test.html", "test.html")
+    loader1.get_source_async.assert_called_once_with("test.html")
+    loader2.get_source_async.assert_called_once_with("test.html")
 
 
 @pytest.mark.asyncio
@@ -290,12 +291,8 @@ async def test_choice_loader_template_not_found(
         await choice_loader.get_source_async("nonexistent.html")
 
     # Verify
-    loader1.get_source_async.assert_called_once_with(
-        "nonexistent.html", "nonexistent.html"
-    )
-    loader2.get_source_async.assert_called_once_with(
-        "nonexistent.html", "nonexistent.html"
-    )
+    loader1.get_source_async.assert_called_once_with("nonexistent.html")
+    loader2.get_source_async.assert_called_once_with("nonexistent.html")
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,3 @@
-
 <p align="center">
 <img src="./images/fastblocks-logo.png" alt="FastBlocks Logo">
 </p>
@@ -9,14 +8,15 @@
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-
+![Coverage](https://img.shields.io/badge/coverage-29.6%25-red)
 
 ## What is FastBlocks?
 
 FastBlocks is an asynchronous web application framework, inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines modern Python async capabilities with server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
 
-Unlike monolithic frameworks or micro-frameworks that require extensive configuration, FastBlocks offers a modular, component-based architecture that provides batteries-included functionality while maintaining exceptional flexibility. Its adapter pattern allows for seamless component swapping, cloud provider migrations, and tailored customizations without extensive code changes.
+Unlike monolithic frameworks or micro-frameworks that require extensive configuration, FastBlocks offers a modular, component-based architecture that provides batteries-included functionality while maintaining exceptional flexibility. Built on the **[Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb)** framework, FastBlocks leverages ACB's powerful adapter pattern for seamless component swapping, cloud provider migrations, and tailored customizations without extensive code changes.
+
+FastBlocks serves as a prime example of ACB's capabilities, showcasing how ACB's dependency injection, configuration management, and pluggable adapter system can create enterprise-grade applications. All FastBlocks adapters (templates, auth, admin, routing, storage) follow ACB's standardized interfaces, ensuring consistency and interoperability.
 
 ## Key Concepts
 
@@ -24,26 +24,28 @@ If you're new to FastBlocks, here are the key concepts to understand:
 
 1. **Server-Side Rendering**: Unlike frameworks that rely heavily on JavaScript for interactivity, FastBlocks renders HTML on the server and sends only what's needed to the browser.
 
-2. **HTMX**: A lightweight JavaScript library that allows you to access modern browser features directly from HTML, without writing JavaScript. FastBlocks is built with HTMX in mind.
+1. **HTMX**: A lightweight JavaScript library that allows you to access modern browser features directly from HTML, without writing JavaScript. FastBlocks is built with HTMX in mind.
 
-3. **Template Blocks**: Small pieces of HTML that can be rendered independently and injected into the page, enabling dynamic updates without full page reloads.
+1. **Template Blocks**: Small pieces of HTML that can be rendered independently and injected into the page, enabling dynamic updates without full page reloads.
 
-4. **Adapters**: Pluggable components that provide standardized interfaces to different implementations (templates, authentication, admin interfaces, etc.). This architecture facilitates seamless provider switching, multi-cloud deployments, and targeted customizations without restructuring your application.
+1. **Adapters**: Pluggable components that provide standardized interfaces to different implementations (templates, authentication, admin interfaces, etc.). This architecture facilitates seamless provider switching, multi-cloud deployments, and targeted customizations without restructuring your application.
 
-5. **Dependency Injection**: A pattern that automatically provides components to your functions when needed, reducing boilerplate code.
+1. **Dependency Injection**: A pattern that automatically provides components to your functions when needed, reducing boilerplate code.
 
-6. **Asynchronous Architecture**: Built on Python's async/await syntax for high performance and efficient handling of concurrent requests.
+1. **Asynchronous Architecture**: Built on Python's async/await syntax for high performance and efficient handling of concurrent requests.
 
 ## Key Features
 
 - **Starlette Foundation**: Built on the [Starlette](https://www.starlette.io/) ASGI framework for high performance, extending its application class and middleware system
-- **HTMX Integration**: First-class support for HTMX to create dynamic interfaces with server-side rendering
+- **Native HTMX Integration**: Built-in HTMX support (not a dependency) for creating dynamic interfaces with server-side rendering
 - **Asynchronous Architecture**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), providing dependency injection, configuration management, and pluggable components
 - **Template-Focused**: Advanced asynchronous Jinja2 template system with fragments and partials support using `[[` and `]]` delimiters
 - **Modular Design**: Pluggable adapters for authentication, admin interfaces, routing, templates, and sitemap generation
 - **Cloud Flexibility**: Easily switch between cloud providers or create hybrid deployments by swapping adapters
 - **Performance Optimized**: Built-in caching system, Brotli compression, and HTML/CSS/JS minification
 - **Type Safety**: Leverages Pydantic v2 for validation and type safety throughout
+- **Universal Database Support**: Works with SQL (PostgreSQL, MySQL, SQLite) and NoSQL (MongoDB, Firestore, Redis) databases
+- **Multiple Model Types**: Supports SQLModel, SQLAlchemy, Pydantic, msgspec, attrs, and Redis-OM
 - **Admin Interface**: Integrated SQLAlchemy Admin support for database management
 - **Dependency Injection**: Robust dependency injection system with automatic resolution
 - **Batteries Included, But Replaceable**: Comprehensive defaults with the ability to customize or replace any component
@@ -151,6 +153,7 @@ Litestar is a modern FastAPI alternative with native HTMX support, while FastBlo
 ### Key Advantages of FastBlocks
 
 #### 🧩 **Component-Based Architecture**
+
 - **Batteries Included, But Customizable**: Comprehensive defaults for rapid development, with every component easily replaceable
 - **Pluggable Adapters**: Every component (auth, admin, templates, storage, cache) can be swapped without code changes
 - **Consistent Interfaces**: Standardized APIs across all adapters ensure predictable behavior
@@ -158,30 +161,35 @@ Litestar is a modern FastAPI alternative with native HTMX support, while FastBlo
 - **Zero Lock-in**: Unlike monolithic frameworks, you're never locked into specific implementations
 
 #### 🌐 **Multi-Cloud & Hybrid Deployment Ready**
+
 - **Cloud Provider Flexibility**: Switch between AWS, Azure, GCP, or on-premise with configuration changes
 - **Vendor Lock-in Prevention**: Abstract cloud-specific APIs behind adapter interfaces
 - **Hybrid Strategies**: Mix and match services from different providers in the same application
 - **Infrastructure as Code**: Configuration-driven infrastructure decisions
 
 #### 🚀 **Server-Side Rendering Excellence**
-- **HTMX-Native**: Built specifically for HTMX patterns and server-side rendering
+
+- **HTMX-Native**: Native implementation built specifically for HTMX patterns and server-side rendering
 - **Template Block Rendering**: Render specific template fragments for dynamic updates
 - **SEO Optimized**: Full server-side rendering ensures search engine visibility
 - **Progressive Enhancement**: Start with functional HTML, enhance with HTMX
 
 #### ⚡ **Performance Optimized**
+
 - **Async Everything**: Fully asynchronous template loading, caching, and rendering
 - **Built-in Caching**: Redis-based template and response caching with configurable rules
 - **Compression**: Brotli compression reduces payload sizes
 - **Minification**: Built-in HTML, CSS, and JS minification
 
 #### 🛠 **Developer Experience**
+
 - **Rapid Development**: HTML-first approach with powerful template system
 - **Full CLI**: Project generation, development server, testing, and deployment tools
 - **Type Safety**: Pydantic-based configuration and validation throughout
 - **Testing Support**: Comprehensive testing utilities and mocking framework
 
 #### 🏢 **Enterprise Ready**
+
 - **Configuration Management**: Multi-environment configuration with secrets management
 - **Security Built-in**: CSRF protection, secure headers, session management
 - **Admin Interface**: Integrated SQLAlchemy admin for database management
@@ -215,6 +223,7 @@ FastBlocks combines the development speed of modern frameworks with the infrastr
   - [Routing](#routing)
   - [Middleware](#middleware)
   - [HTMX Integration](#htmx-integration)
+- [Database Models and Queries](#database-models-and-queries)
 - [Adapters](#adapters)
 - [Actions](#actions)
 - [Configuration](#configuration)
@@ -230,10 +239,10 @@ FastBlocks combines the development speed of modern frameworks with the infrastr
 
 ## Installation
 
-Install FastBlocks using [pdm](https://pdm.fming.dev):
+Install FastBlocks using [uv](https://docs.astral.sh/uv/):
 
 ```bash
-pdm add fastblocks
+uv add fastblocks
 ```
 
 ### Requirements
@@ -246,11 +255,11 @@ FastBlocks supports various optional dependencies for different features:
 
 | Feature Group | Components | Installation Command |
 |---------------|------------|----------------------|
-| Admin | SQLAlchemy Admin interface | `pdm add "fastblocks[admin]"` |
-| Sitemap | Automatic sitemap generation | `pdm add "fastblocks[sitemap]"` |
-| Monitoring | Sentry and Logfire integration | `pdm add "fastblocks[monitoring]"` |
-| Complete | All dependencies | `pdm add "fastblocks[admin,sitemap,monitoring]"` |
-| Development | Development tools | `pdm add -G dev "fastblocks"` |
+| Admin | SQLAlchemy Admin interface | `uv add "fastblocks[admin]"` |
+| Sitemap | Automatic sitemap generation | `uv add "fastblocks[sitemap]"` |
+| Monitoring | Sentry and Logfire integration | `uv add "fastblocks[monitoring]"` |
+| Complete | All dependencies | `uv add "fastblocks[admin,sitemap,monitoring]"` |
+| Development | Development tools | `uv add "fastblocks" --group dev` |
 
 You can also install FastBlocks using pip:
 
@@ -283,6 +292,7 @@ from acb.depends import depends
 Templates = import_adapter("templates")  # Get the configured template adapter
 App = import_adapter("app")  # Get the configured app adapter
 
+
 # Define a route handler for the homepage
 # The @depends.inject decorator automatically provides dependencies
 @depends.inject
@@ -293,10 +303,12 @@ async def homepage(request, templates: Templates = depends()):
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
 
+
 # Define your application routes
 routes = [
     Route("/", endpoint=homepage)  # Map the root URL to the homepage function
 ]
+
 
 # Create a counter endpoint that demonstrates HTMX functionality
 # This will handle both GET and POST requests
@@ -314,6 +326,7 @@ async def counter_block(request, templates: Templates = depends()):
     return await templates.app.render_template(
         request, "blocks/counter.html", context={"count": count}
     )
+
 
 # Add the counter route
 routes.append(Route("/block/counter", endpoint=counter_block, methods=["GET", "POST"]))
@@ -411,24 +424,28 @@ from acb.depends import depends
 
 Templates = import_adapter("templates")
 
+
 @depends.inject
 async def user_profile_block(request, templates: Templates = depends()):
     user_id = request.path_params["user_id"]
 
     # Fetch user data (in a real app, this would come from a database)
-    user = {"id": user_id, "name": f"User {user_id}", "email": f"user{user_id}@example.com"}
+    user = {
+        "id": user_id,
+        "name": f"User {user_id}",
+        "email": f"user{user_id}@example.com",
+    }
 
     # Render just the user profile block
     return await templates.app.render_template_block(
         request,
         "users/profile.html",  # Template file
-        "profile_block",       # Block name within the template
-        context={"user": user}
+        "profile_block",  # Block name within the template
+        context={"user": user},
     )
 
-routes = [
-    Route("/users/{user_id}/profile", endpoint=user_profile_block)
-]
+
+routes = [Route("/users/{user_id}/profile", endpoint=user_profile_block)]
 ```
 
 Template (`templates/users/profile.html`):
@@ -463,6 +480,7 @@ from acb.depends import depends
 
 Templates = import_adapter("templates")
 
+
 @depends.inject
 async def contact_form(request, templates: Templates = depends()):
     if request.method == "POST":
@@ -477,22 +495,14 @@ async def contact_form(request, templates: Templates = depends()):
 
         # Return just the success message block
         return await templates.app.render_template_block(
-            request,
-            "contact/form.html",
-            "success_block",
-            context={"name": name}
+            request, "contact/form.html", "success_block", context={"name": name}
         )
 
     # For GET requests, render the form
-    return await templates.app.render_template(
-        request,
-        "contact/form.html",
-        context={}
-    )
+    return await templates.app.render_template(request, "contact/form.html", context={})
 
-routes = [
-    Route("/contact", endpoint=contact_form, methods=["GET", "POST"])
-]
+
+routes = [Route("/contact", endpoint=contact_form, methods=["GET", "POST"])]
 ```
 
 Template (`templates/contact/form.html`):
@@ -542,22 +552,21 @@ from acb.config import Config
 Templates = import_adapter("templates")
 Cache = import_adapter("cache")
 
+
 @depends.inject
-async def dashboard(request,
-                  templates: Templates = depends(),
-                  cache: Cache = depends(),
-                  config: Config = depends()):
+async def dashboard(
+    request,
+    templates: Templates = depends(),
+    cache: Cache = depends(),
+    config: Config = depends(),
+):
     # Get cached data or compute it
     cache_key = "dashboard_stats"
     stats = await cache.get(cache_key)
 
     if not stats:
         # In a real app, you would fetch this from a database
-        stats = {
-            "users": 1250,
-            "posts": 5432,
-            "comments": 15876
-        }
+        stats = {"users": 1250, "posts": 5432, "comments": 15876}
 
         # Cache the stats for 5 minutes
         await cache.set(cache_key, stats, ttl=300)
@@ -566,17 +575,11 @@ async def dashboard(request,
     app_name = config.app.name
 
     return await templates.app.render_template(
-        request,
-        "dashboard.html",
-        context={
-            "app_name": app_name,
-            "stats": stats
-        }
+        request, "dashboard.html", context={"app_name": app_name, "stats": stats}
     )
 
-routes = [
-    Route("/dashboard", endpoint=dashboard)
-]
+
+routes = [Route("/dashboard", endpoint=dashboard)]
 ```
 
 **Note**: This example uses the new v0.13.2+ import patterns. The template system automatically handles dependency resolution with fallbacks, so if cache is unavailable, the function will still work correctly.
@@ -611,9 +614,9 @@ FastBlocks is built on top of [Asynchronous Component Base (ACB)](https://github
 
 - **Adapter Pattern**: FastBlocks uses ACB's adapter pattern to create pluggable components for authentication, admin interfaces, templates, etc.
 
-#### Direct ACB Integration (v0.13.2+)
+#### Direct ACB Integration (v0.14.0+)
 
-Recent improvements include simplified dependency management through direct ACB imports:
+Recent improvements include simplified dependency management through direct ACB imports and ACB 0.19.0 compatibility:
 
 ```python
 # Direct ACB imports for better performance
@@ -700,13 +703,14 @@ from acb.depends import depends
 
 Templates = import_adapter("templates")
 
+
 @depends.inject
 async def homepage(request, templates: Templates = depends()):
     # Render a full template
     return await templates.app.render_template(
         request,
         "index.html",  # Template file path relative to templates directory
-        context={"title": "FastBlocks Demo", "user": {"name": "John"}}
+        context={"title": "FastBlocks Demo", "user": {"name": "John"}},
     )
 ```
 
@@ -801,8 +805,8 @@ async def counter_block(request, templates: Templates = depends()):
     return await templates.app.render_template_block(
         request,
         "blocks/counter.html",  # Template file
-        "counter_block",        # Block name within the template
-        context={"count": count}
+        "counter_block",  # Block name within the template
+        context={"count": count},
     )
 ```
 
@@ -814,6 +818,7 @@ FastBlocks includes several built-in filters and you can add your own:
 from acb.adapters import import_adapter
 
 Templates = import_adapter("templates")
+
 
 # Register a custom filter
 @Templates.filter()
@@ -845,6 +850,7 @@ from acb.adapters import import_adapter
 from acb.depends import depends
 
 Templates = import_adapter("templates")
+
 
 @depends.inject
 async def my_view(request, templates: Templates = depends()):
@@ -887,17 +893,20 @@ from acb.depends import depends
 
 Templates = import_adapter("templates")
 
+
 @depends.inject
 async def homepage(request, templates: Templates = depends()):
     return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
 
+
 @depends.inject
 async def about(request, templates: Templates = depends()):
     return await templates.app.render_template(
         request, "about.html", context={"title": "About Us"}
     )
+
 
 # Define your routes
 routes = [
@@ -919,11 +928,13 @@ from acb.depends import depends
 
 Templates = import_adapter("templates")
 
+
 @depends.inject
 async def homepage(request, templates: Templates = depends()):
     return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
+
 
 # Export routes to be automatically discovered
 routes = [
@@ -944,6 +955,7 @@ async def user_profile(request, templates: Templates = depends()):
         request, "user/profile.html", context={"user_id": user_id}
     )
 
+
 routes = [
     Route("/users/{user_id}", endpoint=user_profile),
 ]
@@ -958,15 +970,13 @@ Create routes specifically for HTMX interactions:
 async def load_more_items(request, templates: Templates = depends()):
     page = int(request.query_params.get("page", 1))
     # Fetch items for the requested page...
-    items = [f"Item {i}" for i in range((page-1)*10, page*10)]
+    items = [f"Item {i}" for i in range((page - 1) * 10, page * 10)]
 
     # Return just the items block for HTMX to insert
     return await templates.app.render_template_block(
-        request,
-        "items.html",
-        "items_block",
-        context={"items": items, "page": page}
+        request, "items.html", "items_block", context={"items": items, "page": page}
     )
+
 
 routes = [
     Route("/api/items", endpoint=load_more_items),
@@ -975,26 +985,66 @@ routes = [
 
 ### Middleware
 
-FastBlocks includes several middleware components:
+FastBlocks includes a comprehensive middleware stack that enhances application functionality:
 
-- **HTMX Middleware**: Adds HTMX-specific request information
-- **CSRF Protection**: Built-in CSRF protection for forms
-- **Session Middleware**: Cookie-based session management
-- **Compression**: Brotli compression for reduced payload sizes
+- **HTMX Middleware**: Processes HTMX-specific headers and makes HTMX request information available
+- **CSRF Protection**: Built-in CSRF protection requiring tokens for state-changing requests
+- **Session Middleware**: Cookie-based session management with secure defaults
+- **Compression**: Brotli compression for reduced payload sizes and improved performance
 - **Secure Headers**: Security headers for production environments
-- **Cache Middleware**: HTTP response caching with rule-based configuration
+- **Cache Middleware**: HTTP response caching with rule-based configuration and automatic invalidation
 - **Cache Control Middleware**: Simplified management of cache control headers
-- **Process Time Header Middleware**: Measures and logs request processing time
-- **Current Request Middleware**: Makes the current request available via a context variable
+- **Process Time Header Middleware**: Measures and logs request processing time for monitoring
+- **Current Request Middleware**: Makes the current request available via context variable for global access
+
+#### Advanced Middleware Features
+
+**Cache Middleware with Rules**:
+
+```python
+from fastblocks.middleware import CacheMiddleware
+from fastblocks.caching import Rule
+
+# Define caching rules
+rules = [
+    Rule(match="/api/*", ttl=60),  # Cache API responses for 60 seconds
+    Rule(match="/static/*", ttl=3600),  # Cache static content for 1 hour
+]
+
+app = CacheMiddleware(app, cache=cache, rules=rules)
+```
+
+**Cache Control Headers**:
+
+```python
+from fastblocks.decorators import cache_control
+
+
+@cache_control(max_age=300, public=True)
+async def my_endpoint(request):
+    return JSONResponse({"data": "This response will have cache headers"})
+```
+
+**Response Caching Decorator**:
+
+```python
+from fastblocks.decorators import cached
+
+
+@cached(cache=cache)
+async def my_endpoint(request):
+    return JSONResponse({"data": "This response will be cached"})
+```
 
 #### Middleware Ordering
 
 FastBlocks uses a position-based middleware system to ensure middleware components are executed in the correct order. The middleware execution flow follows the ASGI specification:
 
 1. The last middleware in the list is the first to process the request
-2. The first middleware in the list is the last to process the request
+1. The first middleware in the list is the last to process the request
 
 The actual execution flow is:
+
 - ExceptionMiddleware (outermost - first to see request, last to see response)
 - System middleware (ordered by MiddlewarePosition enum)
 - User-provided middleware
@@ -1021,9 +1071,7 @@ from fastblocks.middleware import MiddlewarePosition
 
 # Replace the compression middleware with a custom implementation
 app.add_system_middleware(
-    CustomMiddleware,
-    position=MiddlewarePosition.COMPRESSION,
-    option="value"
+    CustomMiddleware, position=MiddlewarePosition.COMPRESSION, option="value"
 )
 ```
 
@@ -1036,6 +1084,7 @@ from typing import Any
 from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks import FastBlocks
 from fastblocks.middleware import MiddlewarePosition
+
 
 # Define a simple custom middleware
 class CustomHeaderMiddleware:
@@ -1054,22 +1103,19 @@ class CustomHeaderMiddleware:
         async def send_with_header(message: dict[str, Any]) -> None:
             if message["type"] == "http.response.start":
                 headers = message.get("headers", [])
-                headers.append(
-                    (self.header_name.encode(), self.header_value.encode())
-                )
+                headers.append((self.header_name.encode(), self.header_value.encode()))
                 message["headers"] = headers
             await send(message)
 
         await self.app(scope, receive, send_with_header)
+
 
 # Create a FastBlocks application
 app = FastBlocks()
 
 # Add a custom middleware to the user middleware stack
 app.add_middleware(
-    CustomHeaderMiddleware,
-    header_name="X-Custom-User",
-    header_value="User-defined"
+    CustomHeaderMiddleware, header_name="X-Custom-User", header_value="User-defined"
 )
 
 # Replace the compression middleware with a custom implementation
@@ -1077,7 +1123,7 @@ app.add_system_middleware(
     CustomHeaderMiddleware,
     position=MiddlewarePosition.COMPRESSION,
     header_name="X-Custom-Compression",
-    header_value="Replaced"
+    header_value="Replaced",
 )
 ```
 
@@ -1088,12 +1134,12 @@ The `MiddlewarePosition` enum defines the positions of middleware in the system 
 ```python
 class MiddlewarePosition(IntEnum):
     # Core middleware (always present)
-    PROCESS_TIME = 0      # First middleware to see request, last to see response
-    CSRF = 1              # Security middleware should be early in the chain
-    SESSION = 2           # Session handling (if auth enabled)
-    HTMX = 3              # HTMX request processing
-    CURRENT_REQUEST = 4   # Request context tracking
-    COMPRESSION = 5       # Response compression
+    PROCESS_TIME = 0  # First middleware to see request, last to see response
+    CSRF = 1  # Security middleware should be early in the chain
+    SESSION = 2  # Session handling (if auth enabled)
+    HTMX = 3  # HTMX request processing
+    CURRENT_REQUEST = 4  # Request context tracking
+    COMPRESSION = 5  # Response compression
     SECURITY_HEADERS = 6  # Security headers for responses
 ```
 
@@ -1108,14 +1154,24 @@ print(positions)  # {'PROCESS_TIME': 0, 'CSRF': 1, ...}
 
 ### HTMX Integration
 
-FastBlocks is designed to work seamlessly with HTMX, a lightweight JavaScript library that allows you to access modern browser features directly from HTML attributes.
+FastBlocks includes **native HTMX support** built directly into the framework. This implementation provides seamless integration with HTMX without requiring external dependencies.
+
+#### Native Implementation Details
+
+FastBlocks' HTMX support is provided through:
+
+- **`fastblocks.htmx` module**: Core HTMX functionality with ACB integration
+- **HTMX Middleware**: Automatically processes HTMX headers in the middleware stack
+- **No external dependencies**: All HTMX support is built into FastBlocks
 
 #### Key HTMX Features in FastBlocks
 
 - **HtmxRequest**: Extended request object with HTMX-specific attributes
+- **HtmxResponse**: Specialized response class for HTMX interactions
 - **Template Blocks**: Specialized endpoints for rendering template fragments
 - **Push URL**: Automatic URL updates for browser history
 - **Response Headers**: Helper methods for setting HTMX-specific response headers
+- **Response Helpers**: Built-in functions like `htmx_trigger()`, `htmx_redirect()`, and `htmx_refresh()`
 
 #### Using HTMX Request Properties
 
@@ -1128,6 +1184,7 @@ from acb.depends import depends
 
 Templates = import_adapter("templates")
 
+
 @depends.inject
 async def product_detail(request, templates: Templates = depends()):
     product_id = request.path_params["product_id"]
@@ -1136,27 +1193,24 @@ async def product_detail(request, templates: Templates = depends()):
     if request.htmx:
         # Access HTMX-specific properties
         is_boosted = request.htmx.boosted  # True if hx-boost was used
-        trigger = request.htmx.trigger     # ID of the element that triggered the request
-        target = request.htmx.target       # ID of the target element
+        trigger = request.htmx.trigger  # ID of the element that triggered the request
+        target = request.htmx.target  # ID of the target element
 
         # For HTMX requests, render just the product details block
         return await templates.app.render_template_block(
             request,
             "products/detail.html",
             "product_detail_block",
-            context={"product_id": product_id}
+            context={"product_id": product_id},
         )
 
     # For regular requests, render the full page
     return await templates.app.render_template(
-        request,
-        "products/detail.html",
-        context={"product_id": product_id}
+        request, "products/detail.html", context={"product_id": product_id}
     )
 
-routes = [
-    Route("/products/{product_id}", endpoint=product_detail)
-]
+
+routes = [Route("/products/{product_id}", endpoint=product_detail)]
 ```
 
 #### Setting HTMX Response Headers
@@ -1171,6 +1225,7 @@ from acb.depends import depends
 
 Templates = import_adapter("templates")
 
+
 @depends.inject
 async def search_results(request, templates: Templates = depends()):
     query = request.query_params.get("q", "")
@@ -1180,18 +1235,17 @@ async def search_results(request, templates: Templates = depends()):
         request,
         "search/results.html",
         "results_block",
-        context={"query": query, "results": []}
+        context={"query": query, "results": []},
     )
 
     # Set HTMX-specific headers
     response.headers["HX-Push-Url"] = f"/search?q={query}"  # Update browser URL
-    response.headers["HX-Trigger"] = "search-complete"      # Trigger client-side events
+    response.headers["HX-Trigger"] = "search-complete"  # Trigger client-side events
 
     return response
 
-routes = [
-    Route("/search", endpoint=search_results)
-]
+
+routes = [Route("/search", endpoint=search_results)]
 ```
 
 #### Common HTMX Patterns
@@ -1241,7 +1295,87 @@ app = depends.get(App)
 - **Middleware Optimization**: Position-based middleware management with caching
 - **Memory Efficiency**: Reduced memory footprint through optimized component loading
 
+#### Adapter Metadata Requirements (v0.14.0+)
+
+All FastBlocks adapters now include metadata for ACB 0.19.0 compatibility:
+
+```python
+from acb.adapters import AdapterStatus
+
+# Required metadata for all adapters
+MODULE_ID = "01937d86-4f2a-7b3c-8d9e-1234567890ab"  # Static UUID7
+MODULE_STATUS = AdapterStatus.STABLE
+```
+
+**Metadata Components:**
+
+- **MODULE_ID**: Static UUID7 identifier that remains constant across deployments
+- **MODULE_STATUS**: Adapter status from ACB's AdapterStatus enum (STABLE, BETA, ALPHA, DEPRECATED)
+
+**Benefits:**
+
+- **Tracking**: Unique identification for monitoring and debugging
+- **Status Awareness**: Clear indication of adapter maturity and stability
+- **Compatibility**: Full compliance with ACB 0.19.0 requirements
+
 For more information about adapters, see the [Adapters Documentation](./fastblocks/adapters/README.md).
+
+## Database Models and Queries
+
+FastBlocks provides comprehensive database support through ACB's universal model and query system:
+
+### Supported Model Types
+
+FastBlocks automatically detects and supports multiple model frameworks:
+
+| Model Type | Use Case | Example |
+|------------|----------|---------|
+| **SQLModel** | Type-safe SQL with validation | `class User(SQLModel, table=True): ...` |
+| **SQLAlchemy** | Traditional ORM | `class User(Base): __tablename__ = "users"` |
+| **Pydantic** | API models & validation | `class UserSchema(BaseModel): ...` |
+| **msgspec** | High-performance serialization | `class User(msgspec.Struct): ...` |
+| **Redis-OM** | Redis object mapping | `class User(HashModel): ...` |
+
+### Database Support
+
+- **SQL Databases**: PostgreSQL, MySQL/MariaDB, SQLite (including Turso)
+- **NoSQL Databases**: MongoDB, Google Firestore, Redis
+
+### Universal Query Interface
+
+FastBlocks provides multiple query patterns that work consistently across all database types:
+
+```python
+from acb.depends import depends
+
+# Access the universal query interface
+query = depends.get("query")
+
+# Simple queries (Active Record style)
+users = await query.for_model(User).simple.all()
+user = await query.for_model(User).simple.find(1)
+
+# Repository pattern (with built-in caching)
+repo = query.for_model(User).repository()
+active_users = await repo.find_active()
+
+# Advanced query builder
+results = await (
+    query.for_model(User)
+    .advanced.where("active", True)
+    .where_gt("age", 21)
+    .order_by_desc("created_at")
+    .limit(10)
+    .all()
+)
+```
+
+**Key Benefits:**
+
+- **Database Agnostic**: Switch databases without changing application code
+- **Type Safety**: Full type checking across all operations
+- **Multiple Patterns**: Choose the query style that fits your needs
+- **Automatic Detection**: Models are discovered based on their base class
 
 ## Actions
 
@@ -1299,6 +1433,7 @@ python -m fastblocks create
 ```
 
 You'll be prompted for:
+
 - **app_name**: Name of your application
 - **style**: UI framework to use (bulma, webawesome, or custom)
 - **domain**: Application domain
@@ -1338,6 +1473,7 @@ python -m fastblocks dev
 ```
 
 The development server includes enhanced features:
+
 - **Optimized Logging**: Uvicorn logging is integrated with ACB's InterceptHandler for cleaner output
 - **Smart Reloading**: Excludes `tmp/*`, `settings/*`, and `templates/*` directories from reload monitoring for better performance
 - **Template Development**: Templates are excluded from reload to prevent unnecessary restarts during template development
@@ -1396,11 +1532,12 @@ Show available FastBlocks components and their status.
 
 ### Updating from Version 0.13.1 to 0.13.2
 
-Version 0.13.2 introduces simplified dependency management with direct ACB imports. While existing code will continue to work, we recommend updating to the new patterns for better performance and maintainability.
+Version 0.14.0 introduces ACB 0.19.0 compatibility with adapter metadata requirements and continues the simplified dependency management with direct ACB imports. While existing code will continue to work, we recommend updating to the new patterns for better performance and maintainability.
 
 #### Import Pattern Changes
 
 **Before (v0.13.1 and earlier):**
+
 ```python
 # Old wrapper-based imports
 from fastblocks.dependencies import Templates, App
@@ -1408,6 +1545,7 @@ from fastblocks.config import config
 ```
 
 **After (v0.13.2+):**
+
 ```python
 # Direct ACB imports (recommended)
 from acb.adapters import import_adapter
@@ -1422,6 +1560,7 @@ config = depends.get(Config)
 #### Route Handler Updates
 
 **Before:**
+
 ```python
 @depends.inject
 async def homepage(request, templates=depends(Templates)):
@@ -1429,6 +1568,7 @@ async def homepage(request, templates=depends(Templates)):
 ```
 
 **After:**
+
 ```python
 @depends.inject
 async def homepage(request, templates: Templates = depends()):
@@ -1438,9 +1578,9 @@ async def homepage(request, templates: Templates = depends()):
 #### Benefits of the New Pattern
 
 1. **Better Performance**: Direct ACB access eliminates wrapper overhead
-2. **Improved Type Safety**: Explicit type annotations with adapters
-3. **Enhanced Error Handling**: Built-in fallback mechanisms for missing dependencies
-4. **Future Compatibility**: Aligned with ACB framework patterns
+1. **Improved Type Safety**: Explicit type annotations with adapters
+1. **Enhanced Error Handling**: Built-in fallback mechanisms for missing dependencies
+1. **Future Compatibility**: Aligned with ACB framework patterns
 
 #### Template System Improvements
 
@@ -1474,11 +1614,13 @@ App = import_adapter("app")
 
 counter = 0
 
+
 @depends.inject
 async def get_counter(request, templates: Templates = depends()):
     return await templates.app.render_template(
         request, "blocks/counter.html", context={"count": counter}
     )
+
 
 @depends.inject
 async def increment_counter(request, templates: Templates = depends()):
@@ -1487,6 +1629,7 @@ async def increment_counter(request, templates: Templates = depends()):
     return await templates.app.render_template(
         request, "blocks/counter.html", context={"count": counter}
     )
+
 
 routes = [
     Route("/block/counter", endpoint=get_counter, methods=["GET"]),
@@ -1521,15 +1664,58 @@ This project is licensed under the terms of the BSD 3-Clause license.
 Special thanks to the following open-source projects that power FastBlocks:
 
 ### Foundation
+
 - [Starlette](https://www.starlette.io/) - The ASGI framework that FastBlocks directly extends, providing the web application foundation
 - [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb) - The core infrastructure providing dependency injection, configuration, and component architecture
 
 ### Frontend & Templates
+
 - [HTMX](https://htmx.org/) - The lightweight JavaScript library for dynamic interfaces
 - [Jinja2](https://jinja.palletsprojects.com/) - The template engine
 - [jinja2-async-environment](https://github.com/lesleslie/jinja2-async-environment) - Asynchronous Jinja2 environment
 - [starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja) - Starlette integration for async Jinja2
+- [Bulma](https://bulma.io/) - Modern CSS framework based on Flexbox for beautiful responsive designs
+- [Web Awesome](https://fontawesome.com/webawesome) - Comprehensive icon library and UI components from Font Awesome
 
 ### Data & Validation
+
 - [Pydantic](https://pydantic-docs.helpmanual.io/) - Data validation and settings management
 - [SQLAlchemy](https://www.sqlalchemy.org/) - SQL toolkit and ORM
+- [SQLModel](https://sqlmodel.tiangolo.com/) - Modern SQL databases with Python, designed by the creator of FastAPI
+- [SQLAdmin](https://github.com/aminalaee/sqladmin) - Admin interface for SQLAlchemy models with Starlette integration
+
+### Components & Rendering
+
+- [HTMY](https://github.com/lesleslie/htmy) - Python-based HTML components with type safety
+- [asgi-htmx](https://github.com/marcelotrylesisnki/asgi-htmx) - ASGI HTMX integration (enhanced and integrated into FastBlocks)
+- [asgi-sitemaps](https://github.com/DahlitzFlorian/asgi-sitemaps) - ASGI sitemap generation (enhanced and integrated into FastBlocks)
+
+### Performance & Infrastructure
+
+- [Redis](https://redis.io/) - In-memory data structure store for caching and sessions
+- [aiocache](https://github.com/aio-libs/aiocache) - Async cache interface and implementations
+- [Brotli](https://github.com/google/brotli) - Compression algorithm for better performance
+- [Loguru](https://github.com/Delgan/loguru) - Async-compatible logging
+
+### Development Tools
+
+- [Uvicorn](https://www.uvicorn.org/) - Lightning-fast ASGI server implementation
+- [Granian](https://github.com/emmett-framework/granian) - Alternative high-performance ASGI server
+- [Typer](https://typer.tiangolo.com/) - Modern CLI framework for building command-line interfaces
+- [icecream](https://github.com/gruns/icecream) - Enhanced debugging utilities
+- [bevy](https://github.com/bevy-engine/bevy) - Dependency injection framework (via ACB)
+- [msgspec](https://github.com/jcrist/msgspec) - High-performance serialization library
+- [attrs](https://github.com/python-attrs/attrs) - Classes without boilerplate
+
+### Development Environment
+
+- [PyCharm](https://www.jetbrains.com/pycharm/) - The premier Python IDE that powered the development of FastBlocks
+- [Claude Code](https://claude.ai/code) - AI-powered development assistant that accelerated development and ensured code quality
+
+## Special Acknowledgments
+
+**FastAPI Inspiration**: FastBlocks draws significant inspiration from [FastAPI](https://fastapi.tiangolo.com/) by Sebastián Ramírez. FastAPI's elegant approach to modern Python web development, type safety, automatic validation, and developer experience served as a guiding light for FastBlocks' design philosophy. While FastBlocks focuses on server-side rendering with HTMX rather than API development, it embraces FastAPI's commitment to developer productivity, type safety, and modern Python features.
+
+FastBlocks incorporates enhanced versions of **asgi-htmx** by Marcelo Trylesinski and **asgi-sitemaps** by Florian Dahlitz. These excellent libraries provided the foundation for FastBlocks' native HTMX and sitemap functionality. The original implementations have been enhanced with ACB integration, improved error handling, caching capabilities, and FastBlocks-specific optimizations while maintaining the quality and design principles of the original work.
+
+We extend our sincere gratitude to all the maintainers and contributors of these outstanding open-source projects that make FastBlocks possible.

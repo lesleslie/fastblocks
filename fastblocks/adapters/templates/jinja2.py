@@ -1,3 +1,38 @@
+"""Jinja2 Templates Adapter for FastBlocks.
+
+Provides asynchronous Jinja2 template rendering with advanced features including:
+- Multi-layer loader system (Redis cache, cloud storage, filesystem)
+- Bidirectional integration with HTMY components via dedicated HTMY adapter
+- Fragment and partial template support
+- Bytecode caching with Redis backend
+- Template synchronization across cache/storage/filesystem layers
+- Custom delimiters ([[/]] instead of {{/}})
+- Extensive template debugging and error handling
+
+Requirements:
+- jinja2-async-environment>=0.14.3
+- starlette-async-jinja>=1.12.4
+- jinja2>=3.1.6
+- redis>=3.5.3 (for caching)
+
+Usage:
+```python
+from acb.depends import depends
+from acb.adapters import import_adapter
+
+templates = depends.get("templates")
+
+Templates = import_adapter("templates")
+
+response = await templates.render_template(
+    request, "index.html", {"title": "FastBlocks"}
+)
+```
+
+Author: lesleslie <les@wedgwoodwebworks.com>
+Created: 2025-01-12
+"""
+
 import asyncio
 import re
 import typing as t
@@ -8,8 +43,9 @@ from importlib import import_module
 from importlib.util import find_spec
 from inspect import isclass
 from pathlib import Path
+from uuid import UUID
 
-from acb.adapters import get_adapter, import_adapter
+from acb.adapters import AdapterStatus, get_adapter, import_adapter
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends
@@ -50,7 +86,9 @@ _ATTR_PATTERN_CACHE: dict[str, re.Pattern[str]] = {}
 def _get_attr_pattern(attr: str) -> re.Pattern[str]:
     if attr not in _ATTR_PATTERN_CACHE:
         escaped_attr = re.escape(f"{attr}=")
-        _ATTR_PATTERN_CACHE[attr] = re.compile(escaped_attr)
+        _ATTR_PATTERN_CACHE[attr] = re.compile(
+            escaped_attr
+        )  # REGEX OK: Template attribute pattern compilation for Jinja2
     return _ATTR_PATTERN_CACHE[attr]
 
 
@@ -726,6 +764,7 @@ class Templates(TemplatesBase):
             setattr(templates.env, delimiter, value)
         templates.env.globals["config"] = self.config  # type: ignore[assignment]
         templates.env.globals["render_block"] = templates.render_block  # type: ignore[assignment]
+        templates.env.globals["render_component"] = self._get_htmy_component_renderer()  # type: ignore[assignment]
         if admin:
             try:
                 from sqladmin.helpers import (  # type: ignore[import-not-found,import-untyped]
@@ -776,9 +815,49 @@ class Templates(TemplatesBase):
                     "test",
                 ):
                     await cache.clear(namespace)
-                self.logger.debug("Templates cache cleared")
+                self.logger.debug("Template caches cleared")
+                with suppress(Exception):
+                    htmy_adapter = depends.get("htmy")
+                    if htmy_adapter:
+                        await htmy_adapter.clear_component_cache()
+                        self.logger.debug("HTMY component caches cleared via adapter")
             except (NotImplementedError, AttributeError) as e:
                 self.logger.debug(f"Cache clear not supported: {e}")
+
+    def _get_htmy_component_renderer(self) -> t.Callable[..., t.Any]:
+        async def render_component(
+            component_name: str,
+            context: dict[str, t.Any] | None = None,
+            **kwargs: t.Any,
+        ) -> str:
+            try:
+                htmy_adapter = depends.get("htmy")
+                if htmy_adapter:
+                    htmy_adapter.jinja_templates = self
+
+                    response = await htmy_adapter.render_component(
+                        request=None,
+                        component=component_name,
+                        context=context,
+                        **kwargs,
+                    )
+                    return (
+                        response.body.decode()
+                        if hasattr(response.body, "decode")
+                        else str(response.body)
+                    )
+                else:
+                    debug(
+                        f"HTMY adapter not available for component '{component_name}'"
+                    )
+                    return f"<!-- HTMY adapter not available for '{component_name}' -->"
+            except Exception as e:
+                debug(
+                    f"Failed to render component '{component_name}' via HTMY adapter: {e}"
+                )
+                return f"<!-- Error rendering component '{component_name}': {e} -->"
+
+        return render_component
 
     async def init(self, cache: t.Any | None = None) -> None:
         cache = self._resolve_cache(cache)
@@ -791,7 +870,7 @@ class Templates(TemplatesBase):
                 try:
                     from ..app.default import App
 
-                    app_adapter = App()
+                    app_adapter = depends.get("app") or App()
                     debug("Created app adapter by direct import")
                     depends.set("app", app_adapter)
                 except Exception:
@@ -861,6 +940,44 @@ class Templates(TemplatesBase):
             headers=headers,
         )
 
+    async def render_component(
+        self,
+        request: t.Any,
+        component: str,
+        context: dict[str, t.Any] | None = None,
+        status_code: int = 200,
+        headers: dict[str, str] | None = None,
+        **kwargs: t.Any,
+    ) -> t.Any:
+        try:
+            htmy_adapter = depends.get("htmy")
+            if htmy_adapter:
+                htmy_adapter.jinja_templates = self
+                return await htmy_adapter.render_component(
+                    request=request,
+                    component=component,
+                    context=context,
+                    status_code=status_code,
+                    headers=headers,
+                    **kwargs,
+                )
+            else:
+                from starlette.responses import HTMLResponse
+
+                return HTMLResponse(
+                    content=f"<html><body>HTMY adapter not available for component '{component}'</body></html>",
+                    status_code=500,
+                    headers=headers,
+                )
+        except Exception as e:
+            from starlette.responses import HTMLResponse
+
+            return HTMLResponse(
+                content=f"<html><body>Component error: {e}</body></html>",
+                status_code=500,
+                headers=headers,
+            )
+
     def filter(
         self,
         name: str | None = None,
@@ -894,6 +1011,9 @@ class Templates(TemplatesBase):
             )
         return _extensions
 
+
+MODULE_ID = UUID("01937d86-4f2a-7b3c-8d9e-1234567890ab")
+MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
     depends.set(Templates)

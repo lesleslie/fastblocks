@@ -53,7 +53,7 @@ routes_result = await gather.routes(
     sources=["adapters", "base_routes"],
     patterns=["_routes.py", "routes.py"],
     include_base=True,
-    include_adapters=True
+    include_adapters=True,
 )
 
 # Access discovered routes
@@ -80,7 +80,7 @@ templates_result = await gather.templates(
     template_paths=[AsyncPath("templates"), AsyncPath("custom_templates")],
     loader_types=["redis", "storage", "filesystem"],
     extension_modules=["myapp.extensions"],
-    admin_mode=True
+    admin_mode=True,
 )
 
 # Access components
@@ -101,14 +101,10 @@ print(f"Built stack with {middleware_result.total_middleware} components")
 
 # Custom middleware configuration
 middleware_result = await gather.middleware(
-    user_middleware=[
-        Middleware(CustomMiddleware, param="value")
-    ],
-    system_overrides={
-        MiddlewarePosition.SECURITY: CustomSecurityMiddleware
-    },
+    user_middleware=[Middleware(CustomMiddleware, param="value")],
+    system_overrides={MiddlewarePosition.SECURITY: CustomSecurityMiddleware},
     include_defaults=True,
-    debug_mode=False
+    debug_mode=False,
 )
 
 # Access middleware stack
@@ -130,7 +126,7 @@ models_result = await gather.models(
     sources=["base", "adapters", "custom"],
     patterns=["models.py", "_models.py"],
     include_admin=True,
-    base_classes=[SQLModel, BaseModel]
+    base_classes=[SQLModel, BaseModel],
 )
 
 # Access models by type
@@ -158,7 +154,7 @@ app_result = await gather.application(
     include_acb_modules=True,
     include_dependencies=True,
     adapter_patterns=["__init__.py", "models.py", "views.py"],
-    dependency_patterns=["models", "config", "cache"]
+    dependency_patterns=["models", "config", "cache"],
 )
 
 # Access components
@@ -188,13 +184,15 @@ async def routes(
 ```
 
 **Parameters:**
+
 - `sources` (list[str], optional): Source types ["adapters", "base_routes", "custom"]
-- `patterns` (list[str], optional): Filename patterns ["_routes.py", "routes.py"]
+- `patterns` (list[str], optional): Filename patterns ["\_routes.py", "routes.py"]
 - `include_base` (bool, default=True): Include base routes from root_path/routes.py
 - `include_adapters` (bool, default=True): Include routes from adapters
 - `strategy` (GatherStrategy, optional): Custom gathering strategy
 
 **Returns:**
+
 - `RouteGatherResult`: Contains discovered routes and metadata
 
 #### `gather.templates()`
@@ -215,6 +213,7 @@ async def templates(
 ```
 
 **Parameters:**
+
 - `template_paths` (list[AsyncPath], optional): Template search directories
 - `loader_types` (list[str], optional): Loader types ["redis", "storage", "filesystem", "package"]
 - `extension_modules` (list[str], optional): Module paths for Jinja2 extensions
@@ -224,6 +223,7 @@ async def templates(
 - `strategy` (GatherStrategy, optional): Custom gathering strategy
 
 **Returns:**
+
 - `TemplateGatherResult`: Contains loaders, extensions, processors, and filters
 
 #### `gather.middleware()`
@@ -243,6 +243,7 @@ async def middleware(
 ```
 
 **Parameters:**
+
 - `user_middleware` (list[Middleware], optional): User-defined middleware list
 - `system_overrides` (dict, optional): Overrides for system middleware positions
 - `include_defaults` (bool, default=True): Include default FastBlocks middleware
@@ -251,6 +252,7 @@ async def middleware(
 - `strategy` (GatherStrategy, optional): Custom gathering strategy
 
 **Returns:**
+
 - `MiddlewareGatherResult`: Contains complete middleware stack
 
 #### `gather.models()`
@@ -271,8 +273,9 @@ async def models(
 ```
 
 **Parameters:**
+
 - `sources` (list[str], optional): Source types ["base", "adapters", "custom"]
-- `patterns` (list[str], optional): Filename patterns ["models.py", "_models.py"]
+- `patterns` (list[str], optional): Filename patterns ["models.py", "\_models.py"]
 - `include_base` (bool, default=True): Include base models from root_path/models.py
 - `include_adapters` (bool, default=True): Include models from adapters
 - `include_admin` (bool, default=True): Gather admin-enabled models
@@ -280,6 +283,7 @@ async def models(
 - `strategy` (GatherStrategy, optional): Custom gathering strategy
 
 **Returns:**
+
 - `ModelGatherResult`: Contains SQL models, NoSQL models, and metadata
 
 #### `gather.application()`
@@ -300,15 +304,17 @@ async def application(
 ```
 
 **Parameters:**
+
 - `include_adapters` (bool, default=True): Include enabled adapters
 - `include_acb_modules` (bool, default=True): Include ACB framework modules
 - `include_dependencies` (bool, default=True): Include application dependencies
 - `include_initializers` (bool, default=True): Include initialization functions
-- `adapter_patterns` (list[str], optional): File patterns in adapters ["__init__.py", "models.py"]
+- `adapter_patterns` (list[str], optional): File patterns in adapters \["__init__.py", "models.py"\]
 - `dependency_patterns` (list[str], optional): Dependency module patterns
 - `strategy` (GatherStrategy, optional): Custom gathering strategy
 
 **Returns:**
+
 - `ApplicationGatherResult`: Contains adapters, modules, dependencies, and initializers
 
 ## Configuration
@@ -321,13 +327,13 @@ Configure gathering behavior with strategy options:
 from fastblocks.actions.gather import GatherStrategy, ErrorStrategy
 
 strategy = GatherStrategy(
-    parallel=True,                    # Enable parallel execution
-    max_concurrent=10,               # Maximum concurrent tasks
-    timeout=30.0,                    # Timeout in seconds
+    parallel=True,  # Enable parallel execution
+    max_concurrent=10,  # Maximum concurrent tasks
+    timeout=30.0,  # Timeout in seconds
     error_strategy=ErrorStrategy.PARTIAL_SUCCESS,  # Error handling strategy
-    cache_strategy=CacheStrategy.MEMORY_CACHE,     # Caching strategy
-    retry_attempts=2,                # Number of retry attempts
-    retry_delay=0.1                  # Delay between retries
+    cache_strategy=CacheStrategy.MEMORY_CACHE,  # Caching strategy
+    retry_attempts=2,  # Number of retry attempts
+    retry_delay=0.1,  # Delay between retries
 )
 ```
 
@@ -350,6 +356,7 @@ strategy = GatherStrategy(
 
 ```python
 from fastblocks.actions.gather import gather
+
 
 async def setup_application():
     """Complete application setup using gather action."""
@@ -387,20 +394,19 @@ async def setup_application():
 ```python
 from fastblocks.actions.gather import gather, GatherStrategy, ErrorStrategy
 
+
 async def discover_custom_components():
     """Discover components with custom configuration."""
 
     strategy = GatherStrategy(
-        parallel=True,
-        max_concurrent=5,
-        error_strategy=ErrorStrategy.PARTIAL_SUCCESS
+        parallel=True, max_concurrent=5, error_strategy=ErrorStrategy.PARTIAL_SUCCESS
     )
 
     # Custom route discovery
     routes = await gather.routes(
         sources=["adapters", "custom"],
         patterns=["api_routes.py", "web_routes.py"],
-        strategy=strategy
+        strategy=strategy,
     )
 
     # Custom template discovery
@@ -408,10 +414,10 @@ async def discover_custom_components():
         template_paths=[
             AsyncPath("templates"),
             AsyncPath("themes/default"),
-            AsyncPath("custom_templates")
+            AsyncPath("custom_templates"),
         ],
         loader_types=["filesystem", "redis"],
-        strategy=strategy
+        strategy=strategy,
     )
 
     return routes, templates
@@ -421,6 +427,7 @@ async def discover_custom_components():
 
 ```python
 from fastblocks.actions.gather import gather
+
 
 async def robust_gathering():
     """Example of robust error handling."""
@@ -451,21 +458,25 @@ async def robust_gathering():
 ## Performance Considerations
 
 ### Parallel Processing
+
 - **Concurrency**: Adjust `max_concurrent` based on I/O vs CPU workload
 - **Timeout**: Set appropriate timeouts for network operations
 - **Memory**: Large concurrent operations may require significant memory
 
 ### Caching
+
 - **Memory usage**: Cached results are stored in memory
 - **Cache keys**: Unique keys prevent cache collisions
 - **TTL**: Cached results persist until manual clear or restart
 
 ### Component Discovery
+
 - **File I/O**: Discovery involves filesystem scanning and module imports
 - **Import time**: Dynamic imports may be slower than static imports
 - **Error recovery**: Partial success allows processing despite some failures
 
 ### Best Practices
+
 - Use caching for repeated gather operations
 - Configure appropriate concurrency limits
 - Handle errors gracefully with partial success
@@ -475,4 +486,4 @@ async def robust_gathering():
 
 - [Sync Action](../sync/README.md): Synchronize gathered components with storage
 - [Minify Action](../minify/README.md): Optimize gathered assets
-- [ACB Actions](https://github.com/fastblocks/acb/tree/main/acb/actions): Core utility actions
+- [ACB Actions](https://github.com/lesleslie/acb/tree/main/acb/actions): Core utility actions

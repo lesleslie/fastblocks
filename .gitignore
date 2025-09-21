@@ -18,3 +18,9 @@ __pycache__/
 /tests/mock_tmp/
 
 **/.claude/settings.local.json
+/.claude/
+/.benchmarks/
+/backup/
+/.coverage
+/.mcp.json
+/.crackerjack/

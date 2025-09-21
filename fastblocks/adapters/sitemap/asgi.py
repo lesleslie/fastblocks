@@ -1,21 +1,38 @@
-from contextlib import suppress
+"""FastBlocks ASGI Sitemap Adapter (Legacy).
 
+This adapter now uses FastBlocks native sitemap implementation
+instead of the external asgi-sitemaps dependency.
+
+For new projects, consider using the native adapter directly.
+"""
+
+from contextlib import suppress
+from uuid import UUID
+
+from acb.adapters import AdapterStatus
 from acb.depends import depends
-from asgi_sitemaps import Sitemap as AsgiSitemap  # type: ignore[import-untyped]
-from asgi_sitemaps import SitemapApp as AsgiSitemapApp  # type: ignore[import-untyped]
 
 from ._base import SitemapBase, SitemapBaseSettings
+from .core import BaseSitemap as NativeSitemap
+from .core import SitemapApp
 
 
-class SitemapSettings(SitemapBaseSettings): ...
+class SitemapSettings(SitemapBaseSettings):
+    pass
 
 
-class Sitemap(AsgiSitemap[str], SitemapBase):  # type: ignore[misc]
-    sitemap: AsgiSitemapApp | None = None
+class Sitemap(NativeSitemap[str], SitemapBase):
+    sitemap: SitemapApp | None = None
 
     @depends.inject
     def items(self) -> list[str]:
-        return [r.path for r in depends.get("routes").routes]
+        try:
+            routes_adapter = depends.get("routes")
+            if hasattr(routes_adapter, "routes"):
+                return [r.path for r in routes_adapter.routes]
+            return []
+        except Exception:
+            return []
 
     def location(self, item: str) -> str:
         return item
@@ -27,8 +44,15 @@ class Sitemap(AsgiSitemap[str], SitemapBase):  # type: ignore[misc]
         if not self.config.app.domain:
             msg = "`domain` must be set in AppSettings"
             raise ValueError(msg)
-        self.sitemap = AsgiSitemapApp(self, domain=self.config.app.domain)
+        self.sitemap = SitemapApp(
+            self,
+            domain=self.config.app.domain,
+            cache_ttl=getattr(self.config, "cache_ttl", 3600),
+        )
 
+
+MODULE_ID = UUID("01937d86-eff0-7410-5786-a01234567890")
+MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
     depends.set(Sitemap)

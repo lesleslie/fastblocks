@@ -43,8 +43,8 @@ Tests should **never** create actual files, directories, or settings during test
 The test suite includes proper mocking for adapter implementations:
 
 1. No actual files or directories are created during tests
-2. No actual configuration files are read
-3. All filesystem operations are properly mocked
+1. No actual configuration files are read
+1. All filesystem operations are properly mocked
 
 ### Mock Class Method Delegation
 
@@ -70,11 +70,11 @@ When creating mock classes for testing adapters, it's important to implement pro
            # Mock implementation
    ```
 
-2. **Separate Test Classes for Complex Mocks**: For adapters with complex dependencies, create separate test classes with their own fixtures.
+1. **Separate Test Classes for Complex Mocks**: For adapters with complex dependencies, create separate test classes with their own fixtures.
 
-3. **Patching External Dependencies**: Use `unittest.mock.patch` to mock external dependencies like file system operations.
+1. **Patching External Dependencies**: Use `unittest.mock.patch` to mock external dependencies like file system operations.
 
-4. **Exception Handling in Mocks**: Ensure that mock objects properly handle exceptions that would occur in the real implementation.
+1. **Exception Handling in Mocks**: Ensure that mock objects properly handle exceptions that would occur in the real implementation.
 
 ### Example: Proper Mock Implementation
 
@@ -108,16 +108,18 @@ class TestTemplateRenderer:
 For adapter tests, the project follows a structured approach:
 
 1. **Base Test Files**: Each adapter category has base test files that contain:
+
    - Common test fixtures
    - Base class tests
    - Shared assertion utilities
 
-2. **Implementation-Specific Tests**: Each adapter implementation has its own test file that:
+1. **Implementation-Specific Tests**: Each adapter implementation has its own test file that:
+
    - Focuses on implementation-specific behavior
    - Uses fixtures and utilities from the base test file
    - Implements proper mock objects with method delegation
 
-3. **Reusable Test Functions**: Where possible, test functions are designed to be reusable across different adapter implementations.
+1. **Reusable Test Functions**: Where possible, test functions are designed to be reusable across different adapter implementations.
 
 ## Mocking the ACB Framework
 
@@ -185,6 +187,7 @@ def register_pkg() -> None:
     # Patched by FastBlocks tests
     return
 
+
 # Patched register_actions
 async def register_actions(path: AsyncPath) -> list[Action]:
     # Patched by FastBlocks tests
@@ -199,20 +202,20 @@ The test suite's `conftest.py` includes comprehensive mocking of ACB modules:
 def _patch_acb_modules() -> None:
     """Patch ACB modules to prevent filesystem access during tests."""
     # Create mock modules
-    mock_acb_module = types.ModuleType('acb')
-    mock_acb_module.__path__ = ['/mock/path/to/acb']
+    mock_acb_module = types.ModuleType("acb")
+    mock_acb_module.__path__ = ["/mock/path/to/acb"]
 
-    mock_acb_config = types.ModuleType('acb.config')
-    mock_acb_depends = types.ModuleType('acb.depends')
-    mock_acb_actions = types.ModuleType('acb.actions')
-    mock_acb_adapters = types.ModuleType('acb.adapters')
+    mock_acb_config = types.ModuleType("acb.config")
+    mock_acb_depends = types.ModuleType("acb.depends")
+    mock_acb_actions = types.ModuleType("acb.actions")
+    mock_acb_adapters = types.ModuleType("acb.adapters")
 
     # Add to sys.modules
-    sys.modules['acb'] = mock_acb_module
-    sys.modules['acb.config'] = mock_acb_config
-    sys.modules['acb.depends'] = mock_acb_depends
-    sys.modules['acb.actions'] = mock_acb_actions
-    sys.modules['acb.adapters'] = mock_acb_adapters
+    sys.modules["acb"] = mock_acb_module
+    sys.modules["acb.config"] = mock_acb_config
+    sys.modules["acb.depends"] = mock_acb_depends
+    sys.modules["acb.actions"] = mock_acb_actions
+    sys.modules["acb.adapters"] = mock_acb_adapters
 
     # Set up mock implementations
     # ... (see conftest.py for complete implementation)
@@ -224,13 +227,13 @@ To ensure tests run independently and don't interfere with each other, the test 
 
 1. **Module Patching**: System modules are patched at the beginning of each test session to prevent real imports from accessing the filesystem.
 
-2. **Fixture Isolation**: Test fixtures are designed to be isolated, with each test receiving its own instance of mock objects.
+1. **Fixture Isolation**: Test fixtures are designed to be isolated, with each test receiving its own instance of mock objects.
 
-3. **Context Managers**: Context managers are used to ensure that patches are properly applied and removed, even if tests fail.
+1. **Context Managers**: Context managers are used to ensure that patches are properly applied and removed, even if tests fail.
 
-4. **Mock Implementations**: Complete mock implementations of FastBlocks and ACB components prevent any actual configuration loading or filesystem access.
+1. **Mock Implementations**: Complete mock implementations of FastBlocks and ACB components prevent any actual configuration loading or filesystem access.
 
-5. **Stateless Tests**: Tests are designed to be stateless, not relying on global state that could be modified by other tests.
+1. **Stateless Tests**: Tests are designed to be stateless, not relying on global state that could be modified by other tests.
 
 Example of module isolation in a test file:
 
@@ -266,10 +269,10 @@ To run tests with Crackerjack:
 python -m crackerjack
 ```
 
-Or if using PDM:
+Or if using UV:
 
 ```bash
-pdm run python -m crackerjack
+uv run python -m crackerjack
 ```
 
 ### Using the AI Agent
@@ -327,8 +330,8 @@ pytest tests/adapters/templates/test_templates.py -s
 ### Benefits of Using Crackerjack
 
 1. **AI-Assisted Debugging**: The AI agent can analyze test failures and suggest fixes
-2. **Detailed Output**: Using the `-s` flag provides visibility into what's happening during test execution
-3. **Compatible with FastBlocks' Test Suite**: The test suite has been configured to work properly with Crackerjack
+1. **Detailed Output**: Using the `-s` flag provides visibility into what's happening during test execution
+1. **Compatible with FastBlocks' Test Suite**: The test suite has been configured to work properly with Crackerjack
 
 ## Troubleshooting Common Test Issues
 
@@ -351,6 +354,7 @@ ACB-related test failures are often caused by the framework attempting to access
 #### FileNotFoundError for settings files
 
 If you see errors like:
+
 ```
 FileNotFoundError: [Errno 2] No such file or directory: '/path/to/settings/debug.yml'
 ```
@@ -358,17 +362,19 @@ FileNotFoundError: [Errno 2] No such file or directory: '/path/to/settings/debug
 This usually means that ACB is trying to load actual configuration files. Solutions:
 
 1. **Patch the ACB register_pkg function**:
+
    ```bash
    python tests/patch_site_packages.py
    ```
 
-2. **Mock Config class**: Ensure tests use the `MockConfig` class instead of the real `Config` class.
+1. **Mock Config class**: Ensure tests use the `MockConfig` class instead of the real `Config` class.
 
-3. **Mock settings loading**: Add explicit patches for settings loading functions.
+1. **Mock settings loading**: Add explicit patches for settings loading functions.
 
 #### AsyncPath iterdir() issues
 
 Errors involving `iterdir()` or async iteration often look like:
+
 ```
 TypeError: 'async for' requires an object with __aiter__ method, got coroutine
 ```
@@ -377,11 +383,12 @@ This happens when `MockAsyncPath.iterdir()` doesn't properly implement the async
 
 1. Ensure your `MockAsyncPath` class properly implements the async iterator protocol as shown in the example above.
 
-2. Make sure `iterdir()` returns an object with both `__aiter__` and `__anext__` methods.
+1. Make sure `iterdir()` returns an object with both `__aiter__` and `__anext__` methods.
 
 #### ACB module import errors
 
 If you see errors like:
+
 ```
 ModuleNotFoundError: No module named 'acb.actions.encode'
 ```
@@ -390,7 +397,8 @@ The test is trying to import a real ACB module. Solutions:
 
 1. **Add comprehensive module mocking**: Make sure all ACB modules are mocked in `conftest.py`.
 
-2. **Patch imports at the module level**: In specific test files, add module-level patches:
+1. **Patch imports at the module level**: In specific test files, add module-level patches:
+
    ```python
    # At the top of your test file
    import sys
@@ -398,10 +406,10 @@ The test is trying to import a real ACB module. Solutions:
    from unittest.mock import MagicMock
 
    # Create and patch ACB modules before other imports
-   mock_acb = types.ModuleType('acb')
+   mock_acb = types.ModuleType("acb")
    mock_acb.register_pkg = MagicMock()
-   sys.modules['acb'] = mock_acb
+   sys.modules["acb"] = mock_acb
    # ... additional module patching
    ```
 
-3. **Use the ensure_cli_module fixture**: For CLI tests, use the `ensure_cli_module` fixture which provides comprehensive mocking of the CLI's dependencies.
+1. **Use the ensure_cli_module fixture**: For CLI tests, use the `ensure_cli_module` fixture which provides comprehensive mocking of the CLI's dependencies.

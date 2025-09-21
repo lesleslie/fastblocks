@@ -38,12 +38,14 @@ FastBlocks comes with several built-in actions for web application development:
 The Gather action consolidates component discovery patterns throughout FastBlocks, providing unified interfaces for collecting routes, templates, middleware, models, and application components.
 
 #### Key Features:
+
 - **Parallel processing** with concurrency control
 - **Standardized error handling** and retry logic
 - **Unified caching** strategies across components
 - **Adapter integration** through protocols
 
 #### Usage Example:
+
 ```python
 from fastblocks.actions.gather import gather
 
@@ -75,12 +77,14 @@ print(f"Loaded {app_result.total_components} application components")
 The Sync action provides bidirectional synchronization between filesystem and cloud storage with intelligent conflict resolution and cache consistency management.
 
 #### Key Features:
+
 - **Bidirectional sync** with configurable conflict resolution
 - **Incremental sync** based on modification times and content hashes
 - **Atomic operations** with backup capability
 - **Cache coordination** and invalidation
 
 #### Usage Example:
+
 ```python
 from fastblocks.actions.sync import sync
 
@@ -104,12 +108,14 @@ print(f"Refreshed {len(cache_result.invalidated_keys)} cache entries")
 The Minify action provides code and asset optimization for web applications, reducing file sizes for better performance.
 
 #### Key Features:
+
 - **HTML minification** with whitespace and comment removal
 - **CSS optimization** with redundancy elimination
 - **JavaScript compression** with safe transformations
 - **Preserves functionality** while reducing size
 
 #### Usage Example:
+
 ```python
 from fastblocks.actions.minify import minify
 
@@ -133,11 +139,13 @@ minified_js = minify.js(js_content)
 FastBlocks actions follow a semantic pattern inspired by ACB's action system:
 
 ### Semantic Naming
+
 - **Actions are verbs**: `gather`, `sync`, `minify`
 - **Methods are operations**: `.routes()`, `.templates()`, `.cache()`
 - **Clear intent**: Each method has a specific, obvious purpose
 
 ### Adapter Awareness
+
 Actions work with adapters through protocols and dynamic imports:
 
 ```python
@@ -154,7 +162,9 @@ from fastblocks.adapters.templates.jinja2 import ChoiceLoader
 ```
 
 ### Error Resilience
+
 All actions include:
+
 - **Comprehensive error handling** with meaningful messages
 - **Retry logic** with exponential backoff
 - **Partial success** strategies for batch operations
@@ -163,6 +173,7 @@ All actions include:
 ## Best Practices
 
 ### 1. Use Semantic Interfaces
+
 ```python
 # ✅ Semantic and clear
 await gather.routes()
@@ -175,6 +186,7 @@ await transfer_files("templates", "bidirectional")
 ```
 
 ### 2. Handle Results Properly
+
 ```python
 result = await gather.templates()
 
@@ -188,6 +200,7 @@ print(f"Successfully gathered {result.total_components} template components")
 ```
 
 ### 3. Use Strategy Configuration
+
 ```python
 from fastblocks.actions.gather import GatherStrategy
 
@@ -195,13 +208,14 @@ strategy = GatherStrategy(
     parallel=True,
     max_concurrent=5,
     timeout=30.0,
-    error_strategy=ErrorStrategy.PARTIAL_SUCCESS
+    error_strategy=ErrorStrategy.PARTIAL_SUCCESS,
 )
 
 result = await gather.routes(strategy=strategy)
 ```
 
 ### 4. Leverage Caching
+
 ```python
 # Actions automatically cache results based on parameters
 result1 = await gather.routes()  # Executes gathering
@@ -209,6 +223,7 @@ result2 = await gather.routes()  # Returns cached result
 
 # Clear cache when needed
 from fastblocks.actions.gather.strategies import clear_cache
+
 clear_cache("routes:base:adapters")
 ```
 
@@ -217,6 +232,7 @@ clear_cache("routes:base:adapters")
 FastBlocks follows the ACB semantic action pattern. Create custom actions by:
 
 ### 1. Directory Structure
+
 ```
 myproject/
 ├── actions/
@@ -227,9 +243,11 @@ myproject/
 ```
 
 ### 2. Action Implementation
+
 ```python
 # myproject/actions/validate/__init__.py
 __all__ = ["validate"]
+
 
 class Validate:
     """Semantic validate action for data validation operations."""
@@ -238,7 +256,8 @@ class Validate:
     def email(email: str) -> bool:
         """Validate an email address."""
         import re
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return bool(re.match(pattern, email))
 
     @staticmethod
@@ -247,11 +266,13 @@ class Validate:
         # Implementation with async HTTP check
         return True
 
+
 # Export semantic action instance
 validate = Validate()
 ```
 
 ### 3. Usage
+
 ```python
 from myproject.actions.validate import validate
 
@@ -260,7 +281,9 @@ is_accessible = await validate.url("https://example.com")
 ```
 
 ### 4. Documentation
+
 Create a `README.md` following the pattern of existing actions with:
+
 - Clear overview and features
 - Usage examples with code
 - API reference with parameters and return types
@@ -269,6 +292,6 @@ Create a `README.md` following the pattern of existing actions with:
 
 ## Related Resources
 
-- [ACB Actions Documentation](https://github.com/fastblocks/acb/tree/main/acb/actions)
+- [ACB Actions Documentation](https://github.com/lesleslie/acb/tree/main/acb/actions)
 - [FastBlocks Adapters Documentation](../adapters/README.md)
 - [FastBlocks Core Documentation](../README.md)

@@ -1,6 +1,17 @@
+"""SQLAdmin Adapter for FastBlocks.
+
+Provides administrative interface using SQLAdmin for database model management.
+Includes automatic model discovery and registration with template integration.
+
+Author: lesleslie <les@wedgwoodwebworks.com>
+Created: 2025-01-12
+"""
+
 import typing as t
 from contextlib import suppress
+from uuid import UUID
 
+from acb.adapters import AdapterStatus
 from acb.depends import depends
 from starlette.applications import Starlette
 from fastblocks.applications import FastBlocks
@@ -41,6 +52,9 @@ class Admin(AdminBase):
                 for model in admin_models:
                     self._sqladmin.add_view(model)
 
+
+MODULE_ID = UUID("01937d86-7f5d-7e6f-b120-4567890123de")
+MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
     depends.set(Admin)

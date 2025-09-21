@@ -1,8 +1,13 @@
-"""Settings file synchronization between filesystem and cloud storage."""
+"""Settings file synchronization between filesystem and cloud storage.
+
+Settings sync is intentionally limited to filesystem and cloud storage only.
+Unlike templates, settings are not cached for security and consistency reasons.
+"""
 
 import typing as t
 from pathlib import Path
 
+import yaml
 from acb.debug import debug
 from anyio import Path as AsyncPath
 
@@ -38,13 +43,16 @@ async def sync_settings(
     settings_path: AsyncPath | None = None,
     adapter_names: list[str] | None = None,
     strategy: SyncStrategy | None = None,
-    storage_bucket: str = "settings",
+    storage_bucket: str | None = None,
     reload_config: bool = True,
 ) -> SettingsSyncResult:
     config = _prepare_settings_sync_config(settings_path, strategy)
     result = SettingsSyncResult()
 
-    storage = await _initialize_settings_storage(result)
+    if storage_bucket is None:
+        storage_bucket = await _get_default_settings_bucket()
+
+    storage = await _initialize_storage_only(result)
     if not storage:
         return result
 
@@ -85,7 +93,7 @@ def _prepare_settings_sync_config(
     }
 
 
-async def _initialize_settings_storage(result: SettingsSyncResult) -> t.Any | None:
+async def _initialize_storage_only(result: SettingsSyncResult) -> t.Any | None:
     try:
         from acb.depends import depends
 
@@ -98,6 +106,24 @@ async def _initialize_settings_storage(result: SettingsSyncResult) -> t.Any | No
     except Exception as e:
         result.errors.append(e)
         return None
+
+
+async def _get_default_settings_bucket() -> str:
+    try:
+        storage_config_path = AsyncPath("settings/storage.yml")
+        if await storage_config_path.exists():
+            content = await storage_config_path.read_text()
+            config = yaml.safe_load(content)
+            if isinstance(config, dict):
+                bucket_name = config.get("buckets", {}).get("settings", "settings")
+            else:
+                bucket_name = "settings"
+            debug(f"Using settings bucket from config: {bucket_name}")
+            return bucket_name
+    except Exception as e:
+        debug(f"Could not load storage config, using default: {e}")
+    debug("Using fallback settings bucket: settings")
+    return "settings"
 
 
 async def _sync_settings_files(

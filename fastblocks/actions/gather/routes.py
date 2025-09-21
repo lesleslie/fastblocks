@@ -7,6 +7,7 @@ from pathlib import Path
 
 from acb.adapters import get_adapters, root_path
 from acb.debug import debug
+from acb.depends import depends
 from anyio import Path as AsyncPath
 from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 
@@ -265,7 +266,7 @@ def create_default_routes() -> list[RouteType]:
             fromlist=["Routes"],
         )
         Routes = routes_module.Routes
-        routes_instance = Routes()
+        routes_instance = depends.get("routes") or Routes()
         return [
             Route("/favicon.ico", endpoint=routes_instance.favicon, methods=["GET"]),
             Route("/robots.txt", endpoint=routes_instance.robots, methods=["GET"]),

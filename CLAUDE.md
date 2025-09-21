@@ -10,18 +10,20 @@ FastBlocks is an asynchronous web application framework, inspired by FastAPI and
 
 - **Starlette Foundation**: FastBlocks extends Starlette's application class and middleware system
 - **ACB Integration**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), providing dependency injection, configuration management, and pluggable components
+  - **ACB Version Compatibility**: FastBlocks v0.14.0+ requires ACB v0.19.0+
+  - **See ACB CLAUDE.md**: For detailed ACB patterns, configuration, and troubleshooting
 - **Template-Focused**: Advanced asynchronous Jinja2 template system with fragments and partials support using jinja2-async-environment
+- **HTMY Integration**: Built-in support for HTMY components, enabling Python-based component creation alongside Jinja2 templates
 - **Adapters Pattern**: Pluggable components for authentication, admin interfaces, routing, templates, etc.
 - **HTMX Integration**: First-class support for HTMX to create dynamic interfaces with server-side rendering
 - **Direct ACB Imports** (v0.13.2+): Simplified dependency injection using direct ACB imports instead of wrapper system
+- **Adapter Metadata** (v0.14.0+): All adapters include static MODULE_ID and MODULE_STATUS for ACB 0.19.0 compliance
 
 ## Directory Structure
 
-The project is organized into these main components:
-
 ```
 fastblocks/
-├── actions/         # Utility functions (minify)
+├── actions/         # Utility functions (gather, sync, query, minify)
 ├── adapters/        # Integration modules for external systems
 │   ├── app/         # Application configuration
 │   ├── auth/        # Authentication adapters
@@ -40,217 +42,315 @@ fastblocks/
 
 ## Development Commands
 
-### Running Tests
+### Essential Commands
 
 ```bash
-# Run all tests
-python -m pytest
+# Quality verification (MANDATORY before task completion)
+python -m crackerjack -t --ai-agent    # AI-optimized test and quality checks
 
-# Run specific tests
-python -m pytest tests/adapters/templates/
+# Testing
+python -m pytest                       # Run all tests
+python -m pytest --cov=fastblocks      # Run with coverage
+python -m pytest -v                    # Verbose test output
+python -m pytest -m unit               # Unit tests only
+python -m pytest -m integration        # Integration tests only
+python -m pytest tests/adapters/templates/  # Run specific test directory
+python -m pytest --timeout=300         # Set test timeout (configured in pyproject.toml)
 
-# Run with coverage
-python -m pytest --cov=fastblocks
+# Code quality
+ruff check --fix                       # Lint with automatic fixes
+ruff format                            # Format code
+pyright                                # Type checking
+pre-commit run --all-files             # Run all pre-commit hooks
 
-# Run a single test file
-python -m pytest tests/test_cli.py
+# FastBlocks CLI
+python -m fastblocks create            # Create new project
+python -m fastblocks dev               # Development server with hot reload
+python -m fastblocks dev --granian     # Development with Granian server
+python -m fastblocks run               # Production server
+python -m fastblocks run --granian     # Production with Granian server
+python -m fastblocks components        # Show available components
+python -m fastblocks version           # Show FastBlocks version
 
-# Run tests with output
-python -m pytest -s
+# Package management (UV-based)
+uv sync                                # Sync dependencies from uv.lock
+uv add <package>                       # Add new dependency
+uv remove <package>                    # Remove dependency
+uv build                               # Build package
+uv pip install -e .                    # Development install
 ```
 
-### Code Quality Tools
+### AI-Optimized Tools
+
+FastBlocks includes specialized configurations for AI assistants:
 
 ```bash
-# Run linting with ruff
-ruff check
-
-# Format code with ruff
-ruff format
-
-# Run type checking
-pyright
-
-# Run full pre-commit checks
+# Pre-commit hooks (standard configuration)
 pre-commit run --all-files
+
+# Development dependencies include AI tools
+uv add crackerjack --group dev          # Comprehensive code quality
+uv add session-mgmt-mcp --group dev     # Session management
+uv add pydoll-mcp --group dev           # Python development tools
 ```
 
-### FastBlocks CLI Commands
+**Features**: Comprehensive code quality checks, session management, AI-optimized development tools.
 
-```bash
-# Create a new FastBlocks project
-python -m fastblocks create
+## FastBlocks Native Features
 
-# Run development server with hot reload
-python -m fastblocks dev
+### HTMX Integration (Native Implementation)
 
-# Run production server
-python -m fastblocks run
-
-# Show available components and adapters
-python -m fastblocks components
-```
-
-### Testing with Crackerjack
-
-```bash
-# Run tests with AI assistance
-python -m crackerjack --ai-agent
-
-# Show output during test execution
-python -m crackerjack -s
-```
-
-## Important Notes for Development
-
-1. **Testing Guidelines**:
-   - Tests should never create actual files or directories
-   - Use the mocking framework provided in the project
-   - Ensure proper method delegation in mock classes
-
-2. **Code Style**:
-   - Project uses ruff for linting and formatting
-   - Uses Google docstring format
-   - Target Python version is 3.13+
-
-3. **Dependency Management**:
-   - Project uses PDM for dependency management
-   - Also supports uv for lockfile generation
-
-4. **Type Safety**:
-   - Project uses strict typing with pyright
-   - Type annotations are added with autotyping
-
-5. **Template System**:
-   - FastBlocks uses `[[` and `]]` for template variables instead of `{{` and `}}`
-   - Templates are rendered asynchronously
-
-## Code Quality Compliance
-
-When generating code, AI assistants MUST follow these standards to ensure compliance with Refurb and Bandit pre-commit hooks:
-
-### Refurb Standards (Modern Python Patterns)
-
-**Use modern syntax and built-ins:**
-- Use `pathlib.Path` instead of `os.path` operations
-- Use `str.removeprefix()` and `str.removesuffix()` instead of string slicing
-- Use `itertools.batched()` for chunking sequences (Python 3.12+)
-- Prefer `match` statements over complex `if/elif` chains
-- Use `|` for union types instead of `Union` from typing
-- Use `dict1 | dict2` for merging instead of `{**dict1, **dict2}`
-
-**Use efficient built-in functions:**
-- Use `any()` and `all()` instead of manual boolean loops
-- Use list/dict comprehensions over manual loops when appropriate
-- Use `enumerate()` instead of manual indexing with `range(len())`
-- Use `zip()` for parallel iteration instead of manual indexing
-
-**Resource management:**
-- Always use context managers (`with` statements) for file operations
-- Use `tempfile` module for temporary files instead of manual paths
-- Prefer `subprocess.run()` over `subprocess.Popen()` when possible
-
-### Bandit Security Standards
-
-**Never use dangerous functions:**
-- Avoid `eval()`, `exec()`, or `compile()` with any user input
-- Never use `subprocess.shell=True` or `os.system()`
-- Don't use `pickle` with untrusted data
-- Avoid `yaml.load()` - use `yaml.safe_load()` instead
-
-**Cryptography and secrets:**
-- Use `secrets` module for cryptographic operations, never `random`
-- Never hardcode passwords, API keys, or secrets in source code
-- Use environment variables or secure configuration for sensitive data
-- Use `hashlib` with explicit algorithms, avoid MD5/SHA1 for security
-
-**File and path security:**
-- Always validate file paths to prevent directory traversal
-- Use `tempfile.mkstemp()` instead of predictable temporary file names
-- Always specify encoding when opening files
-- Validate all external inputs before processing
-
-**Database and injection prevention:**
-- Use parameterized queries, never string concatenation for SQL
-- Validate and sanitize all user inputs
-- Use prepared statements for database operations
-
-### Integration with Pre-commit Hooks
-
-These standards align with the project's pre-commit hooks:
-- **Refurb**: Automatically suggests modern Python patterns
-- **Bandit**: Scans for security vulnerabilities
-- **Pyright**: Enforces type safety
-- **Ruff**: Handles formatting and additional linting
-
-By following these guidelines during code generation, AI assistants will produce code that passes all quality checks without requiring manual fixes.
-
-## Recent Changes and Best Practices (v0.13.2+)
-
-### Dependency Management (Breaking Change)
-FastBlocks now uses **direct ACB imports** instead of the wrapper system:
+FastBlocks includes **native HTMX support** built directly into the framework:
 
 ```python
-# OLD pattern (removed in v0.13.2)
-from ...dependencies import get_acb_subset
-get_adapter, import_adapter, Config, depends = get_acb_subset(...)
+from fastblocks.htmx import HtmxDetails, HtmxRequest, HtmxResponse, is_htmx
 
-# NEW pattern (current)
-from acb.adapters import get_adapter, import_adapter
-from acb.config import Config
+# Check if request is from HTMX
+if is_htmx(request):
+    return HtmxResponse(content="<div>HTMX Content</div>")
+
+# Response helpers
+return htmx_trigger("refresh-list", content="Updated")
+return htmx_redirect("/dashboard")
+return htmx_refresh()
+```
+
+**Key Features**: Native implementation, HTMX middleware, enhanced request objects, response helpers, template integration.
+
+### HTMY Component Integration
+
+FastBlocks includes dedicated HTMY template adapter alongside Jinja2:
+
+```python
+# Component: templates/{variant}/components/user_card.py
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass
+class UserCard:
+    name: str
+    email: str
+    avatar_url: str = "/static/default-avatar.png"
+
+    def htmy(self, context: dict[str, Any]) -> str:
+        return f'''
+        <div class="user-card">
+            <img src="{self.avatar_url}" alt="{self.name}">
+            <h3>{self.name}</h3>
+            <p>{self.email}</p>
+        </div>
+        '''
+
+
+# Usage in templates
+# [[ render_component("user_card", {"name": "John", "email": "john@example.com"}) ]]
+```
+
+### Database Models and Query Interface
+
+FastBlocks leverages ACB's universal model and query system:
+
+**Supported Models**: SQLModel, SQLAlchemy, Pydantic, msgspec, attrs, Redis-OM
+**Databases**: PostgreSQL, MySQL/MariaDB, SQLite, MongoDB, Firestore, Redis
+
+```python
 from acb.depends import depends
+
+query = depends.get("query")
+
+# Simple queries (Active Record-like)
+users = await query.for_model(User).simple.all()
+user = await query.for_model(User).simple.find(1)
+
+# Advanced query builder
+users = await (
+    query.for_model(User)
+    .advanced.where("active", True)
+    .where_gt("age", 21)
+    .order_by_desc("created_at")
+    .limit(10)
+    .all()
+)
 ```
 
-### Template System Enhancements
-- **Null Safety**: Template adapters now gracefully handle None dependencies with automatic fallbacks
-- **Enhanced Error Handling**: Better error messages and recovery in template loading
-- **Redis Bytecode Cache**: Fixed string/bytes handling in jinja2-async-environment integration
+### Actions System
 
-### CLI and Development Experience
-- **Uvicorn Logging**: Fixed duplicate logging with `log_config=None` and `propagate=False`
-- **Template Reload Exclusions**: Templates directory excluded from file watching to prevent conflicts
-- **Signal Handling**: Improved graceful shutdown with proper SIGINT/SIGTERM handling
-
-### Lazy Loading Pattern
-FastBlocks uses lazy loading for improved startup performance:
+**Gather Actions**: Unified component discovery and orchestration
 
 ```python
-from fastblocks import app, logger  # These are LazyApp and LazyLogger instances
+from fastblocks.actions.gather import gather
 
-# They initialize on first use
-@app.get("/")  # Triggers app initialization
-async def index():
-    logger.info("Request handled")  # Triggers logger initialization
+routes_result = await gather.routes()
+templates_result = await gather.templates(admin_mode=True)
 ```
 
-### Integration with Latest ACB (0.16.17+)
-- Compatible with ACB's static adapter mappings
-- Works with enhanced memory cache aiocache interface
-- Supports library mode detection for better configuration
+**Query Actions**: Automatic URL query parameter to database query conversion
 
-### Template Uptodate Fix
-After recent jinja2-async-environment fixes, template reloading no longer produces RuntimeWarnings about unawaited coroutines. The uptodate functions now properly return coroutines when called.
+```python
+from fastblocks.actions.query import UniversalQueryParser
 
-### Best Practices for Development
-1. **Always use direct ACB imports** - no more wrapper functions
-2. **Handle None dependencies** - template loaders should fallback gracefully
-3. **Use lazy loading** - import app and logger from fastblocks main module
-4. **Configure uvicorn properly** - set log_config=None in production
-5. **Exclude templates from reload** - prevents file watching conflicts
+parser = UniversalQueryParser(request, User)
+results = await parser.parse_and_execute()
+```
+
+**Sync Actions**: Multi-layer synchronization for settings, templates, and static files
+
+```python
+from fastblocks.actions.sync import sync
+
+await sync.settings(reload_config=True)
+await sync.templates()
+await sync.static()
+```
+
+### Sitemap Generation
+
+Multiple strategies: native (routes), static (predefined), dynamic (database), cached (background refresh).
+
+Configuration: `settings/sitemap.yml`
+
+```yaml
+module: "native"
+domain: "example.com"
+change_freq: "weekly"
+cache_ttl: 3600
+```
+
+## Development Guidelines
+
+### Critical Requirements
+
+1. **Testing**: Tests must never create actual files. Use provided mocking framework (MockAsyncPath, MockAdapter, etc.)
+1. **ACB Compliance**: Always use direct ACB imports (`from acb.depends import depends`)
+1. **Python Version**: Target Python 3.13+ with modern syntax (set in pyproject.toml)
+1. **Template System**: Use `[[` and `]]` delimiters, async rendering
+1. **Error Handling**: Structured exceptions with HTMX-aware responses
+1. **Package Management**: Use UV for all dependency management (not pip or PDM)
+1. **Signal Handling**: CLI includes proper signal handlers for graceful shutdown
+
+### Code Quality Standards
+
+**Modern Python Patterns (Refurb compliance)**:
+
+- Use `pathlib.Path` instead of `os.path`
+- Use `str.removeprefix()` and `str.removesuffix()`
+- Use `|` for union types instead of `Union`
+- Use `dict1 | dict2` for merging
+- Always use context managers for file operations
+
+**Security Standards (Bandit compliance)**:
+
+- Never use `eval()`, `exec()`, `subprocess.shell=True`
+- Use `secrets` module for cryptography, never `random`
+- Never hardcode secrets in source code
+- Use parameterized queries, validate all inputs
+
+**Pre-commit hooks**: Core file structure validators, UV dependency management, security checks (detect-secrets, bandit), Python quality tools (ruff, pyright, refurb, vulture, complexipy), and project formatting (pyproject-fmt, codespell).
+
+### ACB Best Practices
+
+**Critical Rules**:
+
+- All adapter `__init__.py` files MUST remain empty (except docstrings)
+- Use ACB dependency injection: `depends.get("adapter_name")`
+- Register adapters with `depends.set(MyAdapter)` in `suppress(Exception)` block
+- Include ACB 0.19.0 metadata: `MODULE_ID` (UUID7) and `MODULE_STATUS`
+
+**Common Violations to Avoid**:
+
+```python
+# ❌ WRONG
+from fastblocks.adapters.templates.jinja2 import Templates
+
+templates = Templates()
+
+# ✅ CORRECT
+from acb.depends import depends
+
+templates = depends.get("templates")
+```
+
+### Error Handling and Debugging
+
+FastBlocks implements structured exception hierarchy with HTMX-aware responses:
+
+```python
+from fastblocks.exceptions import FastBlocksException, ConfigurationError
+
+
+# HTMX requests get plain text, regular requests get HTML
+class CustomErrorHandler(ErrorHandler):
+    async def handle(self, exception, context, request):
+        if hasattr(request, "scope") and request.scope.get("htmx"):
+            return PlainTextResponse("Error message")
+        return HTMLResponse(template_content)
+```
+
+### Recent Changes (v0.14.0+)
+
+- **Direct ACB Imports**: Use `from acb.depends import depends` (no wrapper system)
+- **Template System**: Null safety, enhanced error handling, Redis bytecode cache fixes
+- **CLI Improvements**: Fixed uvicorn logging, signal handling, template reload exclusions, added Granian support
+- **Lazy Loading**: App and logger initialize on first use for better performance
+- **ACB 0.19.0 Compatibility**: Static adapter mappings, enhanced cache interface
+- **UV Package Management**: Full migration from PDM to UV for dependency management
+- **Middleware Management**: Enhanced position-based middleware system with caching
+
+### Deployment and Production
+
+**Server Options**: Uvicorn (default), Granian (high-performance)
+**Optimizations**: Brotli compression, template caching, static file optimization, async everything, connection pooling
+**Configuration**: `config.deployed = True/False` adjusts caching and debug features
 
 ## Task Completion Requirements
 
 **MANDATORY: Before marking any task as complete, AI assistants MUST:**
 
-1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-agent` to run all quality checks and tests with AI-optimized output
-2. **Fix any issues found**: Address all formatting, linting, type checking, and test failures
-3. **Re-run verification**: Ensure crackerjack passes completely (all hooks pass, all tests pass)
-4. **Document verification**: Mention that crackerjack verification was completed successfully
-
-**Why this is critical:**
-- Ensures all code meets project quality standards
-- Prevents broken code from being committed
-- Maintains consistency with project development workflow
-- Catches issues early before they become problems
+1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-agent`
+1. **Fix any issues found**: Address all formatting, linting, type checking, and test failures
+1. **Re-run verification**: Ensure crackerjack passes completely
+1. **Document verification**: Mention that crackerjack verification was completed successfully
 
 **Never skip crackerjack verification** - it's the project's standard quality gate.
+
+## Development Workflow
+
+### Project Structure Requirements
+
+- **Python 3.13+**: Strictly enforced in pyproject.toml
+- **UV Package Management**: All dependency operations use UV (uv.lock, not pdm.lock)
+- **Test Configuration**: Comprehensive pytest setup with timeout, coverage, and markers
+- **Quality Gates**: Pre-commit hooks with structured validation pipeline
+- **CLI Integration**: FastBlocks CLI with Uvicorn and Granian server support
+
+### Testing Framework
+
+FastBlocks uses pytest with comprehensive configuration:
+
+```bash
+# Test markers (defined in pyproject.toml)
+pytest -m unit          # Unit tests
+pytest -m integration   # Integration tests
+pytest -m benchmark     # Performance tests
+
+# Coverage requirements
+pytest --cov=fastblocks --cov-fail-under=42
+
+# Timeout configuration
+pytest --timeout=300    # 5-minute timeout per test
+```
+
+### Documentation Audit Requirements
+
+AI assistants must regularly audit documentation for:
+
+- Package manager consistency (UV, not PDM)
+- Python 3.13+ requirement accuracy
+- ACB integration accuracy
+- Command and URL validation
+- Template syntax correctness (`[[` `]]`)
+- CLI command accuracy (dev/run with --granian option)
+- Workflow currency
+
+When completing audits, document files reviewed, issues found, changes made, ACB compliance verification, and example testing confirmation.

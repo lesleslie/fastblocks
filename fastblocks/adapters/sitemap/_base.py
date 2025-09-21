@@ -17,6 +17,8 @@ class SitemapURL:
 
 
 class SitemapBaseSettings(Settings):
+    module: str = "native"
+    domain: str = ""
     change_freq: t.Literal[
         "always",
         "hourly",
@@ -25,7 +27,17 @@ class SitemapBaseSettings(Settings):
         "monthly",
         "yearly",
         "never",
-    ] = "hourly"
+    ] = "weekly"
+    cache_ttl: int = 3600
+
+    strategy_options: dict[str, t.Any] = {
+        "include_patterns": [],
+        "exclude_patterns": ["^/admin/.*", "^/api/.*", ".*/__.*"],
+        "static_urls": [],
+        "model_configs": [],
+        "background_refresh": True,
+        "cache_warmup": False,
+    }
 
 
 class SitemapProtocol(t.Protocol):
@@ -33,4 +45,6 @@ class SitemapProtocol(t.Protocol):
 
 
 class SitemapBase(AdapterBase):
+    category = "sitemap"
+    settings_klass = SitemapBaseSettings
     sitemap: t.Any = None

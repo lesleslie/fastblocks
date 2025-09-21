@@ -1,0 +1,161 @@
+{
+  "mcpServers": {
+    "session-mgmt": {
+      "url": "http://localhost:8678/mcp",
+      "type": "http"
+    },
+    "crackerjack": {
+      "url": "http://localhost:8676/mcp",
+      "type": "http"
+    },
+    "jetbrains": {
+      "type": "sse",
+      "url": "http://localhost:64342/sse"
+    },
+    "macos_automator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@steipete/macos-automator-mcp@0.4.1"
+      ],
+      "type": "stdio"
+    },
+    "penpot": {
+      "command": "uvx",
+      "args": ["penpot-mcp"],
+      "type": "stdio"
+    },
+    "peekaboo": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@steipete/peekaboo-mcp@2.0.3"
+      ],
+      "env": {
+        "PEEKABOO_AI_PROVIDERS": "anthropic/claude-opus-4,anthropic/claude-sonnet-4"
+      },
+      "type": "stdio"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server@1.0.6"
+      ],
+      "type": "stdio"
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@cyanheads/git-mcp-server@2.3.3"
+      ],
+      "type": "stdio"
+    },
+    "github": {
+      "url": "http://localhost:3038/mcp",
+      "type": "http"
+    },
+    "gitlab": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@zereight/mcp-gitlab@2.0.5"
+      ],
+      "type": "stdio"
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory@2025.8.4"
+      ],
+      "type": "stdio"
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking@2025.7.1"
+      ],
+      "type": "stdio"
+    },
+    "filesystem": {
+      "command": "rust-mcp-filesystem",
+      "args": [
+        "-w",
+        "/Users/les"
+      ],
+      "type": "stdio"
+    },
+    "mermaid": {
+      "url": "http://localhost:3033/mcp",
+      "type": "http"
+    },
+    "qwen-code": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "qwen-mcp-tool"
+      ],
+      "env": {},
+      "type": "stdio"
+    },
+    "gemini-cli": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "gemini-mcp-tool@1.1.4"
+      ],
+      "type": "stdio"
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@1.0.17"
+      ],
+      "type": "stdio"
+    },
+    "excalidraw": {
+      "url": "http://localhost:3032/mcp",
+      "type": "http"
+    },
+    "upstash": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/mcp-server",
+        "run"
+      ],
+      "type": "stdio"
+    },
+    "cloud-run": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "https://github.com/GoogleCloudPlatform/cloud-run-mcp"
+      ],
+      "type": "stdio"
+    },
+    "sentry": {
+      "url": "https://mcp.sentry.dev/mcp",
+      "type": "http"
+    },
+    "logfire": {
+      "command": "uvx",
+      "args": [
+        "logfire-mcp@latest"
+      ],
+      "type": "stdio"
+    },
+    "turso-cloud": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-turso-cloud"
+      ],
+      "type": "stdio"
+    }
+  }
+}

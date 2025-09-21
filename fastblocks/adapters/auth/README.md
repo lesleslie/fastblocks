@@ -53,6 +53,7 @@ Templates = import_adapter("templates")
 auth = depends.get(Auth)
 templates = depends.get(Templates)
 
+
 async def login(request):
     if request.method == "POST":
         form = await request.form()
@@ -72,9 +73,11 @@ async def login(request):
 
     return await templates.app.render_template(request, "login.html")
 
+
 async def logout(request):
     request.session.clear()
     return RedirectResponse("/")
+
 
 routes = [
     Route("/login", endpoint=login, methods=["GET", "POST"]),
@@ -89,6 +92,7 @@ You can protect routes by checking the session:
 ```python
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import RedirectResponse
+
 
 class AuthenticationMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
@@ -128,12 +132,16 @@ The Auth adapter is implemented in the following files:
 ```python
 from acb.config import Settings
 
+
 class AuthBaseSettings(Settings):
     token_id: str | None = None
     token_lifetime: int = 86400  # 24 hours
 
+
 class AuthBase(AdapterBase):
-    async def authenticate(self, username: str, password: str) -> dict[str, object] | None:
+    async def authenticate(
+        self, username: str, password: str
+    ) -> dict[str, object] | None:
         """Authenticate a user with username and password"""
         raise NotImplementedError()
 ```
@@ -154,6 +162,7 @@ import bcrypt
 
 Base = declarative_base()
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -168,8 +177,10 @@ class User(Base):
             password = password.encode("utf-8")
         return bcrypt.checkpw(password, self.password_hash.encode("utf-8"))
 
+
 class DatabaseAuthSettings(AuthBaseSettings):
     db_url: str = "sqlite:///./users.db"
+
 
 class DatabaseAuth(AuthBase):
     settings: DatabaseAuthSettings | None = None
@@ -189,11 +200,7 @@ class DatabaseAuth(AuthBase):
         try:
             user = session.query(User).filter_by(username=username).first()
             if user and user.verify_password(password):
-                return {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email
-                }
+                return {"id": user.id, "username": user.username, "email": user.email}
             return None
         finally:
             session.close()
@@ -208,11 +215,7 @@ class DatabaseAuth(AuthBase):
             ).decode("utf-8")
 
             # Create user
-            user = User(
-                username=username,
-                email=email,
-                password_hash=password_hash
-            )
+            user = User(username=username, email=email, password_hash=password_hash)
 
             session.add(user)
             session.commit()
@@ -230,9 +233,11 @@ from datetime import datetime, timedelta
 from redis.asyncio import Redis
 from fastblocks.adapters.auth._base import AuthBase, AuthBaseSettings
 
+
 class RedisSessionSettings(AuthBaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     session_prefix: str = "session:"
+
 
 class RedisSessionAuth(AuthBase):
     settings: RedisSessionSettings | None = None
@@ -256,14 +261,12 @@ class RedisSessionAuth(AuthBase):
         session_data = {
             "user": user_data,
             "created_at": datetime.now().isoformat(),
-            "expires_at": expiry.isoformat()
+            "expires_at": expiry.isoformat(),
         }
 
         # Save to Redis
         await self.redis.set(
-            session_key,
-            json.dumps(session_data),
-            ex=self.settings.token_lifetime
+            session_key, json.dumps(session_data), ex=self.settings.token_lifetime
         )
 
         return session_id
@@ -304,9 +307,11 @@ from datetime import datetime, timedelta
 from fastblocks.adapters.auth._base import AuthBase, AuthBaseSettings
 from pydantic import SecretStr
 
+
 class JWTSettings(AuthBaseSettings):
     secret_key: SecretStr = SecretStr("change-me-in-production")
     algorithm: str = "HS256"
+
 
 class JWTAuth(AuthBase):
     settings: JWTSettings | None = None
@@ -324,14 +329,14 @@ class JWTAuth(AuthBase):
             "sub": str(user_data["id"]),
             "user": user_data,
             "exp": expiry.timestamp(),
-            "iat": datetime.now().timestamp()
+            "iat": datetime.now().timestamp(),
         }
 
         # Encode token
         token = jwt.encode(
             payload,
             self.settings.secret_key.get_secret_value(),
-            algorithm=self.settings.algorithm
+            algorithm=self.settings.algorithm,
         )
 
         return token
@@ -345,7 +350,7 @@ class JWTAuth(AuthBase):
             payload = jwt.decode(
                 token,
                 self.settings.secret_key.get_secret_value(),
-                algorithms=[self.settings.algorithm]
+                algorithms=[self.settings.algorithm],
             )
 
             return payload["user"]
@@ -367,6 +372,7 @@ from fastblocks.adapters.auth._base import AuthBase, AuthBaseSettings
 from pydantic import SecretStr
 import httpx
 
+
 class OAuthSettings(AuthBaseSettings):
     client_id: str = ""
     client_secret: SecretStr = SecretStr("")
@@ -374,6 +380,7 @@ class OAuthSettings(AuthBaseSettings):
     auth_url: str = ""
     token_url: str = ""
     userinfo_url: str = ""
+
 
 class OAuth(AuthBase):
     settings: OAuthSettings | None = None
@@ -395,8 +402,8 @@ class OAuth(AuthBase):
                 "client_secret": self.settings.client_secret.get_secret_value(),
                 "code": code,
                 "redirect_uri": self.settings.redirect_uri,
-                "grant_type": "authorization_code"
-            }
+                "grant_type": "authorization_code",
+            },
         )
 
         if token_data.status_code != 200:
@@ -406,8 +413,7 @@ class OAuth(AuthBase):
 
         # Get user info
         user_data = await self.http_client.get(
-            self.settings.userinfo_url,
-            headers={"Authorization": f"Bearer {token}"}
+            self.settings.userinfo_url, headers={"Authorization": f"Bearer {token}"}
         )
 
         if user_data.status_code != 200:
