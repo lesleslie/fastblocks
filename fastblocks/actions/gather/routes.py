@@ -61,7 +61,7 @@ async def gather_routes(
 
     result = RouteGatherResult()
 
-    tasks = []
+    tasks: list[t.Coroutine[t.Any, t.Any, t.Any]] = []
 
     if "adapters" in sources and include_adapters:
         tasks.append(_gather_adapter_routes(patterns, strategy))
@@ -98,7 +98,7 @@ async def _gather_adapter_routes(
     patterns: list[str],
     strategy: GatherStrategy,
 ) -> dict[str, list[RouteType]]:
-    adapter_routes = {}
+    adapter_routes: dict[str, list[RouteType]] = {}
 
     for adapter in get_adapters():
         await _process_adapter_routes(adapter, patterns, strategy, adapter_routes)
@@ -283,7 +283,7 @@ async def validate_routes(routes: list[RouteType]) -> dict[str, t.Any]:
         "warnings": [],
         "total_checked": len(routes),
     }
-    path_patterns = set()
+    path_patterns: set[str] = set()
     for route in routes:
         _validate_single_route(route, validation, path_patterns)
 

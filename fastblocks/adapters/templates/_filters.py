@@ -2,11 +2,10 @@ import hashlib
 import typing as t
 from urllib.parse import quote_plus
 
-from acb.config import Config
 from acb.depends import depends
 from fastblocks.actions.minify import minify
 
-_minification_cache = {}
+_minification_cache: dict[str, str | bytes | bytearray] = {}
 _cache_max_size = 1000
 
 
@@ -32,13 +31,21 @@ def _cached_minify(
 
 
 class Filters:
-    config: Config = depends()
+    config: t.Any = None
+
+    def __init__(self) -> None:
+        try:
+            self.config = depends.get("config")
+        except Exception:
+            self.config = None
 
     @classmethod
     def get_templates(cls) -> t.Any:
-        if not hasattr(cls, "_templates"):
-            cls._templates = depends.get("templates")
-        return cls._templates
+        _templates = getattr(cls, "_templates", None)
+        if _templates is None:
+            _templates = depends.get("templates")
+            setattr(cls, "_templates", _templates)
+        return _templates
 
     @staticmethod
     def map_src(address: str) -> str:

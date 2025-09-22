@@ -109,12 +109,13 @@ class DefaultErrorHandler(ErrorHandler):
         templates = safe_depends_get("templates", _exception_cache)
         if templates:
             with suppress(Exception):
-                return await templates.app.render_template(
+                result = await templates.app.render_template(
                     request,
                     "index.html",
                     status_code=status_code,
                     context={"page": str(status_code)},
                 )
+                return result  # type: ignore[no-any-return]
 
         return PlainTextResponse(content=message, status_code=status_code)
 
@@ -140,7 +141,7 @@ def safe_depends_get(
     return cache_dict[key]
 
 
-_exception_cache = {}
+_exception_cache: dict[t.Any, t.Any] = {}
 
 
 async def handle_exception(request: HtmxRequest, exc: HTTPException) -> Response:

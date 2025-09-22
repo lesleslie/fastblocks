@@ -101,7 +101,7 @@ def _check_cache(
     if cache_key and strategy.cache_strategy != CacheStrategy.NO_CACHE:
         if cached_result := _memory_cache.get(cache_key):
             debug(f"Cache hit for {cache_key}")
-            return cached_result
+            return t.cast(GatherResult, cached_result)
     return None
 
 

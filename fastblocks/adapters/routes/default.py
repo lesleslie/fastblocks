@@ -18,6 +18,8 @@ Requirements:
 
 Usage:
 ```python
+import typing as t
+
 from acb.depends import depends
 from acb.adapters import import_adapter
 
@@ -79,7 +81,7 @@ class FastBlocksEndpoint(HTTPEndpoint):
 
 
 class Index(FastBlocksEndpoint):
-    @depends.inject
+    @depends.inject  # type: ignore[misc]
     async def get(self, request: HtmxRequest | Request) -> Response:
         debug(request)
         path_params = getattr(request, "path_params", {})
@@ -101,12 +103,13 @@ class Index(FastBlocksEndpoint):
                 context[f"{model_name}_list"] = await parser.parse_and_execute()
                 context[f"{model_name}_count"] = await parser.get_count()
         try:
-            return await self.templates.render_template(
+            result = await self.templates.render_template(
                 request,
                 template,
                 headers=headers,
                 context=context,
             )
+            return result  # type: ignore[no-any-return]
         except TemplateNotFound:
             raise HTTPException(status_code=404)
 
@@ -125,13 +128,16 @@ class Block(FastBlocksEndpoint):
                 context[f"{model_name}_list"] = await parser.parse_and_execute()
                 context[f"{model_name}_count"] = await parser.get_count()
         try:
-            return await self.templates.render_template(request, block, context=context)
+            result = await self.templates.render_template(
+                request, block, context=context
+            )
+            return result  # type: ignore[no-any-return]
         except TemplateNotFound:
             raise HTTPException(status_code=404)
 
 
 class Component(FastBlocksEndpoint):
-    @depends.inject
+    @depends.inject  # type: ignore[misc]
     async def get(self, request: HtmxRequest | Request) -> Response:
         debug(request)
         component_name = getattr(request, "path_params", {}).get("component", "default")
@@ -149,7 +155,10 @@ class Component(FastBlocksEndpoint):
                 raise HTTPException(
                     status_code=500, detail="HTMY adapter not available"
                 )
-            return await htmy.render_component(request, component_name, context=context)
+            result = await htmy.render_component(
+                request, component_name, context=context
+            )
+            return result  # type: ignore[no-any-return]
         except Exception as e:
             debug(f"Component '{component_name}' not found: {e}")
             raise HTTPException(status_code=404)
@@ -179,7 +188,7 @@ class Routes(RoutesBase):
         txt = "User-agent: *\nDisallow: /dashboard/\nDisallow: /blocks/"
         return PlainTextResponse(txt, 200)
 
-    @depends.inject
+    @depends.inject  # type: ignore[misc]
     async def init(self) -> None:
         self.routes.extend(
             [

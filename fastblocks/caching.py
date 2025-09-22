@@ -31,14 +31,14 @@ def _safe_log(logger: t.Any, level: str, message: str) -> None:
 
 _CacheClass = None
 
-_hasher_pool = local()
+_hasher_pool: local = local()
 
 _str_encode = str.encode
 _base64_encodebytes = base64.encodebytes
 _base64_decodebytes = base64.decodebytes
 
 
-def _get_hasher():
+def _get_hasher() -> t.Any:
     if not hasattr(_hasher_pool, "hasher"):
         _hasher_pool.hasher = hashlib.md5(usedforsecurity=False)
     else:
@@ -99,13 +99,18 @@ class CacheRules:
             if isinstance(rule.match, str | re.Pattern)
             else list(rule.match)
         )
-        for item in match:
-            if isinstance(item, re.Pattern):
-                if item.match(request.url.path):
-                    return True
-            elif item in ("*", request.url.path):
+        return _check_rule_match(match, request.url.path)
+
+
+def _check_rule_match(match: list[str | re.Pattern[str]], path: str) -> bool:
+    """Check if any rule matches the request path."""
+    for item in match:
+        if isinstance(item, re.Pattern):
+            if item.match(path):
                 return True
-        return False
+        elif item in ("*", path):
+            return True
+    return False
 
     @staticmethod
     def response_matches_rule(
@@ -114,13 +119,20 @@ class CacheRules:
         request: Request,
         response: Response,
     ) -> bool:
+        # First check if request matches the rule
         if not CacheRules.request_matches_rule(rule, request=request):
             return False
-        if rule.status is not None:
-            statuses = [rule.status] if isinstance(rule.status, int) else rule.status
-            if response.status_code not in statuses:
-                return False
-        return True
+        # Then check if response status matches
+        return _check_response_status_match(rule, response)
+
+
+def _check_response_status_match(rule: Rule, response: Response) -> bool:
+    """Check if response status code matches the rule."""
+    if rule.status is not None:
+        statuses = [rule.status] if isinstance(rule.status, int) else rule.status
+        if response.status_code not in statuses:
+            return False
+    return True
 
     @staticmethod
     def get_rule_matching_request(
@@ -158,20 +170,14 @@ class CacheRules:
         )
 
 
-def request_matches_rule(rule: Rule, *, request: Request) -> bool:
-    return CacheRules.request_matches_rule(rule, request=request)
-
-
-def response_matches_rule(rule: Rule, *, request: Request, response: Response) -> bool:
-    return CacheRules.response_matches_rule(rule, request=request, response=response)
-
-
 def get_rule_matching_request(
     rules: Sequence[Rule],
     *,
     request: Request,
 ) -> Rule | None:
-    return CacheRules.get_rule_matching_request(rules, request=request)
+    method = getattr(CacheRules, "get_rule_matching_request")
+    result = method(rules, request=request)
+    return t.cast(Rule | None, result)
 
 
 def get_rule_matching_response(
@@ -180,11 +186,21 @@ def get_rule_matching_response(
     request: Request,
     response: Response,
 ) -> Rule | None:
-    return CacheRules.get_rule_matching_response(
-        rules,
-        request=request,
-        response=response,
-    )
+    method = getattr(CacheRules, "get_rule_matching_response")
+    result = method(rules, request=request, response=response)
+    return t.cast(Rule | None, result)
+
+
+def request_matches_rule(rule: Rule, *, request: Request) -> bool:
+    method = getattr(CacheRules, "request_matches_rule")
+    result = method(rule, request=request)
+    return t.cast(bool, result)
+
+
+def response_matches_rule(rule: Rule, *, request: Request, response: Response) -> bool:
+    method = getattr(CacheRules, "response_matches_rule")
+    result = method(rule, request=request, response=response)
+    return t.cast(bool, result)
 
 
 class CacheDirectives(t.TypedDict, total=False):
@@ -211,11 +227,48 @@ async def set_in_cache(
     cache: t.Any = None,
     logger: t.Any = None,
 ) -> None:
-    if cache is None or logger is None:
-        if cache is None:
-            cache = depends.get("cache")
-        if logger is None:
-            logger = depends.get("logger")
+    # Initialize dependencies if not provided
+    cache, logger = _init_cache_dependencies(cache, logger)
+
+    # Validate response can be cached
+    _validate_response_cacheable(response, request, logger)
+
+    # Find matching rule for caching
+    rule = get_rule_matching_response(rules, request=request, response=response)
+    if not rule:
+        _safe_log(logger, "debug", "response_not_cacheable reason=rule")
+        raise ResponseNotCachable(response)
+
+    # Calculate TTL and max age
+    ttl, max_age = _calculate_cache_ttl(rule, cache, logger)
+
+    # Set cache headers
+    _set_cache_headers(response, max_age, logger)
+
+    # Generate cache key and serialize response
+    cache_key = await learn_cache_key(request, response, cache=cache)
+    serialized_response = serialize_response(response)
+
+    # Store in cache
+    await _store_in_cache(cache, cache_key, serialized_response, ttl, logger)
+
+    # Update response header
+    response.headers["X-Cache"] = "miss"
+
+
+def _init_cache_dependencies(cache: t.Any, logger: t.Any) -> tuple[t.Any, t.Any]:
+    """Initialize cache and logger dependencies."""
+    if cache is None:
+        cache = depends.get("cache")
+    if logger is None:
+        logger = depends.get("logger")
+    return cache, logger
+
+
+def _validate_response_cacheable(
+    response: Response, request: Request, logger: t.Any
+) -> None:
+    """Validate that a response can be cached."""
     if response.status_code not in cacheable_status_codes:
         _safe_log(logger, "debug", "response_not_cacheable reason=status_code")
         raise ResponseNotCachable(response)
@@ -226,27 +279,41 @@ async def set_in_cache(
             "response_not_cacheable reason=cookies_for_cookieless_request",
         )
         raise ResponseNotCachable(response)
-    rule = get_rule_matching_response(rules, request=request, response=response)
-    if not rule:
-        _safe_log(logger, "debug", "response_not_cacheable reason=rule")
-        raise ResponseNotCachable(response)
+
+
+def _calculate_cache_ttl(rule: Rule, cache: t.Any, logger: t.Any) -> tuple[t.Any, int]:
+    """Calculate TTL and max age for caching."""
     ttl = rule.ttl if rule.ttl is not None else cache.ttl
     if ttl == 0:
         _safe_log(logger, "debug", "response_not_cacheable reason=zero_ttl")
-        raise ResponseNotCachable(response)
+        # Create a minimal response for the exception
+        raise ResponseNotCachable(Response(content=b"", status_code=200))
+
     if ttl is None:
         max_age = one_year
         _safe_log(logger, "debug", f"max_out_ttl value={max_age!r}")
     else:
         max_age = int(ttl)
     _safe_log(logger, "debug", f"set_in_cache max_age={max_age!r}")
+    return ttl, max_age
+
+
+def _set_cache_headers(response: Response, max_age: int, logger: t.Any) -> None:
+    """Set cache headers on the response."""
     response.headers["X-Cache"] = "hit"
     cache_headers = get_cache_response_headers(response, max_age=max_age)
     _safe_log(logger, "debug", f"patch_response_headers headers={cache_headers!r}")
     response.headers.update(cache_headers)
-    cache_key = await learn_cache_key(request, response, cache=cache)
-    _safe_log(logger, "debug", f"learnt_cache_key cache_key={cache_key!r}")
-    serialized_response = serialize_response(response)
+
+
+async def _store_in_cache(
+    cache: t.Any,
+    cache_key: str,
+    serialized_response: dict[str, t.Any],
+    ttl: t.Any,
+    logger: t.Any,
+) -> None:
+    """Store serialized response in cache."""
     _safe_log(
         logger,
         "debug",
@@ -256,7 +323,6 @@ async def set_in_cache(
     if ttl is not None:
         kwargs["ttl"] = ttl
     await cache.set(key=cache_key, value=serialized_response, **kwargs)
-    response.headers["X-Cache"] = "miss"
 
 
 async def get_from_cache(
@@ -266,40 +332,65 @@ async def get_from_cache(
     cache: t.Any = None,
     logger: t.Any = None,
 ) -> Response | None:
-    if cache is None or logger is None:
-        if cache is None:
-            cache = depends.get("cache")
-        if logger is None:
-            logger = depends.get("logger")
+    # Initialize dependencies if not provided
+    cache, logger = _init_cache_dependencies(cache, logger)
+
+    # Log request details
     _safe_log(
         logger,
         "debug",
         f"get_from_cache request.url={str(request.url)!r} request.method={request.method!r}",
     )
-    if request.method not in cacheable_methods:
-        _safe_log(logger, "debug", "request_not_cacheable reason=method")
-        raise RequestNotCachable(request)
-    rule = get_rule_matching_request(rules, request=request)
+
+    # Validate request can use cache
+    _validate_request_cacheable(request, logger)
+
+    # Find matching rule
+    rule = getattr(CacheRules, "get_rule_matching_request")(rules, request=request)
     if rule is None:
         _safe_log(logger, "debug", "request_not_cacheable reason=rule")
         raise RequestNotCachable(request)
+
+    # Try to get cached response
+    return await _try_get_cached_response(request, cache, logger)
+
+
+def _validate_request_cacheable(request: Request, logger: t.Any) -> None:
+    """Validate that a request can use the cache."""
+    if request.method not in cacheable_methods:
+        _safe_log(logger, "debug", "request_not_cacheable reason=method")
+        raise RequestNotCachable(request)
+
+
+async def _try_get_cached_response(
+    request: Request, cache: t.Any, logger: t.Any
+) -> Response | None:
+    """Try to get a cached response for the request."""
+    # Try GET method first
     _safe_log(logger, "debug", "lookup_cached_response method='GET'")
     cache_key = await get_cache_key(request, method="GET", cache=cache)
-    if cache_key is None:
-        _safe_log(logger, "debug", "cache_key found=False")
-        return None
-    _safe_log(logger, "debug", f"cache_key found=True cache_key={cache_key!r}")
-    serialized_response = await cache.get(cache_key)
-    if serialized_response is None:
-        _safe_log(logger, "debug", "lookup_cached_response method='HEAD'")
-        cache_key = await get_cache_key(request, method="HEAD", cache=cache)
-        if cache_key is None:
-            return None
-        _safe_log(logger, "debug", f"cache_key found=True cache_key={cache_key!r}")
+    if cache_key is not None:
         serialized_response = await cache.get(cache_key)
-    if serialized_response is None:
-        _safe_log(logger, "debug", "cached_response found=False")
-        return None
+        if serialized_response is not None:
+            return _return_cached_response(cache_key, serialized_response, logger)
+
+    # Try HEAD method
+    _safe_log(logger, "debug", "lookup_cached_response method='HEAD'")
+    cache_key = await get_cache_key(request, method="HEAD", cache=cache)
+    if cache_key is not None:
+        serialized_response = await cache.get(cache_key)
+        if serialized_response is not None:
+            return _return_cached_response(cache_key, serialized_response, logger)
+
+    # No cached response found
+    _safe_log(logger, "debug", "cached_response found=False")
+    return None
+
+
+def _return_cached_response(
+    cache_key: str, serialized_response: t.Any, logger: t.Any
+) -> Response:
+    """Return a cached response after logging."""
     _safe_log(
         logger,
         "debug",
@@ -320,10 +411,24 @@ async def delete_from_cache(
             cache = depends.get("cache")
         if logger is None:
             logger = depends.get("logger")
+
     varying_headers_cache_key = generate_varying_headers_cache_key(url)
     varying_headers = await cache.get(varying_headers_cache_key)
     if varying_headers is None:
         return
+
+    await _delete_cache_entries(url, vary, cache, logger, varying_headers)
+    await cache.delete(varying_headers_cache_key)
+
+
+async def _delete_cache_entries(
+    url: URL,
+    vary: Headers,
+    cache: t.Any,
+    logger: t.Any,
+    varying_headers: t.Any,
+) -> None:
+    """Delete cache entries for GET and HEAD methods."""
     for method in ("GET", "HEAD"):
         cache_key = generate_cache_key(
             url,
@@ -333,10 +438,10 @@ async def delete_from_cache(
         )
         logger.debug(f"clear_cache key={cache_key!r}")
         await cache.delete(cache_key)
-    await cache.delete(varying_headers_cache_key)
 
 
 def serialize_response(response: Response) -> dict[str, t.Any]:
+    """Serialize a response for caching."""
     return {
         "content": _base64_encodebytes(response.body).decode("ascii"),
         "status_code": response.status_code,
@@ -345,6 +450,22 @@ def serialize_response(response: Response) -> dict[str, t.Any]:
 
 
 def deserialize_response(serialized_response: t.Any) -> Response:
+    """Deserialize a cached response."""
+    _validate_serialized_response(serialized_response)
+
+    content = serialized_response["content"]
+    status_code = serialized_response["status_code"]
+    headers = serialized_response["headers"]
+
+    return Response(
+        content=_base64_decodebytes(_str_encode(content, "ascii")),
+        status_code=status_code,
+        headers=headers,
+    )
+
+
+def _validate_serialized_response(serialized_response: t.Any) -> None:
+    """Validate the structure of a serialized response."""
     if not isinstance(serialized_response, dict):
         msg = f"Expected dict, got {type(serialized_response)}"
         raise TypeError(msg)
@@ -360,11 +481,6 @@ def deserialize_response(serialized_response: t.Any) -> Response:
     if not isinstance(headers, dict):
         msg = f"Expected headers to be dict, got {type(headers)}"
         raise TypeError(msg)
-    return Response(
-        content=_base64_decodebytes(_str_encode(content, "ascii")),
-        status_code=status_code,
-        headers=headers,
-    )
 
 
 async def learn_cache_key(
@@ -455,23 +571,33 @@ def generate_cache_key(
     if method not in cacheable_methods:
         return None
 
+    vary_hash = _generate_vary_hash(headers, varying_headers)
+    url_hash = _generate_url_hash(url)
+
+    return f"{config.app.name}:cached:{method}.{url_hash}.{vary_hash}"
+
+
+def _generate_vary_hash(headers: Headers, varying_headers: list[str]) -> str:
+    """Generate hash for varying headers."""
     vary_values = [
         f"{header}:{value}"
         for header in varying_headers
         if (value := headers.get(header)) is not None
     ]
 
-    vary_hash = ""
-    if vary_values:
-        hasher = _get_hasher()
-        hasher.update(_str_encode("|".join(vary_values)))
-        vary_hash = hasher.hexdigest()
+    if not vary_values:
+        return ""
 
     hasher = _get_hasher()
-    hasher.update(_str_encode(str(url)))
-    url_hash = hasher.hexdigest()
+    hasher.update(_str_encode("|".join(vary_values)))
+    return t.cast(str, hasher.hexdigest())
 
-    return f"{config.app.name}:cached:{method}.{url_hash}.{vary_hash}"
+
+def _generate_url_hash(url: URL) -> str:
+    """Generate hash for URL."""
+    hasher = _get_hasher()
+    hasher.update(_str_encode(str(url)))
+    return t.cast(str, hasher.hexdigest())
 
 
 def generate_varying_headers_cache_key(url: URL) -> str:
@@ -508,16 +634,8 @@ def patch_cache_control(
     if "max-age" in cache_control and "max_age" in kwargs:
         kwargs["max_age"] = min(int(cache_control["max-age"]), kwargs["max_age"])
 
-    if "public" in kwargs:
-        msg = "The 'public' cache control directive isn't supported yet."
-        raise NotImplementedError(
-            msg,
-        )
-    if "private" in kwargs:
-        msg = "The 'private' cache control directive isn't supported yet."
-        raise NotImplementedError(
-            msg,
-        )
+    # Check for unsupported directives
+    _check_unsupported_directives(kwargs)
 
     for key, value in kwargs.items():
         key = key.replace("_", "-")
@@ -537,6 +655,16 @@ def patch_cache_control(
         headers["Cache-Control"] = patched_cache_control
     else:
         del headers["Cache-Control"]
+
+
+def _check_unsupported_directives(kwargs: t.Any) -> None:
+    """Check for unsupported cache control directives."""
+    if "public" in kwargs:
+        msg = "The 'public' cache control directive isn't supported yet."
+        raise NotImplementedError(msg)
+    if "private" in kwargs:
+        msg = "The 'private' cache control directive isn't supported yet."
+        raise NotImplementedError(msg)
 
 
 class CacheResponder:

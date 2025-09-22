@@ -211,7 +211,9 @@ async def _get_default_templates_bucket() -> str:
             content = await storage_config_path.read_text()
             config = yaml.safe_load(content)
             if isinstance(config, dict):
-                bucket_name = config.get("buckets", {}).get("templates", "templates")
+                bucket_name = t.cast(
+                    str, config.get("buckets", {}).get("templates", "templates")
+                )
             else:
                 bucket_name = "templates"
             debug(f"Using templates bucket from config: {bucket_name}")
@@ -328,7 +330,6 @@ async def _sync_single_template(
 
     try:
         local_info = await get_file_info(Path(local_path))
-
         remote_info = await _get_storage_file_info(
             storage,
             storage_bucket,
@@ -343,52 +344,19 @@ async def _sync_single_template(
 
         debug(f"Syncing template {relative_path}: {reason}")
 
-        if strategy.direction == SyncDirection.PULL or (
-            strategy.direction == SyncDirection.BIDIRECTIONAL
-            and remote_info["exists"]
-            and (not local_info["exists"] or remote_info["mtime"] > local_info["mtime"])
-        ):
-            await _pull_template(
-                local_path,
-                storage,
-                storage_bucket,
-                storage_path,
-                strategy,
-                result,
-            )
+        # Handle sync based on direction
+        await _handle_sync_direction(
+            strategy,
+            local_info,
+            remote_info,
+            local_path,
+            storage,
+            storage_bucket,
+            storage_path,
+            result,
+        )
 
-        elif strategy.direction == SyncDirection.PUSH or (
-            strategy.direction == SyncDirection.BIDIRECTIONAL
-            and local_info["exists"]
-            and (
-                not remote_info["exists"] or local_info["mtime"] > remote_info["mtime"]
-            )
-        ):
-            await _push_template(
-                local_path,
-                storage,
-                storage_bucket,
-                storage_path,
-                strategy,
-                result,
-            )
-
-        elif (
-            strategy.direction == SyncDirection.BIDIRECTIONAL
-            and local_info["exists"]
-            and remote_info["exists"]
-        ):
-            await _handle_template_conflict(
-                local_path,
-                storage,
-                storage_bucket,
-                storage_path,
-                local_info,
-                remote_info,
-                strategy,
-                result,
-            )
-
+        # Invalidate cache if needed
         if result["synced"]:
             await _invalidate_template_cache(cache, str(relative_path), result)
 
@@ -397,6 +365,81 @@ async def _sync_single_template(
         debug(f"Error in _sync_single_template for {relative_path}: {e}")
 
     return result
+
+
+async def _handle_sync_direction(
+    strategy: SyncStrategy,
+    local_info: dict[str, t.Any],
+    remote_info: dict[str, t.Any],
+    local_path: t.Any,
+    storage: t.Any,
+    storage_bucket: str,
+    storage_path: str,
+    result: dict[str, t.Any],
+) -> None:
+    """Handle sync based on direction."""
+    if _should_pull_template(strategy, local_info, remote_info):
+        await _pull_template(
+            local_path,
+            storage,
+            storage_bucket,
+            storage_path,
+            strategy,
+            result,
+        )
+    elif _should_push_template(strategy, local_info, remote_info):
+        await _push_template(
+            local_path,
+            storage,
+            storage_bucket,
+            storage_path,
+            strategy,
+            result,
+        )
+    elif _has_bidirectional_conflict(strategy, local_info, remote_info):
+        await _handle_template_conflict(
+            local_path,
+            storage,
+            storage_bucket,
+            storage_path,
+            local_info,
+            remote_info,
+            strategy,
+            result,
+        )
+
+
+def _should_pull_template(
+    strategy: SyncStrategy, local_info: dict[str, t.Any], remote_info: dict[str, t.Any]
+) -> bool:
+    """Check if template should be pulled."""
+    return strategy.direction == SyncDirection.PULL or (
+        strategy.direction == SyncDirection.BIDIRECTIONAL
+        and remote_info["exists"]
+        and (not local_info["exists"] or remote_info["mtime"] > local_info["mtime"])
+    )
+
+
+def _should_push_template(
+    strategy: SyncStrategy, local_info: dict[str, t.Any], remote_info: dict[str, t.Any]
+) -> bool:
+    """Check if template should be pushed."""
+    return strategy.direction == SyncDirection.PUSH or (
+        strategy.direction == SyncDirection.BIDIRECTIONAL
+        and local_info["exists"]
+        and (not remote_info["exists"] or local_info["mtime"] > remote_info["mtime"])
+    )
+
+
+def _has_bidirectional_conflict(
+    strategy: SyncStrategy, local_info: dict[str, t.Any], remote_info: dict[str, t.Any]
+) -> bool:
+    """Check if there's a bidirectional conflict."""
+    return (
+        strategy.direction == SyncDirection.BIDIRECTIONAL
+        and local_info["exists"]
+        and remote_info["exists"]
+    )
 
 
 async def _get_storage_file_info(

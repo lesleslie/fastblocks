@@ -1,3 +1,5 @@
+import typing as t
+
 from minify_html import minify as min_html  # type: ignore
 from rcssmin import cssmin as min_css
 from rjsmin import jsmin as min_js
@@ -11,7 +13,7 @@ class Minify:
         if not js or js.isspace():
             return ""
         js = js.replace("}", "}\n")
-        return min_js(js)
+        return t.cast(bytearray | bytes | str, min_js(js))
 
     @staticmethod
     def html(html: str) -> str:
@@ -24,7 +26,7 @@ class Minify:
         if not css or css.isspace():
             return ""
         css = css.replace("@media (", "@media(")
-        return min_css(css)
+        return t.cast(bytearray | bytes | str, min_css(css))
 
 
 minify = Minify()

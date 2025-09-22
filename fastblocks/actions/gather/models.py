@@ -110,7 +110,7 @@ def _get_default_model_base_classes() -> list[type]:
     with suppress(ImportError):
         from pydantic import BaseModel  # type: ignore[import-untyped]
 
-        base_classes.append(BaseModel)
+        base_classes.append(BaseModel)  # type: ignore[arg-type]
 
     return base_classes
 
@@ -189,7 +189,7 @@ async def _gather_base_models(
     patterns: list[str],
     base_classes: list[type],
 ) -> dict[str, t.Any]:
-    base_models = {
+    base_models: dict[str, dict[str, t.Any]] = {
         "sql": {},
         "nosql": {},
         "metadata": {},
@@ -271,7 +271,7 @@ async def _gather_adapter_models(
     patterns: list[str],
     base_classes: list[type],
 ) -> dict[str, t.Any]:
-    adapter_models = {
+    adapter_models: dict[str, dict[str, t.Any]] = {
         "adapter_models": {},
         "metadata": {},
     }
@@ -408,7 +408,7 @@ async def _gather_custom_models(
     patterns: list[str],
     base_classes: list[type],
 ) -> dict[str, t.Any]:
-    custom_models = {
+    custom_models: dict[str, dict[str, t.Any]] = {
         "sql": {},
         "nosql": {},
         "metadata": {},
@@ -555,7 +555,7 @@ async def create_models_namespace(
         def __init__(self) -> None:
             self.sql = SQLNamespace()
             self.nosql = NoSQLNamespace()
-            self._all_models = {}
+            self._all_models: dict[str, t.Any] = {}
 
         def get_admin_models(self) -> list[type]:
             return gather_result.admin_models
@@ -610,7 +610,7 @@ def _validate_single_model(
     model_class: type,
     validation: dict[str, t.Any],
 ) -> None:
-    issues = []
+    issues: list[str] = []
 
     _check_model_definition(model_class, issues)
 

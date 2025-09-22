@@ -267,14 +267,10 @@ async def _warm_gather_cache(
     result: CacheSyncResult,
 ) -> None:
     try:
-        from fastblocks.actions.gather import (
-            gather_middleware,
-            gather_routes,
-            gather_templates,
-        )
+        from fastblocks.actions.gather import gather
 
         try:
-            routes_result = await gather_routes()
+            routes_result = await gather.routes()
             if routes_result.total_routes > 0:
                 result.warmed_keys.append("gather:routes")
                 debug("Warmed gather routes cache")
@@ -282,7 +278,7 @@ async def _warm_gather_cache(
             debug(f"Error warming routes cache: {e}")
 
         try:
-            templates_result = await gather_templates()
+            templates_result = await gather.templates()
             if templates_result.total_components > 0:
                 result.warmed_keys.append("gather:templates")
                 debug("Warmed gather templates cache")
@@ -290,7 +286,7 @@ async def _warm_gather_cache(
             debug(f"Error warming templates cache: {e}")
 
         try:
-            middleware_result = await gather_middleware()
+            middleware_result = await gather.middleware()
             if middleware_result.total_middleware > 0:
                 result.warmed_keys.append("gather:middleware")
                 debug("Warmed gather middleware cache")
@@ -431,46 +427,57 @@ async def optimize_cache(
     }
 
     try:
-        from acb.depends import depends
-
-        cache = depends.get("cache")
-
+        cache = await _get_cache_adapter(result)
         if not cache:
             result["errors"].append("Cache adapter not available")
             return result
 
-        try:
-            max_memory_bytes = max_memory_mb * 1024 * 1024
-            await cache.config_set("maxmemory", max_memory_bytes)
-            result["optimizations"].append(f"Set max memory to {max_memory_mb}MB")
-        except Exception as e:
-            result["errors"].append(f"Error setting max memory: {e}")
+        # Configure memory settings
+        await _configure_memory_settings(cache, max_memory_mb, eviction_policy, result)
 
-        try:
-            await cache.config_set("maxmemory-policy", eviction_policy)
-            result["optimizations"].append(f"Set eviction policy to {eviction_policy}")
-        except Exception as e:
-            result["errors"].append(f"Error setting eviction policy: {e}")
-
-        stats = await get_cache_stats()
-
-        if stats["hit_rate"] < 0.8:
-            result["warnings"].append(f"Low cache hit rate: {stats['hit_rate']:.2%}")
-
-        if stats["total_keys"] > 10000:
-            result["warnings"].append(f"High key count: {stats['total_keys']}")
-
-        for namespace, info in stats["namespaces"].items():
-            if info["key_count"] > 5000:
-                result["warnings"].append(
-                    f"Namespace {namespace} has {info['key_count']} keys",
-                )
+        # Analyze cache stats and generate warnings
+        await _analyze_cache_stats(result)
 
     except Exception as e:
         result["errors"].append(str(e))
         debug(f"Error optimizing cache: {e}")
 
     return result
+
+
+async def _configure_memory_settings(
+    cache: t.Any, max_memory_mb: int, eviction_policy: str, result: dict[str, t.Any]
+) -> None:
+    """Configure cache memory settings."""
+    try:
+        max_memory_bytes = max_memory_mb * 1024 * 1024
+        await cache.config_set("maxmemory", max_memory_bytes)
+        result["optimizations"].append(f"Set max memory to {max_memory_mb}MB")
+    except Exception as e:
+        result["errors"].append(f"Error setting max memory: {e}")
+
+    try:
+        await cache.config_set("maxmemory-policy", eviction_policy)
+        result["optimizations"].append(f"Set eviction policy to {eviction_policy}")
+    except Exception as e:
+        result["errors"].append(f"Error setting eviction policy: {e}")
+
+
+async def _analyze_cache_stats(result: dict[str, t.Any]) -> None:
+    """Analyze cache statistics and generate warnings."""
+    stats = await get_cache_stats()
+
+    if stats["hit_rate"] < 0.8:
+        result["warnings"].append(f"Low cache hit rate: {stats['hit_rate']:.2%}")
+
+    if stats["total_keys"] > 10000:
+        result["warnings"].append(f"High key count: {stats['total_keys']}")
+
+    for namespace, info in stats["namespaces"].items():
+        if info["key_count"] > 5000:
+            result["warnings"].append(
+                f"Namespace {namespace} has {info['key_count']} keys",
+            )
 
 
 def get_cache_sync_summary(result: CacheSyncResult) -> dict[str, t.Any]:

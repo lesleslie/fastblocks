@@ -1,0 +1,4058 @@
+[
+  {
+    "complexity": 0,
+    "file_name": "__init__.py",
+    "function_name": "Gather::application",
+    "path": "fastblocks/actions/gather/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "__init__.py",
+    "function_name": "Gather::middleware",
+    "path": "fastblocks/actions/gather/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "__init__.py",
+    "function_name": "Gather::models",
+    "path": "fastblocks/actions/gather/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "__init__.py",
+    "function_name": "Gather::routes",
+    "path": "fastblocks/actions/gather/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "__init__.py",
+    "function_name": "Gather::templates",
+    "path": "fastblocks/actions/gather/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "application.py",
+    "function_name": "ApplicationGatherResult::has_errors",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "application.py",
+    "function_name": "ApplicationGatherResult::total_components",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "application.py",
+    "function_name": "_gather_initializers",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "application.py",
+    "function_name": "gather_application",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "application.py",
+    "function_name": "_gather_application_config",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "application.py",
+    "function_name": "create_application_manager",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "application.py",
+    "function_name": "get_application_info",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "application.py",
+    "function_name": "_gather_adapter_initializers",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "application.py",
+    "function_name": "_prepare_application_gather_config",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "application.py",
+    "function_name": "_build_application_gather_tasks",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "application.py",
+    "function_name": "_gather_config",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "application.py",
+    "function_name": "ApplicationGatherResult::__init__",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "application.py",
+    "function_name": "_gather_acb_modules",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "application.py",
+    "function_name": "_collect_adapter_init_functions",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "application.py",
+    "function_name": "_gather_standard_initializers",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "application.py",
+    "function_name": "_gather_adapters_and_modules",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "application.py",
+    "function_name": "_gather_application_dependencies",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "application.py",
+    "function_name": "_process_application_gather_results",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "application.py",
+    "function_name": "initialize_application_components",
+    "path": "fastblocks/actions/gather/application.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareGatherResult::has_errors",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareGatherResult::total_middleware",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "create_middleware_manager",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "_add_error_handler_middleware",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "_build_middleware_stack",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "add_middleware_at_position",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "get_middleware_stack_info",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareGatherResult::__init__",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "middleware.py",
+    "function_name": "extract_middleware_info",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "middleware.py",
+    "function_name": "_gather_default_middleware",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "middleware.py",
+    "function_name": "_gather_custom_middleware",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "middleware.py",
+    "function_name": "gather_middleware",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "middleware.py",
+    "function_name": "_add_system_middleware",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 16,
+    "file_name": "middleware.py",
+    "function_name": "validate_middleware_stack",
+    "path": "fastblocks/actions/gather/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "models.py",
+    "function_name": "ModelGatherResult::has_errors",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "models.py",
+    "function_name": "ModelGatherResult::total_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "models.py",
+    "function_name": "_gather_admin_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "models.py",
+    "function_name": "_gather_base_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "models.py",
+    "function_name": "_get_default_model_base_classes",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "models.py",
+    "function_name": "_validate_single_model",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "models.py",
+    "function_name": "ModelGatherResult::get_all_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "models.py",
+    "function_name": "_check_duplicate_model_name",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "models.py",
+    "function_name": "_extract_models_from_file",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "models.py",
+    "function_name": "_get_module_path_from_file",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "models.py",
+    "function_name": "_process_model_gather_results",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "models.py",
+    "function_name": "_process_single_model_source_result",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "models.py",
+    "function_name": "gather_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "models.py",
+    "function_name": "_categorize_model_validation_result",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "models.py",
+    "function_name": "_check_model_definition",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "models.py",
+    "function_name": "_check_model_inheritance",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "models.py",
+    "function_name": "validate_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "models.py",
+    "function_name": "_gather_adapter_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "models.py",
+    "function_name": "_gather_custom_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "models.py",
+    "function_name": "_gather_single_adapter_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "models.py",
+    "function_name": "_is_sql_model",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "models.py",
+    "function_name": "_process_base_models_file",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "models.py",
+    "function_name": "_process_custom_models_file",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "models.py",
+    "function_name": "_store_adapter_model_metadata",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "models.py",
+    "function_name": "create_models_namespace",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "models.py",
+    "function_name": "_get_model_source_type_by_index",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "models.py",
+    "function_name": "_prepare_model_gather_config",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "models.py",
+    "function_name": "_add_custom_models_to_collection",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "models.py",
+    "function_name": "_add_models_to_base_collection",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "models.py",
+    "function_name": "_build_model_gather_tasks",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "models.py",
+    "function_name": "_extract_models_from_module",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "models.py",
+    "function_name": "_gather_models_with_exact_pattern",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "models.py",
+    "function_name": "ModelGatherResult::__init__",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "models.py",
+    "function_name": "_process_adapter_models",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "models.py",
+    "function_name": "_is_valid_model_class",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "models.py",
+    "function_name": "_gather_models_with_glob_pattern",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "models.py",
+    "function_name": "_process_base_models_directory",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "models.py",
+    "function_name": "get_model_info",
+    "path": "fastblocks/actions/gather/models.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "routes.py",
+    "function_name": "RouteGatherResult::extend_routes",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "routes.py",
+    "function_name": "RouteGatherResult::has_errors",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "routes.py",
+    "function_name": "RouteGatherResult::total_routes",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "routes.py",
+    "function_name": "_extract_routes_from_file",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "routes.py",
+    "function_name": "_gather_adapter_routes",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "routes.py",
+    "function_name": "validate_routes",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "routes.py",
+    "function_name": "_check_route_endpoint",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "routes.py",
+    "function_name": "create_default_routes",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "routes.py",
+    "function_name": "_check_route_path_duplicates",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "routes.py",
+    "function_name": "_get_module_path_from_file_path",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "routes.py",
+    "function_name": "_validate_route_objects",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "routes.py",
+    "function_name": "_validate_single_route",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "routes.py",
+    "function_name": "RouteGatherResult::__init__",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "routes.py",
+    "function_name": "_extract_routes_from_module",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "routes.py",
+    "function_name": "gather_route_patterns",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "routes.py",
+    "function_name": "_gather_base_routes",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "routes.py",
+    "function_name": "_process_adapter_routes",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "routes.py",
+    "function_name": "_gather_custom_routes",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "routes.py",
+    "function_name": "gather_routes",
+    "path": "fastblocks/actions/gather/routes.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "GatherResult::is_success",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "GatherStrategy::__init__",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "get_cache_info",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "strategies.py",
+    "function_name": "GatherResult::is_failure",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "strategies.py",
+    "function_name": "GatherResult::is_partial",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "strategies.py",
+    "function_name": "clear_cache",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "strategies.py",
+    "function_name": "gather_modules",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "strategies.py",
+    "function_name": "gather_with_strategy",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "strategies.py",
+    "function_name": "GatherResult::__init__",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "strategies.py",
+    "function_name": "_cache_result_if_needed",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "strategies.py",
+    "function_name": "_execute_tasks_with_strategy",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "strategies.py",
+    "function_name": "gather_files",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "strategies.py",
+    "function_name": "_import_module_safe",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "strategies.py",
+    "function_name": "_check_cache",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "strategies.py",
+    "function_name": "_execute_tasks_sequential",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "strategies.py",
+    "function_name": "_execute_with_retry",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "strategies.py",
+    "function_name": "_execute_tasks_parallel",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "strategies.py",
+    "function_name": "_find_files_safe",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "strategies.py",
+    "function_name": "_handle_gather_errors",
+    "path": "fastblocks/actions/gather/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "TemplateGatherResult::has_errors",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "TemplateGatherResult::total_components",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "_gather_default_extensions",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "gather_templates",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "templates.py",
+    "function_name": "_extract_filters_from_module",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "templates.py",
+    "function_name": "_gather_default_filters",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "templates.py",
+    "function_name": "_has_template_extensions_config",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "templates.py",
+    "function_name": "_is_valid_extension_class",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "templates.py",
+    "function_name": "_gather_filters",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "templates.py",
+    "function_name": "_load_config_extensions",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "templates.py",
+    "function_name": "_process_extension_paths",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "templates.py",
+    "function_name": "_build_template_gather_tasks",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "templates.py",
+    "function_name": "_extract_extension_classes_from_module",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "templates.py",
+    "function_name": "_process_template_gather_results",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "templates.py",
+    "function_name": "create_choice_loader",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "templates.py",
+    "function_name": "create_template_environment",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "templates.py",
+    "function_name": "register_template_filters",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "templates.py",
+    "function_name": "_gather_context_processors",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "templates.py",
+    "function_name": "_gather_template_globals",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "templates.py",
+    "function_name": "_prepare_template_gather_config",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "templates.py",
+    "function_name": "TemplateGatherResult::__init__",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "templates.py",
+    "function_name": "_extract_filter_functions",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "templates.py",
+    "function_name": "_extract_filters_from_class",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "templates.py",
+    "function_name": "_gather_extensions",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "templates.py",
+    "function_name": "_gather_loaders",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "templates.py",
+    "function_name": "_gather_default_context_processors",
+    "path": "fastblocks/actions/gather/templates.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "__init__.py",
+    "function_name": "Minify::css",
+    "path": "fastblocks/actions/minify/__init__.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "__init__.py",
+    "function_name": "Minify::html",
+    "path": "fastblocks/actions/minify/__init__.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "__init__.py",
+    "function_name": "Minify::js",
+    "path": "fastblocks/actions/minify/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::__init__",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_parse_pagination",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_apply_pagination",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_execute_query",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_get_query_builder",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_parse_sorting",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_process_operator_value",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_process_simple_value",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::get_pagination_info",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_convert_to_number",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_parse_filters",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::get_count",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_validate_query_requirements",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "parser.py",
+    "function_name": "get_model_for_query",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_apply_sorting",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::parse_and_execute",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_handle_simple_pattern",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "parser.py",
+    "function_name": "create_query_context",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "parser.py",
+    "function_name": "UniversalQueryParser::_apply_filters",
+    "path": "fastblocks/actions/query/parser.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "__init__.py",
+    "function_name": "Sync::cache",
+    "path": "fastblocks/actions/sync/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "__init__.py",
+    "function_name": "Sync::settings",
+    "path": "fastblocks/actions/sync/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "__init__.py",
+    "function_name": "Sync::static",
+    "path": "fastblocks/actions/sync/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "__init__.py",
+    "function_name": "Sync::templates",
+    "path": "fastblocks/actions/sync/__init__.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cache.py",
+    "function_name": "_refresh_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cache.py",
+    "function_name": "_warm_response_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cache.py",
+    "function_name": "get_cache_sync_summary",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "cache.py",
+    "function_name": "_collect_cache_info",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "cache.py",
+    "function_name": "_get_cache_adapter",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "cache.py",
+    "function_name": "CacheSyncResult::__init__",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "cache.py",
+    "function_name": "_clear_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "cache.py",
+    "function_name": "get_cache_stats",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "cache.py",
+    "function_name": "_warm_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "cache.py",
+    "function_name": "_collect_namespace_stats",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "cache.py",
+    "function_name": "_invalidate_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "cache.py",
+    "function_name": "_warm_template_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "cache.py",
+    "function_name": "invalidate_template_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "cache.py",
+    "function_name": "sync_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "cache.py",
+    "function_name": "_warm_gather_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "cache.py",
+    "function_name": "optimize_cache",
+    "path": "fastblocks/actions/sync/cache.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "settings.py",
+    "function_name": "_create_backup_result",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "settings.py",
+    "function_name": "_create_sync_result",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "settings.py",
+    "function_name": "_generate_backup_suffix",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "settings.py",
+    "function_name": "_get_file_infos",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "settings.py",
+    "function_name": "_backup_files_with_patterns",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "settings.py",
+    "function_name": "_backup_single_file",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "settings.py",
+    "function_name": "_execute_sync_operation",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "settings.py",
+    "function_name": "_has_bidirectional_conflict",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "settings.py",
+    "function_name": "_reload_configuration",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "settings.py",
+    "function_name": "_validate_yaml_content",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "settings.py",
+    "function_name": "SettingsSyncResult::__init__",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "settings.py",
+    "function_name": "_prepare_settings_sync_config",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "settings.py",
+    "function_name": "_should_sync_file",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "settings.py",
+    "function_name": "_sync_settings_files",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "settings.py",
+    "function_name": "_validate_local_yaml",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "settings.py",
+    "function_name": "_backup_files_with_pattern",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "settings.py",
+    "function_name": "_discover_files_with_pattern",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "settings.py",
+    "function_name": "_discover_settings_files",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "settings.py",
+    "function_name": "_handle_config_reload",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "settings.py",
+    "function_name": "_process_settings_file",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "settings.py",
+    "function_name": "_push_settings",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "settings.py",
+    "function_name": "_should_pull_settings",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "settings.py",
+    "function_name": "_should_push_settings",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "settings.py",
+    "function_name": "_initialize_storage_only",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "settings.py",
+    "function_name": "_accumulate_settings_sync_results",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "settings.py",
+    "function_name": "sync_settings",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "settings.py",
+    "function_name": "_get_default_settings_bucket",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "settings.py",
+    "function_name": "_pull_settings",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "settings.py",
+    "function_name": "backup_settings",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "settings.py",
+    "function_name": "_get_storage_file_info",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "settings.py",
+    "function_name": "_sync_single_settings_file",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "settings.py",
+    "function_name": "validate_all_settings",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "settings.py",
+    "function_name": "_handle_settings_conflict",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "settings.py",
+    "function_name": "get_settings_sync_status",
+    "path": "fastblocks/actions/sync/settings.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "static.py",
+    "function_name": "_create_backup_result",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "static.py",
+    "function_name": "_create_sync_result",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "static.py",
+    "function_name": "_generate_backup_suffix",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "static.py",
+    "function_name": "_get_file_infos",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "static.py",
+    "function_name": "_is_cacheable_file",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "static.py",
+    "function_name": "_backup_single_file",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "static.py",
+    "function_name": "_backup_static_files_with_patterns",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "static.py",
+    "function_name": "_detect_mime_type",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "static.py",
+    "function_name": "_execute_sync_operation",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "static.py",
+    "function_name": "_has_bidirectional_conflict",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "static.py",
+    "function_name": "_process_static_file",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "static.py",
+    "function_name": "_should_sync_file",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "static.py",
+    "function_name": "_validate_cache_dependencies",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "static.py",
+    "function_name": "_backup_files_with_pattern",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "static.py",
+    "function_name": "_cache_static_file",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "static.py",
+    "function_name": "_discover_static_files",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "static.py",
+    "function_name": "_should_pull_static",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "static.py",
+    "function_name": "_should_push_static",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "static.py",
+    "function_name": "_initialize_adapters",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "static.py",
+    "function_name": "_prepare_static_sync_config",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "static.py",
+    "function_name": "_should_exclude_file",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "static.py",
+    "function_name": "_sync_single_static_file",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "static.py",
+    "function_name": "sync_static",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "static.py",
+    "function_name": "StaticSyncResult::__init__",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "static.py",
+    "function_name": "_discover_files_with_pattern",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "static.py",
+    "function_name": "_get_default_static_bucket",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "static.py",
+    "function_name": "_push_static",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "static.py",
+    "function_name": "_warm_single_static_file",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "static.py",
+    "function_name": "backup_static_files",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "static.py",
+    "function_name": "_accumulate_static_sync_results",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "static.py",
+    "function_name": "_get_storage_file_info",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "static.py",
+    "function_name": "warm_static_cache",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "static.py",
+    "function_name": "_pull_static",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "static.py",
+    "function_name": "_sync_static_files",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "static.py",
+    "function_name": "_handle_static_conflict",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "static.py",
+    "function_name": "get_static_sync_status",
+    "path": "fastblocks/actions/sync/static.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "SyncResult::has_conflicts",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "SyncResult::has_errors",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "SyncResult::success_count",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "SyncResult::total_processed",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "SyncStrategy::__init__",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "_merge_sync_result",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "strategies.py",
+    "function_name": "get_sync_summary",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "strategies.py",
+    "function_name": "SyncResult::is_success",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "strategies.py",
+    "function_name": "_check_content_differences",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "strategies.py",
+    "function_name": "_execute_parallel_sync",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "strategies.py",
+    "function_name": "sync_with_strategy",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "strategies.py",
+    "function_name": "_process_parallel_results",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "strategies.py",
+    "function_name": "compare_content",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "strategies.py",
+    "function_name": "should_sync",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "strategies.py",
+    "function_name": "create_backup",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "strategies.py",
+    "function_name": "get_file_info",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "strategies.py",
+    "function_name": "SyncResult::__init__",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "strategies.py",
+    "function_name": "_execute_sequential_sync",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "strategies.py",
+    "function_name": "_execute_with_retry",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "strategies.py",
+    "function_name": "_check_missing_files",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "strategies.py",
+    "function_name": "resolve_conflict",
+    "path": "fastblocks/actions/sync/strategies.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::conflict_strategy",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::conflicts_requiring_resolution",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::conflicts_resolved",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::direction",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::dry_run",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::filtered_files",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::synchronized_files",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "_calculate_out_of_sync_total",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "templates.py",
+    "function_name": "_create_file_status_info",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::sync_status",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::would_resolve_conflicts",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::would_sync_files",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "templates.py",
+    "function_name": "_process_template_files_for_status",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "templates.py",
+    "function_name": "TemplateSyncResult::__init__",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "templates.py",
+    "function_name": "_sync_template_files",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "templates.py",
+    "function_name": "_accumulate_sync_results",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "templates.py",
+    "function_name": "_invalidate_template_cache",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "templates.py",
+    "function_name": "_push_template",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "templates.py",
+    "function_name": "_discover_template_files",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "templates.py",
+    "function_name": "_get_storage_file_info",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "templates.py",
+    "function_name": "_initialize_adapters",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "templates.py",
+    "function_name": "_update_status_counters",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "templates.py",
+    "function_name": "get_template_sync_status",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "templates.py",
+    "function_name": "_get_default_templates_bucket",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "templates.py",
+    "function_name": "_pull_template",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "templates.py",
+    "function_name": "sync_templates",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "templates.py",
+    "function_name": "_scan_path_for_templates",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "templates.py",
+    "function_name": "_prepare_sync_config",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "templates.py",
+    "function_name": "_discover_template_files_for_status",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "templates.py",
+    "function_name": "_handle_template_conflict",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "templates.py",
+    "function_name": "warm_template_cache",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "templates.py",
+    "function_name": "_sync_single_template",
+    "path": "fastblocks/actions/sync/templates.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "sqladmin.py",
+    "function_name": "Admin::__getattr__",
+    "path": "fastblocks/adapters/admin/sqladmin.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "sqladmin.py",
+    "function_name": "Admin::__init__",
+    "path": "fastblocks/adapters/admin/sqladmin.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "sqladmin.py",
+    "function_name": "Admin::init",
+    "path": "fastblocks/adapters/admin/sqladmin.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AppBase::__init__",
+    "path": "fastblocks/adapters/app/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AppProtocol::__init__",
+    "path": "fastblocks/adapters/app/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AppProtocol::lifespan",
+    "path": "fastblocks/adapters/app/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "App::__call__",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "App::__getattr__",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "App::__init__",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "App::_startup_sequence",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "App::logger",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "App::logger",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "App::post_startup",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::__init__",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::_display_simple_startup",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::_get_color_constants",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::init",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::_clean_and_center_line",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::_display_fancy_startup",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::_format_info_lines",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::post_startup",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "default.py",
+    "function_name": "App::_setup_admin_adapter",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "default.py",
+    "function_name": "App::_shutdown_logger",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "default.py",
+    "function_name": "App::logger",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "default.py",
+    "function_name": "App::_cancel_remaining_tasks",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "default.py",
+    "function_name": "App::init",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "default.py",
+    "function_name": "App::lifespan",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "default.py",
+    "function_name": "AppSettings::__init__",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::_get_startup_time",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::lifespan",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "default.py",
+    "function_name": "FastBlocksApp::_get_debug_enabled",
+    "path": "fastblocks/adapters/app/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthBase::__init__",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthBase::authenticate",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthBase::current_user",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthBase::init",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthBase::login",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthBase::logout",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthBase::token_id",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthProtocol::authenticate",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthProtocol::current_user",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthProtocol::login",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "AuthProtocol::logout",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "CurrentUser::display_name",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "CurrentUser::email",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "CurrentUser::has_role",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "CurrentUser::identity",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "CurrentUser::is_authenticated",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "CurrentUser::set_role",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "_base.py",
+    "function_name": "AuthBaseSettings::__init__",
+    "path": "fastblocks/adapters/auth/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "basic.py",
+    "function_name": "Auth::init",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "basic.py",
+    "function_name": "Auth::login",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "basic.py",
+    "function_name": "Auth::logout",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "basic.py",
+    "function_name": "CurrentUser::display_name",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "basic.py",
+    "function_name": "CurrentUser::email",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "basic.py",
+    "function_name": "CurrentUser::has_role",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "basic.py",
+    "function_name": "CurrentUser::identity",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "basic.py",
+    "function_name": "CurrentUser::is_authenticated",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "basic.py",
+    "function_name": "CurrentUser::set_role",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "basic.py",
+    "function_name": "Auth::authenticate",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "basic.py",
+    "function_name": "Auth::__init__",
+    "path": "fastblocks/adapters/auth/basic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "FastBlocksEndpoint::__init__",
+    "path": "fastblocks/adapters/routes/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "Routes::favicon",
+    "path": "fastblocks/adapters/routes/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "default.py",
+    "function_name": "Routes::robots",
+    "path": "fastblocks/adapters/routes/default.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "default.py",
+    "function_name": "Block::get",
+    "path": "fastblocks/adapters/routes/default.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "default.py",
+    "function_name": "Component::get",
+    "path": "fastblocks/adapters/routes/default.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "default.py",
+    "function_name": "Routes::gather_routes",
+    "path": "fastblocks/adapters/routes/default.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "default.py",
+    "function_name": "Routes::init",
+    "path": "fastblocks/adapters/routes/default.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "default.py",
+    "function_name": "Index::get",
+    "path": "fastblocks/adapters/routes/default.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_routes.py",
+    "function_name": "get_sitemap_adapter",
+    "path": "fastblocks/adapters/sitemap/_routes.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_routes.py",
+    "function_name": "sitemap_endpoint",
+    "path": "fastblocks/adapters/sitemap/_routes.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "asgi.py",
+    "function_name": "AsgiSitemap::changefreq",
+    "path": "fastblocks/adapters/sitemap/asgi.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "asgi.py",
+    "function_name": "AsgiSitemap::location",
+    "path": "fastblocks/adapters/sitemap/asgi.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "asgi.py",
+    "function_name": "AsgiSitemap::init",
+    "path": "fastblocks/adapters/sitemap/asgi.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "asgi.py",
+    "function_name": "AsgiSitemap::items",
+    "path": "fastblocks/adapters/sitemap/asgi.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cached.py",
+    "function_name": "CachedSitemap::__init__",
+    "path": "fastblocks/adapters/sitemap/cached.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cached.py",
+    "function_name": "CachedSitemap::changefreq",
+    "path": "fastblocks/adapters/sitemap/cached.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cached.py",
+    "function_name": "CachedSitemap::location",
+    "path": "fastblocks/adapters/sitemap/cached.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "cached.py",
+    "function_name": "CachedSitemap::cleanup",
+    "path": "fastblocks/adapters/sitemap/cached.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "cached.py",
+    "function_name": "CachedSitemap::init",
+    "path": "fastblocks/adapters/sitemap/cached.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "cached.py",
+    "function_name": "CachedSitemap::items",
+    "path": "fastblocks/adapters/sitemap/cached.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "cached.py",
+    "function_name": "CachedSitemap::priority",
+    "path": "fastblocks/adapters/sitemap/cached.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "cached.py",
+    "function_name": "CachedSitemap::_background_refresh",
+    "path": "fastblocks/adapters/sitemap/cached.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "core.py",
+    "function_name": "BaseSitemap::changefreq",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "core.py",
+    "function_name": "BaseSitemap::items",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "core.py",
+    "function_name": "BaseSitemap::lastmod",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "core.py",
+    "function_name": "BaseSitemap::location",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "core.py",
+    "function_name": "BaseSitemap::priority",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "core.py",
+    "function_name": "SitemapApp::_send_error",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "core.py",
+    "function_name": "_escape_xml",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "core.py",
+    "function_name": "BaseSitemap::__init__",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "core.py",
+    "function_name": "BaseSitemap::scope",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "core.py",
+    "function_name": "SitemapApp::__init__",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "core.py",
+    "function_name": "generate_sitemap",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "core.py",
+    "function_name": "SitemapApp::__call__",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "core.py",
+    "function_name": "_cache_sitemap",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "core.py",
+    "function_name": "_generate_sitemap_content",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "core.py",
+    "function_name": "get_fields",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "core.py",
+    "function_name": "_get_cached_sitemap",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "core.py",
+    "function_name": "_ensure_async_iterator",
+    "path": "fastblocks/adapters/sitemap/core.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "dynamic.py",
+    "function_name": "DynamicSitemap::_get_model_items",
+    "path": "fastblocks/adapters/sitemap/dynamic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "dynamic.py",
+    "function_name": "DynamicSitemap::changefreq",
+    "path": "fastblocks/adapters/sitemap/dynamic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "dynamic.py",
+    "function_name": "DynamicSitemap::lastmod",
+    "path": "fastblocks/adapters/sitemap/dynamic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "dynamic.py",
+    "function_name": "DynamicSitemap::location",
+    "path": "fastblocks/adapters/sitemap/dynamic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "dynamic.py",
+    "function_name": "DynamicSitemap::priority",
+    "path": "fastblocks/adapters/sitemap/dynamic.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "dynamic.py",
+    "function_name": "DynamicSitemap::init",
+    "path": "fastblocks/adapters/sitemap/dynamic.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "dynamic.py",
+    "function_name": "DynamicSitemap::items",
+    "path": "fastblocks/adapters/sitemap/dynamic.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "native.py",
+    "function_name": "NativeSitemap::changefreq",
+    "path": "fastblocks/adapters/sitemap/native.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "native.py",
+    "function_name": "NativeSitemap::location",
+    "path": "fastblocks/adapters/sitemap/native.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "native.py",
+    "function_name": "NativeSitemap::init",
+    "path": "fastblocks/adapters/sitemap/native.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "native.py",
+    "function_name": "NativeSitemap::priority",
+    "path": "fastblocks/adapters/sitemap/native.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "native.py",
+    "function_name": "NativeSitemap::items",
+    "path": "fastblocks/adapters/sitemap/native.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "native.py",
+    "function_name": "NativeSitemap::_filter_routes",
+    "path": "fastblocks/adapters/sitemap/native.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "static.py",
+    "function_name": "StaticSitemap::changefreq",
+    "path": "fastblocks/adapters/sitemap/static.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "static.py",
+    "function_name": "StaticSitemap::items",
+    "path": "fastblocks/adapters/sitemap/static.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "static.py",
+    "function_name": "StaticSitemap::location",
+    "path": "fastblocks/adapters/sitemap/static.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "static.py",
+    "function_name": "StaticSitemap::init",
+    "path": "fastblocks/adapters/sitemap/static.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "static.py",
+    "function_name": "StaticSitemap::priority",
+    "path": "fastblocks/adapters/sitemap/static.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "TemplateLoader::get_template",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "TemplateLoader::list_templates",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "TemplateRenderer::render_template",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "TemplatesBase::get_cache_key",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "TemplatesBase::get_searchpath",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "TemplatesProtocol::get_cache_key",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "TemplatesProtocol::get_searchpath",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "TemplatesProtocol::get_searchpaths",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "TemplatesProtocol::get_storage_path",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "_base.py",
+    "function_name": "TemplatesBase::get_storage_path",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "_base.py",
+    "function_name": "TemplatesBaseSettings::__init__",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "_base.py",
+    "function_name": "safe_await",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 17,
+    "file_name": "_base.py",
+    "function_name": "TemplatesBase::get_searchpaths",
+    "path": "fastblocks/adapters/templates/_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_filters.py",
+    "function_name": "Filters::map_src",
+    "path": "fastblocks/adapters/templates/_filters.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_filters.py",
+    "function_name": "Filters::minify_css",
+    "path": "fastblocks/adapters/templates/_filters.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_filters.py",
+    "function_name": "Filters::minify_html",
+    "path": "fastblocks/adapters/templates/_filters.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_filters.py",
+    "function_name": "Filters::minify_js",
+    "path": "fastblocks/adapters/templates/_filters.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_filters.py",
+    "function_name": "Filters::register_filters",
+    "path": "fastblocks/adapters/templates/_filters.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_filters.py",
+    "function_name": "Filters::url_encode",
+    "path": "fastblocks/adapters/templates/_filters.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "_filters.py",
+    "function_name": "Filters::__init__",
+    "path": "fastblocks/adapters/templates/_filters.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "_filters.py",
+    "function_name": "Filters::get_templates",
+    "path": "fastblocks/adapters/templates/_filters.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "_filters.py",
+    "function_name": "_cached_minify",
+    "path": "fastblocks/adapters/templates/_filters.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::get_cache_key",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::get_storage_path",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::__init__",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::render_template",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::__init__",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::_cache_component_bytecode",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::_cache_component_source",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::_get_cached_bytecode",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::get_component_class",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::_get_cached_source",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::_sync_component_file",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::get_component_source",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::_init_htmy_registry",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::get_component_searchpaths",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::init",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::_sync_from_storage_fallback",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::_create_block_renderer",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::_create_template_renderer",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::render_component",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::discover_components",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "htmy.py",
+    "function_name": "HTMYTemplates::clear_component_cache",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 11,
+    "file_name": "htmy.py",
+    "function_name": "HTMYComponentRegistry::get_component_class",
+    "path": "fastblocks/adapters/templates/htmy.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "jinja2.py",
+    "function_name": "BaseTemplateLoader::get_supported_extensions",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "jinja2.py",
+    "function_name": "ChoiceLoader::__init__",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "jinja2.py",
+    "function_name": "FileSystemLoader::list_templates_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "jinja2.py",
+    "function_name": "LoaderProtocol::get_source_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "jinja2.py",
+    "function_name": "LoaderProtocol::list_templates_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::__init__",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::admin",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "jinja2.py",
+    "function_name": "BaseTemplateLoader::_normalize_template",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "jinja2.py",
+    "function_name": "ChoiceLoader::list_templates_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "jinja2.py",
+    "function_name": "FileSystemLoader::_cache_template",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "jinja2.py",
+    "function_name": "FileSystemLoader::_check_storage_exists",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "jinja2.py",
+    "function_name": "PackageLoader::list_templates_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "jinja2.py",
+    "function_name": "StorageLoader::list_templates_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::_load_extensions",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::_setup_admin_templates",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "jinja2.py",
+    "function_name": "_get_attr_pattern",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::_resolve_cache",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "jinja2.py",
+    "function_name": "_apply_template_replacements",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "jinja2.py",
+    "function_name": "FileSystemLoader::_sync_template_file",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "jinja2.py",
+    "function_name": "FileSystemLoader::get_source_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "jinja2.py",
+    "function_name": "StorageLoader::_sync_storage_with_filesystem",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::_get_app_adapter",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::render_component",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::render_template",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "jinja2.py",
+    "function_name": "TemplatesSettings::__init__",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "ChoiceLoader::get_source_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "FileSystemLoader::_read_and_store_template",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "FileSystemLoader::_sync_from_storage_fallback",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "RedisLoader::get_source_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "StorageLoader::_check_filesystem_sync_opportunity",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::_log_extension_info",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::_log_loader_info",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::filter",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::get_attr",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::init",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "jinja2.py",
+    "function_name": "BaseTemplateLoader::_find_template_path_parallel",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "jinja2.py",
+    "function_name": "PackageLoader::get_source_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::admin",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::get_loader",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "jinja2.py",
+    "function_name": "BaseTemplateLoader::_find_storage_path_parallel",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "jinja2.py",
+    "function_name": "BaseTemplateLoader::_list_templates_for_extensions",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::_get_htmy_component_renderer",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::_add_filters",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::init_envs",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "jinja2.py",
+    "function_name": "BaseTemplateLoader::_find_cache_path_parallel",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "jinja2.py",
+    "function_name": "RedisLoader::list_templates_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "jinja2.py",
+    "function_name": "BaseTemplateLoader::__init__",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "jinja2.py",
+    "function_name": "PackageLoader::__init__",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "jinja2.py",
+    "function_name": "StorageLoader::get_source_async",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "jinja2.py",
+    "function_name": "Templates::_clear_debug_cache",
+    "path": "fastblocks/adapters/templates/jinja2.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::__init__",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_build_base_middleware_list",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_middleware_stack_cache",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_middleware_stack_cache",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_system_middleware",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_system_middleware",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::add_middleware",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::add_system_middleware",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::user_middleware",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::user_middleware",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "MiddlewareManager::__init__",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "MiddlewareManager::add_system_middleware",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "applications.py",
+    "function_name": "MiddlewareManager::get_middleware_stack",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "applications.py",
+    "function_name": "FastBlocksSettings::__init_subclass__",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::build_middleware_stack",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_apply_middleware_to_app",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_get_dependencies",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_get_system_middleware_with_overrides",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_separate_exception_handlers",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_extract_middleware_info",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "applications.py",
+    "function_name": "MiddlewareManager::add_user_middleware",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "applications.py",
+    "function_name": "MiddlewareManager::_extract_middleware_info",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::get_middleware_stack",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 12,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_apply_system_middleware_overrides",
+    "path": "fastblocks/applications.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "CacheControlResponder::kvformat",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "CacheRules::get_rule_matching_request",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "CacheRules::get_rule_matching_response",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "_safe_log",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "generate_varying_headers_cache_key",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "get_rule_matching_request",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "get_rule_matching_response",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "request_matches_rule",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "response_matches_rule",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "serialize_response",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "caching.py",
+    "function_name": "CacheControlResponder::__call__",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "caching.py",
+    "function_name": "CacheControlResponder::__init__",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "caching.py",
+    "function_name": "CacheControlResponder::send_with_caching",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "caching.py",
+    "function_name": "get_cache",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "caching.py",
+    "function_name": "get_cache_response_headers",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "caching.py",
+    "function_name": "CacheResponder::__init__",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "caching.py",
+    "function_name": "CacheUtils::safe_log",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "caching.py",
+    "function_name": "_get_hasher",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "caching.py",
+    "function_name": "CacheResponder::send_then_invalidate",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "caching.py",
+    "function_name": "generate_cache_key",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "caching.py",
+    "function_name": "CacheResponder::__call__",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "caching.py",
+    "function_name": "CacheResponder::send_with_caching",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "caching.py",
+    "function_name": "CacheRules::request_matches_rule",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "caching.py",
+    "function_name": "CacheRules::response_matches_rule",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "caching.py",
+    "function_name": "get_cache_key",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "caching.py",
+    "function_name": "delete_from_cache",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "caching.py",
+    "function_name": "deserialize_response",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "caching.py",
+    "function_name": "learn_cache_key",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "caching.py",
+    "function_name": "get_from_cache",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 13,
+    "file_name": "caching.py",
+    "function_name": "patch_cache_control",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 15,
+    "file_name": "caching.py",
+    "function_name": "set_in_cache",
+    "path": "fastblocks/caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cli.py",
+    "function_name": "Styles::__str__",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "cli.py",
+    "function_name": "setup_signal_handlers",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "cli.py",
+    "function_name": "_display_actions",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "cli.py",
+    "function_name": "_display_default_config",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "cli.py",
+    "function_name": "components",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "cli.py",
+    "function_name": "dev",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "cli.py",
+    "function_name": "version",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "cli.py",
+    "function_name": "_display_adapter_info",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "cli.py",
+    "function_name": "run",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "cli.py",
+    "function_name": "create",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "cli.py",
+    "function_name": "_display_adapters",
+    "path": "fastblocks/cli.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "decorators.py",
+    "function_name": "_CacheControlMiddlewareDecorator::__call__",
+    "path": "fastblocks/decorators.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "decorators.py",
+    "function_name": "_CacheMiddlewareDecorator::__call__",
+    "path": "fastblocks/decorators.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "decorators.py",
+    "function_name": "_MiddlewareFactory::__call__",
+    "path": "fastblocks/decorators.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "decorators.py",
+    "function_name": "_wrap_in_middleware",
+    "path": "fastblocks/decorators.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "DefaultErrorHandler::can_handle",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "DuplicateCaching::__init__",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "ErrorHandler::can_handle",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "ErrorHandler::handle",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "ErrorHandlerRegistry::__init__",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "ErrorHandlerRegistry::register",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "ErrorHandlerRegistry::set_fallback",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "FastBlocksException::to_error_context",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "MissingCaching::__init__",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "RequestNotCachable::__init__",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "ResponseNotCachable::__init__",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "StarletteCachesException::__init__",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "exceptions.py",
+    "function_name": "register_error_handler",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "exceptions.py",
+    "function_name": "ConfigurationError::__init__",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "exceptions.py",
+    "function_name": "DependencyError::__init__",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "exceptions.py",
+    "function_name": "FastBlocksException::__init__",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "exceptions.py",
+    "function_name": "safe_depends_get",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "exceptions.py",
+    "function_name": "DefaultErrorHandler::handle",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "exceptions.py",
+    "function_name": "ErrorHandlerRegistry::handle_error",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "exceptions.py",
+    "function_name": "handle_exception",
+    "path": "fastblocks/exceptions.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::__bool__",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::__init__",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::boosted",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::current_url",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::get_all_headers",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::history_restore_request",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::prompt",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::target",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::trigger",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::trigger_name",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "htmx_push_url",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "htmx_redirect",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "htmx_refresh",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "htmx.py",
+    "function_name": "htmx_retarget",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "htmx.py",
+    "function_name": "htmx_trigger",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::_get_header",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "htmx.py",
+    "function_name": "HtmxDetails::triggering_event",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "htmx.py",
+    "function_name": "is_htmx",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "htmx.py",
+    "function_name": "HtmxResponse::__init__",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 14,
+    "file_name": "htmx.py",
+    "function_name": "_get_header",
+    "path": "fastblocks/htmx.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::__init__",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::initialize",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_configure_exception_handlers",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_initialize_starlette",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_setup_models",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_configure_debug_mode",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_configure_error_handling",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_setup_dependencies",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_load_acb_modules",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_configure_logging",
+    "path": "fastblocks/initializers.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "main.py",
+    "function_name": "LazyApp::__call__",
+    "path": "fastblocks/main.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "main.py",
+    "function_name": "LazyApp::__getattr__",
+    "path": "fastblocks/main.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "main.py",
+    "function_name": "LazyLogger::__getattr__",
+    "path": "fastblocks/main.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "main.py",
+    "function_name": "get_logger",
+    "path": "fastblocks/main.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "main.py",
+    "function_name": "LazyLogger::__call__",
+    "path": "fastblocks/main.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "main.py",
+    "function_name": "get_app",
+    "path": "fastblocks/main.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "CacheKeyManager::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "CacheMiddleware::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "CacheValidator::is_duplicate_in_scope",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "CurrentRequestMiddleware::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "HtmxMiddleware::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "HtmxResponseMiddleware::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareStackManager::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareStackManager::_register_default_middleware",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareStackManager::add_custom_middleware",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareUtils::get_request",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareUtils::set_request",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "get_middleware_positions",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "get_request",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "middleware.py",
+    "function_name": "middlewares",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "CacheControlMiddleware::__call__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "CacheControlMiddleware::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "CacheKeyManager::get_cache_instance",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "CacheValidator::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "CurrentRequestMiddleware::__call__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareStackManager::initialize",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareStackManager::register_middleware",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "middleware.py",
+    "function_name": "SecureHeadersMiddleware::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "middleware.py",
+    "function_name": "CacheMiddleware::__call__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareStackManager::get_middleware_info",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareStackManager::build_stack",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "middleware.py",
+    "function_name": "_BaseCacheMiddlewareHelper::__init__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 4,
+    "file_name": "middleware.py",
+    "function_name": "CacheHelper::invalidate_cache_for",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 5,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareStackManager::_register_conditional_middleware",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "middleware.py",
+    "function_name": "CacheControlMiddleware::process_response",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "middleware.py",
+    "function_name": "SecureHeadersMiddleware::__call__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "middleware.py",
+    "function_name": "HtmxResponseMiddleware::__call__",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 7,
+    "file_name": "middleware.py",
+    "function_name": "MiddlewareStackManager::_ensure_dependencies",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "middleware.py",
+    "function_name": "CacheValidator::check_for_duplicate_middleware",
+    "path": "fastblocks/middleware.py"
+  },
+  {
+    "complexity": 10,
+    "file_name": "middleware.py",
+    "function_name": "HtmxMiddleware::__call__",
+    "path": "fastblocks/middleware.py"
+  }
+]

@@ -36,7 +36,10 @@ class ApplicationInitializer:
 
     def _load_acb_modules(self) -> None:
         try:
-            logger_class: type[t.Any] | None = depends.get("logger").__class__
+            logger = depends.get("logger")
+            logger_class: type[t.Any] | None = (
+                logger.__class__ if logger is not None else None
+            )
             from acb.logger import InterceptHandler
 
             interceptor_class: type[t.Any] | None = InterceptHandler
@@ -111,7 +114,7 @@ class ApplicationInitializer:
 
     def _setup_models(self) -> None:
         try:
-            models = self.depends.get("models")
+            models = self.depends.get("models")  # type: ignore[union-attr]
         except Exception:
             models = None
         object.__setattr__(self.app, "models", models)

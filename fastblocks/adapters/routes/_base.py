@@ -1,7 +1,7 @@
 from acb.config import AdapterBase, Settings
 
 
-class RoutesBaseSettings(Settings): ...
+class RoutesBaseSettings(Settings): ...  # type: ignore[misc]
 
 
-class RoutesBase(AdapterBase): ...
+class RoutesBase(AdapterBase): ...  # type: ignore[misc]

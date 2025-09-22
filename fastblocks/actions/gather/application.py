@@ -110,7 +110,7 @@ def _build_application_gather_tasks(
     include_dependencies: bool,
     include_initializers: bool,
 ) -> list[t.Coroutine[t.Any, t.Any, t.Any]]:
-    tasks = []
+    tasks: list[t.Coroutine[t.Any, t.Any, t.Any]] = []
 
     if include_adapters:
         tasks.append(_gather_adapters_and_modules(config["adapter_patterns"]))
@@ -271,7 +271,7 @@ async def _gather_application_dependencies(
 
 
 async def _gather_initializers() -> list[t.Callable[..., t.Any]]:
-    initializers = []
+    initializers: list[t.Callable[..., t.Any]] = []
     await _gather_standard_initializers(initializers)
     await _gather_adapter_initializers(initializers)
     debug(f"Gathered {len(initializers)} initialization functions")

@@ -21,7 +21,7 @@ class DynamicSitemapSettings(SitemapBaseSettings):
     pass
 
 
-class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
+class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):  # type: ignore[override,misc]
     sitemap: SitemapApp | None = None
 
     async def items(self) -> list[dict[str, t.Any]]:
@@ -52,16 +52,16 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
         ]
 
     def location(self, item: dict[str, t.Any]) -> str:
-        return item.get("url", "/")
+        return t.cast(str, item.get("url", "/"))
 
     def lastmod(self, item: dict[str, t.Any]) -> dt.datetime | None:
         return item.get("lastmod")
 
     def changefreq(self, item: dict[str, t.Any]) -> str:
-        return item.get("changefreq", self.config.change_freq)
+        return t.cast(str, item.get("changefreq", self.config.change_freq))
 
     def priority(self, item: dict[str, t.Any]) -> float:
-        return item.get("priority", 0.5)
+        return t.cast(float, item.get("priority", 0.5))
 
     async def init(self) -> None:
         if not self.config.domain:

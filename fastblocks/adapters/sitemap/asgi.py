@@ -6,6 +6,7 @@ instead of the external asgi-sitemaps dependency.
 For new projects, consider using the native adapter directly.
 """
 
+import typing as t
 from contextlib import suppress
 from uuid import UUID
 
@@ -21,11 +22,11 @@ class SitemapSettings(SitemapBaseSettings):
     pass
 
 
-class Sitemap(NativeSitemap[str], SitemapBase):
+class AsgiSitemap(NativeSitemap[str], SitemapBase):  # type: ignore[override,name-defined]
     sitemap: SitemapApp | None = None
 
-    @depends.inject
-    def items(self) -> list[str]:
+    @depends.inject  # type: ignore[misc]
+    def items(self) -> t.Any:
         try:
             routes_adapter = depends.get("routes")
             if hasattr(routes_adapter, "routes"):
@@ -38,7 +39,7 @@ class Sitemap(NativeSitemap[str], SitemapBase):
         return item
 
     def changefreq(self, item: str) -> str:
-        return self.config.change_freq
+        return t.cast(str, self.config.change_freq)
 
     async def init(self) -> None:
         if not self.config.app.domain:
@@ -55,4 +56,4 @@ MODULE_ID = UUID("01937d86-eff0-7410-5786-a01234567890")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    depends.set(Sitemap)
+    depends.set(AsgiSitemap)

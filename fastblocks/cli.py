@@ -53,7 +53,7 @@ class Styles(str, Enum):
     custom = "custom"
 
     def __str__(self) -> str:
-        return self.value
+        return t.cast(str, self.value)
 
 
 run_args = {"app": "main:app"}
@@ -137,7 +137,7 @@ def _display_adapters() -> None:
     if not adapters:
         console.print("  [dim]No adapters found[/dim]")
         return
-    categories = {}
+    categories: dict[str, list[t.Any]] = {}
     for adapter in adapters:
         if adapter.category not in categories:
             categories[adapter.category] = []
@@ -217,19 +217,26 @@ def create(
     ):
         p.mkdir(parents=True, exist_ok=True)
     for p in (
-        "models.py",
-        "routes.py",
-        "main.py",
-        ".envrc",
-        "pyproject.toml",
-        "__init__.py",
-        "adapters/__init__.py",
-        "actions/__init__.py",
+        Path("models.py"),
+        Path("routes.py"),
+        Path("main.py"),
+        Path(".envrc"),
+        Path("pyproject.toml"),
+        Path("__init__.py"),
+        Path("adapters/__init__.py"),
+        Path("actions/__init__.py"),
     ):
-        Path(p).touch()
-    for p in ("main.py.tmpl", ".envrc", "pyproject.toml.tmpl", "Procfile.tmpl"):
-        Path(p.replace(".tmpl", "")).write_text(
-            (fastblocks_path / p).read_text().replace("APP_NAME", app_name),
+        p.touch()
+    for template_file in (
+        "main.py.tmpl",
+        ".envrc",
+        "pyproject.toml.tmpl",
+        "Procfile.tmpl",
+    ):
+        template_path = Path(template_file)
+        target_path = Path(template_file.replace(".tmpl", ""))
+        target_path.write_text(
+            (fastblocks_path / template_path).read_text().replace("APP_NAME", app_name),
         )
     commands = (
         ["direnv", "allow", "."],

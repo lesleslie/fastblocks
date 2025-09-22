@@ -49,28 +49,35 @@ from fastblocks.htmx import HtmxRequest
 from ._base import AuthBase, AuthBaseSettings
 
 
-class AuthSettings(AuthBaseSettings): ...
+class AuthSettings(AuthBaseSettings):
+    pass
 
 
 class CurrentUser:
-    def has_role(self, _: str) -> str: ...
+    def has_role(self, _: str) -> str:
+        raise NotImplementedError
 
-    def set_role(self, _: str) -> str | bool | None: ...
-
-    @property
-    def identity(self) -> UUID4 | str | int: ...
-
-    @property
-    def display_name(self) -> str: ...
+    def set_role(self, _: str) -> str | bool | None:
+        raise NotImplementedError
 
     @property
-    def email(self) -> EmailStr | None: ...
+    def identity(self) -> UUID4 | str | int:
+        raise NotImplementedError
+
+    @property
+    def display_name(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def email(self) -> EmailStr | None:
+        raise NotImplementedError
 
     def is_authenticated(
         self,
         request: HtmxRequest | None = None,
         config: t.Any = None,
-    ) -> bool | int | str: ...
+    ) -> bool | int | str:
+        raise NotImplementedError
 
 
 class Auth(AuthBase):
@@ -138,9 +145,11 @@ class Auth(AuthBase):
             ),
         ]
 
-    async def login(self, request: HtmxRequest) -> bool: ...
+    async def login(self, request: HtmxRequest) -> bool:
+        raise NotImplementedError
 
-    async def logout(self, request: HtmxRequest) -> bool: ...
+    async def logout(self, request: HtmxRequest) -> bool:
+        raise NotImplementedError
 
 
 MODULE_ID = UUID("01937d86-5f3b-7c4d-9e0f-2345678901bc")

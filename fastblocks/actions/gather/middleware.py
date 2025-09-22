@@ -70,7 +70,7 @@ async def gather_middleware(
         system_middleware=system_overrides,
     )
 
-    tasks = []
+    tasks: list[t.Coroutine[t.Any, t.Any, t.Any]] = []
 
     if include_defaults:
         tasks.append(_gather_default_middleware())
@@ -174,25 +174,32 @@ def _add_system_middleware(
     system_overrides: dict[MiddlewarePosition, t.Any],
 ) -> None:
     try:
-        from fastblocks.middleware import middlewares
-
-        system_middleware = middlewares()
-
-        for position, override in system_overrides.items():
-            position_index = position.value
-            if 0 <= position_index < len(system_middleware):
-                system_middleware[position_index] = override
-                debug(f"Override middleware at position {position.name}")
-
-        for middleware_def in system_middleware:
-            if isinstance(middleware_def, tuple):
-                cls, kwargs = middleware_def
-                stack.append(Middleware(cls, **kwargs))
-            else:
-                stack.append(middleware_def)
-
+        _apply_system_middleware(stack, system_overrides)
     except Exception as e:
         debug(f"Error building system middleware: {e}")
+
+
+def _apply_system_middleware(
+    stack: list[Middleware],
+    system_overrides: dict[MiddlewarePosition, t.Any],
+) -> None:
+    """Apply system middleware to the stack."""
+    from fastblocks.middleware import middlewares
+
+    system_middleware = middlewares()
+
+    for position, override in system_overrides.items():
+        position_index = position.value
+        if 0 <= position_index < len(system_middleware):
+            system_middleware[position_index] = override
+            debug(f"Override middleware at position {position.name}")
+
+    for middleware_def in system_middleware:
+        if isinstance(middleware_def, tuple):
+            cls, kwargs = middleware_def
+            stack.append(Middleware(cls, **kwargs))
+        else:
+            stack.append(middleware_def)
 
 
 def _add_error_handler_middleware(
@@ -200,21 +207,22 @@ def _add_error_handler_middleware(
     error_handler: t.Any,
     debug_mode: bool,
 ) -> None:
+    error_middleware = _create_error_middleware(error_handler, debug_mode)
+    stack.append(error_middleware)
+
+
+def _create_error_middleware(error_handler: t.Any, debug_mode: bool) -> Middleware:
+    """Create error handler middleware."""
     if error_handler:
-        stack.append(
-            Middleware(
-                ServerErrorMiddleware,
-                handler=error_handler,
-                debug=debug_mode,
-            ),
+        return Middleware(
+            ServerErrorMiddleware,
+            handler=error_handler,
+            debug=debug_mode,
         )
-    else:
-        stack.append(
-            Middleware(
-                ServerErrorMiddleware,
-                debug=debug_mode,
-            ),
-        )
+    return Middleware(
+        ServerErrorMiddleware,
+        debug=debug_mode,
+    )
 
 
 def extract_middleware_info(middleware: t.Any) -> dict[str, t.Any]:
@@ -245,6 +253,13 @@ def get_middleware_stack_info(
         "execution_order": [],
     }
 
+    return _populate_middleware_info(middleware_stack, info)
+
+
+def _populate_middleware_info(
+    middleware_stack: list[Middleware], info: dict[str, t.Any]
+) -> dict[str, t.Any]:
+    """Populate middleware information."""
     for i, middleware in enumerate(middleware_stack):
         middleware_info = extract_middleware_info(middleware)
         middleware_info["position"] = i
@@ -266,6 +281,24 @@ def validate_middleware_stack(
 
     middleware_classes = [extract_middleware_info(m)["class"] for m in middleware_stack]
 
+    # Check middleware ordering
+    _check_middleware_ordering(middleware_classes, validation)
+
+    # Check for security middleware
+    _check_security_middleware(middleware_classes, validation)
+
+    # Check session and auth middleware ordering
+    _check_session_auth_ordering(middleware_classes, validation)
+
+    validation["valid"] = len(validation["errors"]) == 0
+
+    return validation
+
+
+def _check_middleware_ordering(
+    middleware_classes: list[str], validation: dict[str, t.Any]
+) -> None:
+    """Check if middleware is in the correct order."""
     if middleware_classes and middleware_classes[0] != "ExceptionMiddleware":
         validation["warnings"].append(
             "ExceptionMiddleware should be first in the stack",
@@ -276,6 +309,11 @@ def validate_middleware_stack(
             "ServerErrorMiddleware should be last in the stack",
         )
 
+
+def _check_security_middleware(
+    middleware_classes: list[str], validation: dict[str, t.Any]
+) -> None:
+    """Check if security middleware is present."""
     security_middleware = [
         "CORSMiddleware",
         "TrustedHostMiddleware",
@@ -291,6 +329,11 @@ def validate_middleware_stack(
             "Consider adding security middleware (CORS, TrustedHost, etc.)",
         )
 
+
+def _check_session_auth_ordering(
+    middleware_classes: list[str], validation: dict[str, t.Any]
+) -> None:
+    """Check if session and auth middleware are in the correct order."""
     session_index = -1
     auth_index = -1
 
@@ -305,10 +348,6 @@ def validate_middleware_stack(
             "SessionMiddleware should come before authentication middleware",
         )
 
-    validation["valid"] = len(validation["errors"]) == 0
-
-    return validation
-
 
 async def create_middleware_manager(
     gather_result: MiddlewareGatherResult,
@@ -319,7 +358,7 @@ async def create_middleware_manager(
 
     manager.user_middleware = gather_result.user_middleware
 
-    manager._system_middleware = gather_result.system_middleware  # type: ignore[misc]
+    manager._system_middleware = gather_result.system_middleware  # type: ignore[assignment]
 
     manager._middleware_stack_cache = gather_result.middleware_stack
 
@@ -337,6 +376,18 @@ def add_middleware_at_position(
 ) -> list[Middleware]:
     stack = middleware_stack.copy()
 
+    insert_index = _calculate_insert_index(position, stack)
+
+    stack.insert(insert_index, new_middleware)
+    debug(f"Added middleware at position {position.name}")
+
+    return stack
+
+
+def _calculate_insert_index(
+    position: MiddlewarePosition, stack: list[Middleware]
+) -> int:
+    """Calculate the insert index based on the middleware position."""
     insert_index = 1
 
     if position == MiddlewarePosition.SECURITY:
@@ -354,9 +405,4 @@ def add_middleware_at_position(
     elif position == MiddlewarePosition.CUSTOM:
         insert_index = len(stack) - 1
 
-    insert_index = min(insert_index, len(stack) - 1)
-
-    stack.insert(insert_index, new_middleware)
-    debug(f"Added middleware at position {position.name}")
-
-    return stack
+    return min(insert_index, len(stack) - 1)

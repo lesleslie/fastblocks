@@ -239,9 +239,9 @@ class App(AppBase):
         await self.post_startup()
 
     def __call__(self, scope: Scope, receive: Receive, send: Send) -> ASGIApp:
-        return self.fastblocks_app(scope, receive, send)
+        return t.cast(ASGIApp, self.fastblocks_app(scope, receive, send))
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> t.Any:
         return getattr(self.fastblocks_app, name)
 
     async def post_startup(self) -> None:

@@ -1,12 +1,22 @@
 import typing as t
+from abc import ABC
 
-from acb import pkg_registry
 from acb.adapters import get_adapters, root_path
-from acb.config import AdapterBase, Settings
+from acb.config import AdapterBase, Config
 from acb.depends import depends
 from anyio import Path as AsyncPath
 from starlette.requests import Request
 from starlette.responses import Response
+
+try:
+    # For newer versions of ACB where pkg_registry is in context
+    from acb import get_context
+
+    context = get_context()
+    pkg_registry = context.pkg_registry
+except (ImportError, AttributeError):
+    # Fallback for older versions or if context is not available
+    pkg_registry = None
 
 
 async def safe_await(func_or_value: t.Any) -> t.Any:
@@ -43,10 +53,10 @@ class TemplateLoader(t.Protocol):
     async def list_templates(self) -> list[TemplatePath]: ...
 
 
-class TemplatesBaseSettings(Settings):
+class TemplatesBaseSettings(Config, ABC):  # type: ignore[misc]
     cache_timeout: int = 300
 
-    @depends.inject
+    @depends.inject  # type: ignore[misc]
     def __init__(self, config: t.Any = depends(), **values: t.Any) -> None:
         super().__init__(**values)
         self.cache_timeout = self.cache_timeout if config.deployed else 1
@@ -64,7 +74,7 @@ class TemplatesProtocol(t.Protocol):
     def get_cache_key(path: AsyncPath) -> str: ...
 
 
-class TemplatesBase(AdapterBase):
+class TemplatesBase(AdapterBase):  # type: ignore[misc]
     app: t.Any | None = None
     admin: t.Any | None = None
     app_searchpaths: list[AsyncPath] | None = None
@@ -80,27 +90,45 @@ class TemplatesBase(AdapterBase):
 
     async def get_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
         searchpaths = []
-        if callable(root_path):
-            base_root = AsyncPath(root_path())
-        else:
-            base_root = AsyncPath(root_path)
+        base_root = self._get_base_root()
+
         if adapter and hasattr(adapter, "category"):
             searchpaths.extend(
                 self.get_searchpath(
                     adapter, base_root / "templates" / adapter.category
                 ),
             )
+
         if adapter and hasattr(adapter, "category") and adapter.category == "app":
-            for a in [
-                a
-                for a in get_adapters()
-                if a
-                and hasattr(a, "category")
-                and a.category not in ("app", "admin", "secret")
-            ]:
-                exists_result = await safe_await((a.path / "_templates").exists)
-                if exists_result:
-                    searchpaths.append(a.path / "_templates")
+            searchpaths.extend(await self._get_app_searchpaths(adapter))
+
+        # Only use pkg_registry if it's available
+        if pkg_registry:
+            searchpaths.extend(await self._get_pkg_registry_searchpaths(adapter))
+
+        return searchpaths
+
+    def _get_base_root(self) -> AsyncPath:
+        if callable(root_path):
+            return AsyncPath(root_path())
+        return AsyncPath(root_path)
+
+    async def _get_app_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
+        searchpaths = []
+        for a in [
+            a
+            for a in get_adapters()
+            if a
+            and hasattr(a, "category")
+            and a.category not in ("app", "admin", "secret")
+        ]:
+            exists_result = await safe_await((a.path / "_templates").exists)
+            if exists_result:
+                searchpaths.append(a.path / "_templates")
+        return searchpaths
+
+    async def _get_pkg_registry_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
+        searchpaths = []
         for pkg in pkg_registry.get():
             if (
                 pkg

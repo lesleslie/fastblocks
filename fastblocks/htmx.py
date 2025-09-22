@@ -119,6 +119,8 @@ def _get_header(scope: "Scope", key: bytes) -> str | None:
     key = key.lower()
     value: str | None = None
     should_unquote = False
+
+    # Extract header value and autoencoding flag
     try:
         for k, v in scope["headers"]:
             if k.lower() == key:
@@ -128,8 +130,12 @@ def _get_header(scope: "Scope", key: bytes) -> str | None:
     except (KeyError, UnicodeDecodeError) as e:
         debug(f"HtmxDetails: Error processing header {key}: {e}")
         return None
+
+    # Return None if no value found
     if value is None:
         return None
+
+    # Handle URI autoencoding if needed
     try:
         return unquote(value) if should_unquote else value
     except Exception as e:
@@ -146,7 +152,7 @@ if STARLETTE_AVAILABLE and Request is not t.Any:
 
         @property
         def htmx(self) -> HtmxDetails:
-            return self.scope["htmx"]
+            return t.cast(HtmxDetails, self.scope["htmx"])
 
         def is_htmx(self) -> bool:
             return bool(self.htmx)
@@ -189,31 +195,21 @@ class HtmxResponse(HTMLResponse):
     ) -> None:
         init_headers = dict(headers or {})
 
-        if trigger:
-            init_headers["HX-Trigger"] = trigger
-        if trigger_after_settle:
-            init_headers["HX-Trigger-After-Settle"] = trigger_after_settle
-        if trigger_after_swap:
-            init_headers["HX-Trigger-After-Swap"] = trigger_after_swap
-        if retarget:
-            init_headers["HX-Retarget"] = retarget
-        if reselect:
-            init_headers["HX-Reselect"] = reselect
-        if reswap:
-            init_headers["HX-Reswap"] = reswap
-        if push_url is not None:
-            init_headers["HX-Push-Url"] = str(push_url).lower()
-        if replace_url is not None:
-            init_headers["HX-Replace-Url"] = str(replace_url).lower()
-        if refresh:
-            init_headers["HX-Refresh"] = "true"
-        if redirect:
-            init_headers["HX-Redirect"] = redirect
-        if location:
-            if isinstance(location, dict):
-                init_headers["HX-Location"] = json.dumps(location)
-            else:
-                init_headers["HX-Location"] = str(location)
+        # Set HTMX-specific headers
+        self._set_htmx_headers(
+            init_headers,
+            trigger=trigger,
+            trigger_after_settle=trigger_after_settle,
+            trigger_after_swap=trigger_after_swap,
+            retarget=retarget,
+            reselect=reselect,
+            reswap=reswap,
+            push_url=push_url,
+            replace_url=replace_url,
+            refresh=refresh,
+            redirect=redirect,
+            location=location,
+        )
 
         super().__init__(
             content=content,
@@ -222,6 +218,49 @@ class HtmxResponse(HTMLResponse):
             media_type=media_type,
             background=background,
         )
+
+    def _set_htmx_headers(
+        self,
+        headers: dict[str, str],
+        *,
+        trigger: str | None = None,
+        trigger_after_settle: str | None = None,
+        trigger_after_swap: str | None = None,
+        retarget: str | None = None,
+        reselect: str | None = None,
+        reswap: str | None = None,
+        push_url: str | bool | None = None,
+        replace_url: str | bool | None = None,
+        refresh: bool = False,
+        redirect: str | None = None,
+        location: dict[str, t.Any] | str | None = None,
+    ) -> None:
+        """Set HTMX-specific headers in the response."""
+        if trigger:
+            headers["HX-Trigger"] = trigger
+        if trigger_after_settle:
+            headers["HX-Trigger-After-Settle"] = trigger_after_settle
+        if trigger_after_swap:
+            headers["HX-Trigger-After-Swap"] = trigger_after_swap
+        if retarget:
+            headers["HX-Retarget"] = retarget
+        if reselect:
+            headers["HX-Reselect"] = reselect
+        if reswap:
+            headers["HX-Reswap"] = reswap
+        if push_url is not None:
+            headers["HX-Push-Url"] = str(push_url).lower()
+        if replace_url is not None:
+            headers["HX-Replace-Url"] = str(replace_url).lower()
+        if refresh:
+            headers["HX-Refresh"] = "true"
+        if redirect:
+            headers["HX-Redirect"] = redirect
+        if location:
+            if isinstance(location, dict):
+                headers["HX-Location"] = json.dumps(location)
+            else:
+                headers["HX-Location"] = str(location)
 
 
 def htmx_trigger(

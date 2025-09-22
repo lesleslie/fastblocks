@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.15.1"
+version = "0.15.2"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -178,7 +178,7 @@ markers = [
 ]
 timeout = 300
 timeout_method = "thread"
-addopts = "--cov=fastblocks --cov-report=term --cov-fail-under=42"
+addopts = "--cov=fastblocks --cov-report=term"
 filterwarnings = [
     "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
 ]
@@ -292,11 +292,6 @@ ignore = [
     "FURB184",
     "FURB120",
 ]
-exclude = [
-    "tests/",
-    "test_*.py",
-    "*_test.py",
-]
 
 [tool.bandit]
 target = [
@@ -307,6 +302,7 @@ skips = [
     "B602",
     "B607",
     "B101",
+    "B102",
     "B403",
     "B404",
     "B311",

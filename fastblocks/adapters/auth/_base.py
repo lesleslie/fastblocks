@@ -8,10 +8,10 @@ from starlette.authentication import UnauthenticatedUser
 from fastblocks.htmx import HtmxRequest
 
 
-class AuthBaseSettings(Settings):
+class AuthBaseSettings(Settings):  # type: ignore[misc]
     token_id: str | None = None
 
-    @depends.inject
+    @depends.inject  # type: ignore[misc]
     def __init__(self, config: t.Any = depends(), **data: t.Any) -> None:
         super().__init__(**data)
         self.token_id = self.token_id or getattr(config.app, "token_id", "_fb_")
@@ -51,7 +51,7 @@ class AuthProtocol(t.Protocol):
     async def logout(self, request: HtmxRequest) -> bool: ...
 
 
-class AuthBase(AdapterBase):
+class AuthBase(AdapterBase):  # type: ignore[misc]
     _current_user: ContextVar[t.Any] = ContextVar(
         "current_user",
         default=UnauthenticatedUser(),
@@ -63,18 +63,22 @@ class AuthBase(AdapterBase):
 
     @property
     def token_id(self) -> str:
-        return self.config.auth.token_id
+        return t.cast(str, self.config.auth.token_id)
 
     @staticmethod
-    async def authenticate(request: HtmxRequest) -> bool: ...
+    async def authenticate(request: HtmxRequest) -> bool:
+        raise NotImplementedError
 
     def __init__(
         self, secret_key: SecretStr, user_model: t.Any, **kwargs: t.Any
     ) -> None:
         super().__init__(**kwargs)
 
-    async def init(self) -> None: ...
+    async def init(self) -> None:
+        raise NotImplementedError
 
-    async def login(self, request: HtmxRequest) -> bool: ...
+    async def login(self, request: HtmxRequest) -> bool:
+        raise NotImplementedError
 
-    async def logout(self, request: HtmxRequest) -> bool: ...
+    async def logout(self, request: HtmxRequest) -> bool:
+        raise NotImplementedError

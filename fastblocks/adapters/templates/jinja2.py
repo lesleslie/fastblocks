@@ -56,16 +56,10 @@ from jinja2.ext import debug as jinja_debug
 from jinja2_async_environment.bccache import AsyncRedisBytecodeCache
 from jinja2_async_environment.loaders import AsyncBaseLoader, SourceType
 from starlette_async_jinja import AsyncJinja2Templates
+from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
+from fastblocks.actions.sync.templates import sync_templates
 
 from ._base import TemplatesBase, TemplatesBaseSettings
-
-try:
-    from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
-    from fastblocks.actions.sync.templates import sync_templates
-except ImportError:
-    sync_templates = None
-    SyncDirection = None
-    SyncStrategy = None
 
 try:
     Cache, Storage, Models = import_adapter()
@@ -101,10 +95,10 @@ def _apply_template_replacements(source: bytes, deployed: bool = False) -> bytes
     return source
 
 
-class BaseTemplateLoader(AsyncBaseLoader):
-    config: Config = depends()
-    cache: Cache = depends()
-    storage: Storage = depends()
+class BaseTemplateLoader(AsyncBaseLoader):  # type: ignore[misc]
+    config: t.Any = None
+    cache: t.Any = None
+    storage: t.Any = None
 
     def __init__(
         self,
@@ -241,7 +235,7 @@ class LoaderProtocol(t.Protocol):
 class FileSystemLoader(BaseTemplateLoader):
     async def _check_storage_exists(self, storage_path: AsyncPath) -> bool:
         if self.storage is not None:
-            return await self.storage.templates.exists(storage_path)
+            return t.cast(bool, await self.storage.templates.exists(storage_path))
         return False
 
     async def _sync_template_file(
@@ -440,7 +434,11 @@ class StorageLoader(BaseTemplateLoader):
                     return int(fs_stat.st_mtime) == local_mtime
                 else:
                     storage_stat = await self.storage.templates.stat(storage_path)
-                    return round(storage_stat.get("mtime").timestamp()) == local_mtime
+                    mtime = storage_stat.get("mtime")
+                    if hasattr(mtime, "timestamp"):
+                        timestamp = t.cast(float, mtime.timestamp())
+                        return round(timestamp) == local_mtime
+                    return False
 
             return (resp.decode(), str(storage_path), uptodate)
         except (FileNotFoundError, AttributeError):
@@ -482,7 +480,7 @@ class RedisLoader(BaseTemplateLoader):
     async def list_templates_async(self) -> list[str]:
         found: list[str] = []
         for ext in ("html", "css", "js"):
-            scan_result = (
+            scan_result: t.Any = (
                 await self.cache.scan(f"*.{ext}") if self.cache is not None else []
             )
             if hasattr(scan_result, "__aiter__"):
@@ -584,7 +582,7 @@ class PackageLoader(BaseTemplateLoader):
         return sorted(found)
 
 
-class ChoiceLoader(AsyncBaseLoader):
+class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
     loaders: list[AsyncBaseLoader | LoaderProtocol]
 
     def __init__(
@@ -640,7 +638,7 @@ class TemplatesSettings(TemplatesBaseSettings):
     def __init__(self, **data: t.Any) -> None:
         from pydantic import BaseModel
 
-        BaseModel.__init__(self, **data)
+        BaseModel.__init__(self, **data)  # type: ignore[arg-type]
         if not hasattr(self, "cache_timeout"):
             self.cache_timeout = 300
         try:
@@ -720,7 +718,7 @@ class Templates(TemplatesBase):
         debug(jinja_loaders)
         return ChoiceLoader(jinja_loaders)
 
-    @depends.inject
+    @depends.inject  # type: ignore[misc]
     async def init_envs(
         self,
         template_paths: list[AsyncPath],
@@ -814,7 +812,8 @@ class Templates(TemplatesBase):
                     "template",
                     "test",
                 ):
-                    await cache.clear(namespace)
+                    if cache is not None:
+                        await cache.clear(namespace)
                 self.logger.debug("Template caches cleared")
                 with suppress(Exception):
                     htmy_adapter = depends.get("htmy")
@@ -895,6 +894,8 @@ class Templates(TemplatesBase):
         parser = HTMLParser()
         parser.feed(html)
         soup = parser.get_starttag_text()
+        if soup is None:
+            return None
         attr_pattern = _get_attr_pattern(attr)
         _attr = f"{attr}="
         for s in soup.split():

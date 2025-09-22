@@ -182,7 +182,9 @@ async def _get_default_static_bucket() -> str:
             content = await storage_config_path.read_text()
             config = yaml.safe_load(content)
             if isinstance(config, dict):
-                bucket_name = config.get("buckets", {}).get("static", "static")
+                bucket_name = t.cast(
+                    str, config.get("buckets", {}).get("static", "static")
+                )
             else:
                 bucket_name = "static"
             debug(f"Using static bucket from config: {bucket_name}")
@@ -730,6 +732,54 @@ async def _cache_static_file(
     pass
 
 
+async def _validate_cache_dependencies() -> tuple[t.Any, t.Any, dict[str, t.Any]]:
+    """Validate and return cache and storage dependencies."""
+    from acb.depends import depends
+
+    cache = depends.get("cache")
+    storage = depends.get("storage")
+    result: dict[str, t.Any] = {
+        "warmed": [],
+        "errors": [],
+        "skipped": [],
+    }
+
+    if not cache or not storage:
+        result["errors"].append(Exception("Cache or storage not available"))
+        return None, None, result
+
+    return cache, storage, result
+
+
+async def _warm_single_static_file(
+    static_path: str,
+    cache: t.Any,
+    storage: t.Any,
+    cache_namespace: str,
+    result: dict[str, t.Any],
+) -> None:
+    """Warm cache for a single static file."""
+    try:
+        if not _is_cacheable_file(AsyncPath(static_path)):
+            result["skipped"].append(f"{static_path} (not cacheable)")
+            return
+
+        cache_key = f"{cache_namespace}:{static_path}"
+        if await cache.exists(cache_key):
+            result["skipped"].append(static_path)
+            return
+
+        content = await storage.static.read(static_path)
+        await cache.set(cache_key, content, ttl=86400)
+        result["warmed"].append(static_path)
+
+        debug(f"Warmed cache for static file: {static_path}")
+
+    except Exception as e:
+        result["errors"].append(f"{static_path}: {e}")
+        debug(f"Error warming cache for static file {static_path}: {e}")
+
+
 async def warm_static_cache(
     static_paths: list[str] | None = None,
     cache_namespace: str = "static",
@@ -749,35 +799,16 @@ async def warm_static_cache(
         ]
 
     try:
-        from acb.depends import depends
-
-        cache = depends.get("cache")
-        storage = depends.get("storage")
-
+        cache, storage, dep_result = await _validate_cache_dependencies()
         if not cache or not storage:
-            result["errors"].append(Exception("Cache or storage not available"))
-            return result
+            return dep_result
+
+        result = dep_result
 
         for static_path in static_paths:
-            try:
-                if not _is_cacheable_file(AsyncPath(static_path)):
-                    result["skipped"].append(f"{static_path} (not cacheable)")
-                    continue
-
-                cache_key = f"{cache_namespace}:{static_path}"
-                if await cache.exists(cache_key):
-                    result["skipped"].append(static_path)
-                    continue
-
-                content = await storage.static.read(static_path)
-                await cache.set(cache_key, content, ttl=86400)
-                result["warmed"].append(static_path)
-
-                debug(f"Warmed cache for static file: {static_path}")
-
-            except Exception as e:
-                result["errors"].append(f"{static_path}: {e}")
-                debug(f"Error warming cache for static file {static_path}: {e}")
+            await _warm_single_static_file(
+                static_path, cache, storage, cache_namespace, result
+            )
 
     except Exception as e:
         result["errors"].append(str(e))
@@ -804,10 +835,7 @@ async def get_static_sync_status(
     }
 
     try:
-        from acb.depends import depends
-
-        storage = depends.get("storage")
-
+        storage = await _get_storage_adapter()
         if not storage:
             status["error"] = "Storage adapter not available"
             return status
@@ -819,40 +847,7 @@ async def get_static_sync_status(
         )
         status["total_static_files"] = len(static_files)
 
-        for static_info in static_files:
-            local_info = await get_file_info(Path(static_info["local_path"]))
-            remote_info = await _get_storage_file_info(
-                storage,
-                storage_bucket,
-                static_info["storage_path"],
-            )
-
-            file_status: dict[str, t.Any] = {
-                "path": static_info["storage_path"],
-                "mime_type": static_info["mime_type"],
-                "local_exists": local_info["exists"],
-                "remote_exists": remote_info["exists"],
-            }
-
-            if local_info["exists"] and remote_info["exists"]:
-                if local_info["content_hash"] == remote_info["content_hash"]:
-                    file_status["status"] = "in_sync"
-                    status["in_sync"] += 1
-                else:
-                    file_status["status"] = "conflict"
-                    file_status["local_mtime"] = local_info["mtime"]
-                    file_status["remote_mtime"] = remote_info["mtime"]
-                    status["conflicts"] += 1
-            elif local_info["exists"]:
-                file_status["status"] = "local_only"
-                status["local_only"] += 1
-            elif remote_info["exists"]:
-                file_status["status"] = "remote_only"
-                status["remote_only"] += 1
-            else:
-                file_status["status"] = "missing"
-
-            status["details"].append(file_status)
+        await _process_static_files(static_files, storage, storage_bucket, status)
 
         status["out_of_sync"] = (
             status["conflicts"] + status["local_only"] + status["remote_only"]
@@ -863,6 +858,82 @@ async def get_static_sync_status(
         debug(f"Error getting static sync status: {e}")
 
     return status
+
+
+async def _get_storage_adapter() -> t.Any:
+    """Get the storage adapter."""
+    from acb.depends import depends
+
+    return depends.get("storage")
+
+
+async def _process_static_files(
+    static_files: list[dict[str, t.Any]],
+    storage: t.Any,
+    storage_bucket: str,
+    status: dict[str, t.Any],
+) -> None:
+    """Process all static files and update status."""
+    for static_info in static_files:
+        local_info = await get_file_info(Path(static_info["local_path"]))
+        remote_info = await _get_storage_file_info(
+            storage,
+            storage_bucket,
+            static_info["storage_path"],
+        )
+
+        file_status = _create_file_status(static_info, local_info, remote_info)
+        _update_status_counters(local_info, remote_info, file_status, status)
+        status["details"].append(file_status)
+
+
+def _create_file_status(
+    static_info: dict[str, t.Any],
+    local_info: dict[str, t.Any],
+    remote_info: dict[str, t.Any],
+) -> dict[str, t.Any]:
+    """Create file status dictionary."""
+    file_status: dict[str, t.Any] = {
+        "path": static_info["storage_path"],
+        "mime_type": static_info["mime_type"],
+        "local_exists": local_info["exists"],
+        "remote_exists": remote_info["exists"],
+    }
+
+    # Determine sync status
+    if local_info["exists"] and remote_info["exists"]:
+        if local_info["content_hash"] == remote_info["content_hash"]:
+            file_status["status"] = "in_sync"
+        else:
+            file_status["status"] = "conflict"
+            file_status["local_mtime"] = local_info["mtime"]
+            file_status["remote_mtime"] = remote_info["mtime"]
+    elif local_info["exists"]:
+        file_status["status"] = "local_only"
+    elif remote_info["exists"]:
+        file_status["status"] = "remote_only"
+    else:
+        file_status["status"] = "missing"
+
+    return file_status
+
+
+def _update_status_counters(
+    local_info: dict[str, t.Any],
+    remote_info: dict[str, t.Any],
+    file_status: dict[str, t.Any],
+    status: dict[str, t.Any],
+) -> None:
+    """Update status counters based on file status."""
+    if local_info["exists"] and remote_info["exists"]:
+        if local_info["content_hash"] == remote_info["content_hash"]:
+            status["in_sync"] += 1
+        else:
+            status["conflicts"] += 1
+    elif local_info["exists"]:
+        status["local_only"] += 1
+    elif remote_info["exists"]:
+        status["remote_only"] += 1
 
 
 async def backup_static_files(

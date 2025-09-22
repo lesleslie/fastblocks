@@ -5,7 +5,7 @@ from acb.config import AppSettings as AppConfigSettings
 from starlette.routing import Router
 
 
-class AppBaseSettings(AppConfigSettings):
+class AppBaseSettings(AppConfigSettings):  # type: ignore[misc]
     name: str = "fastblocks"
     style: str = "bulma"
     theme: str = "light"
@@ -17,7 +17,7 @@ class AppProtocol(t.Protocol):
     async def lifespan(self) -> t.AsyncIterator[None]: ...
 
 
-class AppBase(AdapterBase):
+class AppBase(AdapterBase):  # type: ignore[misc]
     router: Router | None
 
     def __init__(self) -> None:

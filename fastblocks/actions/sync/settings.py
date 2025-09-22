@@ -115,7 +115,9 @@ async def _get_default_settings_bucket() -> str:
             content = await storage_config_path.read_text()
             config = yaml.safe_load(content)
             if isinstance(config, dict):
-                bucket_name = config.get("buckets", {}).get("settings", "settings")
+                bucket_name = t.cast(
+                    str, config.get("buckets", {}).get("settings", "settings")
+                )
             else:
                 bucket_name = "settings"
             debug(f"Using settings bucket from config: {bucket_name}")
@@ -727,10 +729,7 @@ async def get_settings_sync_status(
     }
 
     try:
-        from acb.depends import depends
-
-        storage = depends.get("storage")
-
+        storage = await _get_storage_adapter()
         if not storage:
             status["error"] = "Storage adapter not available"
             return status
@@ -738,40 +737,7 @@ async def get_settings_sync_status(
         settings_files = await _discover_settings_files(settings_path)
         status["total_settings"] = len(settings_files)
 
-        for settings_info in settings_files:
-            local_info = await get_file_info(Path(settings_info["local_path"]))
-            remote_info = await _get_storage_file_info(
-                storage,
-                storage_bucket,
-                settings_info["storage_path"],
-            )
-
-            file_status: dict[str, t.Any] = {
-                "path": settings_info["storage_path"],
-                "adapter": settings_info["adapter_name"],
-                "local_exists": local_info["exists"],
-                "remote_exists": remote_info["exists"],
-            }
-
-            if local_info["exists"] and remote_info["exists"]:
-                if local_info["content_hash"] == remote_info["content_hash"]:
-                    file_status["status"] = "in_sync"
-                    status["in_sync"] += 1
-                else:
-                    file_status["status"] = "conflict"
-                    file_status["local_mtime"] = local_info["mtime"]
-                    file_status["remote_mtime"] = remote_info["mtime"]
-                    status["conflicts"] += 1
-            elif local_info["exists"]:
-                file_status["status"] = "local_only"
-                status["local_only"] += 1
-            elif remote_info["exists"]:
-                file_status["status"] = "remote_only"
-                status["remote_only"] += 1
-            else:
-                file_status["status"] = "missing"
-
-            status["details"].append(file_status)
+        await _process_settings_files(settings_files, storage, storage_bucket, status)
 
         status["out_of_sync"] = (
             status["conflicts"] + status["local_only"] + status["remote_only"]
@@ -782,6 +748,82 @@ async def get_settings_sync_status(
         debug(f"Error getting settings sync status: {e}")
 
     return status
+
+
+async def _get_storage_adapter() -> t.Any:
+    """Get the storage adapter."""
+    from acb.depends import depends
+
+    return depends.get("storage")
+
+
+async def _process_settings_files(
+    settings_files: list[dict[str, t.Any]],
+    storage: t.Any,
+    storage_bucket: str,
+    status: dict[str, t.Any],
+) -> None:
+    """Process all settings files and update status."""
+    for settings_info in settings_files:
+        local_info = await get_file_info(Path(settings_info["local_path"]))
+        remote_info = await _get_storage_file_info(
+            storage,
+            storage_bucket,
+            settings_info["storage_path"],
+        )
+
+        file_status = _create_file_status(settings_info, local_info, remote_info)
+        _update_status_counters(local_info, remote_info, file_status, status)
+        status["details"].append(file_status)
+
+
+def _create_file_status(
+    settings_info: dict[str, t.Any],
+    local_info: dict[str, t.Any],
+    remote_info: dict[str, t.Any],
+) -> dict[str, t.Any]:
+    """Create file status dictionary."""
+    file_status: dict[str, t.Any] = {
+        "path": settings_info["storage_path"],
+        "adapter": settings_info["adapter_name"],
+        "local_exists": local_info["exists"],
+        "remote_exists": remote_info["exists"],
+    }
+
+    # Determine sync status
+    if local_info["exists"] and remote_info["exists"]:
+        if local_info["content_hash"] == remote_info["content_hash"]:
+            file_status["status"] = "in_sync"
+        else:
+            file_status["status"] = "conflict"
+            file_status["local_mtime"] = local_info["mtime"]
+            file_status["remote_mtime"] = remote_info["mtime"]
+    elif local_info["exists"]:
+        file_status["status"] = "local_only"
+    elif remote_info["exists"]:
+        file_status["status"] = "remote_only"
+    else:
+        file_status["status"] = "missing"
+
+    return file_status
+
+
+def _update_status_counters(
+    local_info: dict[str, t.Any],
+    remote_info: dict[str, t.Any],
+    file_status: dict[str, t.Any],
+    status: dict[str, t.Any],
+) -> None:
+    """Update status counters based on file status."""
+    if local_info["exists"] and remote_info["exists"]:
+        if local_info["content_hash"] == remote_info["content_hash"]:
+            status["in_sync"] += 1
+        else:
+            status["conflicts"] += 1
+    elif local_info["exists"]:
+        status["local_only"] += 1
+    elif remote_info["exists"]:
+        status["remote_only"] += 1
 
 
 async def validate_all_settings(

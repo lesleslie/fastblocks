@@ -207,14 +207,14 @@ class UniversalQueryParser:
         limit: int,
     ) -> list[t.Any]:
         if self.pattern == "simple":
-            return await query_builder.all()
+            return t.cast(list[t.Any], await query_builder.all())
 
         query_builder = self._apply_filters(query_builder, filters)
         query_builder = self._apply_sorting(query_builder, order_by, order_dir)
         query_builder = self._apply_pagination(query_builder, offset, limit)
 
         debug(f"Executing query for model {self.model_class.__name__}")
-        results = await query_builder.all()
+        results = t.cast(list[t.Any], await query_builder.all())
         debug(f"Query returned {len(results)} results")
 
         return results
@@ -232,7 +232,7 @@ class UniversalQueryParser:
             query_builder = self.query.for_model(self.model_class).advanced
             query_builder = self._apply_filters(query_builder, filters)
 
-            return await query_builder.count()
+            return t.cast(int, await query_builder.count())
         except Exception as e:
             debug(f"Count query failed: {e}")
             return 0

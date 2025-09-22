@@ -16,7 +16,7 @@ class SitemapURL:
     priority: float | None = None
 
 
-class SitemapBaseSettings(Settings):
+class SitemapBaseSettings(Settings):  # type: ignore[misc]
     module: str = "native"
     domain: str = ""
     change_freq: t.Literal[
@@ -44,7 +44,7 @@ class SitemapProtocol(t.Protocol):
     sitemap: t.Any = None
 
 
-class SitemapBase(AdapterBase):
+class SitemapBase(AdapterBase):  # type: ignore[misc]
     category = "sitemap"
     settings_klass = SitemapBaseSettings
     sitemap: t.Any = None

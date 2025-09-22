@@ -1,6 +1,7 @@
 import functools
 import typing as t
 from collections.abc import Sequence
+from typing import TypeVar
 
 from starlette.types import ASGIApp
 
@@ -8,6 +9,7 @@ from .caching import CacheDirectives, Rule
 from .middleware import CacheControlMiddleware, CacheMiddleware
 
 _P = t.ParamSpec("_P")
+T = TypeVar("T", bound=ASGIApp)
 _T = t.TypeVar("_T", bound=ASGIApp)
 
 
@@ -21,7 +23,7 @@ class _MiddlewareFactory(t.Protocol[_P]):
 
 
 def _wrap_in_middleware[T: ASGIApp](app: T, middleware: ASGIApp) -> T:
-    return t.cast("T", functools.wraps(app, updated=())(middleware))
+    return t.cast(T, functools.wraps(app, updated=())(middleware))
 
 
 class _CacheMiddlewareDecorator:

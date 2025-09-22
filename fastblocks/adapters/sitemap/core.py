@@ -212,7 +212,7 @@ async def _ensure_async_iterator[T](items: ItemsTypes[T]) -> AsyncIterator[T]:
             for item in resolved_items:
                 yield item
         else:
-            items_sync = cast(Iterable[T], items)
+            items_sync = items
             for item in items_sync:
                 yield item
     except Exception as e:

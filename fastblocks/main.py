@@ -8,7 +8,7 @@ _app_instance = None
 _logger_instance = None
 
 
-def get_app():
+def get_app() -> t.Any:
     global _app_instance, _logger_instance
     if _app_instance is None:
         current_dir = Path.cwd()
@@ -50,13 +50,13 @@ def get_app():
     return _app_instance
 
 
-def get_logger():
+def get_logger() -> t.Any:
     get_app()
     return _logger_instance
 
 
 class LazyApp:
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> t.Any:
         return getattr(get_app(), name)
 
     async def __call__(self, scope: t.Any, receive: t.Any, send: t.Any) -> None:
@@ -65,7 +65,7 @@ class LazyApp:
 
 
 class LazyLogger:
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> t.Any:
         return getattr(get_logger(), name)
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:

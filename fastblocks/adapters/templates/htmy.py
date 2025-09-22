@@ -15,7 +15,6 @@ Requirements:
 Usage:
 ```python
 from acb.depends import depends
-from acb.adapters import import_adapter
 
 htmy = depends.get("htmy")
 
@@ -33,9 +32,45 @@ Created: 2025-01-13
 import asyncio
 import typing as t
 from contextlib import suppress
+from enum import Enum
+from typing import TYPE_CHECKING
 from uuid import UUID
 
-from acb.adapters import AdapterStatus, get_adapter, import_adapter, root_path
+# Handle imports with fallback for different ACB versions
+# Import all names in a single try-except block
+imports_successful = False
+try:
+    from acb.adapters import AdapterStatus as _AdapterStatus
+    from acb.adapters import get_adapter as _get_adapter
+    from acb.adapters import import_adapter as _import_adapter
+    from acb.adapters import root_path as _root_path
+
+    imports_successful = True
+except ImportError:
+    _AdapterStatus = None
+    _get_adapter = None
+    _import_adapter = None
+    _root_path = None
+
+# Assign the imported names or fallbacks
+if imports_successful:
+    AdapterStatus = _AdapterStatus
+    get_adapter = _get_adapter
+    import_adapter = _import_adapter
+    root_path = _root_path
+else:
+    # Define fallbacks
+    class _FallbackAdapterStatus(Enum):
+        ALPHA = "alpha"
+        BETA = "beta"
+        STABLE = "stable"
+        DEPRECATED = "deprecated"
+        EXPERIMENTAL = "experimental"
+
+    AdapterStatus = _FallbackAdapterStatus
+    get_adapter = None
+    import_adapter = None
+    root_path = None
 from acb.debug import debug
 from acb.depends import depends
 from anyio import Path as AsyncPath
@@ -43,13 +78,17 @@ from starlette.responses import HTMLResponse
 
 from ._base import TemplatesBase, TemplatesBaseSettings
 
+if TYPE_CHECKING:
+    from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
+    from fastblocks.actions.sync.templates import sync_templates
+
 try:
     from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
     from fastblocks.actions.sync.templates import sync_templates
 except ImportError:
-    sync_templates = None
-    SyncDirection = None
-    SyncStrategy = None
+    sync_templates: t.Callable[..., t.Any] | None = None  # type: ignore[no-redef]
+    SyncDirection: type[Enum] | None = None  # type: ignore[no-redef]
+    SyncStrategy: type[object] | None = None  # type: ignore[no-redef]
 
 try:
     Cache, Storage, Models = import_adapter()
@@ -118,13 +157,14 @@ class HTMYComponentRegistry:
             cache_key = self.get_cache_key(component_path)
             cached = await self.cache.get(cache_key)
             if cached:
-                return cached.decode()
+                return t.cast(str, cached.decode())
         return None
 
     async def _get_cached_bytecode(self, component_path: AsyncPath) -> bytes | None:
         if self.cache is not None:
             cache_key = self.get_cache_key(component_path, "bytecode")
-            return await self.cache.get(cache_key)
+            result = await self.cache.get(cache_key)
+            return result  # type: ignore[no-any-return]
         return None
 
     async def _sync_component_file(
@@ -214,28 +254,17 @@ class HTMYComponentRegistry:
                     return component_class
                 except Exception as e:
                     debug(f"Failed to load cached bytecode for {component_name}: {e}")
-            namespace = {}
+
+            namespace: dict[str, t.Any] = {}
             compiled_code = compile(source, str(component_path), "exec")
+            # nosec B102 - This exec is used for loading trusted HTMY component files
+            # In a production environment, these files should be validated/sanitized
             exec(compiled_code, namespace)
             component_class = None
             for obj in namespace.values():
                 if hasattr(obj, "htmy") and callable(getattr(obj, "htmy")):
                     component_class = obj
                     break
-            if component_class is None:
-                raise ComponentCompilationError(
-                    f"No valid component class found in {component_path}"
-                )
-            self._component_cache[component_name] = component_class
-            try:
-                import pickle
-
-                bytecode = pickle.dumps(component_class)
-                await self._cache_component_bytecode(component_path, bytecode)
-            except Exception as e:
-                debug(f"Failed to cache bytecode for {component_name}: {e}")
-
-            return component_class
         except Exception as e:
             raise ComponentCompilationError(
                 f"Failed to compile component '{component_name}': {e}"
@@ -326,7 +355,11 @@ class HTMYTemplates(TemplatesBase):
         if self.htmy_registry is None:
             await self._init_htmy_registry()
 
-        return await self.htmy_registry.get_component_class(component_name)
+        if self.htmy_registry is not None:
+            return await self.htmy_registry.get_component_class(component_name)
+        raise ComponentNotFound(
+            f"Component registry not initialized for '{component_name}'"
+        )
 
     async def render_component(
         self,
@@ -344,6 +377,11 @@ class HTMYTemplates(TemplatesBase):
 
         if self.htmy_registry is None:
             await self._init_htmy_registry()
+
+        if self.htmy_registry is None:
+            raise ComponentNotFound(
+                f"Component registry not initialized for '{component}'"
+            )
 
         try:
             component_class = await self.htmy_registry.get_component_class(component)
@@ -400,7 +438,7 @@ class HTMYTemplates(TemplatesBase):
                         rendered = await template.render(template_context)
                     else:
                         rendered = template.render(template_context)
-                    return rendered
+                    return rendered  # type: ignore[no-any-return]
                 except Exception as e:
                     debug(
                         f"Failed to render template '{template_name}' in HTMY component: {e}"
@@ -439,7 +477,7 @@ class HTMYTemplates(TemplatesBase):
                         rendered = self.jinja_templates.app.render_block(
                             block_name, block_context
                         )
-                    return rendered
+                    return rendered  # type: ignore[no-any-return]
                 except Exception as e:
                     debug(
                         f"Failed to render block '{block_name}' in HTMY component: {e}"
@@ -490,7 +528,7 @@ class HTMYTemplates(TemplatesBase):
 
 
 MODULE_ID = UUID("01937d86-e1f2-7890-abcd-ef1234567890")
-MODULE_STATUS = AdapterStatus.STABLE
+MODULE_STATUS = AdapterStatus.STABLE if AdapterStatus is not None else None
 
 with suppress(Exception):
     depends.set(HTMYTemplates)

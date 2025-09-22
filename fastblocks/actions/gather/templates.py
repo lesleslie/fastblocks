@@ -332,8 +332,8 @@ async def _gather_default_context_processors() -> list[t.Callable[..., t.Any]]:
 
 async def _gather_filters(
     filter_modules: list[str],
-) -> dict[str, t.Callable[..., t.Any]]:
-    filters = {}
+) -> list[dict[str, t.Callable[..., t.Any]]]:
+    filters: dict[str, t.Callable[..., t.Any]] = {}
     for module_path in filter_modules:
         try:
             module = import_module(module_path)
@@ -341,7 +341,7 @@ async def _gather_filters(
         except Exception as e:
             debug(f"Error loading filters from {module_path}: {e}")
     debug(f"Gathered {len(filters)} template filters")
-    return filters
+    return [filters]
 
 
 def _extract_filters_from_module(
@@ -383,26 +383,21 @@ def _extract_filter_functions(
                 debug(f"Found filter function {filter_name} in {module_path}")
 
 
-async def _gather_default_filters() -> dict[str, t.Callable[..., t.Any]]:
-    filters = {}
+async def _gather_default_filters() -> list[dict[str, t.Callable[..., t.Any]]]:
+    filters: dict[str, t.Callable[..., t.Any]] = {}
     try:
         filters_module = __import__(
             "fastblocks.adapters.templates._filters",
             fromlist=["Filters"],
         )
-        Filters = filters_module.Filters
-        for attr_name in dir(Filters):
-            if not attr_name.startswith("_") and attr_name != "register_filters":
-                attr = getattr(Filters, attr_name)
-                if callable(attr):
-                    filters[attr_name] = attr
-    except (ImportError, AttributeError) as e:
+        filters = getattr(filters_module, "Filters", {})
+    except Exception as e:
         debug(f"Error loading default filters: {e}")
+    debug(f"Gathered {len(filters)} default template filters")
+    return [filters]
 
-    return filters
 
-
-async def _gather_template_globals() -> dict[str, t.Any]:
+async def _gather_template_globals() -> list[dict[str, t.Any]]:
     globals_dict = {}
     try:
         from acb.depends import depends
@@ -419,7 +414,7 @@ async def _gather_template_globals() -> dict[str, t.Any]:
     except Exception as e:
         debug(f"Error gathering template globals: {e}")
 
-    return globals_dict
+    return [globals_dict]
 
 
 async def create_choice_loader(

@@ -5,6 +5,7 @@ with enhanced caching, filtering, and debugging capabilities.
 """
 
 import re
+import typing as t
 from contextlib import suppress
 from uuid import UUID
 
@@ -20,11 +21,11 @@ class NativeSitemapSettings(SitemapBaseSettings):
     pass
 
 
-class NativeSitemap(BaseSitemap[str], SitemapBase):
+class NativeSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
     sitemap: SitemapApp | None = None
 
-    @depends.inject
-    def items(self) -> list[str]:
+    @depends.inject  # type: ignore[misc]
+    def items(self) -> t.Any:
         try:
             routes_adapter = depends.get("routes")
             if not hasattr(routes_adapter, "routes"):
@@ -44,7 +45,7 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
         strategy_options = self.config.strategy_options
         include_patterns = strategy_options.get("include_patterns", [])
         exclude_patterns = strategy_options.get("exclude_patterns", [])
-        filtered = routes[:]
+        filtered = routes.copy()
         for pattern in exclude_patterns:
             try:
                 regex = re.compile(
@@ -75,7 +76,7 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
         return item
 
     def changefreq(self, item: str) -> str:
-        return self.config.change_freq
+        return t.cast(str, self.config.change_freq)
 
     def priority(self, item: str) -> float:
         if item == "/":
@@ -83,10 +84,9 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
         segments = len([s for s in item.split("/") if s])
         if segments == 1:
             return 0.8
-        elif segments == 2:
+        if segments == 2:
             return 0.6
-        else:
-            return 0.4
+        return 0.4
 
     async def init(self) -> None:
         if not self.config.domain:

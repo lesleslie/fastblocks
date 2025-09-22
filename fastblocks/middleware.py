@@ -46,18 +46,26 @@ class HtmxMiddleware:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] in ("http", "websocket"):
-            htmx_details = HtmxDetails(scope)
-            scope["htmx"] = htmx_details
-            if debug.enabled:
-                method = scope.get("method", "UNKNOWN")
-                path = scope.get("path", "unknown")
-                is_htmx = bool(htmx_details)
-                debug(f"HtmxMiddleware: {method} {path} - HTMX: {is_htmx}")
-                if is_htmx:
-                    headers = htmx_details.get_all_headers()
-                    for header_name, header_value in headers.items():
-                        debug(f"HtmxMiddleware: {header_name}: {header_value}")
+            await self._process_htmx_request(scope)
         await self._app(scope, receive, send)
+
+    async def _process_htmx_request(self, scope: Scope) -> None:
+        """Process HTMX request and add HTMX details to scope."""
+        htmx_details = HtmxDetails(scope)
+        scope["htmx"] = htmx_details
+        if debug.enabled:
+            self._log_htmx_details(scope, htmx_details)
+
+    def _log_htmx_details(self, scope: Scope, htmx_details: HtmxDetails) -> None:
+        """Log HTMX details if debugging is enabled."""
+        method = scope.get("method", "UNKNOWN")
+        path = scope.get("path", "unknown")
+        is_htmx = bool(htmx_details)
+        debug(f"HtmxMiddleware: {method} {path} - HTMX: {is_htmx}")
+        if is_htmx:
+            headers = htmx_details.get_all_headers()
+            for header_name, header_value in headers.items():
+                debug(f"HtmxMiddleware: {header_name}: {header_value}")
 
 
 class HtmxResponseMiddleware:
@@ -71,15 +79,21 @@ class HtmxResponseMiddleware:
             return
 
         async def send_wrapper(message: Message) -> None:
-            if message["type"] == "http.response.start":
-                htmx_details = scope.get("htmx")
-                if htmx_details and bool(htmx_details):
-                    debug("HtmxResponseMiddleware: Processing HTMX response")
-                    headers = list(message.get("headers", []))
-                    message["headers"] = headers
-            await send(message)
+            await self._process_response_message(message, scope, send)
 
         await self._app(scope, receive, send_wrapper)
+
+    async def _process_response_message(
+        self, message: Message, scope: Scope, send: Send
+    ) -> None:
+        """Process response message and handle HTMX responses."""
+        if message["type"] == "http.response.start":
+            htmx_details = scope.get("htmx")
+            if htmx_details and bool(htmx_details):
+                debug("HtmxResponseMiddleware: Processing HTMX response")
+                headers = list(message.get("headers", []))
+                message["headers"] = headers
+        await send(message)
 
 
 class MiddlewareUtils:
@@ -126,17 +140,17 @@ class CurrentRequestMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> t.Any:  # type: ignore[func-returns-value,no-any-return]
         if scope[MiddlewareUtils.TYPE] not in (
             MiddlewareUtils.HTTP,
             MiddlewareUtils.WEBSOCKET,
         ):
             await self.app(scope, receive, send)
-            return None
+            return None  # type: ignore[func-returns-value]
         local_scope = _request_ctx_var.set(scope)
-        response = await self.app(scope, receive, send)
+        response = await self.app(scope, receive, send)  # type: ignore[func-returns-value]
         _request_ctx_var.reset(local_scope)
-        return response
+        return response  # type: ignore[no-any-return]
 
 
 class SecureHeadersMiddleware:
@@ -167,19 +181,24 @@ class CacheValidator:
         self.rules = rules or [Rule()]
 
     def check_for_duplicate_middleware(self, app: ASGIApp) -> None:
-        if hasattr(app, "middleware"):
-            middleware_attr = app.middleware  # type: ignore[attr-defined]
-            if callable(middleware_attr):
-                return
-            middleware = middleware_attr
-            for middleware_item in middleware:
-                if isinstance(middleware_item, CacheMiddleware):
-                    from .exceptions import DuplicateCaching
+        if not hasattr(app, "middleware"):
+            return
 
-                    msg = "CacheMiddleware detected in middleware stack"
-                    raise DuplicateCaching(
-                        msg,
-                    )
+        middleware_attr = app.middleware  # type: ignore[attr-defined]
+        if callable(middleware_attr):
+            return
+
+        middleware = middleware_attr
+        self._check_for_cache_middleware_duplicates(middleware)
+
+    def _check_for_cache_middleware_duplicates(self, middleware: t.Any) -> None:
+        """Check if CacheMiddleware is already in the middleware stack."""
+        for middleware_item in middleware:
+            if isinstance(middleware_item, CacheMiddleware):
+                from .exceptions import DuplicateCaching
+
+                msg = "CacheMiddleware detected in middleware stack"
+                raise DuplicateCaching(msg)
 
     def is_duplicate_in_scope(self, scope: Scope) -> bool:
         return scope_name in scope
@@ -188,9 +207,9 @@ class CacheValidator:
 class CacheKeyManager:
     def __init__(self, cache: t.Any | None = None) -> None:
         self.cache = cache
-        self._cache_dict = {}
+        self._cache_dict: dict[t.Any, t.Any] = {}
 
-    def get_cache_instance(self):
+    def get_cache_instance(self) -> t.Any:
         if self.cache is None:
             from .exceptions import safe_depends_get
 
@@ -218,7 +237,7 @@ class CacheMiddleware:
         self.validator.check_for_duplicate_middleware(app)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        cache = self.key_manager.get_cache_instance()
+        cache = self.key_manager.get_cache_instance()  # type: ignore[no-untyped-call]
         self.cache = cache
         if scope["type"] != "http":
             await self.app(scope, receive, send)
@@ -422,15 +441,22 @@ class MiddlewareStackManager:
     def build_stack(self) -> list[Middleware]:
         if not self._initialized:
             self.initialize()
+
         middleware_stack: dict[MiddlewarePosition, Middleware] = {}
-        for position, middleware_class in self._middleware_registry.items():
-            options = self._middleware_options.get(position, {})
-            middleware_stack[position] = Middleware(middleware_class, **options)
+        self._build_middleware_stack(middleware_stack)
         middleware_stack.update(self._custom_middleware)
 
         return [
             middleware_stack[position] for position in sorted(middleware_stack.keys())
         ]
+
+    def _build_middleware_stack(
+        self, middleware_stack: dict[MiddlewarePosition, Middleware]
+    ) -> None:
+        """Build the middleware stack from registered middleware."""
+        for position, middleware_class in self._middleware_registry.items():
+            options = self._middleware_options.get(position, {})
+            middleware_stack[position] = Middleware(middleware_class, **options)
 
     def get_middleware_info(self) -> dict[str, t.Any]:
         if not self._initialized:

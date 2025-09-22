@@ -21,7 +21,7 @@ class CachedSitemapSettings(SitemapBaseSettings):
     pass
 
 
-class CachedSitemap(BaseSitemap[str], SitemapBase):
+class CachedSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
     sitemap: SitemapApp | None = None
     _background_task: asyncio.Task[t.Any] | None = None
 
@@ -29,8 +29,8 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
         super().__init__()
         self._underlying_adapter = None
 
-    @depends.inject
-    def items(self) -> list[str]:
+    @depends.inject  # type: ignore[misc]
+    async def items(self) -> t.Any:
         try:
             routes_adapter = depends.get("routes")
             if hasattr(routes_adapter, "routes"):
@@ -46,7 +46,7 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
         return item
 
     def changefreq(self, item: str) -> str:
-        return self.config.change_freq
+        return t.cast(str, self.config.change_freq)
 
     def priority(self, item: str) -> float:
         if item == "/":
@@ -54,10 +54,9 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
         segments = len([s for s in item.split("/") if s])
         if segments == 1:
             return 0.8
-        elif segments == 2:
+        if segments == 2:
             return 0.6
-        else:
-            return 0.4
+        return 0.4
 
     async def _background_refresh(self) -> None:
         strategy_options = self.config.strategy_options
