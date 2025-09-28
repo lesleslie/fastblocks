@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.15.2"
+version = "0.16.0"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -77,7 +77,7 @@ sitemap = []
 
 [dependency-groups]
 dev = [
-    "crackerjack==0.38.12",
+    "crackerjack>=0.38.12",
     "excalidraw-mcp>=0.34",
     "penpot-mcp>=0.1.2",
     "pytest>=8.4.1",
