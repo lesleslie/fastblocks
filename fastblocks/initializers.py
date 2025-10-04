@@ -33,6 +33,7 @@ class ApplicationInitializer:
         self._configure_exception_handlers()
         self._setup_models()
         self._configure_logging()
+        self._register_event_handlers()
 
     def _load_acb_modules(self) -> None:
         try:
@@ -137,3 +138,48 @@ class ApplicationInitializer:
                 server_logger.addHandler(interceptor_class())
                 server_logger.setLevel(logging.DEBUG)
                 server_logger.propagate = False
+
+    def _register_event_handlers(self) -> None:
+        """Register FastBlocks event handlers, health checks, validation, and workflows with ACB."""
+        try:
+            from contextlib import suppress
+
+            from ._events_integration import register_fastblocks_event_handlers
+            from ._health_integration import register_fastblocks_health_checks
+            from ._validation_integration import register_fastblocks_validation
+            from ._workflows_integration import register_fastblocks_workflows
+
+            # Register event handlers, health checks, validation, and workflows (async, run in background)
+            with suppress(Exception):
+                import asyncio
+
+                # Try to get or create event loop
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                # Schedule registration tasks
+                loop.create_task(register_fastblocks_event_handlers())
+                loop.create_task(register_fastblocks_health_checks())
+                loop.create_task(register_fastblocks_validation())
+                loop.create_task(register_fastblocks_workflows())
+
+            if self.logger:
+                self.logger.info(
+                    "FastBlocks integrations registered (events, health, validation, workflows)"
+                )
+
+        except ImportError:
+            # ACB integrations not available - graceful degradation
+            if self.logger:
+                self.logger.debug(
+                    "ACB integrations not available - running without enhanced features"
+                )
+        except Exception as e:
+            # Log error but don't fail application startup
+            if self.logger:
+                self.logger.warning(
+                    f"Failed to register ACB integrations: {e} - continuing with degraded features"
+                )

@@ -24,3 +24,11 @@ __pycache__/
 /.coverage
 /.mcp.json
 /.crackerjack/
+/NOTES.md
+/.obsidian/
+/.smart-env/
+
+# Temporary and working files
+.DS_Store
+coverage.json
+*.bak

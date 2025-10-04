@@ -13,10 +13,13 @@ The FastBlocks implementation extends the original with:
 - FastBlocks-specific debugging and logging
 - Enhanced template integration
 - Response helpers optimized for FastBlocks
+- Event-driven HTMX updates via ACB Events system
 """
 
+import asyncio
 import json
 import typing as t
+from contextlib import suppress
 from urllib.parse import unquote
 
 from acb.debug import debug
@@ -271,8 +274,26 @@ def htmx_trigger(
 ) -> HtmxResponse:
     if isinstance(trigger_events, dict):
         trigger_value = json.dumps(trigger_events)
+        trigger_name = next(iter(trigger_events.keys()), "custom_trigger")
+        trigger_data = trigger_events
     else:
         trigger_value = trigger_events
+        trigger_name = trigger_events
+        trigger_data = None
+
+    # Publish HTMX trigger event (async, don't block response)
+    with suppress(Exception):
+
+        async def _publish_event() -> None:
+            from .adapters.templates._events_wrapper import publish_htmx_trigger
+
+            await publish_htmx_trigger(
+                trigger_name=trigger_name,
+                trigger_data=trigger_data,
+            )
+
+        # Schedule event publishing in background
+        asyncio.create_task(_publish_event())
 
     return HtmxResponse(
         content=content,
@@ -283,10 +304,39 @@ def htmx_trigger(
 
 
 def htmx_redirect(url: str, **kwargs: t.Any) -> HtmxResponse:
+    # Publish HTMX redirect event (async, don't block response)
+    with suppress(Exception):
+
+        async def _publish_event() -> None:
+            from ._events_integration import get_event_publisher
+
+            publisher = get_event_publisher()
+            if publisher:
+                await publisher.publish_htmx_update(
+                    update_type="redirect",
+                    target=url,
+                )
+
+        # Schedule event publishing in background
+        asyncio.create_task(_publish_event())
+
     return HtmxResponse(redirect=url, **kwargs)
 
 
 def htmx_refresh(**kwargs: t.Any) -> HtmxResponse:
+    # Publish HTMX refresh event (async, don't block response)
+    with suppress(Exception):
+
+        async def _publish_event() -> None:
+            from .adapters.templates._events_wrapper import publish_htmx_refresh
+
+            # Get target from kwargs if provided
+            target = kwargs.get("target", "#body")
+            await publish_htmx_refresh(target=target)
+
+        # Schedule event publishing in background
+        asyncio.create_task(_publish_event())
+
     return HtmxResponse(refresh=True, **kwargs)
 
 

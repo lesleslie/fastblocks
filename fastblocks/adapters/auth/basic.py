@@ -17,7 +17,7 @@ Requirements:
 
 Usage:
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 auth = depends.get("auth")

@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import email.utils
 import hashlib
@@ -6,6 +7,7 @@ import sys
 import time
 import typing as t
 from collections.abc import Iterable, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from functools import partial
 from threading import local
@@ -439,6 +441,23 @@ async def _delete_cache_entries(
         logger.debug(f"clear_cache key={cache_key!r}")
         await cache.delete(cache_key)
 
+        # Publish cache invalidation event (async, don't block)
+        with suppress(Exception):
+
+            async def _publish_event() -> None:
+                from .adapters.templates._events_wrapper import (
+                    publish_cache_invalidation,
+                )
+
+                await publish_cache_invalidation(
+                    cache_key=cache_key,
+                    reason="url_invalidation",
+                    invalidated_by="cache_middleware",
+                    affected_templates=None,
+                )
+
+            asyncio.create_task(_publish_event())
+
 
 def serialize_response(response: Response) -> dict[str, t.Any]:
     """Serialize a response for caching."""
@@ -741,7 +760,7 @@ class CacheResponder:
         except ResponseNotCachable:
             self.is_response_cacheable = False
         else:
-            self.initial_message["headers"] = list(response.raw_headers)
+            self.initial_message["headers"] = response.raw_headers.copy()
         await send(self.initial_message)
         await send(message)
 

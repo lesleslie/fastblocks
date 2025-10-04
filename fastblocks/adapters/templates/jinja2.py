@@ -17,7 +17,7 @@ Requirements:
 
 Usage:
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 templates = depends.get("templates")
@@ -48,6 +48,16 @@ from uuid import UUID
 from acb.adapters import AdapterStatus, get_adapter, import_adapter
 from acb.config import Config
 from acb.debug import debug
+
+# Import event tracking decorator (with fallback if unavailable)
+try:
+    from ._events_wrapper import track_template_render
+except ImportError:
+    # Fallback no-op decorator if events integration unavailable
+    def track_template_render(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+        return func
+
+
 from acb.depends import depends
 from anyio import Path as AsyncPath
 from jinja2 import TemplateNotFound
@@ -718,7 +728,6 @@ class Templates(TemplatesBase):
         debug(jinja_loaders)
         return ChoiceLoader(jinja_loaders)
 
-    @depends.inject  # type: ignore[misc]
     async def init_envs(
         self,
         template_paths: list[AsyncPath],
@@ -911,6 +920,7 @@ class Templates(TemplatesBase):
                 else:
                     env.filters[name] = filter_func
 
+    @track_template_render
     async def render_template(
         self,
         request: t.Any,
@@ -941,6 +951,7 @@ class Templates(TemplatesBase):
             headers=headers,
         )
 
+    @track_template_render
     async def render_component(
         self,
         request: t.Any,

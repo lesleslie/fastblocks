@@ -1,6 +1,6 @@
 # Templates Adapter
 
-> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
+> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>)
 
 The Templates adapter provides template rendering capabilities for FastBlocks applications.
 
@@ -444,6 +444,217 @@ Once registered, you can use your custom filters in templates:
 <h1>[[ title | uppercase ]]</h1>
 <p>[[ count | pluralize("item", "items") ]]</p>
 <p>Posted [[ article.created_at | relative_time ]]</p>
+```
+
+## Adapter Integration Examples
+
+FastBlocks templates work seamlessly with other adapters to provide filters for images, icons, fonts, and styles. These examples demonstrate practical usage patterns.
+
+### Image Adapter Integration
+
+The image adapter provides filters for responsive images with transformations:
+
+```jinja2
+[% extends "base.html" %]
+
+[% block content %]
+<div class="hero-section">
+    <!-- Basic image tag with adapter integration -->
+    [[ img_tag('hero-banner.jpg', 'Welcome Banner', class='hero-image', width=1200) ]]
+
+    <!-- Async image with transformations -->
+    [[ await async_image_with_transformations('hero-banner.jpg', 'Welcome Banner',
+                                             {'width': 1200, 'quality': 85, 'format': 'webp'},
+                                             class='hero-image', loading='eager') ]]
+</div>
+[% endblock %]
+```
+
+### Responsive Images
+
+Create responsive images with multiple size variants:
+
+```jinja2
+<article class="blog-post">
+    <h1>Article Title</h1>
+
+    <!-- Responsive image with multiple sizes -->
+    [[ await async_responsive_image('article-hero.jpg', 'Article Hero Image', {
+        'mobile': {'width': 400, 'quality': 75, 'format': 'webp'},
+        'tablet': {'width': 800, 'quality': 80, 'format': 'webp'},
+        'desktop': {'width': 1200, 'quality': 85, 'format': 'webp'}
+    }, class='article-hero', loading='lazy') ]]
+
+    <div class="article-content">
+        <!-- Lazy loading image -->
+        [[ await async_lazy_image('content-image.jpg', 'Content Image',
+                                  width=600, height=400, class='content-img') ]]
+    </div>
+</article>
+```
+
+### Icon Adapter Integration
+
+Use icon adapters for inline SVG icons:
+
+```jinja2
+<nav class="user-nav">
+    <!-- Phosphor icon with custom size and variant -->
+    [[ ph_icon("user-circle", variant="fill", size="lg") | safe ]]
+
+    <!-- Interactive icon with action -->
+    [[ ph_interactive("sign-out", action="logout()") | safe ]]
+
+    <!-- Heroicons integration -->
+    [[ heroicon("user", variant="outline", size="6") | safe ]]
+</nav>
+```
+
+### Font Adapter Integration
+
+Optimize font loading with the font adapter:
+
+```jinja2
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Enhanced font loading with optimization -->
+    [[ await async_optimized_font_loading(['Inter', 'Roboto Mono'], critical=True) ]]
+
+    <style>
+        [[ font_face_declaration('CustomFont', {
+            'woff2': '/fonts/custom.woff2',
+            'woff': '/fonts/custom.woff'
+        }, weight='400', style='normal') ]]
+
+        body {
+            font-family: [[ font_family('primary') ]];
+        }
+    </style>
+</head>
+</html>
+```
+
+### Style Framework Integration
+
+Integrate with style frameworks using utility filters:
+
+```jinja2
+[% extends "base.html" %]
+
+[% block content %]
+<div class="container">
+    <!-- Stylesheet links from all adapters -->
+    [[ stylesheet_links() ]]
+
+    <!-- Framework-specific utilities -->
+    <div class="[[ grid_class('cols', 3) ]]">
+        <div class="[[ utility_class('card') ]]">
+            Card 1
+        </div>
+        <div class="[[ utility_class('card') ]]">
+            Card 2
+        </div>
+        <div class="[[ utility_class('card') ]]">
+            Card 3
+        </div>
+    </div>
+</div>
+[% endblock %]
+```
+
+### Complete Example: Blog Post Page
+
+A comprehensive example demonstrating multiple adapter integrations:
+
+```jinja2
+[% extends "base.html" %]
+
+[% block title %][[ post.title ]] - Blog[% endblock %]
+
+[% block head %]
+    [# Critical font loading #]
+    [[ await async_optimized_font_loading(['Merriweather', 'Open Sans'], critical=True) ]]
+
+    [# Stylesheet links #]
+    [[ stylesheet_links() ]]
+[% endblock %]
+
+[% block content %]
+<article class="blog-post">
+    <header class="post-header">
+        <h1>[[ post.title ]]</h1>
+
+        <div class="post-meta">
+            <div class="author">
+                [[ ph_icon("user", variant="fill") | safe ]]
+                <span>[[ post.author.name ]]</span>
+            </div>
+
+            <div class="date">
+                [[ ph_icon("calendar", variant="regular") | safe ]]
+                <time datetime="[[ post.created_at ]]">
+                    [[ post.created_at | datetime('%B %d, %Y') ]]
+                </time>
+            </div>
+        </div>
+
+        [# Hero image with responsive variants #]
+        [[ await async_responsive_image(post.hero_image, post.title, {
+            'mobile': {'width': 400, 'quality': 75},
+            'tablet': {'width': 800, 'quality': 80},
+            'desktop': {'width': 1200, 'quality': 85}
+        }, class='post-hero', loading='eager') ]]
+    </header>
+
+    <div class="post-content">
+        [[ post.content | safe ]]
+    </div>
+
+    <footer class="post-footer">
+        <div class="tags">
+            [% for tag in post.tags %]
+                <span class="tag">[[ tag ]]</span>
+            [% endfor %]
+        </div>
+
+        <div class="share-buttons">
+            [[ ph_interactive("share", action="sharePost('[[ post.id ]]')") | safe ]]
+        </div>
+    </footer>
+</article>
+
+[# Related posts loaded via HTMX #]
+<section
+    class="related-posts"
+    hx-get="/api/posts/[[ post.id ]]/related"
+    hx-trigger="load"
+    hx-swap="innerHTML">
+    <div class="loading">
+        Loading related posts...
+    </div>
+</section>
+[% endblock %]
+```
+
+### Performance Optimization Patterns
+
+Best practices for template performance:
+
+```jinja2
+[# 1. Use async filters for I/O operations #]
+[[ await async_image_with_transformations('banner.jpg', 'Banner',
+                                         {'width': 1200, 'format': 'webp'}) ]]
+
+[# 2. Lazy load non-critical images #]
+[[ await async_lazy_image('footer-logo.png', 'Logo',
+                          loading='lazy', class='footer-logo') ]]
+
+[# 3. Preload critical fonts #]
+[[ await async_optimized_font_loading(['Inter'], critical=True) ]]
+
+[# 4. Use fragment templates for HTMX updates #]
+[% include "fragments/user_card.html" %]
 ```
 
 ## Customization

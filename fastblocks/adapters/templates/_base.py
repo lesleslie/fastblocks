@@ -3,7 +3,7 @@ from abc import ABC
 
 from acb.adapters import get_adapters, root_path
 from acb.config import AdapterBase, Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 from anyio import Path as AsyncPath
 from starlette.requests import Request
 from starlette.responses import Response
@@ -57,7 +57,7 @@ class TemplatesBaseSettings(Config, ABC):  # type: ignore[misc]
     cache_timeout: int = 300
 
     @depends.inject  # type: ignore[misc]
-    def __init__(self, config: t.Any = depends(), **values: t.Any) -> None:
+    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         self.cache_timeout = self.cache_timeout if config.deployed else 1
 
@@ -115,13 +115,13 @@ class TemplatesBase(AdapterBase):  # type: ignore[misc]
 
     async def _get_app_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
         searchpaths = []
-        for a in [
+        for a in (
             a
             for a in get_adapters()
             if a
             and hasattr(a, "category")
             and a.category not in ("app", "admin", "secret")
-        ]:
+        ):
             exists_result = await safe_await((a.path / "_templates").exists)
             if exists_result:
                 searchpaths.append(a.path / "_templates")

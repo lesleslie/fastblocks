@@ -14,7 +14,7 @@ Requirements:
 
 Usage:
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 htmy = depends.get("htmy")
 
@@ -77,6 +77,14 @@ from anyio import Path as AsyncPath
 from starlette.responses import HTMLResponse
 
 from ._base import TemplatesBase, TemplatesBaseSettings
+from ._htmy_components import (
+    AdvancedHTMYComponentRegistry,
+    ComponentLifecycleManager,
+    ComponentMetadata,
+    ComponentRenderError,
+    ComponentStatus,
+    ComponentType,
+)
 
 if TYPE_CHECKING:
     from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
@@ -276,14 +284,20 @@ class HTMYTemplatesSettings(TemplatesBaseSettings):
     cache_timeout: int = 300
     enable_bidirectional: bool = True
     debug_components: bool = False
+    enable_hot_reload: bool = True
+    enable_lifecycle_hooks: bool = True
+    enable_component_validation: bool = True
+    enable_advanced_registry: bool = True
 
 
 class HTMYTemplates(TemplatesBase):
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.htmy_registry: HTMYComponentRegistry | None = None
+        self.advanced_registry: AdvancedHTMYComponentRegistry | None = None
         self.component_searchpaths: list[AsyncPath] = []
         self.jinja_templates: t.Any = None
+        self.settings = HTMYTemplatesSettings(**kwargs)
 
     async def get_component_searchpaths(self, app_adapter: t.Any) -> list[AsyncPath]:
         searchpaths = []
@@ -309,8 +323,9 @@ class HTMYTemplates(TemplatesBase):
         return searchpaths
 
     async def _init_htmy_registry(self) -> None:
-        if self.htmy_registry is not None:
+        if self.htmy_registry is not None and self.advanced_registry is not None:
             return
+
         app_adapter = get_adapter("app")
         if app_adapter is None:
             try:
@@ -319,7 +334,22 @@ class HTMYTemplates(TemplatesBase):
                 from types import SimpleNamespace
 
                 app_adapter = SimpleNamespace(name="app", category="app")
+
         self.component_searchpaths = await self.get_component_searchpaths(app_adapter)
+
+        # Initialize advanced registry if enabled
+        if self.settings.enable_advanced_registry:
+            self.advanced_registry = AdvancedHTMYComponentRegistry(
+                searchpaths=self.component_searchpaths,
+                cache=self.cache,
+                storage=self.storage,
+            )
+
+            # Configure hot reload
+            if self.settings.enable_hot_reload:
+                self.advanced_registry.enable_hot_reload()
+
+        # Keep legacy registry for backward compatibility
         self.htmy_registry = HTMYComponentRegistry(
             searchpaths=self.component_searchpaths,
             cache=self.cache,
@@ -361,6 +391,60 @@ class HTMYTemplates(TemplatesBase):
             f"Component registry not initialized for '{component_name}'"
         )
 
+    async def render_component_advanced(
+        self,
+        request: t.Any,
+        component: str,
+        context: dict[str, t.Any] | None = None,
+        status_code: int = 200,
+        headers: dict[str, str] | None = None,
+        **kwargs: t.Any,
+    ) -> HTMLResponse:
+        """Render component using advanced registry with lifecycle management."""
+        if context is None:
+            context = {}
+        if headers is None:
+            headers = {}
+
+        if self.advanced_registry is None:
+            await self._init_htmy_registry()
+
+        if self.advanced_registry is None:
+            raise ComponentRenderError(
+                f"Advanced registry not initialized for '{component}'"
+            )
+
+        try:
+            # Add kwargs to context
+            enhanced_context = context | kwargs
+
+            rendered_content = (
+                await self.advanced_registry.render_component_with_lifecycle(
+                    component, enhanced_context, request
+                )
+            )
+
+            return HTMLResponse(
+                content=rendered_content,
+                status_code=status_code,
+                headers=headers,
+            )
+
+        except Exception as e:
+            error_content = (
+                f"<html><body>Component {component} error: {e}</body></html>"
+            )
+            if self.settings.debug_components:
+                import traceback
+
+                error_content = f"<html><body><h3>Component {component} error:</h3><pre>{traceback.format_exc()}</pre></body></html>"
+
+            return HTMLResponse(
+                content=error_content,
+                status_code=500,
+                headers=headers,
+            )
+
     async def render_component(
         self,
         request: t.Any,
@@ -374,6 +458,15 @@ class HTMYTemplates(TemplatesBase):
             context = {}
         if headers is None:
             headers = {}
+
+        # Use advanced registry if available and enabled
+        if (
+            self.settings.enable_advanced_registry
+            and self.advanced_registry is not None
+        ):
+            return await self.render_component_advanced(
+                request, component, context, status_code, headers, **kwargs
+            )
 
         if self.htmy_registry is None:
             await self._init_htmy_registry()
@@ -429,7 +522,7 @@ class HTMYTemplates(TemplatesBase):
             if context is None:
                 context = {}
 
-            template_context = {**context, **kwargs}
+            template_context = context | kwargs
 
             if self.jinja_templates and hasattr(self.jinja_templates, "app"):
                 try:
@@ -452,6 +545,84 @@ class HTMYTemplates(TemplatesBase):
 
         return render_template
 
+    async def discover_components(self) -> dict[str, ComponentMetadata]:
+        """Discover all components and return metadata."""
+        if self.advanced_registry is None:
+            await self._init_htmy_registry()
+
+        if self.advanced_registry is not None:
+            return await self.advanced_registry.discover_components()
+
+        # Fallback to basic discovery
+        components = {}
+        if self.htmy_registry is not None:
+            discovered = await self.htmy_registry.discover_components()
+            for name, path in discovered.items():
+                components[name] = ComponentMetadata(
+                    name=name,
+                    path=path,
+                    type=ComponentType.BASIC,
+                    status=ComponentStatus.DISCOVERED,
+                )
+        return components
+
+    async def scaffold_component(
+        self,
+        name: str,
+        component_type: ComponentType = ComponentType.DATACLASS,
+        props: dict[str, type] | None = None,
+        htmx_enabled: bool = False,
+        endpoint: str = "",
+        trigger: str = "click",
+        target: str = "#content",
+        children: list[str] | None = None,
+        target_path: AsyncPath | None = None,
+    ) -> AsyncPath:
+        """Scaffold a new component."""
+        if self.advanced_registry is None:
+            await self._init_htmy_registry()
+
+        if self.advanced_registry is None:
+            raise ComponentRenderError(
+                "Advanced registry not available for scaffolding"
+            )
+
+        kwargs: dict[str, Any] = {}
+        if props:
+            kwargs["props"] = props
+        if htmx_enabled:
+            kwargs["htmx_enabled"] = True
+        if endpoint:
+            kwargs["endpoint"] = endpoint
+            kwargs["trigger"] = trigger
+            kwargs["target"] = target
+        if children:
+            kwargs["children"] = children
+
+        return await self.advanced_registry.scaffold_component(
+            name, component_type, target_path, **kwargs
+        )
+
+    async def validate_component(self, component_name: str) -> ComponentMetadata:
+        """Validate a specific component."""
+        components = await self.discover_components()
+        if component_name not in components:
+            raise ComponentNotFound(f"Component '{component_name}' not found")
+
+        return components[component_name]
+
+    def get_lifecycle_manager(self) -> ComponentLifecycleManager | None:
+        """Get the component lifecycle manager."""
+        if self.advanced_registry is not None:
+            return self.advanced_registry.lifecycle_manager
+        return None
+
+    def register_lifecycle_hook(self, event: str, callback: t.Callable) -> None:
+        """Register a lifecycle hook."""
+        lifecycle_manager = self.get_lifecycle_manager()
+        if lifecycle_manager is not None:
+            lifecycle_manager.register_hook(event, callback)
+
     def _create_block_renderer(self, request: t.Any = None) -> t.Callable[..., t.Any]:
         async def render_block(
             block_name: str, context: dict[str, t.Any] | None = None, **kwargs: t.Any
@@ -459,7 +630,7 @@ class HTMYTemplates(TemplatesBase):
             if context is None:
                 context = {}
 
-            block_context = {**context, **kwargs}
+            block_context = context | kwargs
 
             if (
                 self.jinja_templates

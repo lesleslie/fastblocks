@@ -23,6 +23,11 @@ Key modules:
 from typing import Any
 
 from .application import gather_application
+from .components import (
+    analyze_component_usage,
+    gather_component_dependencies,
+    gather_components,
+)
 from .middleware import gather_middleware
 from .models import gather_models
 from .routes import gather_routes
@@ -51,6 +56,18 @@ class Gather:
     @staticmethod
     async def models(*args: Any, **kwargs: Any) -> Any:
         return await gather_models(*args, **kwargs)
+
+    @staticmethod
+    async def components(*args: Any, **kwargs: Any) -> Any:
+        return await gather_components(*args, **kwargs)
+
+    @staticmethod
+    async def component_dependencies(*args: Any, **kwargs: Any) -> Any:
+        return await gather_component_dependencies(*args, **kwargs)
+
+    @staticmethod
+    async def component_usage(*args: Any, **kwargs: Any) -> Any:
+        return await analyze_component_usage(*args, **kwargs)
 
 
 gather = Gather()

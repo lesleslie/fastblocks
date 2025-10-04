@@ -20,7 +20,7 @@ Usage:
 ```python
 import typing as t
 
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.adapters import import_adapter
 
 routes = depends.get("routes")
@@ -47,7 +47,7 @@ from acb.adapters import (
 )
 from acb.config import Config
 from acb.debug import debug
-from acb.depends import depends
+from acb.depends import Inject, depends
 from anyio import Path as AsyncPath
 from jinja2.exceptions import TemplateNotFound
 from starlette.endpoints import HTTPEndpoint
@@ -73,15 +73,20 @@ class RoutesSettings(RoutesBaseSettings): ...
 
 
 class FastBlocksEndpoint(HTTPEndpoint):
-    config: Config = depends()
-
-    def __init__(self, scope: Scope, receive: Receive, send: Send) -> None:
+    @depends.inject
+    def __init__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+        config: Inject[Config] | None = None,
+    ) -> None:
         super().__init__(scope, receive, send)
+        self.config = config or depends.get(Config)
         self.templates = depends.get("templates")
 
 
 class Index(FastBlocksEndpoint):
-    @depends.inject  # type: ignore[misc]
     async def get(self, request: HtmxRequest | Request) -> Response:
         debug(request)
         path_params = getattr(request, "path_params", {})
@@ -137,7 +142,6 @@ class Block(FastBlocksEndpoint):
 
 
 class Component(FastBlocksEndpoint):
-    @depends.inject  # type: ignore[misc]
     async def get(self, request: HtmxRequest | Request) -> Response:
         debug(request)
         component_name = getattr(request, "path_params", {}).get("component", "default")
@@ -188,7 +192,6 @@ class Routes(RoutesBase):
         txt = "User-agent: *\nDisallow: /dashboard/\nDisallow: /blocks/"
         return PlainTextResponse(txt, 200)
 
-    @depends.inject  # type: ignore[misc]
     async def init(self) -> None:
         self.routes.extend(
             [

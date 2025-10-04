@@ -150,7 +150,7 @@ async def handle_exception(request: HtmxRequest, exc: HTTPException) -> Response
         error_id=f"http_{status_code}",
         category=ErrorCategory.APPLICATION,
         severity=ErrorSeverity.ERROR if status_code >= 500 else ErrorSeverity.WARNING,
-        message=str(exc.detail) if hasattr(exc, "detail") else f"HTTP {status_code}",
+        message=exc.detail if hasattr(exc, "detail") else f"HTTP {status_code}",
         details={
             "status_code": status_code,
             "request_path": getattr(getattr(request, "url", None), "path", "/")

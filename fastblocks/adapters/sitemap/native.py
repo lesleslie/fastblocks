@@ -24,7 +24,6 @@ class NativeSitemapSettings(SitemapBaseSettings):
 class NativeSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
     sitemap: SitemapApp | None = None
 
-    @depends.inject  # type: ignore[misc]
     def items(self) -> t.Any:
         try:
             routes_adapter = depends.get("routes")

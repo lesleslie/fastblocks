@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.16.0"
+version = "0.17.0"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -42,7 +42,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "acb[cache,monitoring,requests,storage]",
+    "acb>=0.23.0",
     "anyio>=4.9",
     "brotli-asgi>=1.4",
     "granian[reload]>=2.4.1",
@@ -64,17 +64,6 @@ dependencies = [
 [project.license]
 text = "BSD-3-Clause"
 
-[project.optional-dependencies]
-admin = [
-    "sqladmin>=0.21",
-]
-monitoring = [
-    "logfire[starlette]>=3.24",
-    "sentry-sdk[starlette]>=2.32",
-    "urllib3>=2.5",
-]
-sitemap = []
-
 [dependency-groups]
 dev = [
     "crackerjack>=0.38.12",
@@ -91,6 +80,15 @@ dev = [
     "refurb>=2.1",
     "session-mgmt-mcp>=0.3.13",
 ]
+admin = [
+    "sqladmin>=0.21",
+]
+monitoring = [
+    "logfire[starlette]>=3.24",
+    "sentry-sdk[starlette]>=2.32",
+    "urllib3>=2.5",
+]
+sitemap = []
 
 [tool.ruff]
 target-version = "py313"
@@ -163,7 +161,6 @@ python_files = [
 ]
 testpaths = [
     "tests",
-    "fastblocks",
 ]
 python_classes = [
     "Test*",
@@ -209,6 +206,7 @@ omit = [
 ]
 
 [tool.coverage.report]
+fail_under = 31
 exclude_also = [
     "pragma: no cover",
     "def __repr__",
@@ -320,6 +318,7 @@ keyring-provider = "subprocess"
 index-url = "https://pypi.org/simple/"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
+prerelease = "allow"
 
 [tool.vulture]
 min_confidence = 86

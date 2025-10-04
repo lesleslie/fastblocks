@@ -29,7 +29,6 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
         super().__init__()
         self._underlying_adapter = None
 
-    @depends.inject  # type: ignore[misc]
     async def items(self) -> t.Any:
         try:
             routes_adapter = depends.get("routes")

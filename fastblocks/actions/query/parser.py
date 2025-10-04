@@ -82,8 +82,8 @@ class UniversalQueryParser:
         with suppress(ValueError):
             if "." in value:
                 return float(value)
-            else:
-                return int(value)
+
+            return int(value)
         return value
 
     def _apply_filters(  # noqa: C901

@@ -1,3 +1,103 @@
+______________________________________________________________________
+
+## id: 01K6JZ5F5W3MRM8FR0MEMJ03FR
+
+______________________________________________________________________
+
+## id: 01K6J6B68YFHFZZ099XZXD8TN3
+
+______________________________________________________________________
+
+## id: 01K6HPXXAQBZ9KX447FK7ZPB5N
+
+______________________________________________________________________
+
+## id: 01K6HPWW2YY7VE2B5DRCQF184T
+
+______________________________________________________________________
+
+## id: 01K6HPNNQD3EDCCWRMFMZF1HCY
+
+______________________________________________________________________
+
+## id: 01K6HPKVP1WS35PHSCBBMWG6N4
+
+______________________________________________________________________
+
+## id: 01K6H6RNV6Q3BV04PX5HTG2D5X
+
+______________________________________________________________________
+
+## id: 01K6H6HJGA098Y2W6WCJY51BMN
+
+______________________________________________________________________
+
+## id: 01K6H6G7VEJV8P7TZQRVAANVZK
+
+______________________________________________________________________
+
+## id: 01K6H6FA3M6N0DFJ73R3XH0CEQ
+
+______________________________________________________________________
+
+## id: 01K6H5NVQ7DKZQVNXBGFZYRH35
+
+______________________________________________________________________
+
+## id: 01K6H57CM1M9RPN7NBZB0G010B
+
+______________________________________________________________________
+
+## id: 01K6H0YJZB2VWHBXSMMKYA8K9J
+
+______________________________________________________________________
+
+## id: 01K6GZPK90TP1NXK48GA2YYHSJ
+
+______________________________________________________________________
+
+## id: 01K6GZMHAAAAQPAT0B5QSN9BY3
+
+______________________________________________________________________
+
+## id: 01K6GZHCMZGDD2AAYV3SZ51SJF
+
+______________________________________________________________________
+
+## id: 01K6GZFT9TJVXBKTXFSKB3STRV
+
+______________________________________________________________________
+
+## id: 01K6GYFG1M00VR1YKCFNXGKK8H
+
+______________________________________________________________________
+
+## id: 01K6GYEWWPHRTH6KYAB9NRSPWX
+
+______________________________________________________________________
+
+## id: 01K6GXNSS172X9AAE6M0971XQ7
+
+______________________________________________________________________
+
+## id: 01K6GXN68ZSGBBKQPGKXT11CDJ
+
+______________________________________________________________________
+
+## id: 01K6GXHTXX0NVMBH31YSSHF1F8
+
+______________________________________________________________________
+
+## id: 01K6GX4TW7DJ8X5EHHS3YYVJPM
+
+______________________________________________________________________
+
+## id: 01K6GX3WHF92NKMDPRH71MCA1E
+
+______________________________________________________________________
+
+## id: 01K6GWCMNX3VYNAD70CEAWAX9W
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -46,7 +146,7 @@ fastblocks/
 
 ```bash
 # Quality verification (MANDATORY before task completion)
-python -m crackerjack -t --ai-agent    # AI-optimized test and quality checks
+python -m crackerjack -t --ai-fix    # AI-optimized test and quality checks
 
 # Testing
 python -m pytest                       # Run all tests
@@ -307,7 +407,7 @@ class CustomErrorHandler(ErrorHandler):
 
 **MANDATORY: Before marking any task as complete, AI assistants MUST:**
 
-1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-agent`
+1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-fix`
 1. **Fix any issues found**: Address all formatting, linting, type checking, and test failures
 1. **Re-run verification**: Ensure crackerjack passes completely
 1. **Document verification**: Mention that crackerjack verification was completed successfully

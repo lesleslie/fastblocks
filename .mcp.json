@@ -8,10 +8,6 @@
       "url": "http://localhost:8676/mcp",
       "type": "http"
     },
-    "jetbrains": {
-      "type": "sse",
-      "url": "http://localhost:64342/sse"
-    },
     "macos_automator": {
       "command": "npx",
       "args": [
@@ -39,8 +35,7 @@
     "playwright": {
       "command": "npx",
       "args": [
-        "-y",
-        "@executeautomation/playwright-mcp-server@1.0.6"
+        "@playwright/mcp@latest"
       ],
       "type": "stdio"
     },
@@ -48,7 +43,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@cyanheads/git-mcp-server@2.3.3"
+        "@cyanheads/git-mcp-server@2.3.5"
       ],
       "type": "stdio"
     },
@@ -68,7 +63,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "@modelcontextprotocol/server-memory@2025.8.4"
+        "@modelcontextprotocol/server-memory@2025.9.25"
       ],
       "type": "stdio"
     },
@@ -92,28 +87,11 @@
       "url": "http://localhost:3033/mcp",
       "type": "http"
     },
-    "qwen-code": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "qwen-mcp-tool"
-      ],
-      "env": {},
-      "type": "stdio"
-    },
-    "gemini-cli": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "gemini-mcp-tool@1.1.4"
-      ],
-      "type": "stdio"
-    },
     "context7": {
       "command": "npx",
       "args": [
         "-y",
-        "@upstash/context7-mcp@1.0.17"
+        "@upstash/context7-mcp@1.0.18"
       ],
       "type": "stdio"
     },

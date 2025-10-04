@@ -184,8 +184,8 @@ class FastBlocks(Starlette):
                 cls = middleware.cls
             elif isinstance(middleware, tuple) and len(middleware) > 0:
                 cls = middleware[0]
-            else:
-                return None
+
+            return None
             cls_name = str(getattr(cls, "__name__", cls))
             return cls_name, cls
         except (AttributeError, IndexError, TypeError):
@@ -214,10 +214,15 @@ class FastBlocks(Starlette):
         for middleware in self.user_middleware:
             info = self._extract_middleware_info(middleware)
             if info:
-                middleware_list.append(info)
-        middleware_list.append(
-            ("ServerErrorMiddleware", t.cast("type", ServerErrorMiddleware)),
-        )
+                middleware_list.extend(
+                    (
+                        info,
+                        (
+                            "ServerErrorMiddleware",
+                            t.cast("type", ServerErrorMiddleware),
+                        ),
+                    ),
+                )
         return middleware_list
 
     def _get_dependencies(self, config: t.Any, logger: t.Any) -> tuple[t.Any, t.Any]:

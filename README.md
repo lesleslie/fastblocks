@@ -2,13 +2,13 @@
 <img src="./images/fastblocks-logo.png" alt="FastBlocks Logo">
 </p>
 
-> **FastBlocks Documentation**: [Main](./README.md) | [Core Features](./fastblocks/README.md) | [Actions](./fastblocks/actions/README.md) | [Adapters](./fastblocks/adapters/README.md)
+> **FastBlocks Documentation**: [Main](<#fastblocks>) | [Core Features](./fastblocks/README.md) | [Actions](<./fastblocks/actions/README.md>) | [Adapters](<./fastblocks/adapters/README.md>)
 
 # FastBlocks
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-30.9%25-red)
+![Coverage](https://img.shields.io/badge/coverage-29.9%25-red)
 
 ## What is FastBlocks?
 
@@ -212,30 +212,30 @@ FastBlocks combines the development speed of modern frameworks with the infrastr
 
 ## Table of Contents
 
-- [Why Choose FastBlocks?](#why-choose-fastblocks)
-- [Key Concepts](#key-concepts)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Common Patterns](#common-patterns)
-- [Architecture Overview](#architecture-overview)
-- [Core Components](#core-components)
-  - [Templates](#templates)
-  - [Routing](#routing)
-  - [Middleware](#middleware)
-  - [HTMX Integration](#htmx-integration)
-- [Database Models and Queries](#database-models-and-queries)
-- [Adapters](#adapters)
-- [Actions](#actions)
-- [Configuration](#configuration)
-- [Command-Line Interface (CLI)](#command-line-interface-cli)
-  - [Creating a New Project](#creating-a-new-project)
-  - [Running Your Application](#running-your-application)
-  - [CLI Options](#cli-options)
-- [Migration Guide](#migration-guide)
-- [Examples](#examples)
-- [Documentation](#documentation)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
+- [Why Choose FastBlocks?](<#why-choose-fastblocks>)
+- [Key Concepts](<#key-concepts>)
+- [Installation](<#installation>)
+- [Quick Start](<#quick-start>)
+- [Common Patterns](<#common-patterns>)
+- [Architecture Overview](<#architecture-overview>)
+- [Core Components](<#core-components>)
+  - [Templates](<#templates>)
+  - [Routing](<#routing>)
+  - [Middleware](<#middleware>)
+  - [HTMX Integration](<#htmx-integration>)
+- [Database Models and Queries](<#database-models-and-queries>)
+- [Adapters](<#adapters>)
+- [Actions](<#actions>)
+- [Configuration](<#configuration>)
+- [Command-Line Interface (CLI)](<#command-line-interface-cli>)
+  - [Creating a New Project](<#creating-a-new-project>)
+  - [Running Your Application](<#running-your-application>)
+  - [CLI Options](<#cli-options>)
+- [Migration Guide](<#migration-guide>)
+- [Examples](<#examples>)
+- [Documentation](<#documentation>)
+- [License](<#license>)
+- [Acknowledgements](<#acknowledgements>)
 
 ## Installation
 
@@ -1260,65 +1260,61 @@ Here are some common HTMX patterns you can use with FastBlocks:
 
 ## Adapters
 
-FastBlocks uses a pluggable adapter system for various components:
+FastBlocks uses a pluggable adapter system for modular integration with external services and frameworks. Adapters provide standardized interfaces to different implementations, enabling seamless provider switching and customization without code changes.
 
+### Available Adapter Categories
+
+- **Images**: Cloud-based image processing and optimization (Cloudinary, ImageKit, Cloudflare Images, TwicPics)
+- **Styles**: CSS frameworks and styling systems (Bulma, Vanilla, WebAwesome, KelpUI)
+- **Icons**: Icon libraries with SVG/font support (FontAwesome, Lucide, Phosphor, Heroicons, Remix, Material)
+- **Fonts**: Web font loading and optimization (Google Fonts, Font Squirrel)
 - **App**: Application configuration and initialization
 - **Auth**: Authentication providers (Basic, etc.)
 - **Admin**: Admin interface providers (SQLAdmin)
 - **Routes**: Route management and discovery
-- **Templates**: Template engine adapters (Jinja2)
-- **Sitemap**: Sitemap generation
+- **Templates**: Template engine adapters (Jinja2, HTMY)
+- **Sitemap**: Sitemap generation strategies
 
-#### Application Initialization Improvements (v0.13.2)
+### Adapter Architecture
 
-The FastBlocks application initialization process has been streamlined for better performance and reliability:
+All adapters follow ACB 0.19.0+ patterns with:
+
+- **MODULE_ID**: Static UUID7 for unique identification
+- **MODULE_STATUS**: Adapter stability status (stable, beta, alpha, experimental)
+- **Protocol-Based Design**: Standardized interfaces for consistent behavior
+- **Dependency Injection**: Automatic registration via ACB's `depends.set()`
+
+### Using Adapters
+
+Adapters are accessed through ACB's dependency injection system:
 
 ```python
 from acb.adapters import import_adapter
 from acb.depends import depends
 
-# Get the application instance
-App = import_adapter("app")
-app = depends.get(App)
+# Get adapter instances
+Templates = import_adapter("templates")
+Images = import_adapter("images")
 
-# The app is now pre-configured with:
-# - Enhanced middleware stack management
-# - Optimized dependency resolution
-# - Improved error handling
-# - Lazy loading for optional components
+
+# Use in route handlers
+@depends.inject
+async def my_view(request, templates: Templates = depends()):
+    return await templates.app.render_template(request, "index.html")
 ```
 
-**Key Improvements:**
+### Documentation
 
-- **Faster Startup**: Lazy loading of non-critical components reduces initialization time
-- **Better Error Handling**: Clear error messages for configuration issues and missing dependencies
-- **Middleware Optimization**: Position-based middleware management with caching
-- **Memory Efficiency**: Reduced memory footprint through optimized component loading
+For comprehensive adapter documentation including:
 
-#### Adapter Metadata Requirements (v0.14.0+)
+- Creating custom adapters
+- Adapter configuration and settings
+- MCP server foundation
+- Health monitoring
+- Best practices and troubleshooting
+- Integration patterns
 
-All FastBlocks adapters now include metadata for ACB 0.19.0 compatibility:
-
-```python
-from acb.adapters import AdapterStatus
-
-# Required metadata for all adapters
-MODULE_ID = "01937d86-4f2a-7b3c-8d9e-1234567890ab"  # Static UUID7
-MODULE_STATUS = AdapterStatus.STABLE
-```
-
-**Metadata Components:**
-
-- **MODULE_ID**: Static UUID7 identifier that remains constant across deployments
-- **MODULE_STATUS**: Adapter status from ACB's AdapterStatus enum (STABLE, BETA, ALPHA, DEPRECATED)
-
-**Benefits:**
-
-- **Tracking**: Unique identification for monitoring and debugging
-- **Status Awareness**: Clear indication of adapter maturity and stability
-- **Compatibility**: Full compliance with ACB 0.19.0 requirements
-
-For more information about adapters, see the [Adapters Documentation](./fastblocks/adapters/README.md).
+See the [**Adapters Documentation**](<./fastblocks/adapters/README.md>).
 
 ## Database Models and Queries
 
@@ -1385,7 +1381,7 @@ Actions are utility functions that perform specific tasks:
 - **Sync**: Bidirectional synchronization of templates, settings, and cache across environments
 - **Minify**: HTML, CSS, and JavaScript minification
 
-For more information about actions, see the [Actions Documentation](./fastblocks/actions/README.md).
+For more information about actions, see the [Actions Documentation](<./fastblocks/actions/README.md>).
 
 ## Configuration
 
@@ -1645,15 +1641,15 @@ app = depends.get(App)
 For more detailed documentation about FastBlocks components:
 
 - [**Core Features**](./fastblocks/README.md): Applications, middleware, and core functionality
-- [**Actions**](./fastblocks/actions/README.md): Utility functions like minification
-- [**Adapters**](./fastblocks/adapters/README.md): Pluggable components for various features
-  - [**App Adapter**](./fastblocks/adapters/app/README.md): Application configuration
-  - [**Auth Adapter**](./fastblocks/adapters/auth/README.md): Authentication providers
-  - [**Admin Adapter**](./fastblocks/adapters/admin/README.md): Admin interface
-  - [**Routes Adapter**](./fastblocks/adapters/routes/README.md): Routing system
-  - [**Templates Adapter**](./fastblocks/adapters/templates/README.md): Template engine
-  - [**Sitemap Adapter**](./fastblocks/adapters/sitemap/README.md): Sitemap generation
-- [**Running Tests**](./tests/TESTING.md): Comprehensive guide to testing FastBlocks components
+- [**Actions**](<./fastblocks/actions/README.md>): Utility functions like minification
+- [**Adapters**](<./fastblocks/adapters/README.md>): Pluggable components for various features
+  - [**App Adapter**](<./fastblocks/adapters/app/README.md>): Application configuration
+  - [**Auth Adapter**](<./fastblocks/adapters/auth/README.md>): Authentication providers
+  - [**Admin Adapter**](<./fastblocks/adapters/admin/README.md>): Admin interface
+  - [**Routes Adapter**](<./fastblocks/adapters/routes/README.md>): Routing system
+  - [**Templates Adapter**](<./fastblocks/adapters/templates/README.md>): Template engine
+  - [**Sitemap Adapter**](<./fastblocks/adapters/sitemap/README.md>): Sitemap generation
+- [**Running Tests**](<./tests/TESTING.md>): Comprehensive guide to testing FastBlocks components
 
 ## License
 

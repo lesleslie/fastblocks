@@ -1,3 +1,128 @@
+______________________________________________________________________
+
+## [0.17.0] - 2025-01-10
+
+### BREAKING CHANGES
+
+- **Dependency Management Modernization**: Migrated from `[project.optional-dependencies]` to `[dependency-groups]` following PEP 735 and modern UV standards
+  - ⚠️ Old syntax `uv add "fastblocks[admin]"` **no longer works**
+  - ✅ New syntax: `uv add --group admin`
+  - All feature groups (admin, monitoring, sitemap) now use dependency groups
+  - Zero self-references - eliminates circular dependency errors
+  - Full UV compatibility with modern dependency group standards
+  - See [MIGRATION-0.17.0.md](<./MIGRATION-0.17.0.md>) for upgrade instructions
+
+### Changed
+
+- **Dependency Organization**: Migrated all optional dependencies to dependency groups:
+  - Feature groups: admin, monitoring, sitemap
+  - Development tools: dev
+  - Clear categorization with section headers
+
+### Removed
+
+- `[project.optional-dependencies]` section (replaced by `[dependency-groups]`)
+
+______________________________________________________________________
+
+## id: 01K6JZ5EQ928QCWCSHVC9B77R4
+
+______________________________________________________________________
+
+## id: 01K6J6B5V5P3N0VC4NJ28BW2KK
+
+______________________________________________________________________
+
+## id: 01K6HPXYEXAFPDQ4BWK9KMV2BE
+
+______________________________________________________________________
+
+## id: 01K6HPWY0XAGZXBV080ZGNZ3ND
+
+______________________________________________________________________
+
+## id: 01K6HPNQ1WWJD822MYX2W9WH56
+
+______________________________________________________________________
+
+## id: 01K6HPKY46AGCZ8NMZN1V92S09
+
+______________________________________________________________________
+
+## id: 01K6H6RQ09VCCG28T5HF6V05EE
+
+______________________________________________________________________
+
+## id: 01K6H6HJXV98D4V3T7TTKE65KW
+
+______________________________________________________________________
+
+## id: 01K6H6G8EZD311PB96PCQN2H4R
+
+______________________________________________________________________
+
+## id: 01K6H6FATE5RDSR1ZGJ9GMEVM2
+
+______________________________________________________________________
+
+## id: 01K6H5NVVG1WXNSZF4W53CJ18C
+
+______________________________________________________________________
+
+## id: 01K6H57CVDKH75AATGD34967WN
+
+______________________________________________________________________
+
+## id: 01K6H0YKB66G4KY0BGAE63C0R8
+
+______________________________________________________________________
+
+## id: 01K6GZPQ9Z5WZFD2Y2MX8WF3NY
+
+______________________________________________________________________
+
+## id: 01K6GZMNXWEZZ0Q2PPK5DSNQF9
+
+______________________________________________________________________
+
+## id: 01K6GZHEW8G9RVSP9XWFQ4BYZF
+
+______________________________________________________________________
+
+## id: 01K6GZFWMG1TDJBNPYM4NEJBQ6
+
+______________________________________________________________________
+
+## id: 01K6GYFH6N351QZ8P88334CSAZ
+
+______________________________________________________________________
+
+## id: 01K6GYEXXV0M99BPGVEVAYS6R8
+
+______________________________________________________________________
+
+## id: 01K6GXNT3J0KEAACC5763Y2JVH
+
+______________________________________________________________________
+
+## id: 01K6GXN6P0WZHPJ21BWS97629H
+
+______________________________________________________________________
+
+## id: 01K6GXHTTG1K5H0CKAWP0G2ASF
+
+______________________________________________________________________
+
+## id: 01K6GX4W0745EDQT8FDNXSYR45
+
+______________________________________________________________________
+
+## id: 01K6GX3X46TKVPJ1S5W0ATGK0N
+
+______________________________________________________________________
+
+## id: 01K6GWCKQM0KH6AW8VGYWA50ER
+
 # Changelog
 
 All notable changes to FastBlocks will be documented in this file.
