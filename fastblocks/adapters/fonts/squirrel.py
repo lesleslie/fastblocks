@@ -1,11 +1,11 @@
 """Font Squirrel adapter implementation for self-hosted fonts."""
 
+import typing as t
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
 from uuid import UUID
 
-from acb.config import Settings  # type: ignore[attr-defined]
+from acb.config import Settings
 from acb.depends import depends
 
 from ._base import FontsBase
@@ -15,7 +15,7 @@ class FontSquirrelSettings(Settings):  # type: ignore[misc]
     """Font Squirrel-specific settings."""
 
     fonts_dir: str = "/static/fonts"
-    fonts: list[dict[str, Any]] = []
+    fonts: list[dict[str, t.Any]] = []
     preload_critical: bool = True
     display: str = "swap"
 
@@ -69,7 +69,7 @@ class FontSquirrelAdapter(FontsBase):
         # Return default fallbacks if no specific font found
         return self._get_default_fallback(font_type)
 
-    def _generate_font_face(self, font_config: dict[str, Any]) -> str:
+    def _generate_font_face(self, font_config: dict[str, t.Any]) -> str:
         """Generate a single @font-face declaration."""
         family = font_config.get("family") or font_config.get("name")
         if not family:
@@ -102,7 +102,7 @@ class FontSquirrelAdapter(FontsBase):
 
         return f"@font-face {{\n{chr(10).join(properties)}\n}}"
 
-    def _build_src_declaration(self, font_config: dict[str, Any]) -> str:
+    def _build_src_declaration(self, font_config: dict[str, t.Any]) -> str:
         """Build the src property for @font-face."""
         src_parts = []
 
@@ -246,7 +246,7 @@ class FontSquirrelAdapter(FontsBase):
         Returns:
             List of preload link HTML strings
         """
-        preload_links = []
+        preload_links: list[str] = []
 
         for font_family in font_families:
             for font_config in self.settings.fonts:
@@ -272,7 +272,7 @@ class FontSquirrelAdapter(FontsBase):
 
         return "\n".join(preload_links)
 
-    def _find_best_font_file(self, font_config: dict[str, Any]) -> str | None:
+    def _find_best_font_file(self, font_config: dict[str, t.Any]) -> str | None:
         """Find the best format file (woff2 preferred, then woff).
 
         Args:
@@ -282,7 +282,8 @@ class FontSquirrelAdapter(FontsBase):
             Path to best font file or None
         """
         if "path" in font_config:
-            return font_config["path"]
+            # Dictionary access returns Any, so we cast to the expected type
+            return t.cast(str | None, font_config["path"])
 
         if "files" not in font_config:
             return None
@@ -290,16 +291,18 @@ class FontSquirrelAdapter(FontsBase):
         # Search for woff2 first
         for file_info in font_config["files"]:
             if file_info.get("format") == "woff2":
-                return file_info.get("path")
+                # Dictionary.get() returns Any, so we cast to the expected type
+                return t.cast(str | None, file_info.get("path"))
 
         # Fall back to woff
         for file_info in font_config["files"]:
             if file_info.get("format") == "woff":
-                return file_info.get("path")
+                # Dictionary.get() returns Any, so we cast to the expected type
+                return t.cast(str | None, file_info.get("path"))
 
         return None
 
-    def _generate_preload_link(self, font_config: dict[str, Any]) -> str:
+    def _generate_preload_link(self, font_config: dict[str, t.Any]) -> str:
         """Generate a preload link for a specific font."""
         best_file = self._find_best_font_file(font_config)
 

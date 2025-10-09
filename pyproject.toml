@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.17.0"
+version = "0.18.0"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [

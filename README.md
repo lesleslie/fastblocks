@@ -261,7 +261,7 @@ FastBlocks uses **PEP 735 dependency groups** for optional features. Install the
 | Multiple Groups | Install multiple features at once | `uv add --group admin --group monitoring --group sitemap` |
 | Development | Development tools | `uv add --group dev` |
 
-**Note**: Version 0.17.0+ uses dependency groups instead of extras. See [MIGRATION-0.17.0.md](<./MIGRATION-0.17.0.md>) for details.
+**Note**: Version 0.17.0+ uses dependency groups instead of extras. See [MIGRATION-0.17.0.md](<./docs/migrations/MIGRATION-0.17.0.md>) for details.
 
 You can also install FastBlocks using pip:
 
@@ -290,7 +290,7 @@ Create a file named `myapp.py` with the following code:
 ```python
 from starlette.routing import Route
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 # Import adapters - these are pluggable components that FastBlocks uses
 # The Templates adapter handles rendering Jinja2 templates
@@ -300,9 +300,9 @@ App = import_adapter("app")  # Get the configured app adapter
 
 
 # Define a route handler for the homepage
-# The @depends.inject decorator automatically provides dependencies
+# Modern ACB 0.25.1+ uses @depends.inject decorator with Inject[Type] type hints
 @depends.inject
-async def homepage(request, templates: Templates = depends()):
+async def homepage(request, templates: Inject[Templates]):
     # Render a template and return the response
     # This is similar to Flask's render_template but async
     return await templates.app.render_template(
@@ -319,7 +319,7 @@ routes = [
 # Create a counter endpoint that demonstrates HTMX functionality
 # This will handle both GET and POST requests
 @depends.inject
-async def counter_block(request, templates: Templates = depends()):
+async def counter_block(request, templates: Inject[Templates]):
     # Get the current count from the session or default to 0
     count = request.session.get("count", 0)
 
@@ -338,7 +338,7 @@ async def counter_block(request, templates: Templates = depends()):
 routes.append(Route("/block/counter", endpoint=counter_block, methods=["GET", "POST"]))
 
 # Get the FastBlocks application instance
-# This is pre-configured based on your settings
+# For module-level dependency injection, use depends.get()
 app = depends.get(App)
 ```
 
@@ -426,13 +426,13 @@ One of the most common patterns in FastBlocks is rendering specific template blo
 ```python
 from starlette.routing import Route
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 Templates = import_adapter("templates")
 
 
 @depends.inject
-async def user_profile_block(request, templates: Templates = depends()):
+async def user_profile_block(request, templates: Inject[Templates]):
     user_id = request.path_params["user_id"]
 
     # Fetch user data (in a real app, this would come from a database)
@@ -482,13 +482,13 @@ Handling form submissions with HTMX is straightforward in FastBlocks:
 ```python
 from starlette.routing import Route
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 Templates = import_adapter("templates")
 
 
 @depends.inject
-async def contact_form(request, templates: Templates = depends()):
+async def contact_form(request, templates: Inject[Templates]):
     if request.method == "POST":
         # Get form data
         form_data = await request.form()
@@ -551,10 +551,10 @@ FastBlocks leverages ACB's dependency injection system to make components easily
 ```python
 from starlette.routing import Route
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
-# Import adapters using the new direct import pattern
+# Import adapters using the modern ACB 0.25.1+ pattern
 Templates = import_adapter("templates")
 Cache = import_adapter("cache")
 
@@ -562,9 +562,9 @@ Cache = import_adapter("cache")
 @depends.inject
 async def dashboard(
     request,
-    templates: Templates = depends(),
-    cache: Cache = depends(),
-    config: Config = depends(),
+    templates: Inject[Templates],
+    cache: Inject[Cache],
+    config: Inject[Config],
 ):
     # Get cached data or compute it
     cache_key = "dashboard_stats"
@@ -588,7 +588,13 @@ async def dashboard(
 routes = [Route("/dashboard", endpoint=dashboard)]
 ```
 
-**Note**: This example uses the new v0.13.2+ import patterns. The template system automatically handles dependency resolution with fallbacks, so if cache is unavailable, the function will still work correctly.
+**Note**: This example uses the modern ACB 0.25.1+ `Inject[Type]` pattern. Benefits include:
+
+- **Type Safety**: IDE autocomplete and type checking work properly
+- **Cleaner Code**: More Pythonic and declarative syntax
+- **Better Error Messages**: Type mismatches caught at development time
+
+The template system automatically handles dependency resolution with fallbacks, so if cache is unavailable, the function will still work correctly.
 
 ## Architecture Overview
 
@@ -620,29 +626,31 @@ FastBlocks is built on top of [Asynchronous Component Base (ACB)](https://github
 
 - **Adapter Pattern**: FastBlocks uses ACB's adapter pattern to create pluggable components for authentication, admin interfaces, templates, etc.
 
-#### Direct ACB Integration (v0.14.0+)
+#### Modern ACB Integration (v0.14.0+, ACB 0.25.1+)
 
-Recent improvements include simplified dependency management through direct ACB imports and ACB 0.19.0 compatibility:
+Recent improvements include simplified dependency management through direct ACB imports and modern `Inject[Type]` pattern:
 
 ```python
-# Direct ACB imports for better performance
+# Modern ACB 0.25.1+ imports for type-safe dependency injection
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 from acb.config import Config
 
 # Get adapters directly from ACB
 Templates = import_adapter("templates")
 App = import_adapter("app")
 
-# Access configuration and dependencies
+# Modern pattern: Type-safe dependency access
 config = depends.get(Config)
+templates = depends.get(Templates)
 ```
 
-**Benefits of Direct Integration:**
+**Benefits of Modern Integration:**
 
 - **Performance**: Eliminates wrapper overhead for faster adapter access
-- **Type Safety**: Better type annotations and IDE support
+- **Type Safety**: Full IDE autocomplete and type checking support
 - **Error Handling**: Enhanced error recovery with automatic fallbacks
+- **Cleaner Code**: More Pythonic and declarative dependency injection
 - **Maintainability**: Aligned with ACB patterns for easier maintenance
 - **Future-Proof**: Direct compatibility with ACB framework evolution
 
@@ -705,13 +713,13 @@ FastBlocks uses an enhanced asynchronous Jinja2 template system designed specifi
 
 ```python
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 Templates = import_adapter("templates")
 
 
 @depends.inject
-async def homepage(request, templates: Templates = depends()):
+async def homepage(request, templates: Inject[Templates]):
     # Render a full template
     return await templates.app.render_template(
         request,
@@ -800,8 +808,11 @@ Create template blocks specifically for HTMX responses:
 ```
 
 ```python
+from acb.depends import Inject, depends
+
+
 @depends.inject
-async def counter_block(request, templates: Templates = depends()):
+async def counter_block(request, templates: Inject[Templates]):
     count = request.session.get("count", 0)
     if request.method == "POST":
         count += 1
@@ -849,20 +860,20 @@ FastBlocks includes several useful filters:
 
 #### Enhanced Dependency Resolution
 
-Version 0.13.2 introduces robust dependency resolution with automatic fallbacks:
+Version 0.13.2+ introduces robust dependency resolution with automatic fallbacks and modern `Inject[Type]` pattern (ACB 0.25.1+):
 
 ```python
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 Templates = import_adapter("templates")
 
 
 @depends.inject
-async def my_view(request, templates: Templates = depends()):
+async def my_view(request, templates: Inject[Templates]):
     # FastBlocks automatically handles:
-    # 1. Primary dependency resolution via depends.get()
-    # 2. Fallback to get_adapter() if primary fails
+    # 1. Type-safe dependency injection with @depends.inject decorator and Inject[Type]
+    # 2. Automatic fallbacks if dependencies are unavailable
     # 3. Null safety checks throughout the template system
     # 4. Graceful error handling for missing dependencies
 
@@ -873,10 +884,10 @@ async def my_view(request, templates: Templates = depends()):
 
 The template system now includes:
 
+- **Type-Safe Injection**: Modern `Inject[Type]` pattern with full IDE support
 - **Automatic Fallbacks**: If cache or storage dependencies are unavailable, the system continues with file-based templates
 - **Null Safety**: All operations check for null dependencies and provide sensible defaults
 - **Error Recovery**: Template loading failures are handled gracefully with meaningful error messages
-- **Dependency Order**: `depends.get()` is tried first, followed by `get_adapter()` fallback
 
 ### Routing
 
@@ -895,20 +906,20 @@ FastBlocks supports Starlette's routing patterns with additional features:
 ```python
 from starlette.routing import Route, Mount
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 Templates = import_adapter("templates")
 
 
 @depends.inject
-async def homepage(request, templates: Templates = depends()):
+async def homepage(request, templates: Inject[Templates]):
     return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
 
 
 @depends.inject
-async def about(request, templates: Templates = depends()):
+async def about(request, templates: Inject[Templates]):
     return await templates.app.render_template(
         request, "about.html", context={"title": "About Us"}
     )
@@ -930,13 +941,13 @@ FastBlocks can automatically discover and register routes from your application:
 # routes.py
 from starlette.routing import Route
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 Templates = import_adapter("templates")
 
 
 @depends.inject
-async def homepage(request, templates: Templates = depends()):
+async def homepage(request, templates: Inject[Templates]):
     return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
@@ -954,7 +965,7 @@ You can use path parameters in your routes:
 
 ```python
 @depends.inject
-async def user_profile(request, templates: Templates = depends()):
+async def user_profile(request, templates: Inject[Templates]):
     user_id = request.path_params["user_id"]
     # Fetch user data...
     return await templates.app.render_template(
@@ -973,7 +984,7 @@ Create routes specifically for HTMX interactions:
 
 ```python
 @depends.inject
-async def load_more_items(request, templates: Templates = depends()):
+async def load_more_items(request, templates: Inject[Templates]):
     page = int(request.query_params.get("page", 1))
     # Fetch items for the requested page...
     items = [f"Item {i}" for i in range((page - 1) * 10, page * 10)]
@@ -1186,13 +1197,13 @@ FastBlocks extends Starlette's request object with HTMX-specific properties:
 ```python
 from starlette.routing import Route
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 Templates = import_adapter("templates")
 
 
 @depends.inject
-async def product_detail(request, templates: Templates = depends()):
+async def product_detail(request, templates: Inject[Templates]):
     product_id = request.path_params["product_id"]
 
     # Check if this is an HTMX request
@@ -1227,13 +1238,13 @@ FastBlocks makes it easy to set HTMX-specific response headers:
 from starlette.responses import Response
 from starlette.routing import Route
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 Templates = import_adapter("templates")
 
 
 @depends.inject
-async def search_results(request, templates: Templates = depends()):
+async def search_results(request, templates: Inject[Templates]):
     query = request.query_params.get("q", "")
 
     # Render the search results
@@ -1296,16 +1307,16 @@ Adapters are accessed through ACB's dependency injection system:
 
 ```python
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 # Get adapter instances
 Templates = import_adapter("templates")
 Images = import_adapter("images")
 
 
-# Use in route handlers
+# Use in route handlers with modern @depends.inject decorator and Inject[Type] pattern
 @depends.inject
-async def my_view(request, templates: Templates = depends()):
+async def my_view(request, templates: Inject[Templates]):
     return await templates.app.render_template(request, "index.html")
 ```
 
@@ -1348,10 +1359,10 @@ FastBlocks automatically detects and supports multiple model frameworks:
 FastBlocks provides multiple query patterns that work consistently across all database types:
 
 ```python
-from acb.depends import depends
+from acb.depends import Inject, depends
 
-# Access the universal query interface
-query = depends.get("query")
+# Modern pattern: Type-safe dependency access
+query = depends.get(Query)
 
 # Simple queries (Active Record style)
 users = await query.for_model(User).simple.all()
@@ -1395,8 +1406,9 @@ FastBlocks uses ACB's configuration system based on Pydantic, which provides a u
 
 ```python
 from acb.config import Config
-from acb.depends import depends
+from acb.depends import Inject, depends
 
+# Modern pattern: Type-safe dependency access
 config = depends.get(Config)
 
 # Access configuration values
@@ -1546,10 +1558,10 @@ from fastblocks.dependencies import Templates, App
 from fastblocks.config import config
 ```
 
-**After (v0.13.2+):**
+**After (v0.13.2 - v0.24.x):**
 
 ```python
-# Direct ACB imports (recommended)
+# Direct ACB imports with depends.get()
 from acb.adapters import import_adapter
 from acb.depends import depends
 from acb.config import Config
@@ -1559,9 +1571,22 @@ App = import_adapter("app")
 config = depends.get(Config)
 ```
 
+**Modern (ACB 0.25.1+):**
+
+```python
+# Modern Inject[Type] pattern with type safety
+from acb.adapters import import_adapter
+from acb.depends import Inject, depends
+from acb.config import Config
+
+Templates = import_adapter("templates")
+App = import_adapter("app")
+config = depends.get(Config)
+```
+
 #### Route Handler Updates
 
-**Before:**
+**Before (v0.13.1 and earlier):**
 
 ```python
 @depends.inject
@@ -1569,7 +1594,7 @@ async def homepage(request, templates=depends(Templates)):
     return await templates.render_template(request, "index.html")
 ```
 
-**After:**
+**After (v0.13.2 - v0.24.x):**
 
 ```python
 @depends.inject
@@ -1577,12 +1602,23 @@ async def homepage(request, templates: Templates = depends()):
     return await templates.app.render_template(request, "index.html")
 ```
 
-#### Benefits of the New Pattern
+**Modern (ACB 0.25.1+):**
 
+```python
+# Requires @depends.inject decorator with Inject[Type]
+@depends.inject
+async def homepage(request, templates: Inject[Templates]):
+    return await templates.app.render_template(request, "index.html")
+```
+
+#### Benefits of the Modern Pattern (ACB 0.25.1+)
+
+1. **Type Safety**: Full IDE autocomplete and type checking support
+1. **Cleaner Code**: No `@depends.inject` decorator needed
 1. **Better Performance**: Direct ACB access eliminates wrapper overhead
-1. **Improved Type Safety**: Explicit type annotations with adapters
+1. **Improved DX**: More Pythonic and declarative syntax
 1. **Enhanced Error Handling**: Built-in fallback mechanisms for missing dependencies
-1. **Future Compatibility**: Aligned with ACB framework patterns
+1. **Future Compatibility**: Aligned with modern ACB framework patterns
 
 #### Template System Improvements
 
@@ -1608,7 +1644,7 @@ The CLI now includes:
 ```python
 from starlette.routing import Route
 from acb.adapters import import_adapter
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 # Import adapters
 Templates = import_adapter("templates")
@@ -1618,14 +1654,14 @@ counter = 0
 
 
 @depends.inject
-async def get_counter(request, templates: Templates = depends()):
+async def get_counter(request, templates: Inject[Templates]):
     return await templates.app.render_template(
         request, "blocks/counter.html", context={"count": counter}
     )
 
 
 @depends.inject
-async def increment_counter(request, templates: Templates = depends()):
+async def increment_counter(request, templates: Inject[Templates]):
     global counter
     counter += 1
     return await templates.app.render_template(
@@ -1638,7 +1674,7 @@ routes = [
     Route("/block/counter", endpoint=increment_counter, methods=["POST"]),
 ]
 
-# Create the application
+# Create the application with modern pattern
 app = depends.get(App)
 ```
 

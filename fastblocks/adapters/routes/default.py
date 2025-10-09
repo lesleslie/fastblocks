@@ -73,7 +73,7 @@ class RoutesSettings(RoutesBaseSettings): ...
 
 
 class FastBlocksEndpoint(HTTPEndpoint):
-    @depends.inject
+    @depends.inject  # type: ignore[misc]
     def __init__(
         self,
         scope: Scope,

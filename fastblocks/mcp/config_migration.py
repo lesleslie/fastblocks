@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 
@@ -261,9 +261,11 @@ class ConfigurationMigrationManager:
 
         metadata = adapter_config["metadata"]
         if "module_id" not in metadata:
-            metadata["module_id"] = str(
-                _DEFAULT_ADAPTER_METADATA["module_id_generator"]()
+            # Cast to Callable since dict lookup returns Any
+            generator = cast(
+                Callable[[], Any], _DEFAULT_ADAPTER_METADATA["module_id_generator"]
             )
+            metadata["module_id"] = str(generator())
 
         if "module_status" not in metadata:
             metadata["module_status"] = _DEFAULT_ADAPTER_METADATA["module_status"]

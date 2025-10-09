@@ -218,6 +218,7 @@ class BlockRenderer:
                 )
 
                 # Extract variables used in this block
+                # find_undeclared_variables accepts Block nodes at runtime
                 block_def.variables = meta.find_undeclared_variables(node)  # type: ignore[arg-type]
 
                 # Check for HTMX attributes in block content
@@ -226,9 +227,10 @@ class BlockRenderer:
                 self.registry.register_block(block_def)
 
             # Find extends and includes for hierarchy
-            for node in parsed.find_all((Extends, Include)):
+            for node in parsed.find_all((Extends, Include)):  # type: ignore[assignment]
+                # Template attribute value extraction at runtime
                 if hasattr(node, "template") and hasattr(node.template, "value"):
-                    parent_template = node.template.value
+                    parent_template = node.template.value  # type: ignore[attr-defined]
                     # Register dependency relationship
                     for block_def in self.registry.get_blocks_for_template(
                         template_name
@@ -302,7 +304,7 @@ class BlockRenderer:
         htmx_headers = self._build_htmx_headers(block_def, request)
 
         return BlockRenderResult(
-            content=result.content,
+            content=t.cast(str, result.content),
             block_id=request.block_id,
             update_mode=request.update_mode,
             target_selector=request.target_selector or block_def.css_selector,

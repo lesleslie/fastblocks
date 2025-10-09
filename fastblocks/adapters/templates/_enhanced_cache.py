@@ -287,7 +287,9 @@ class EnhancedCacheManager:
         self.metrics.invalidations += len(invalidated)
         return invalidated
 
-    async def warm_cache(self, keys: list[str], loader_func) -> None:
+    async def warm_cache(
+        self, keys: list[str], loader_func: Callable[[str], Awaitable[Any]]
+    ) -> None:
         """Warm cache with specified keys using loader function."""
         for key in keys:
             if key not in self.entries:

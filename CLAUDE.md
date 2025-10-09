@@ -353,22 +353,46 @@ cache_ttl: 3600
 **Critical Rules**:
 
 - All adapter `__init__.py` files MUST remain empty (except docstrings)
-- Use ACB dependency injection: `depends.get("adapter_name")`
+- Use ACB dependency injection (see patterns below)
 - Register adapters with `depends.set(MyAdapter)` in `suppress(Exception)` block
 - Include ACB 0.19.0 metadata: `MODULE_ID` (UUID7) and `MODULE_STATUS`
 
-**Common Violations to Avoid**:
+**Dependency Injection Patterns (ACB 0.25.1+)**:
 
 ```python
-# ❌ WRONG
-from fastblocks.adapters.templates.jinja2 import Templates
+# ✅ CORRECT - Function parameter injection (modern pattern with Inject[Type])
+from acb.depends import Inject, depends
 
-templates = Templates()
 
-# ✅ CORRECT
+@depends.inject  # Required decorator!
+async def my_handler(request, templates: Inject[Templates]):
+    return await templates.app.render_template(request, "index.html")
+
+
+# ✅ CORRECT - Module-level access
 from acb.depends import depends
 
 templates = depends.get("templates")
+# Or with type class:
+templates = depends.get(Templates)
+
+# ❌ WRONG - Direct instantiation bypasses dependency injection
+from fastblocks.adapters.templates.jinja2 import Templates
+
+templates = Templates()  # Don't do this!
+
+
+# ❌ WRONG - Missing @depends.inject decorator
+async def my_handler(request, templates: Inject[Templates]):
+    # Won't work without @depends.inject decorator!
+    ...
+
+
+# ❌ WRONG - Using Inject() with parentheses instead of Inject[Type]
+@depends.inject
+async def my_handler(request, templates: Templates = Inject()):
+    # Wrong syntax - use Inject[Type] not Inject()!
+    ...
 ```
 
 ### Error Handling and Debugging

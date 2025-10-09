@@ -134,8 +134,8 @@ class ComponentBase(ABC):
     async def async_htmy(self, context: dict[str, Any]) -> str:
         """Async version of htmy method."""
         if asyncio.iscoroutinefunction(self.htmy):
-            return await self.htmy(context)
-        return self.htmy(context)
+            return await self.htmy(context)  # type: ignore[no-any-return]
+        return self.htmy(context)  # type: ignore[no-any-return]
 
     def add_child(self, child: "ComponentBase") -> None:
         """Add a child component."""
@@ -614,7 +614,7 @@ class AdvancedHTMYComponentRegistry:
                 request=request,
             )
 
-            return str(rendered_content)  # type: ignore[no-any-return]
+            return t.cast(str, rendered_content)
 
         except Exception as e:
             # Execute error hooks

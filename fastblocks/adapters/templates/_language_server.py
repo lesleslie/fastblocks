@@ -1,6 +1,7 @@
 """FastBlocks Language Server Protocol implementation."""
 
 import asyncio
+import typing as t
 from contextlib import suppress
 from typing import Any
 from uuid import UUID
@@ -229,7 +230,7 @@ class FastBlocksLanguageServer:
             }
 
             if error.fix_suggestion:
-                diagnostic["data"] = {"fix": error.fix_suggestion}
+                diagnostic["data"] = {"fix": error.fix_suggestion}  # type: ignore[typeddict-item]
 
             diagnostics.append(diagnostic)
 
@@ -323,7 +324,7 @@ class FastBlocksLanguageClient:
                 "position": {"line": line, "character": character},
             }
         )
-        return result.get("items", [])
+        return t.cast(list[dict[str, Any]], result.get("items", []))
 
     async def get_hover(
         self, uri: str, line: int, character: int

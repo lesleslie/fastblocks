@@ -209,7 +209,9 @@ class AsyncTemplateRenderer:
     ) -> str | AsyncIterator[str]:
         """Execute the appropriate rendering strategy based on mode."""
         if render_context.mode == RenderMode.STREAMING:
-            return await self._render_streaming(render_context)  # type: ignore[misc]
+            # _render_streaming returns an AsyncIterator, not awaitable
+            result: str | AsyncIterator[str] = self._render_streaming(render_context)
+            return result
         elif render_context.mode == RenderMode.FRAGMENT:
             return await self._render_fragment(render_context)
         elif render_context.mode == RenderMode.BLOCK:
@@ -333,7 +335,8 @@ class AsyncTemplateRenderer:
             env = self.advanced_manager._get_template_environment(secure=True)
             template = env.get_template(render_context.template_name)
 
-        return await template.render_async(render_context.context)
+        rendered = await template.render_async(render_context.context)
+        return t.cast(str, rendered)
 
     async def _render_fragment(self, render_context: RenderContext) -> str:
         """Render template fragment for HTMX."""
@@ -361,7 +364,11 @@ class AsyncTemplateRenderer:
         template = self.base_templates.app.env.get_template(
             render_context.template_name
         )
-        return template.render_block(render_context.block_name, render_context.context)
+        # render_block exists in Jinja2 runtime but not in type stubs
+        rendered = template.render_block(  # type: ignore[attr-defined]
+            render_context.block_name, render_context.context
+        )
+        return t.cast(str, rendered)
 
     async def _render_htmx(self, render_context: RenderContext) -> str:
         """Render template optimized for HTMX responses."""
@@ -383,9 +390,7 @@ class AsyncTemplateRenderer:
 
         return await self._render_standard(render_context)
 
-    async def _render_streaming(
-        self, render_context: RenderContext
-    ) -> AsyncIterator[str]:
+    def _render_streaming(self, render_context: RenderContext) -> AsyncIterator[str]:
         """Render template with streaming for large responses."""
         if not self.base_templates or not self.base_templates.app:
             raise RuntimeError("Templates not initialized")
@@ -394,6 +399,13 @@ class AsyncTemplateRenderer:
             render_context.template_name
         )
 
+        # Return async generator directly
+        return self._stream_template_chunks(template, render_context)
+
+    async def _stream_template_chunks(
+        self, template: t.Any, render_context: RenderContext
+    ) -> AsyncIterator[str]:
+        """Internal async generator for streaming template chunks."""
         # Generate template content in chunks
         async for chunk in template.generate_async(render_context.context):
             # Yield chunks of specified size
@@ -610,7 +622,7 @@ class AsyncTemplateRenderer:
         """Check if template has changed since last render."""
         with suppress(Exception):
             env = self.base_templates.app.env  # type: ignore[union-attr]
-            source, filename = env.loader.get_source(env, template_name)
+            _, filename = env.loader.get_source(env, template_name)
 
             if filename:
                 # Check file modification time

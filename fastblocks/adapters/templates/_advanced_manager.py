@@ -896,10 +896,12 @@ class AdvancedTemplateManager:
             if fragment_info.block_name:
                 # Render specific block
                 template = env.get_template(fragment_info.template_path)
-                # render_block exists in Jinja2 but not in type stubs
+                # render_block exists in Jinja2 runtime but not in type stubs
                 return str(
-                    template.render_block(fragment_info.block_name, context or {})
-                )  # type: ignore[attr-defined]
+                    template.render_block(  # type: ignore[attr-defined]
+                        fragment_info.block_name, context or {}
+                    )
+                )
             else:
                 # Render entire template
                 template = env.get_template(fragment_info.template_path)

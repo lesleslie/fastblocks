@@ -377,7 +377,7 @@ class RemixIconAdapter(IconsBase):
 
         return f"ri {resolved_name}"
 
-    def get_icon_tag(
+    def get_icon_tag(  # type: ignore[override]  # Intentional API extension with variant/size
         self,
         icon_name: str,
         variant: str | None = None,
@@ -700,7 +700,7 @@ def _register_ri_advanced_functions(env: Any) -> None:
 def _register_ri_button_functions(env: Any) -> None:
     """Register Remix Icon button functions."""
 
-    @env.global_("ri_button")
+    @env.global_("ri_button")  # type: ignore[misc]  # Jinja2 decorator preserves signature
     def ri_button(
         text: str,
         icon: str | None = None,
