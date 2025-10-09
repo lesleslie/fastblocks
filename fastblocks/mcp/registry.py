@@ -88,6 +88,35 @@ class AdapterRegistry:
         """Get all available adapter categories."""
         return await self.discovery.get_all_categories()
 
+    def _validate_module_id(self, adapter: Any, result: dict[str, Any]) -> None:
+        """Validate adapter MODULE_ID attribute."""
+        if not hasattr(adapter, "MODULE_ID"):
+            result["warnings"].append("Missing MODULE_ID attribute")
+        elif not isinstance(adapter.MODULE_ID, UUID):
+            result["errors"].append("MODULE_ID is not a valid UUID")
+
+    def _validate_module_status(self, adapter: Any, result: dict[str, Any]) -> None:
+        """Validate adapter MODULE_STATUS attribute."""
+        if not hasattr(adapter, "MODULE_STATUS"):
+            result["warnings"].append("Missing MODULE_STATUS attribute")
+        elif adapter.MODULE_STATUS not in (
+            "stable",
+            "beta",
+            "alpha",
+            "experimental",
+        ):
+            result["warnings"].append(f"Unknown MODULE_STATUS: {adapter.MODULE_STATUS}")
+
+    def _validate_settings(self, adapter: Any, result: dict[str, Any]) -> None:
+        """Validate adapter settings configuration."""
+        if hasattr(adapter, "settings"):
+            result["info"]["has_settings"] = True
+            settings = adapter.settings
+            if hasattr(settings, "__dict__"):
+                result["info"]["settings_properties"] = list(settings.__dict__.keys())
+        else:
+            result["warnings"].append("No settings attribute found")
+
     async def validate_adapter(self, adapter_name: str) -> dict[str, Any]:
         """Validate an adapter's configuration and functionality."""
         result: dict[str, Any] = {
@@ -114,34 +143,10 @@ class AdapterRegistry:
                 )
                 return result
 
-            # Check required attributes
-            if not hasattr(adapter, "MODULE_ID"):
-                result["warnings"].append("Missing MODULE_ID attribute")
-            elif not isinstance(adapter.MODULE_ID, UUID):
-                result["errors"].append("MODULE_ID is not a valid UUID")
-
-            if not hasattr(adapter, "MODULE_STATUS"):
-                result["warnings"].append("Missing MODULE_STATUS attribute")
-            elif adapter.MODULE_STATUS not in (
-                "stable",
-                "beta",
-                "alpha",
-                "experimental",
-            ):
-                result["warnings"].append(
-                    f"Unknown MODULE_STATUS: {adapter.MODULE_STATUS}"
-                )
-
-            # Check settings
-            if hasattr(adapter, "settings"):
-                result["info"]["has_settings"] = True
-                settings = adapter.settings
-                if hasattr(settings, "__dict__"):
-                    result["info"]["settings_properties"] = list(
-                        settings.__dict__.keys()
-                    )
-            else:
-                result["warnings"].append("No settings attribute found")
+            # Validate adapter attributes
+            self._validate_module_id(adapter, result)
+            self._validate_module_status(adapter, result)
+            self._validate_settings(adapter, result)
 
             # If we got here without errors, adapter is valid
             if not result["errors"]:

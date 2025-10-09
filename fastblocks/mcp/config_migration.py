@@ -10,6 +10,12 @@ from typing import Any
 
 import yaml
 
+# Module-level constants for migration defaults
+_DEFAULT_ADAPTER_METADATA = {
+    "module_id_generator": lambda: __import__("uuid").uuid4(),
+    "module_status": "stable",
+}
+
 
 class MigrationDirection(str, Enum):
     """Migration direction."""
@@ -65,89 +71,90 @@ class ConfigurationMigrationManager:
         # Register migration steps
         self.migration_steps = self._register_migration_steps()
 
+    def _create_metadata_migration_step(self) -> MigrationStep:
+        """Create migration step for adding adapter metadata."""
+        return MigrationStep(
+            name="add_adapter_metadata",
+            description="Add MODULE_ID and MODULE_STATUS metadata to adapters",
+            function=self._migrate_add_adapter_metadata,
+            version_from="0.1.0",
+            version_to="0.2.0",
+            direction=MigrationDirection.UPGRADE,
+        )
+
+    def _create_env_validation_step(self) -> MigrationStep:
+        """Create migration step for environment variable validation."""
+        return MigrationStep(
+            name="add_env_validation",
+            description="Add validation patterns to environment variables",
+            function=self._migrate_add_env_validation,
+            version_from="0.2.0",
+            version_to="0.3.0",
+            direction=MigrationDirection.UPGRADE,
+        )
+
+    def _create_production_upgrade_step(self) -> MigrationStep:
+        """Create migration step for production-ready upgrade."""
+        return MigrationStep(
+            name="production_ready_schema",
+            description="Upgrade to production-ready configuration schema",
+            function=self._migrate_production_ready,
+            version_from="0.3.0",
+            version_to="1.0.0",
+            direction=MigrationDirection.UPGRADE,
+        )
+
+    def _create_production_downgrade_step(self) -> MigrationStep:
+        """Create migration step for production downgrade."""
+        return MigrationStep(
+            name="remove_production_features",
+            description="Downgrade from production-ready schema",
+            function=self._migrate_remove_production_features,
+            version_from="1.0.0",
+            version_to="0.3.0",
+            direction=MigrationDirection.DOWNGRADE,
+        )
+
     def _register_migration_steps(self) -> list[MigrationStep]:
         """Register all migration steps."""
-        steps = []
+        return [
+            self._create_metadata_migration_step(),
+            self._create_env_validation_step(),
+            self._create_production_upgrade_step(),
+            self._create_production_downgrade_step(),
+        ]
 
-        # 0.1.0 -> 0.2.0: Add adapter metadata
-        # 0.2.0 -> 0.3.0: Add environment variable validation
-        steps.extend(
-            (
-                MigrationStep(
-                    name="add_adapter_metadata",
-                    description="Add MODULE_ID and MODULE_STATUS metadata to adapters",
-                    function=self._migrate_add_adapter_metadata,
-                    version_from="0.1.0",
-                    version_to="0.2.0",
-                    direction=MigrationDirection.UPGRADE,
-                ),
-                MigrationStep(
-                    name="add_env_validation",
-                    description="Add validation patterns to environment variables",
-                    function=self._migrate_add_env_validation,
-                    version_from="0.2.0",
-                    version_to="0.3.0",
-                    direction=MigrationDirection.UPGRADE,
-                ),
-            )
-        )
-
-        # 0.3.0 -> 1.0.0: Production-ready schema
-        # Reverse migrations
-        steps.extend(
-            (
-                MigrationStep(
-                    name="production_ready_schema",
-                    description="Upgrade to production-ready configuration schema",
-                    function=self._migrate_production_ready,
-                    version_from="0.3.0",
-                    version_to="1.0.0",
-                    direction=MigrationDirection.UPGRADE,
-                ),
-                MigrationStep(
-                    name="remove_production_features",
-                    description="Downgrade from production-ready schema",
-                    function=self._migrate_remove_production_features,
-                    version_from="1.0.0",
-                    version_to="0.3.0",
-                    direction=MigrationDirection.DOWNGRADE,
-                ),
-            )
-        )
-
-        return steps
-
-    async def migrate_configuration(
-        self, config_data: dict[str, Any], target_version: str
+    def _create_already_at_version_result(
+        self, current_version: str, target_version: str
     ) -> MigrationResult:
-        """Migrate configuration to target version."""
-        current_version = config_data.get("version", "0.1.0")
-
-        if current_version == target_version:
-            return MigrationResult(
-                success=True,
-                version_from=current_version,
-                version_to=target_version,
-                warnings=["Configuration is already at target version"],
-            )
-
-        # Determine migration path
-        migration_path = self._get_migration_path(current_version, target_version)
-        if not migration_path:
-            return MigrationResult(
-                success=False,
-                version_from=current_version,
-                version_to=target_version,
-                errors=[
-                    f"No migration path found from {current_version} to {target_version}"
-                ],
-            )
-
-        # Execute migration steps
-        result = MigrationResult(
-            success=True, version_from=current_version, version_to=target_version
+        """Create result when already at target version."""
+        return MigrationResult(
+            success=True,
+            version_from=current_version,
+            version_to=target_version,
+            warnings=["Configuration is already at target version"],
         )
 
+    def _create_no_path_result(
+        self, current_version: str, target_version: str
+    ) -> MigrationResult:
+        """Create result when no migration path exists."""
+        return MigrationResult(
+            success=False,
+            version_from=current_version,
+            version_to=target_version,
+            errors=[
+                f"No migration path found from {current_version} to {target_version}"
+            ],
+        )
+
+    async def _execute_migration_steps(
+        self,
+        config_data: dict[str, Any],
+        migration_path: list[MigrationStep],
+        result: MigrationResult,
+    ) -> dict[str, Any]:
+        """Execute migration steps and update result."""
         current_data = config_data.copy()
 
         for step in migration_path:
@@ -160,7 +167,59 @@ class ConfigurationMigrationManager:
                 result.errors.append(f"Migration step '{step.name}' failed: {e}")
                 break
 
+        return current_data
+
+    async def migrate_configuration(
+        self, config_data: dict[str, Any], target_version: str
+    ) -> MigrationResult:
+        """Migrate configuration to target version."""
+        current_version = config_data.get("version", "0.1.0")
+
+        if current_version == target_version:
+            return self._create_already_at_version_result(
+                current_version, target_version
+            )
+
+        migration_path = self._get_migration_path(current_version, target_version)
+        if not migration_path:
+            return self._create_no_path_result(current_version, target_version)
+
+        result = MigrationResult(
+            success=True, version_from=current_version, version_to=target_version
+        )
+
+        await self._execute_migration_steps(config_data, migration_path, result)
+
         return result
+
+    def _determine_migration_direction(
+        self, from_idx: int, to_idx: int
+    ) -> tuple[MigrationDirection, list[str]]:
+        """Determine migration direction and version range."""
+        if from_idx < to_idx:
+            direction = MigrationDirection.UPGRADE
+            version_range = self.version_history[from_idx:to_idx]
+        else:
+            direction = MigrationDirection.DOWNGRADE
+            version_range = list(reversed(self.version_history[to_idx:from_idx]))
+        return direction, version_range
+
+    def _build_migration_path(
+        self, version_range: list[str], direction: MigrationDirection
+    ) -> list[MigrationStep]:
+        """Build migration path from version range."""
+        migration_path = []
+        for i in range(len(version_range) - 1):
+            current_version = version_range[i]
+            next_version = version_range[i + 1]
+
+            step = self._find_migration_step(current_version, next_version, direction)
+            if step:
+                migration_path.append(step)
+            else:
+                return []  # No migration path available if any step is missing
+
+        return migration_path
 
     def _get_migration_path(
         self, from_version: str, to_version: str
@@ -178,27 +237,8 @@ class ConfigurationMigrationManager:
         if from_idx == to_idx:
             return []
 
-        # Determine direction
-        if from_idx < to_idx:
-            direction = MigrationDirection.UPGRADE
-            version_range = self.version_history[from_idx:to_idx]
-        else:
-            direction = MigrationDirection.DOWNGRADE
-            version_range = list(reversed(self.version_history[to_idx:from_idx]))
-
-        # Find applicable migration steps
-        migration_path = []
-        for i in range(len(version_range) - 1):
-            current_version = version_range[i]
-            next_version = version_range[i + 1]
-
-            step = self._find_migration_step(current_version, next_version, direction)
-            if step:
-                migration_path.append(step)
-
-            return []  # No migration path available
-
-        return migration_path
+        direction, version_range = self._determine_migration_direction(from_idx, to_idx)
+        return self._build_migration_path(version_range, direction)
 
     def _find_migration_step(
         self, from_version: str, to_version: str, direction: MigrationDirection
@@ -214,25 +254,30 @@ class ConfigurationMigrationManager:
         return None
 
     # Migration functions
+    def _ensure_adapter_metadata(self, adapter_config: dict[str, Any]) -> None:
+        """Ensure adapter has required metadata fields."""
+        if "metadata" not in adapter_config:
+            adapter_config["metadata"] = {}
+
+        metadata = adapter_config["metadata"]
+        if "module_id" not in metadata:
+            metadata["module_id"] = str(
+                _DEFAULT_ADAPTER_METADATA["module_id_generator"]()
+            )
+
+        if "module_status" not in metadata:
+            metadata["module_status"] = _DEFAULT_ADAPTER_METADATA["module_status"]
+
     async def _migrate_add_adapter_metadata(
         self, config_data: dict[str, Any]
     ) -> dict[str, Any]:
         """Add adapter metadata to configuration."""
-        if "adapters" in config_data:
-            for adapter_name, adapter_config in config_data["adapters"].items():
-                if isinstance(adapter_config, dict):
-                    # Add default metadata if not present
-                    if "metadata" not in adapter_config:
-                        adapter_config["metadata"] = {}
+        if "adapters" not in config_data:
+            return config_data
 
-                    metadata = adapter_config["metadata"]
-                    if "module_id" not in metadata:
-                        import uuid
-
-                        metadata["module_id"] = str(uuid.uuid4())
-
-                    if "module_status" not in metadata:
-                        metadata["module_status"] = "stable"
+        for adapter_config in config_data["adapters"].values():
+            if isinstance(adapter_config, dict):
+                self._ensure_adapter_metadata(adapter_config)
 
         return config_data
 
@@ -282,29 +327,39 @@ class ConfigurationMigrationManager:
 
         return config_data
 
-    def _add_production_global_settings(self, global_settings: dict[str, Any]) -> None:
-        """Add production-specific global settings."""
-        # Define production settings
-        production_settings = {
-            "security": {
-                "force_https": True,
-                "secure_cookies": True,
-                "csrf_protection": True,
-                "content_security_policy": True,
-            },
-            "monitoring": {
-                "health_checks": True,
-                "metrics_collection": True,
-                "error_reporting": True,
-            },
-            "performance": {
-                "caching_enabled": True,
-                "compression_enabled": True,
-                "static_file_optimization": True,
-            },
+    def _get_security_settings(self) -> dict[str, bool]:
+        """Get production security settings."""
+        return {
+            "force_https": True,
+            "secure_cookies": True,
+            "csrf_protection": True,
+            "content_security_policy": True,
         }
 
-        # Add settings if not present
+    def _get_monitoring_settings(self) -> dict[str, bool]:
+        """Get production monitoring settings."""
+        return {
+            "health_checks": True,
+            "metrics_collection": True,
+            "error_reporting": True,
+        }
+
+    def _get_performance_settings(self) -> dict[str, bool]:
+        """Get production performance settings."""
+        return {
+            "caching_enabled": True,
+            "compression_enabled": True,
+            "static_file_optimization": True,
+        }
+
+    def _add_production_global_settings(self, global_settings: dict[str, Any]) -> None:
+        """Add production-specific global settings."""
+        production_settings = {
+            "security": self._get_security_settings(),
+            "monitoring": self._get_monitoring_settings(),
+            "performance": self._get_performance_settings(),
+        }
+
         for key, value in production_settings.items():
             global_settings.setdefault(key, value)
 
@@ -314,26 +369,27 @@ class ConfigurationMigrationManager:
             if isinstance(adapter_config, dict):
                 self._add_adapter_production_features(adapter_config)
 
+    def _get_health_check_config(self) -> dict[str, Any]:
+        """Get default health check configuration."""
+        return {
+            "enabled": True,
+            "interval_seconds": 60,
+            "timeout_seconds": 30,
+        }
+
+    def _get_profile_overrides(self) -> dict[str, dict[str, Any]]:
+        """Get default profile overrides."""
+        return {
+            "production": {"debug": False, "log_level": "WARNING"},
+            "development": {"debug": True, "log_level": "DEBUG"},
+        }
+
     def _add_adapter_production_features(self, adapter_config: dict[str, Any]) -> None:
         """Add production features to adapter configuration."""
-        # Add health check configuration
         adapter_config.setdefault(
-            "health_check_config",
-            {
-                "enabled": True,
-                "interval_seconds": 60,
-                "timeout_seconds": 30,
-            },
+            "health_check_config", self._get_health_check_config()
         )
-
-        # Add profile-specific overrides
-        adapter_config.setdefault(
-            "profile_overrides",
-            {
-                "production": {"debug": False, "log_level": "WARNING"},
-                "development": {"debug": True, "log_level": "DEBUG"},
-            },
-        )
+        adapter_config.setdefault("profile_overrides", self._get_profile_overrides())
 
     async def _migrate_remove_production_features(
         self, config_data: dict[str, Any]
@@ -371,13 +427,12 @@ class ConfigurationMigrationManager:
 
         return None
 
-    async def migrate_configuration_file(
-        self, config_file: Path, target_version: str, output_file: Path | None = None
-    ) -> MigrationResult:
-        """Migrate configuration file to target version."""
-        # Load configuration
+    def _load_config_file(
+        self, config_file: Path, target_version: str
+    ) -> tuple[dict[str, Any] | None, MigrationResult | None]:
+        """Load configuration file and return data or error result."""
         if not config_file.exists():
-            return MigrationResult(
+            return None, MigrationResult(
                 success=False,
                 version_from="unknown",
                 version_to=target_version,
@@ -390,29 +445,45 @@ class ConfigurationMigrationManager:
                     config_data = json.load(f)
                 else:
                     config_data = yaml.safe_load(f)
+            return config_data, None
         except Exception as e:
-            return MigrationResult(
+            return None, MigrationResult(
                 success=False,
                 version_from="unknown",
                 version_to=target_version,
                 errors=[f"Failed to load configuration: {e}"],
             )
 
+    def _save_config_file(
+        self, config_data: dict[str, Any], output_path: Path, result: MigrationResult
+    ) -> None:
+        """Save migrated configuration to file and update result on error."""
+        try:
+            with output_path.open("w") as f:
+                if output_path.suffix.lower() == ".json":
+                    json.dump(config_data, f, indent=2)
+                else:
+                    yaml.dump(config_data, f, default_flow_style=False)
+        except Exception as e:
+            result.success = False
+            result.errors.append(f"Failed to save migrated configuration: {e}")
+
+    async def migrate_configuration_file(
+        self, config_file: Path, target_version: str, output_file: Path | None = None
+    ) -> MigrationResult:
+        """Migrate configuration file to target version."""
+        # Load configuration
+        config_data, error_result = self._load_config_file(config_file, target_version)
+        if error_result:
+            return error_result
+
         # Perform migration
-        result = await self.migrate_configuration(config_data, target_version)
+        result = await self.migrate_configuration(config_data, target_version)  # type: ignore[arg-type]
 
         if result.success:
             # Save migrated configuration
             output_path = output_file or config_file
-            try:
-                with output_path.open("w") as f:
-                    if output_path.suffix.lower() == ".json":
-                        json.dump(config_data, f, indent=2)
-                    else:
-                        yaml.dump(config_data, f, default_flow_style=False)
-            except Exception as e:
-                result.success = False
-                result.errors.append(f"Failed to save migrated configuration: {e}")
+            self._save_config_file(config_data, output_path, result)  # type: ignore[arg-type]
 
         return result
 
@@ -465,13 +536,11 @@ class ConfigurationMigrationManager:
         except Exception:
             return "unknown"
 
-    async def validate_migration_compatibility(
-        self, config_file: Path, target_version: str
+    def _create_compatibility_result(
+        self, current_version: str, target_version: str
     ) -> dict[str, Any]:
-        """Validate if migration is possible and safe."""
-        current_version = self._detect_configuration_version(config_file)
-
-        result: dict[str, Any] = {
+        """Create initial compatibility result structure."""
+        return {
             "compatible": False,
             "current_version": current_version,
             "target_version": target_version,
@@ -480,33 +549,69 @@ class ConfigurationMigrationManager:
             "requirements": [],
         }
 
+    def _check_version_unknown(
+        self, current_version: str, result: dict[str, Any]
+    ) -> bool:
+        """Check if version is unknown and update result."""
         if current_version == "unknown":
             result["warnings"].append("Cannot detect current configuration version")
-            return result
+            return True
+        return False
 
-        # Get migration path
-        migration_path = self._get_migration_path(current_version, target_version)
+    def _check_migration_path_exists(
+        self, migration_path: list[MigrationStep], result: dict[str, Any]
+    ) -> bool:
+        """Check if migration path exists and update result."""
         if not migration_path:
+            current_v = result["current_version"]
+            target_v = result["target_version"]
             result["warnings"].append(
-                f"No migration path available from {current_version} to {target_version}"
+                f"No migration path available from {current_v} to {target_v}"
             )
-            return result
+            return False
+        return True
 
-        result["compatible"] = True
-        result["migration_path"] = [step.name for step in migration_path]
-
-        # Check for potential issues
+    def _add_downgrade_warnings(
+        self, migration_path: list[MigrationStep], result: dict[str, Any]
+    ) -> None:
+        """Add warnings for downgrade steps in migration path."""
         for step in migration_path:
             if step.direction == MigrationDirection.DOWNGRADE:
                 result["warnings"].append(
                     f"Step '{step.name}' is a downgrade and may result in data loss"
                 )
 
-        # Add requirements
+    def _add_migration_requirements(self, result: dict[str, Any]) -> None:
+        """Add migration requirements to result."""
         result["requirements"] = [
             "Backup will be created automatically",
             "Configuration file will be updated in place",
             "Verify adapter compatibility after migration",
         ]
+
+    async def validate_migration_compatibility(
+        self, config_file: Path, target_version: str
+    ) -> dict[str, Any]:
+        """Validate if migration is possible and safe."""
+        current_version = self._detect_configuration_version(config_file)
+
+        result = self._create_compatibility_result(current_version, target_version)
+
+        if self._check_version_unknown(current_version, result):
+            return result
+
+        # Get migration path
+        migration_path = self._get_migration_path(current_version, target_version)
+        if not self._check_migration_path_exists(migration_path, result):
+            return result
+
+        result["compatible"] = True
+        result["migration_path"] = [step.name for step in migration_path]
+
+        # Check for potential issues
+        self._add_downgrade_warnings(migration_path, result)
+
+        # Add requirements
+        self._add_migration_requirements(result)
 
         return result

@@ -493,6 +493,60 @@ class HeroiconsAdapter(IconsBase):
 
 
 # Template filter registration for FastBlocks
+def _create_hero_button(
+    text: str,
+    icon: str | None,
+    variant: str,
+    icon_position: str,
+    icons: HeroiconsAdapter,
+    **attributes: Any,
+) -> str:
+    """Build button HTML with Heroicons icon."""
+    btn_class = attributes.pop("class", "btn btn-primary")
+
+    # Build button content
+    if icon:
+        icon_tag = icons.get_icon_tag(icon, variant, size="sm")
+        if icon_position == "left":
+            content = f"{icon_tag} {text}"
+        elif icon_position == "right":
+            content = f"{text} {icon_tag}"
+        else:
+            content = text
+    else:
+        content = text
+
+    # Build button attributes
+    btn_attrs = {"class": btn_class} | attributes
+    attr_string = " ".join(f'{k}="{v}"' for k, v in btn_attrs.items())
+
+    return f"<button {attr_string}>{content}</button>"
+
+
+def _create_hero_badge(
+    text: str,
+    icon: str | None,
+    variant: str,
+    icons: HeroiconsAdapter,
+    **attributes: Any,
+) -> str:
+    """Build badge HTML with Heroicons icon."""
+    badge_class = attributes.pop("class", "badge badge-primary")
+
+    # Build badge content
+    if icon:
+        icon_tag = icons.get_icon_tag(icon, variant, size="xs")
+        content = f"{icon_tag} {text}"
+    else:
+        content = text
+
+    # Build badge attributes
+    badge_attrs = {"class": badge_class} | attributes
+    attr_string = " ".join(f'{k}="{v}"' for k, v in badge_attrs.items())
+
+    return f"<span {attr_string}>{content}</span>"
+
+
 def register_heroicons_filters(env: Any) -> None:
     """Register Heroicons filters for Jinja2 templates."""
 
@@ -535,30 +589,11 @@ def register_heroicons_filters(env: Any) -> None:
     ) -> str:
         """Generate button with Heroicons icon."""
         icons = depends.get("icons")
-        if not isinstance(icons, HeroiconsAdapter):
-            return f"<button>{text}</button>"
-
-        btn_class = attributes.pop("class", "btn btn-primary")
-
-        # Build button content
-        content = ""
-        if icon:
-            icon_tag = icons.get_icon_tag(icon, variant, size="sm")
-
-            if icon_position == "left":
-                content = f"{icon_tag} {text}"
-            elif icon_position == "right":
-                content = f"{text} {icon_tag}"
-            else:
-                content = text
-        else:
-            content = text
-
-        # Build button attributes
-        btn_attrs = {"class": btn_class} | attributes
-        attr_string = " ".join(f'{k}="{v}"' for k, v in btn_attrs.items())
-
-        return f"<button {attr_string}>{content}</button>"
+        if isinstance(icons, HeroiconsAdapter):
+            return _create_hero_button(
+                text, icon, variant, icon_position, icons, **attributes
+            )
+        return f"<button>{text}</button>"
 
     @env.global_("hero_badge")
     def hero_badge(
@@ -566,24 +601,9 @@ def register_heroicons_filters(env: Any) -> None:
     ) -> str:
         """Generate badge with Heroicons icon."""
         icons = depends.get("icons")
-        if not isinstance(icons, HeroiconsAdapter):
-            return f"<span class='badge'>{text}</span>"
-
-        badge_class = attributes.pop("class", "badge badge-primary")
-
-        # Build badge content
-        content = ""
-        if icon:
-            icon_tag = icons.get_icon_tag(icon, variant, size="xs")
-            content = f"{icon_tag} {text}"
-        else:
-            content = text
-
-        # Build badge attributes
-        badge_attrs = {"class": badge_class} | attributes
-        attr_string = " ".join(f'{k}="{v}"' for k, v in badge_attrs.items())
-
-        return f"<span {attr_string}>{content}</span>"
+        if isinstance(icons, HeroiconsAdapter):
+            return _create_hero_badge(text, icon, variant, icons, **attributes)
+        return f"<span class='badge'>{text}</span>"
 
 
 # ACB 0.19.0+ compatibility

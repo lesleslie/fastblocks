@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import sys
+import typing as t
 from pathlib import Path
 from typing import Any
 
@@ -261,6 +262,43 @@ class InteractiveConfigurationCLI:
 
         return self._parse_adapter_selection(selection, adapter_choices)
 
+    def _configure_adapter_env_vars(self, adapter_config: t.Any) -> None:
+        """Configure adapter environment variables."""
+        if adapter_config.environment_variables:
+            console.print("\n[yellow]Environment Variables:[/yellow]")
+            for env_var in adapter_config.environment_variables:
+                self._configure_environment_variable(env_var)
+
+    def _configure_required_settings(
+        self, adapter_config: t.Any, schema: dict[str, t.Any]
+    ) -> None:
+        """Configure required adapter settings."""
+        for setting in schema.get("required_settings", []):
+            value = Prompt.ask(
+                f"[red]*[/red] {setting['name']} ({setting['type']})",
+                default=str(setting.get("default", "")),
+            )
+            adapter_config.settings[setting["name"]] = self._parse_setting_value(
+                value, setting["type"]
+            )
+
+    def _configure_optional_settings(
+        self, adapter_config: t.Any, schema: dict[str, t.Any]
+    ) -> None:
+        """Configure optional adapter settings."""
+        if schema.get("optional_settings") and Confirm.ask(
+            "Configure optional settings?"
+        ):
+            for setting in schema.get("optional_settings", []):
+                if Confirm.ask(f"Configure {setting['name']}?"):
+                    value = Prompt.ask(
+                        f"{setting['name']} ({setting['type']})",
+                        default=str(setting.get("default", "")),
+                    )
+                    adapter_config.settings[setting["name"]] = (
+                        self._parse_setting_value(value, setting["type"])
+                    )
+
     async def _configure_adapter_interactive(
         self, config: ConfigurationSchema, adapter_name: str
     ) -> None:
@@ -278,37 +316,13 @@ class InteractiveConfigurationCLI:
             console.print(f"[dim]Description: {schema['description']}[/dim]")
 
         # Configure environment variables
-        if adapter_config.environment_variables:
-            console.print("\n[yellow]Environment Variables:[/yellow]")
-
-            for env_var in adapter_config.environment_variables:
-                self._configure_environment_variable(env_var)
+        self._configure_adapter_env_vars(adapter_config)
 
         # Configure settings
         if schema.get("required_settings") or schema.get("optional_settings"):
             console.print("\n[yellow]Adapter Settings:[/yellow]")
-
-            for setting in schema.get("required_settings", []):
-                value = Prompt.ask(
-                    f"[red]*[/red] {setting['name']} ({setting['type']})",
-                    default=str(setting.get("default", "")),
-                )
-                adapter_config.settings[setting["name"]] = self._parse_setting_value(
-                    value, setting["type"]
-                )
-
-            if schema.get("optional_settings") and Confirm.ask(
-                "Configure optional settings?"
-            ):
-                for setting in schema.get("optional_settings", []):
-                    if Confirm.ask(f"Configure {setting['name']}?"):
-                        value = Prompt.ask(
-                            f"{setting['name']} ({setting['type']})",
-                            default=str(setting.get("default", "")),
-                        )
-                        adapter_config.settings[setting["name"]] = (
-                            self._parse_setting_value(value, setting["type"])
-                        )
+            self._configure_required_settings(adapter_config, schema)
+            self._configure_optional_settings(adapter_config, schema)
 
         # Configure dependencies
         if schema.get("dependencies"):

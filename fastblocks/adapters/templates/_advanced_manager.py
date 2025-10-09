@@ -47,6 +47,102 @@ from jinja2.runtime import StrictUndefined as RuntimeStrictUndefined
 
 from .jinja2 import Templates, TemplatesSettings
 
+__all__ = [
+    "AdvancedTemplateManager",
+    "AdvancedTemplatesSettings",
+    "AutocompleteItem",
+    "FragmentInfo",
+    "SecurityLevel",
+    "TemplateError",
+    "TemplateValidationResult",
+    "ValidationLevel",
+]
+
+# Module-level constants for autocomplete data
+_JINJA2_BUILTIN_FILTERS = [
+    ("abs", "filter", "Return absolute value", "number|abs"),
+    ("attr", "filter", "Get attribute by name", "obj|attr('name')"),
+    ("batch", "filter", "Batch items into sublists", "items|batch(3)"),
+    ("capitalize", "filter", "Capitalize first letter", "text|capitalize"),
+    ("center", "filter", "Center text in field", "text|center(80)"),
+    ("default", "filter", "Default value if undefined", "var|default('fallback')"),
+    ("dictsort", "filter", "Sort dict by key/value", "dict|dictsort"),
+    ("escape", "filter", "Escape HTML characters", "text|escape"),
+    ("filesizeformat", "filter", "Format file size", "bytes|filesizeformat"),
+    ("first", "filter", "Get first item", "items|first"),
+    ("float", "filter", "Convert to float", "value|float"),
+    ("format", "filter", "String formatting", "'{0}'.format(value)"),
+    ("groupby", "filter", "Group by attribute", "items|groupby('category')"),
+    ("indent", "filter", "Indent text", "text|indent(4)"),
+    ("int", "filter", "Convert to integer", "value|int"),
+    ("join", "filter", "Join list with separator", "items|join(', ')"),
+    ("last", "filter", "Get last item", "items|last"),
+    ("length", "filter", "Get length", "items|length"),
+    ("list", "filter", "Convert to list", "value|list"),
+    ("lower", "filter", "Convert to lowercase", "text|lower"),
+    ("map", "filter", "Apply filter to each item", "items|map('upper')"),
+    ("max", "filter", "Get maximum value", "numbers|max"),
+    ("min", "filter", "Get minimum value", "numbers|min"),
+    ("random", "filter", "Get random item", "items|random"),
+    ("reject", "filter", "Reject items by test", "items|reject('odd')"),
+    ("replace", "filter", "Replace substring", "text|replace('old', 'new')"),
+    ("reverse", "filter", "Reverse order", "items|reverse"),
+    ("round", "filter", "Round number", "number|round(2)"),
+    ("safe", "filter", "Mark as safe HTML", "html|safe"),
+    ("select", "filter", "Select items by test", "items|select('even')"),
+    ("slice", "filter", "Slice sequence", "items|slice(3)"),
+    ("sort", "filter", "Sort items", "items|sort"),
+    ("string", "filter", "Convert to string", "value|string"),
+    ("striptags", "filter", "Remove HTML tags", "html|striptags"),
+    ("sum", "filter", "Sum numeric values", "numbers|sum"),
+    ("title", "filter", "Title case", "text|title"),
+    ("trim", "filter", "Strip whitespace", "text|trim"),
+    ("truncate", "filter", "Truncate text", "text|truncate(50)"),
+    ("unique", "filter", "Remove duplicates", "items|unique"),
+    ("upper", "filter", "Convert to uppercase", "text|upper"),
+    ("urlencode", "filter", "URL encode", "text|urlencode"),
+    ("urlize", "filter", "Convert URLs to links", "text|urlize"),
+    ("wordcount", "filter", "Count words", "text|wordcount"),
+    ("wordwrap", "filter", "Wrap text", "text|wordwrap(80)"),
+]
+
+_JINJA2_BUILTIN_FUNCTIONS = [
+    (
+        "range",
+        "function",
+        "Generate sequence of numbers",
+        "range(10)",
+        "range(start, stop, step)",
+    ),
+    (
+        "lipsum",
+        "function",
+        "Generate lorem ipsum text",
+        "lipsum(5)",
+        "lipsum(n=5, html=True, min=20, max=100)",
+    ),
+    ("dict", "function", "Create dictionary", "dict(key='value')", "dict(**kwargs)"),
+    (
+        "cycler",
+        "function",
+        "Create value cycler",
+        "cycler('odd', 'even')",
+        "cycler(*items)",
+    ),
+    ("joiner", "function", "Create joiner helper", "joiner(', ')", "joiner(sep=', ')"),
+]
+
+_ADAPTER_AUTOCOMPLETE_FUNCTIONS = {
+    "images": ["get_image_url", "get_img_tag", "get_placeholder_url"],
+    "icons": ["get_icon_tag", "get_icon_with_text"],
+    "fonts": ["get_font_import", "get_font_family"],
+    "styles": [
+        "get_component_class",
+        "get_utility_classes",
+        "build_component_html",
+    ],
+}
+
 
 class ValidationLevel(Enum):
     """Template validation levels."""
@@ -116,6 +212,44 @@ class AutocompleteItem:
     example: str | None = None
 
 
+def _default_sandbox_attributes() -> list[str]:
+    """Get default allowed sandbox attributes."""
+    return [
+        "alt",
+        "class",
+        "id",
+        "src",
+        "href",
+        "title",
+        "width",
+        "height",
+    ]
+
+
+def _default_sandbox_tags() -> list[str]:
+    """Get default allowed sandbox tags."""
+    return [
+        "div",
+        "span",
+        "p",
+        "a",
+        "img",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "ul",
+        "ol",
+        "li",
+        "strong",
+        "em",
+        "br",
+        "hr",
+    ]
+
+
 class AdvancedTemplatesSettings(TemplatesSettings):
     """Advanced template settings with enhanced features."""
 
@@ -127,39 +261,9 @@ class AdvancedTemplatesSettings(TemplatesSettings):
     # Security settings
     security_level: SecurityLevel = SecurityLevel.STANDARD
     sandbox_allowed_attributes: list[str] = field(
-        default_factory=lambda: [
-            "alt",
-            "class",
-            "id",
-            "src",
-            "href",
-            "title",
-            "width",
-            "height",
-        ]
+        default_factory=_default_sandbox_attributes
     )
-    sandbox_allowed_tags: list[str] = field(
-        default_factory=lambda: [
-            "div",
-            "span",
-            "p",
-            "a",
-            "img",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
-            "h6",
-            "ul",
-            "ol",
-            "li",
-            "strong",
-            "em",
-            "br",
-            "hr",
-        ]
-    )
+    sandbox_allowed_tags: list[str] = field(default_factory=_default_sandbox_tags)
 
     # Fragment/Partial settings
     enable_fragments: bool = True
@@ -197,9 +301,8 @@ class AdvancedTemplateManager:
         self._autocomplete_cache: dict[str, list[AutocompleteItem]] = {}
         self._template_dependencies: dict[str, set[str]] = {}
 
-    async def initialize(self) -> None:
-        """Initialize the advanced template manager."""
-        # Get base templates instance
+    async def _initialize_base_templates(self) -> None:
+        """Initialize base templates instance."""
         try:
             self.base_templates = depends.get("templates")
         except Exception:
@@ -207,12 +310,18 @@ class AdvancedTemplateManager:
             if not self.base_templates.app:
                 await self.base_templates.init()
 
-        # Setup advanced features
+    async def _initialize_advanced_features(self) -> None:
+        """Initialize advanced template features."""
         if self.settings.enable_fragments:
             await self._discover_fragments()
 
         if self.settings.enable_autocomplete:
             await self._build_autocomplete_index()
+
+    async def initialize(self) -> None:
+        """Initialize the advanced template manager."""
+        await self._initialize_base_templates()
+        await self._initialize_advanced_features()
 
     def _get_template_environment(self, secure: bool = False) -> Environment:
         """Get Jinja2 environment with appropriate security settings."""
@@ -225,21 +334,21 @@ class AdvancedTemplateManager:
             # Create sandboxed environment
             sandbox_env = SandboxedEnvironment(
                 loader=env.loader,
-                extensions=env.extensions,
+                extensions=list(env.extensions.values()),  # type: ignore[arg-type]
                 undefined=StrictUndefined
                 if self.settings.strict_undefined
                 else RuntimeStrictUndefined,
             )
 
-            # Apply security restrictions
-            sandbox_env.allowed_tags = set(self.settings.sandbox_allowed_tags)
-            sandbox_env.allowed_attributes = set(
+            # Apply security restrictions (Jinja2 sandbox API)
+            sandbox_env.allowed_tags = set(self.settings.sandbox_allowed_tags)  # type: ignore[attr-defined]
+            sandbox_env.allowed_attributes = set(  # type: ignore[attr-defined]
                 self.settings.sandbox_allowed_attributes
             )
 
             return sandbox_env
 
-        return env
+        return t.cast(Environment, env)
 
     async def validate_template(
         self,
@@ -538,11 +647,11 @@ class AdvancedTemplateManager:
 
             # Extract block information
             for node in parsed.body:
-                if hasattr(node, "name") and node.name:
+                if hasattr(node, "name") and node.name:  # type: ignore[attr-defined]
                     fragment = FragmentInfo(
-                        name=node.name,
+                        name=node.name,  # type: ignore[attr-defined]
                         template_path=template_name,
-                        block_name=node.name,
+                        block_name=node.name,  # type: ignore[attr-defined]
                         start_line=getattr(node, "lineno", None),
                     )
 
@@ -583,153 +692,41 @@ class AdvancedTemplateManager:
 
     def _get_builtin_autocomplete(self) -> list[AutocompleteItem]:
         """Get autocomplete items for built-in Jinja2 features."""
-        items = []
-
-        # Built-in filters
-        builtin_filters = [
-            ("abs", "filter", "Return absolute value", "number|abs"),
-            ("attr", "filter", "Get attribute by name", "obj|attr('name')"),
-            ("batch", "filter", "Batch items into sublists", "items|batch(3)"),
-            ("capitalize", "filter", "Capitalize first letter", "text|capitalize"),
-            ("center", "filter", "Center text in field", "text|center(80)"),
-            (
-                "default",
-                "filter",
-                "Default value if undefined",
-                "var|default('fallback')",
-            ),
-            ("dictsort", "filter", "Sort dict by key/value", "dict|dictsort"),
-            ("escape", "filter", "Escape HTML characters", "text|escape"),
-            ("filesizeformat", "filter", "Format file size", "bytes|filesizeformat"),
-            ("first", "filter", "Get first item", "items|first"),
-            ("float", "filter", "Convert to float", "value|float"),
-            ("format", "filter", "String formatting", "'{0}'.format(value)"),
-            ("groupby", "filter", "Group by attribute", "items|groupby('category')"),
-            ("indent", "filter", "Indent text", "text|indent(4)"),
-            ("int", "filter", "Convert to integer", "value|int"),
-            ("join", "filter", "Join list with separator", "items|join(', ')"),
-            ("last", "filter", "Get last item", "items|last"),
-            ("length", "filter", "Get length", "items|length"),
-            ("list", "filter", "Convert to list", "value|list"),
-            ("lower", "filter", "Convert to lowercase", "text|lower"),
-            ("map", "filter", "Apply filter to each item", "items|map('upper')"),
-            ("max", "filter", "Get maximum value", "numbers|max"),
-            ("min", "filter", "Get minimum value", "numbers|min"),
-            ("random", "filter", "Get random item", "items|random"),
-            ("reject", "filter", "Reject items by test", "items|reject('odd')"),
-            ("replace", "filter", "Replace substring", "text|replace('old', 'new')"),
-            ("reverse", "filter", "Reverse order", "items|reverse"),
-            ("round", "filter", "Round number", "number|round(2)"),
-            ("safe", "filter", "Mark as safe HTML", "html|safe"),
-            ("select", "filter", "Select items by test", "items|select('even')"),
-            ("slice", "filter", "Slice sequence", "items|slice(3)"),
-            ("sort", "filter", "Sort items", "items|sort"),
-            ("string", "filter", "Convert to string", "value|string"),
-            ("striptags", "filter", "Remove HTML tags", "html|striptags"),
-            ("sum", "filter", "Sum numeric values", "numbers|sum"),
-            ("title", "filter", "Title case", "text|title"),
-            ("trim", "filter", "Strip whitespace", "text|trim"),
-            ("truncate", "filter", "Truncate text", "text|truncate(50)"),
-            ("unique", "filter", "Remove duplicates", "items|unique"),
-            ("upper", "filter", "Convert to uppercase", "text|upper"),
-            ("urlencode", "filter", "URL encode", "text|urlencode"),
-            ("urlize", "filter", "Convert URLs to links", "text|urlize"),
-            ("wordcount", "filter", "Count words", "text|wordcount"),
-            ("wordwrap", "filter", "Wrap text", "text|wordwrap(80)"),
+        # Add filters from module constant using list comprehension
+        items = [
+            AutocompleteItem(
+                name=name,
+                type=item_type,
+                description=description,
+                example=example,
+                adapter_source="jinja2",
+            )
+            for name, item_type, description, example in _JINJA2_BUILTIN_FILTERS
         ]
 
-        for name, item_type, description, example in builtin_filters:
-            items.append(
-                AutocompleteItem(
-                    name=name,
-                    type=item_type,
-                    description=description,
-                    example=example,
-                    adapter_source="jinja2",
-                )
+        # Add functions from module constant using list comprehension
+        items.extend(
+            AutocompleteItem(
+                name=name,
+                type=item_type,
+                description=description,
+                signature=signature,
+                example=example,
+                adapter_source="jinja2",
             )
-
-        # Built-in functions
-        builtin_functions = [
-            (
-                "range",
-                "function",
-                "Generate sequence of numbers",
-                "range(10)",
-                "range(start, stop, step)",
-            ),
-            (
-                "lipsum",
-                "function",
-                "Generate lorem ipsum text",
-                "lipsum(5)",
-                "lipsum(n=5, html=True, min=20, max=100)",
-            ),
-            (
-                "dict",
-                "function",
-                "Create dictionary",
-                "dict(key='value')",
-                "dict(**kwargs)",
-            ),
-            (
-                "cycler",
-                "function",
-                "Create value cycler",
-                "cycler('odd', 'even')",
-                "cycler(*items)",
-            ),
-            (
-                "joiner",
-                "function",
-                "Create joiner helper",
-                "joiner(', ')",
-                "joiner(sep=', ')",
-            ),
-        ]
-
-        for name, item_type, description, example, signature in builtin_functions:
-            items.append(
-                AutocompleteItem(
-                    name=name,
-                    type=item_type,
-                    description=description,
-                    signature=signature,
-                    example=example,
-                    adapter_source="jinja2",
-                )
-            )
+            for name, item_type, description, example, signature in _JINJA2_BUILTIN_FUNCTIONS
+        )
 
         return items
 
-    async def _get_adapter_autocomplete(self) -> list[AutocompleteItem]:
-        """Get autocomplete items for adapter functions."""
-        items = []
-
-        # FastBlocks-specific filters from our filter modules
-        from .async_filters import FASTBLOCKS_ASYNC_FILTERS
-        from .filters import FASTBLOCKS_FILTERS
-
-        # Add sync filters
-        for name, func in FASTBLOCKS_FILTERS.items():
-            doc = func.__doc__ or ""
-            description = doc.split("\n")[0] if doc else f"FastBlocks {name} filter"
-
-            items.append(
-                AutocompleteItem(
-                    name=name,
-                    type="filter",
-                    description=description,
-                    adapter_source="fastblocks",
-                    example=self._extract_example_from_doc(doc),
-                )
-            )
-
-        # Add async filters
-        for name, func in FASTBLOCKS_ASYNC_FILTERS.items():
+    def _add_filter_items(
+        self, items: list[AutocompleteItem], filters: dict[str, t.Any], filter_type: str
+    ) -> None:
+        """Add filter autocomplete items from filter dictionary."""
+        for name, func in filters.items():
             doc = func.__doc__ or ""
             description = (
-                doc.split("\n")[0] if doc else f"FastBlocks {name} async filter"
+                doc.split("\n")[0] if doc else f"FastBlocks {name} {filter_type}"
             )
 
             items.append(
@@ -742,19 +739,9 @@ class AdvancedTemplateManager:
                 )
             )
 
-        # Add adapter-specific functions
-        adapter_functions = {
-            "images": ["get_image_url", "get_img_tag", "get_placeholder_url"],
-            "icons": ["get_icon_tag", "get_icon_with_text"],
-            "fonts": ["get_font_import", "get_font_family"],
-            "styles": [
-                "get_component_class",
-                "get_utility_classes",
-                "build_component_html",
-            ],
-        }
-
-        for adapter_name, functions in adapter_functions.items():
+    def _add_adapter_function_items(self, items: list[AutocompleteItem]) -> None:
+        """Add adapter function autocomplete items."""
+        for adapter_name, functions in _ADAPTER_AUTOCOMPLETE_FUNCTIONS.items():
             with suppress(Exception):
                 adapter = depends.get(adapter_name)
                 if adapter:
@@ -768,6 +755,23 @@ class AdvancedTemplateManager:
                                     adapter_source=adapter_name,
                                 )
                             )
+
+    async def _get_adapter_autocomplete(self) -> list[AutocompleteItem]:
+        """Get autocomplete items for adapter functions."""
+        items: list[AutocompleteItem] = []
+
+        # FastBlocks-specific filters from our filter modules
+        from .async_filters import FASTBLOCKS_ASYNC_FILTERS
+        from .filters import FASTBLOCKS_FILTERS
+
+        # Add sync filters
+        self._add_filter_items(items, FASTBLOCKS_FILTERS, "filter")
+
+        # Add async filters
+        self._add_filter_items(items, FASTBLOCKS_ASYNC_FILTERS, "async filter")
+
+        # Add adapter-specific functions
+        self._add_adapter_function_items(items)
 
         return items
 
@@ -892,11 +896,14 @@ class AdvancedTemplateManager:
             if fragment_info.block_name:
                 # Render specific block
                 template = env.get_template(fragment_info.template_path)
-                return template.render_block(fragment_info.block_name, context or {})
+                # render_block exists in Jinja2 but not in type stubs
+                return str(
+                    template.render_block(fragment_info.block_name, context or {})
+                )  # type: ignore[attr-defined]
             else:
                 # Render entire template
                 template = env.get_template(fragment_info.template_path)
-                return template.render(context or {})
+                return str(template.render(context or {}))
 
         except Exception as e:
             raise TemplateError(f"Error rendering fragment '{fragment_name}': {e}")
@@ -956,7 +963,8 @@ class AdvancedTemplateManager:
 
             # Find extends, includes, and imports
             node: t.Any
-            for node in parsed.find_all(("Extends", "Include", "FromImport")):
+            # find_all accepts strings but type stubs expect Node types
+            for node in parsed.find_all(("Extends", "Include", "FromImport")):  # type: ignore[arg-type]
                 if hasattr(node, "template") and hasattr(node.template, "value"):
                     dependencies.add(node.template.value)
 

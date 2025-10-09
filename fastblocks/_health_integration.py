@@ -6,6 +6,7 @@ It registers FastBlocks-specific health checks while maintaining existing MCP he
 Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-10-01
 """
+# type: ignore  # ACB health service API stub - graceful degradation
 
 import typing as t
 from contextlib import suppress

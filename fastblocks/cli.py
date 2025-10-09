@@ -56,9 +56,9 @@ class Styles(str, Enum):
         return t.cast(str, self.value)
 
 
-run_args = {"app": "main:app"}
-dev_args = run_args | {"port": 8000, "reload": True}
-granian_dev_args = dev_args | {
+run_args: dict[str, t.Any] = {"app": "main:app"}
+dev_args: dict[str, t.Any] = run_args | {"port": 8000, "reload": True}
+granian_dev_args: dict[str, t.Any] = dev_args | {
     "address": "127.0.0.1",
     "reload_paths": [Path.cwd(), fastblocks_path],
     "interface": "asgi",
@@ -66,7 +66,7 @@ granian_dev_args = dev_args | {
     "log_access": True,
     "reload_ignore_dirs": ["tmp", "settings", "templates"],
 }
-uvicorn_dev_args = dev_args | {
+uvicorn_dev_args: dict[str, t.Any] = dev_args | {
     "host": "127.0.0.1",
     "reload_includes": ["*.py", str(Path.cwd()), str(fastblocks_path)],
     "reload_excludes": ["tmp/*", "settings/*", "templates/*"],
@@ -243,7 +243,7 @@ def _parse_component_children(children: str) -> list[str] | None:
 
 
 def _build_scaffold_kwargs(
-    parsed_props: dict,
+    parsed_props: dict[str, t.Any],
     htmx: bool,
     component_type: t.Any,
     endpoint: str,
@@ -355,6 +355,36 @@ def scaffold(
     asyncio.run(scaffold_component())
 
 
+def _get_component_status_color(status_value: str) -> str:
+    """Get the color for a component status."""
+    return {
+        "discovered": "yellow",
+        "validated": "green",
+        "compiled": "blue",
+        "ready": "green",
+        "error": "red",
+        "deprecated": "dim",
+    }.get(status_value, "white")
+
+
+def _display_component_entry(name: str, metadata: t.Any) -> None:
+    """Display a single component entry with status and metadata."""
+    status_color = _get_component_status_color(metadata.status.value)
+
+    console.print(
+        f"  [{status_color}]●[/{status_color}] [white]{name}[/white] ({metadata.type.value})"
+    )
+    console.print(f"    [dim]{metadata.path}[/dim]")
+
+    if metadata.error_message:
+        console.print(f"    [red]Error: {metadata.error_message}[/red]")
+    elif metadata.docstring:
+        # Show first line of docstring
+        first_line = metadata.docstring.split("\n")[0].strip()
+        if first_line:
+            console.print(f"    [dim]{first_line}[/dim]")
+
+
 @cli.command(name="list")
 def list_components() -> None:
     """List all discovered HTMY components."""
@@ -382,32 +412,53 @@ def list_components() -> None:
             )
 
             for name, metadata in components.items():
-                status_color = {
-                    "discovered": "yellow",
-                    "validated": "green",
-                    "compiled": "blue",
-                    "ready": "green",
-                    "error": "red",
-                    "deprecated": "dim",
-                }.get(metadata.status.value, "white")
-
-                console.print(
-                    f"  [{status_color}]●[/{status_color}] [white]{name}[/white] ({metadata.type.value})"
-                )
-                console.print(f"    [dim]{metadata.path}[/dim]")
-
-                if metadata.error_message:
-                    console.print(f"    [red]Error: {metadata.error_message}[/red]")
-                elif metadata.docstring:
-                    # Show first line of docstring
-                    first_line = metadata.docstring.split("\n")[0].strip()
-                    if first_line:
-                        console.print(f"    [dim]{first_line}[/dim]")
+                _display_component_entry(name, metadata)
 
         except Exception as e:
             console.print(f"[red]Error listing components: {e}[/red]")
 
     asyncio.run(list_all_components())
+
+
+def _display_basic_metadata(component: str, metadata: t.Any) -> None:
+    """Display basic component metadata."""
+    console.print(f"\n[bold blue]Component: {component}[/bold blue]")
+    console.print(f"  [cyan]Type:[/cyan] {metadata.type.value}")
+    console.print(f"  [cyan]Status:[/cyan] {metadata.status.value}")
+    console.print(f"  [cyan]Path:[/cyan] {metadata.path}")
+
+
+def _display_optional_metadata(metadata: t.Any) -> None:
+    """Display optional component metadata fields."""
+    if metadata.last_modified:
+        console.print(f"  [cyan]Modified:[/cyan] {metadata.last_modified}")
+
+    if metadata.docstring:
+        console.print(f"  [cyan]Description:[/cyan] {metadata.docstring}")
+
+
+def _display_htmx_attributes(metadata: t.Any) -> None:
+    """Display HTMX attributes if present."""
+    if metadata.htmx_attributes:
+        console.print("  [cyan]HTMX Attributes:[/cyan]")
+        for key, value in metadata.htmx_attributes.items():
+            console.print(f"    {key}: {value}")
+
+
+def _display_dependencies(metadata: t.Any) -> None:
+    """Display component dependencies if present."""
+    if metadata.dependencies:
+        console.print(
+            f"  [cyan]Dependencies:[/cyan] {', '.join(metadata.dependencies)}"
+        )
+
+
+def _display_status_message(metadata: t.Any) -> None:
+    """Display status-specific message."""
+    if metadata.status.value == "error":
+        console.print(f"  [red]Error:[/red] {metadata.error_message}")
+    elif metadata.status.value == "ready":
+        console.print("  [green]✓ Component is ready[/green]")
 
 
 @cli.command()
@@ -430,31 +481,11 @@ def validate(
 
             metadata = await htmy_adapter.validate_component(component)
 
-            console.print(f"\n[bold blue]Component: {component}[/bold blue]")
-            console.print(f"  [cyan]Type:[/cyan] {metadata.type.value}")
-            console.print(f"  [cyan]Status:[/cyan] {metadata.status.value}")
-            console.print(f"  [cyan]Path:[/cyan] {metadata.path}")
-
-            if metadata.last_modified:
-                console.print(f"  [cyan]Modified:[/cyan] {metadata.last_modified}")
-
-            if metadata.docstring:
-                console.print(f"  [cyan]Description:[/cyan] {metadata.docstring}")
-
-            if metadata.htmx_attributes:
-                console.print("  [cyan]HTMX Attributes:[/cyan]")
-                for key, value in metadata.htmx_attributes.items():
-                    console.print(f"    {key}: {value}")
-
-            if metadata.dependencies:
-                console.print(
-                    f"  [cyan]Dependencies:[/cyan] {', '.join(metadata.dependencies)}"
-                )
-
-            if metadata.status.value == "error":
-                console.print(f"  [red]Error:[/red] {metadata.error_message}")
-            elif metadata.status.value == "ready":
-                console.print("  [green]✓ Component is ready[/green]")
+            _display_basic_metadata(component, metadata)
+            _display_optional_metadata(metadata)
+            _display_htmx_attributes(metadata)
+            _display_dependencies(metadata)
+            _display_status_message(metadata)
 
         except Exception as e:
             console.print(f"[red]Error validating component '{component}': {e}[/red]")
@@ -529,6 +560,39 @@ def info(
     asyncio.run(get_component_info())
 
 
+def _get_severity_color(severity: str) -> str:
+    """Get the color for an error severity level."""
+    return {
+        "error": "red",
+        "warning": "yellow",
+        "info": "blue",
+        "hint": "dim",
+    }.get(severity, "white")
+
+
+def _display_syntax_error(error: t.Any) -> None:
+    """Display a single syntax error with formatting."""
+    severity_color = _get_severity_color(error.severity)
+
+    console.print(
+        f"  [{severity_color}]{error.severity.upper()}[/{severity_color}] "
+        f"Line {error.line + 1}, Column {error.column + 1}: {error.message}"
+    )
+
+    if error.fix_suggestion:
+        console.print(f"    [dim]Fix: {error.fix_suggestion}[/dim]")
+
+    if error.code:
+        console.print(f"    [dim]Code: {error.code}[/dim]")
+
+
+def _display_syntax_errors(file_path: str, errors: list[t.Any]) -> None:
+    """Display all syntax errors for a file."""
+    console.print(f"\n[bold red]Syntax errors found in {file_path}:[/bold red]")
+    for error in errors:
+        _display_syntax_error(error)
+
+
 @cli.command()
 def syntax_check(
     file_path: Annotated[
@@ -566,25 +630,7 @@ def syntax_check(
                 console.print(f"[green]✓ No syntax errors found in {file_path}[/green]")
                 return
 
-            console.print(f"\n[bold red]Syntax errors found in {file_path}:[/bold red]")
-            for error in errors:
-                severity_color = {
-                    "error": "red",
-                    "warning": "yellow",
-                    "info": "blue",
-                    "hint": "dim",
-                }.get(error.severity, "white")
-
-                console.print(
-                    f"  [{severity_color}]{error.severity.upper()}[/{severity_color}] "
-                    f"Line {error.line + 1}, Column {error.column + 1}: {error.message}"
-                )
-
-                if error.fix_suggestion:
-                    console.print(f"    [dim]Fix: {error.fix_suggestion}[/dim]")
-
-                if error.code:
-                    console.print(f"    [dim]Code: {error.code}[/dim]")
+            _display_syntax_errors(file_path, errors)
 
         except Exception as e:
             console.print(f"[red]Error checking syntax: {e}[/red]")

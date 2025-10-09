@@ -346,13 +346,13 @@ class ConfigurationManager:
                     )
                     result.status = ConfigurationStatus.ERROR
 
-    async def _validate_environment_variables(
-        self, config: ConfigurationSchema, result: ConfigurationValidationResult
+    def _check_duplicate_env_vars(
+        self,
+        config: ConfigurationSchema,
+        result: ConfigurationValidationResult,
+        all_env_vars: set[str],
     ) -> None:
-        """Validate environment variable configuration."""
-        all_env_vars = set()
-
-        # Check for duplicate environment variable names
+        """Check for duplicate environment variable names."""
         for adapter_config in config.adapters.values():
             for env_var in adapter_config.environment_variables:
                 if env_var.name in all_env_vars:
@@ -361,17 +361,40 @@ class ConfigurationManager:
                     )
                 all_env_vars.add(env_var.name)
 
-        # Check for missing required variables
+    def _is_env_var_missing(self, env_var: EnvironmentVariable) -> bool:
+        """Check if a required environment variable is missing."""
+        return (
+            env_var.required
+            and not env_var.value
+            and not env_var.default
+            and env_var.name not in os.environ
+        )
+
+    def _check_missing_required_vars(
+        self, config: ConfigurationSchema, result: ConfigurationValidationResult
+    ) -> None:
+        """Check for missing required environment variables."""
         for adapter_name, adapter_config in config.adapters.items():
             if not adapter_config.enabled:
                 continue
 
             for env_var in adapter_config.environment_variables:
-                if env_var.required and not env_var.value and not env_var.default:
-                    if env_var.name not in os.environ:
-                        result.warnings.append(
-                            f"Required environment variable {env_var.name} for {adapter_name} is not set"
-                        )
+                if self._is_env_var_missing(env_var):
+                    result.warnings.append(
+                        f"Required environment variable {env_var.name} for {adapter_name} is not set"
+                    )
+
+    async def _validate_environment_variables(
+        self, config: ConfigurationSchema, result: ConfigurationValidationResult
+    ) -> None:
+        """Validate environment variable configuration."""
+        all_env_vars: set[str] = set()
+
+        # Check for duplicate environment variable names
+        self._check_duplicate_env_vars(config, result, all_env_vars)
+
+        # Check for missing required variables
+        self._check_missing_required_vars(config, result)
 
     async def save_configuration(
         self, config: ConfigurationSchema, name: str | None = None
@@ -430,8 +453,9 @@ class ConfigurationManager:
             "adapters": {},
         }
 
+        adapters_dict: dict[str, Any] = {}
         for adapter_name, adapter_config in config.adapters.items():
-            result["adapters"][adapter_name] = {
+            adapters_dict[adapter_name] = {
                 "enabled": adapter_config.enabled,
                 "settings": adapter_config.settings,
                 "environment_variables": [
@@ -455,6 +479,7 @@ class ConfigurationManager:
                 "metadata": adapter_config.metadata,
             }
 
+        result["adapters"] = adapters_dict
         return result
 
     def _deserialize_configuration(
@@ -570,8 +595,8 @@ class ConfigurationManager:
         # Calculate checksum
         import hashlib
 
-        with backup_file.open("rb") as f:
-            checksum = hashlib.sha256(f.read()).hexdigest()
+        with backup_file.open("rb") as fb:
+            checksum = hashlib.sha256(fb.read()).hexdigest()
 
         backup = ConfigurationBackup(
             id=backup_id,

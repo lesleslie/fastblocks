@@ -1,6 +1,7 @@
 """Configuration audit and security checks for FastBlocks."""
 
 import re
+import typing as t
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -299,11 +300,11 @@ class ConfigurationAuditor:
         variables = self.env_manager.extract_variables_from_configuration(config)
 
         # Run all checks and collect findings
-        for check in [
+        for check in (
             self._check_weak_secrets,
             self._check_unmarked_secrets,
             self._check_missing_required,
-        ]:
+        ):
             finding = check(variables)
             if finding:
                 findings.append(finding)
@@ -530,28 +531,50 @@ class ConfigurationAuditor:
 
         return findings
 
+    def _is_secret_key(self, key: str) -> bool:
+        """Check if a key name matches secret patterns."""
+        return any(pattern.match(key) for pattern in self.secret_patterns)
+
+    def _is_hardcoded_value(self, value: str) -> bool:
+        """Check if a value appears to be hardcoded (not an env var reference)."""
+        return len(value) > 8 and not value.startswith("${")
+
+    def _check_global_settings_for_secrets(
+        self, config: ConfigurationSchema
+    ) -> list[str]:
+        """Check global settings for hardcoded secrets."""
+        hardcoded = []
+
+        for key, value in config.global_settings.items():
+            if isinstance(value, str) and self._is_secret_key(key):
+                if self._is_hardcoded_value(value):
+                    hardcoded.append(f"global_settings.{key}")
+
+        return hardcoded
+
+    def _check_adapter_settings_for_secrets(
+        self, config: ConfigurationSchema
+    ) -> list[str]:
+        """Check adapter settings for hardcoded secrets."""
+        hardcoded = []
+
+        for adapter_name, adapter_config in config.adapters.items():
+            for key, value in adapter_config.settings.items():
+                if isinstance(value, str) and self._is_secret_key(key):
+                    if self._is_hardcoded_value(value):
+                        hardcoded.append(f"adapters.{adapter_name}.settings.{key}")
+
+        return hardcoded
+
     def _find_hardcoded_secrets(self, config: ConfigurationSchema) -> list[str]:
         """Find potential hardcoded secrets in configuration."""
         hardcoded = []
 
         # Check global settings
-        for key, value in config.global_settings.items():
-            if isinstance(value, str) and any(
-                pattern.match(key) for pattern in self.secret_patterns
-            ):
-                if len(value) > 8 and not value.startswith(
-                    "${"
-                ):  # Not an env var reference
-                    hardcoded.append(f"global_settings.{key}")
+        hardcoded.extend(self._check_global_settings_for_secrets(config))
 
         # Check adapter settings
-        for adapter_name, adapter_config in config.adapters.items():
-            for key, value in adapter_config.settings.items():
-                if isinstance(value, str) and any(
-                    pattern.match(key) for pattern in self.secret_patterns
-                ):
-                    if len(value) > 8 and not value.startswith("${"):
-                        hardcoded.append(f"adapters.{adapter_name}.settings.{key}")
+        hardcoded.extend(self._check_adapter_settings_for_secrets(config))
 
         return hardcoded
 

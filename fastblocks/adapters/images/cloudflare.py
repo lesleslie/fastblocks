@@ -75,27 +75,19 @@ class CloudflareImagesAdapter(ImagesBase):
         client = await self._get_client()
 
         # Generate unique ID for the image
-        image_id = str(uuid4())
+        str(uuid4())
 
         # Prepare upload data
-        upload_data = {
-            "id": image_id,
-            "requireSignedURLs": self.settings.require_signed_urls,
-            "metadata": {
-                "filename": filename,
-                "source": "fastblocks",
-            },
-        }
 
         # Upload to Cloudflare Images
         url = f"https://api.cloudflare.com/client/v4/accounts/{self.settings.account_id}/images/v1"
 
-        files = {
+        # Format files for httpx - each value is a tuple of (filename, file_content, content_type)
+        files_data: dict[str, tuple[str, bytes, str]] = {
             "file": (filename, file_data, "image/*"),
-            "metadata": (None, str(upload_data).encode()),
         }
 
-        response = await client.post(url, files=files)
+        response = await client.post(url, files=files_data)
         response.raise_for_status()
 
         result = response.json()
@@ -105,8 +97,8 @@ class CloudflareImagesAdapter(ImagesBase):
             )
 
         # Return the image ID for future reference
-        image_id: str = result["result"]["id"]
-        return image_id
+        uploaded_image_id: str = result["result"]["id"]
+        return uploaded_image_id
 
     async def get_image_url(
         self, image_id: str, transformations: dict[str, Any] | None = None
@@ -128,30 +120,38 @@ class CloudflareImagesAdapter(ImagesBase):
 
     def _build_base_url(self, image_id: str) -> str:
         """Build base URL for Cloudflare image."""
-        if self.settings and self.settings.delivery_url:
+        if not self.settings:
+            raise RuntimeError("Cloudflare Images settings not configured")
+
+        if self.settings.delivery_url:
             return f"{self.settings.delivery_url}/{image_id}"
         return f"https://api.cloudflare.com/client/v4/accounts/{self.settings.account_id}/images/v1/{image_id}"
 
     def _build_transformation_parts(self, transformations: dict[str, Any]) -> list[str]:
         """Build transformation query parameters."""
-        transform_parts = []
-
         # Common transformations
-        for key in ("width", "height", "quality", "format", "fit"):
-            if key in transformations:
-                transform_parts.append(f"{key}={transformations[key]}")
+        common_parts = [
+            f"{key}={transformations[key]}"
+            for key in ("width", "height", "quality", "format", "fit")
+            if key in transformations
+        ]
 
         # Advanced transformations
-        for key in ("blur", "brightness", "contrast", "gamma", "sharpen"):
-            if key in transformations:
-                transform_parts.append(f"{key}={transformations[key]}")
+        advanced_parts = [
+            f"{key}={transformations[key]}"
+            for key in ("blur", "brightness", "contrast", "gamma", "sharpen")
+            if key in transformations
+        ]
 
-        return transform_parts
+        return common_parts + advanced_parts
 
     def _build_transformed_url(
         self, base_url: str, transformations: dict[str, Any], transform_parts: list[str]
     ) -> str:
         """Build final URL with transformations."""
+        if not self.settings:
+            raise RuntimeError("Cloudflare Images settings not configured")
+
         variant = transformations.get("variant", self.settings.default_variant)
         transform_string = ",".join(transform_parts)
         return f"{base_url}/{variant}?{transform_string}"

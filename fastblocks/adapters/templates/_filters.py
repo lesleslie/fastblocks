@@ -52,6 +52,33 @@ def image_url(image_id: str, **transformations: Any) -> str:
     return image_id
 
 
+def _get_base_component_class(styles: Any, component: str) -> str:
+    """Get the base class for a component from styles adapter."""
+    base_class = styles.get_component_class(component)
+    return str(base_class) if base_class is not None else component.replace("_", "-")
+
+
+def _apply_utility_modifiers(
+    base_class: str, styles: Any, modifiers: dict[str, Any]
+) -> str:
+    """Apply utility class modifiers to base class if supported."""
+    if not hasattr(styles, "get_utility_classes"):
+        return base_class
+
+    utilities = styles.get_utility_classes()
+    if not utilities:
+        return base_class
+
+    for modifier, value in modifiers.items():
+        utility_key = f"{modifier}_{value}"
+        if utility_key in utilities:
+            utility_class = utilities[utility_key]
+            if utility_class:
+                base_class = f"{base_class} {utility_class}"
+
+    return base_class
+
+
 def style_class(component: str, **modifiers: Any) -> str:
     """Get style framework class for component.
 
@@ -59,27 +86,12 @@ def style_class(component: str, **modifiers: Any) -> str:
         [[ style_class('button', variant='primary', size='large') ]]
     """
     styles = depends.get("styles")
-    if styles:
-        base_class = styles.get_component_class(component)
-        base_class = (
-            str(base_class) if base_class is not None else component.replace("_", "-")
-        )
+    if not styles:
+        # Fallback to semantic class name
+        return component.replace("_", "-")
 
-        # Apply modifiers if the adapter supports it
-        if hasattr(styles, "get_utility_classes"):
-            utilities = styles.get_utility_classes()
-            if utilities:
-                for modifier, value in modifiers.items():
-                    utility_key = f"{modifier}_{value}"
-                    if utility_key in utilities:
-                        utility_class = utilities[utility_key]
-                        if utility_class:
-                            base_class = f"{base_class} {utility_class}"
-
-        return base_class
-
-    # Fallback to semantic class name
-    return component.replace("_", "-")
+    base_class = _get_base_component_class(styles, component)
+    return _apply_utility_modifiers(base_class, styles, modifiers)
 
 
 def icon_tag(icon_name: str, **attributes: Any) -> str:

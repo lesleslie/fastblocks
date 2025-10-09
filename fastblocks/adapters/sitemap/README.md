@@ -1,6 +1,6 @@
 # Sitemap Adapter
 
-> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
+> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>)
 
 The Sitemap adapter generates XML sitemaps for FastBlocks applications.
 
@@ -54,10 +54,10 @@ sitemap:
 
 ### Basic Setup
 
-The Sitemap adapter is automatically configured when you install the `sitemap` optional dependency:
+The Sitemap adapter is automatically configured when you install the `sitemap` dependency group:
 
 ```bash
-uv add "fastblocks[sitemap]"
+uv add --group sitemap
 ```
 
 The sitemap will be automatically available at `/sitemap.xml`.

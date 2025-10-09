@@ -270,7 +270,7 @@ async def gather_components(
             htmx_components=htmx,
             dataclass_components=dataclass,
             composite_components=composite,
-            searchpaths=searchpaths,
+            searchpaths=searchpaths or [],
             execution_time=execution_time,
             items_processed=len(component_items),
             cache_hits=0,
@@ -368,7 +368,7 @@ async def analyze_component_usage(
         if not components_result.is_success:
             return {"error": components_result.error_message}
 
-        analysis = {
+        analysis: dict[str, Any] = {
             "total_components": components_result.component_count,
             "by_type": {
                 "htmx": len(components_result.htmx_components),

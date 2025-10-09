@@ -20,6 +20,7 @@ import asyncio
 import json
 import typing as t
 from contextlib import suppress
+from typing import Any
 from urllib.parse import unquote
 
 from acb.debug import debug
@@ -119,16 +120,16 @@ class HtmxDetails:
 
 
 def _get_header(scope: "Scope", key: bytes) -> str | None:
-    key = key.lower()
+    key_lower = key.lower()
     value: str | None = None
     should_unquote = False
 
     # Extract header value and autoencoding flag
     try:
         for k, v in scope["headers"]:
-            if k.lower() == key:
+            if k.lower() == key_lower:
                 value = v.decode("latin-1")
-            if k.lower() == b"%s-uri-autoencoded" % key and v == b"true":
+            if k.lower() == b"%s-uri-autoencoded" % key_lower and v == b"true":
                 should_unquote = True
     except (KeyError, UnicodeDecodeError) as e:
         debug(f"HtmxDetails: Error processing header {key}: {e}")
@@ -272,6 +273,7 @@ def htmx_trigger(
     status_code: int = 200,
     **kwargs: t.Any,
 ) -> HtmxResponse:
+    trigger_data: dict[str, Any]
     if isinstance(trigger_events, dict):
         trigger_value = json.dumps(trigger_events)
         trigger_name = next(iter(trigger_events.keys()), "custom_trigger")
@@ -279,7 +281,7 @@ def htmx_trigger(
     else:
         trigger_value = trigger_events
         trigger_name = trigger_events
-        trigger_data = None
+        trigger_data = {}
 
     # Publish HTMX trigger event (async, don't block response)
     with suppress(Exception):

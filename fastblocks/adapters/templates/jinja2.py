@@ -686,7 +686,11 @@ class Templates(TemplatesBase):
             import asyncio
 
             loop = asyncio.get_event_loop()
-            if hasattr(self, "_admin_cache") and hasattr(self, "admin_searchpaths"):
+            if (
+                hasattr(self, "_admin_cache")
+                and hasattr(self, "admin_searchpaths")
+                and self.admin_searchpaths is not None
+            ):
                 debug("Initializing admin templates environment")
                 self._admin = loop.run_until_complete(
                     self.init_envs(

@@ -180,12 +180,14 @@ class FastBlocksException(Exception):
         category: ErrorCategory = ErrorCategory.APPLICATION,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
         details: dict[str, t.Any] | None = None,
+        status_code: int | None = None,
     ) -> None:
         super().__init__(message)
         self.message = message
         self.category = category
         self.severity = severity
         self.details = details if details is not None else {}
+        self.status_code = status_code
 
     def to_error_context(self, error_id: str | None = None) -> ErrorContext:
         return ErrorContext(

@@ -33,7 +33,7 @@ import asyncio
 import typing as t
 from contextlib import suppress
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 # Handle imports with fallback for different ACB versions
@@ -617,7 +617,9 @@ class HTMYTemplates(TemplatesBase):
             return self.advanced_registry.lifecycle_manager
         return None
 
-    def register_lifecycle_hook(self, event: str, callback: t.Callable) -> None:
+    def register_lifecycle_hook(
+        self, event: str, callback: t.Callable[..., Any]
+    ) -> None:
         """Register a lifecycle hook."""
         lifecycle_manager = self.get_lifecycle_manager()
         if lifecycle_manager is not None:

@@ -1,4 +1,5 @@
 """Demo script showcasing FastBlocks syntax support and autocomplete features."""
+# type: ignore  # Example file - not strict type checking
 
 import asyncio
 from contextlib import suppress

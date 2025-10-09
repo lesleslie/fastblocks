@@ -438,6 +438,9 @@ async def _delete_cache_entries(
             headers=vary,
             varying_headers=varying_headers,
         )
+        if cache_key is None:
+            continue
+
         logger.debug(f"clear_cache key={cache_key!r}")
         await cache.delete(cache_key)
 
@@ -622,7 +625,7 @@ def _generate_url_hash(url: URL) -> str:
 def generate_varying_headers_cache_key(url: URL) -> str:
     hasher = _get_hasher()
     hasher.update(_str_encode(str(url.path)))
-    url_hash = hasher.hexdigest()
+    url_hash = str(hasher.hexdigest())
     return f"varying_headers.{url_hash}"
 
 

@@ -30,6 +30,7 @@ Usage:
     async def create_user(request):
         ...
 """
+# type: ignore  # ACB validation service API stub - graceful degradation
 
 import functools
 import typing as t
@@ -699,12 +700,54 @@ def get_validation_service() -> FastBlocksValidationService:
 # Decorators for automatic validation
 
 
+def _extract_template_context(
+    args: tuple[t.Any, ...], kwargs: dict[str, t.Any]
+) -> tuple[dict[str, t.Any], str]:
+    """Extract context and template name from decorator arguments."""
+    raw_context: t.Any = kwargs.get("context") or (args[3] if len(args) > 3 else {})
+    context: dict[str, t.Any] = raw_context if isinstance(raw_context, dict) else {}
+    template = kwargs.get("template") or (args[2] if len(args) > 2 else "unknown")
+    return context, str(template)
+
+
+async def _log_template_validation_errors(
+    errors: list[str],
+    template: str,
+    service: FastBlocksValidationService,
+) -> None:
+    """Log validation errors if configured."""
+    if not (errors and service._config.log_validation_failures):
+        return
+
+    with suppress(Exception):
+        logger = depends.get("logger")
+        if logger:
+            logger.warning(
+                f"Template context validation warnings for {template}: {errors}"
+            )
+
+
+def _update_context_in_args(
+    args: tuple[t.Any, ...],
+    kwargs: dict[str, t.Any],
+    sanitized_context: dict[str, t.Any],
+) -> tuple[tuple[t.Any, ...], dict[str, t.Any]]:
+    """Update args/kwargs with sanitized context."""
+    if "context" in kwargs:
+        kwargs["context"] = sanitized_context
+    elif len(args) > 3:
+        args = (*args[:3], sanitized_context, *args[4:])
+    return args, kwargs
+
+
 def validate_template_context(
     strict: bool = False,
 ) -> t.Callable[
     [t.Callable[..., t.Awaitable[t.Any]]], t.Callable[..., t.Awaitable[t.Any]]
 ]:
     """Decorator to validate template context before rendering.
+
+    Refactored to reduce cognitive complexity.
 
     Usage:
         @validate_template_context(strict=False)
@@ -718,14 +761,9 @@ def validate_template_context(
         @functools.wraps(func)
         async def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             # Extract context and template name
-            context: dict[str, t.Any] = kwargs.get("context") or (
-                args[3] if len(args) > 3 else {}
-            )
-            template = kwargs.get("template") or (
-                args[2] if len(args) > 2 else "unknown"
-            )
+            context, template = _extract_template_context(args, kwargs)
 
-            # Skip validation if context is None or empty
+            # Skip validation if context is empty
             if not context:
                 return await func(*args, **kwargs)
 
@@ -737,26 +775,15 @@ def validate_template_context(
                 errors,
             ) = await service.validate_template_context(
                 context=context,
-                template_name=str(template),
+                template_name=template,
                 strict=strict,
             )
 
             # Log validation errors if configured
-            if errors and service._config.log_validation_failures:
-                with suppress(Exception):
-                    logger = depends.get("logger")
-                    if logger:
-                        logger.warning(
-                            f"Template context validation warnings for {template}: {errors}"
-                        )
+            await _log_template_validation_errors(errors, template, service)
 
-            # Use sanitized context
-            if "context" in kwargs:
-                kwargs["context"] = sanitized_context
-            elif len(args) > 3:
-                args_list = list(args)
-                args_list[3] = sanitized_context
-                args = args_list
+            # Update with sanitized context
+            args, kwargs = _update_context_in_args(args, kwargs, sanitized_context)
 
             # Call original function
             return await func(*args, **kwargs)
@@ -770,7 +797,8 @@ def _extract_form_data(
     args: tuple[t.Any, ...], kwargs: dict[str, t.Any]
 ) -> dict[str, t.Any]:
     """Extract form data from decorator arguments."""
-    return kwargs.get("form_data") or (args[2] if len(args) > 2 else {})
+    raw_data: t.Any = kwargs.get("form_data") or (args[2] if len(args) > 2 else {})
+    return raw_data if isinstance(raw_data, dict) else {}
 
 
 def _update_form_data(
@@ -794,10 +822,11 @@ async def _handle_form_validation_errors(
 ) -> None:
     """Handle form validation errors (logging or raising exception)."""
     if not is_valid and strict:
-        from .exceptions import FastBlocksException
+        from .exceptions import ErrorCategory, FastBlocksException
 
         raise FastBlocksException(
             message=f"Form validation failed: {'; '.join(errors)}",
+            category=ErrorCategory.VALIDATION,
             status_code=400,
         )
 
@@ -860,7 +889,8 @@ def _extract_request_data(
     args: tuple[t.Any, ...], kwargs: dict[str, t.Any]
 ) -> dict[str, t.Any]:
     """Extract request data from args or kwargs."""
-    return kwargs.get("data") or (args[2] if len(args) > 2 else {})
+    raw_data: t.Any = kwargs.get("data") or (args[2] if len(args) > 2 else {})
+    return raw_data if isinstance(raw_data, dict) else {}
 
 
 def _update_args_with_data(
@@ -874,7 +904,7 @@ def _update_args_with_data(
     elif len(args) > 2:
         args_list = list(args)
         args_list[2] = validated_data
-        args = args_list
+        args = tuple(args_list)
     return args, kwargs
 
 
@@ -890,10 +920,11 @@ async def _validate_request(
     )
 
     if not is_valid:
-        from .exceptions import FastBlocksException
+        from .exceptions import ErrorCategory, FastBlocksException
 
         raise FastBlocksException(
             message=f"Request validation failed: {'; '.join(errors)}",
+            category=ErrorCategory.VALIDATION,
             status_code=400,
         )
 

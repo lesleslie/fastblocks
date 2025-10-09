@@ -465,7 +465,7 @@ async def register_fastblocks_resources(server: Any) -> None:
         server: MCP server instance from ACB
     """
     try:
-        from acb.mcp import register_resources
+        from acb.mcp import register_resources  # type: ignore[attr-defined]
 
         # Define resource registry
         resources = {
@@ -483,7 +483,7 @@ async def register_fastblocks_resources(server: Any) -> None:
         }
 
         # Register resources with MCP server
-        await register_resources(server, resources)
+        await register_resources(server, resources)  # type: ignore[misc]
 
         logger.info(f"Registered {len(resources)} FastBlocks MCP resources")
 

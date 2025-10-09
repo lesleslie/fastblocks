@@ -614,7 +614,7 @@ class AdvancedHTMYComponentRegistry:
                 request=request,
             )
 
-            return str(rendered_content)
+            return str(rendered_content)  # type: ignore[no-any-return]
 
         except Exception as e:
             # Execute error hooks

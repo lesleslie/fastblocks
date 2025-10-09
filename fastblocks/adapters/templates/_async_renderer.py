@@ -216,8 +216,8 @@ class AsyncTemplateRenderer:
             return await self._render_block(render_context)
         elif render_context.mode == RenderMode.HTMX:
             return await self._render_htmx(render_context)
-        else:
-            return await self._render_standard(render_context)
+
+        return await self._render_standard(render_context)
 
     async def _finalize_render_result(
         self,

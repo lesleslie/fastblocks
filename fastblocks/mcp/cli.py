@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import typing as t
 from pathlib import Path
 
 import click
@@ -58,7 +59,7 @@ def _display_health_result_detail(adapter_name: str, result) -> None:  # type: i
                 click.echo(f"  {key}: {value}")
 
 
-def _display_system_health_summary(summary: dict) -> None:
+def _display_system_health_summary(summary: dict[str, t.Any]) -> None:
     """Display overall system health summary."""
     total = summary["total_adapters"]
     click.echo("System Health Summary:")
@@ -70,7 +71,9 @@ def _display_system_health_summary(summary: dict) -> None:
         click.echo(f"Unknown: {summary['unknown_adapters']}")
 
 
-def _display_migration_compatibility(compatibility: dict, target_version: str) -> None:
+def _display_migration_compatibility(
+    compatibility: dict[str, t.Any], target_version: str
+) -> None:
     """Display migration compatibility information."""
     click.echo(f"Migration from {compatibility['current_version']} to {target_version}")
     click.echo(f"Steps: {' -> '.join(compatibility['migration_path'])}")
@@ -81,7 +84,7 @@ def _display_migration_compatibility(compatibility: dict, target_version: str) -
             click.echo(f"  - {warning}")
 
 
-def _display_migration_incompatibility(compatibility: dict) -> None:
+def _display_migration_incompatibility(compatibility: dict[str, t.Any]) -> None:
     """Display migration incompatibility errors."""
     click.echo("Migration not possible:", err=True)
     for warning in compatibility["warnings"]:
@@ -105,7 +108,7 @@ def _display_migration_failure(result) -> None:  # type: ignore[no-untyped-def]
         click.echo(f"  - {error}")
 
 
-def _format_finding_for_json(finding) -> dict:  # type: ignore[no-untyped-def]
+def _format_finding_for_json(finding: t.Any) -> dict[str, t.Any]:
     """Format a single finding for JSON output."""
     return {
         "id": finding.id,
@@ -489,6 +492,75 @@ def migrate(
     asyncio.run(_migrate())
 
 
+def _parse_test_types(test_types: str | None) -> list[t.Any] | None:
+    """Parse comma-separated test types into a list."""
+    if not test_types:
+        return None
+
+    from .config_health import ConfigurationTestType
+
+    return [
+        ConfigurationTestType(test_type.strip()) for test_type in test_types.split(",")
+    ]
+
+
+def _display_health_summary(report: t.Any, config_file: str) -> None:
+    """Display health check summary information."""
+    status_color = {"valid": "green", "warning": "yellow", "error": "red"}.get(
+        report.overall_status.value, "white"
+    )
+
+    click.echo(f"Configuration Health Check: {config_file}")
+    click.secho(
+        f"Overall Status: {report.overall_status.value.upper()}",
+        fg=status_color,
+    )
+    click.echo(f"Total Tests: {report.summary['total_tests']}")
+    click.echo(f"Passed: {report.summary['passed_tests']}")
+    click.echo(f"Failed: {report.summary['failed_tests']}")
+    click.echo(f"Pass Rate: {report.summary['pass_rate']:.1f}%")
+
+
+def _display_failed_tests(failed_tests: list[t.Any]) -> None:
+    """Display failed test details."""
+    if not failed_tests:
+        return
+
+    click.echo(f"\nFailed Tests ({len(failed_tests)}):")
+    for test in failed_tests:
+        severity_color = {
+            "critical": "red",
+            "high": "red",
+            "medium": "yellow",
+            "low": "white",
+        }.get(test.severity.value, "white")
+
+        click.secho(
+            f"  [{test.severity.value.upper()}] {test.test_name}",
+            fg=severity_color,
+        )
+        click.echo(f"    {test.message}")
+
+
+def _display_recommendations(recommendations: list[str]) -> None:
+    """Display health check recommendations."""
+    if not recommendations:
+        return
+
+    click.echo("\nRecommendations:")
+    for rec in recommendations:
+        click.echo(f"  • {rec}")
+
+
+async def _save_health_report_if_requested(
+    health_checker: t.Any, report: t.Any, output: str | None
+) -> None:
+    """Save health report to file if output path is provided."""
+    if output:
+        await health_checker._save_health_report(report, Path(output))
+        click.echo(f"\nReport saved to: {output}")
+
+
 @cli.command()
 @click.argument("config_file")
 @click.option("--test-types", help="Comma-separated test types to run")
@@ -509,62 +581,24 @@ def health_check(config_file: str, test_types: str | None, output: str | None) -
         try:
             config = await config_manager.load_configuration(config_file)
 
-            # Parse test types if provided
-            test_type_list = None
-            if test_types:
-                from .config_health import ConfigurationTestType
-
-                test_type_list = [
-                    ConfigurationTestType(t.strip()) for t in test_types.split(",")
-                ]
-
+            # Parse test types and run health check
+            test_type_list = _parse_test_types(test_types)
             report = await health_checker.run_comprehensive_health_check(
                 config, test_type_list
             )
 
             # Display results
-            status_color = {"valid": "green", "warning": "yellow", "error": "red"}.get(
-                report.overall_status.value, "white"
-            )
-
-            click.echo(f"Configuration Health Check: {config_file}")
-            click.secho(
-                f"Overall Status: {report.overall_status.value.upper()}",
-                fg=status_color,
-            )
-            click.echo(f"Total Tests: {report.summary['total_tests']}")
-            click.echo(f"Passed: {report.summary['passed_tests']}")
-            click.echo(f"Failed: {report.summary['failed_tests']}")
-            click.echo(f"Pass Rate: {report.summary['pass_rate']:.1f}%")
+            _display_health_summary(report, config_file)
 
             # Show failed tests
             failed_tests = [r for r in report.test_results if not r.passed]
-            if failed_tests:
-                click.echo(f"\nFailed Tests ({len(failed_tests)}):")
-                for test in failed_tests:
-                    severity_color = {
-                        "critical": "red",
-                        "high": "red",
-                        "medium": "yellow",
-                        "low": "white",
-                    }.get(test.severity.value, "white")
-
-                    click.secho(
-                        f"  [{test.severity.value.upper()}] {test.test_name}",
-                        fg=severity_color,
-                    )
-                    click.echo(f"    {test.message}")
+            _display_failed_tests(failed_tests)
 
             # Show recommendations
-            if report.recommendations:
-                click.echo("\nRecommendations:")
-                for rec in report.recommendations:
-                    click.echo(f"  • {rec}")
+            _display_recommendations(report.recommendations)
 
             # Save report if requested
-            if output:
-                await health_checker._save_health_report(report, Path(output))
-                click.echo(f"\nReport saved to: {output}")
+            await _save_health_report_if_requested(health_checker, report, output)
 
         except Exception as e:
             click.echo(f"Error: {e}", err=True)

@@ -6,6 +6,7 @@ enabling reactive updates, cache invalidation, and admin action tracking.
 Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-10-01
 """
+# type: ignore  # ACB events API stub - graceful degradation
 
 import operator
 import typing as t

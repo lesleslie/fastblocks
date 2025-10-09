@@ -8,7 +8,7 @@
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-29.9%25-red)
+![Coverage](https://img.shields.io/badge/coverage-30.1%25-red)
 
 ## What is FastBlocks?
 
@@ -251,15 +251,17 @@ uv add fastblocks
 
 ### Optional Dependencies
 
-FastBlocks supports various optional dependencies for different features:
+FastBlocks uses **PEP 735 dependency groups** for optional features. Install the groups you need:
 
 | Feature Group | Components | Installation Command |
 |---------------|------------|----------------------|
-| Admin | SQLAlchemy Admin interface | `uv add "fastblocks[admin]"` |
-| Sitemap | Automatic sitemap generation | `uv add "fastblocks[sitemap]"` |
-| Monitoring | Sentry and Logfire integration | `uv add "fastblocks[monitoring]"` |
-| Complete | All dependencies | `uv add "fastblocks[admin,sitemap,monitoring]"` |
-| Development | Development tools | `uv add "fastblocks" --group dev` |
+| Admin | SQLAlchemy Admin interface | `uv add --group admin` |
+| Sitemap | Automatic sitemap generation | `uv add --group sitemap` |
+| Monitoring | Sentry and Logfire integration | `uv add --group monitoring` |
+| Multiple Groups | Install multiple features at once | `uv add --group admin --group monitoring --group sitemap` |
+| Development | Development tools | `uv add --group dev` |
+
+**Note**: Version 0.17.0+ uses dependency groups instead of extras. See [MIGRATION-0.17.0.md](<./MIGRATION-0.17.0.md>) for details.
 
 You can also install FastBlocks using pip:
 
@@ -267,10 +269,14 @@ You can also install FastBlocks using pip:
 pip install fastblocks
 ```
 
-For optional dependencies with pip:
+**Note**: pip does not support PEP 735 dependency groups. For optional features with pip, install dependencies manually:
 
 ```bash
-pip install "fastblocks[admin,sitemap,monitoring]"
+# Admin interface
+pip install sqladmin>=0.21
+
+# Monitoring
+pip install "logfire[starlette]>=3.24" "sentry-sdk[starlette]>=2.32"
 ```
 
 ## Quick Start

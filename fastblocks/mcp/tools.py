@@ -548,7 +548,7 @@ async def register_fastblocks_tools(server: Any) -> None:
         server: MCP server instance from ACB
     """
     try:
-        from acb.mcp import register_tools
+        from acb.mcp import register_tools  # type: ignore[attr-defined]
 
         # Define tool registry
         tools = {
@@ -568,7 +568,7 @@ async def register_fastblocks_tools(server: Any) -> None:
         }
 
         # Register tools with MCP server
-        await register_tools(server, tools)
+        await register_tools(server, tools)  # type: ignore[misc]
 
         logger.info(f"Registered {len(tools)} FastBlocks MCP tools")
 

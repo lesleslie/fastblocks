@@ -779,6 +779,41 @@ body {{
 
 
 # Template function registration for FastBlocks
+def _determine_component_tag(component_type: str, attributes: dict[str, Any]) -> str:
+    """Determine HTML tag for KelpUI component type."""
+    if component_type in (
+        "btn",
+        "btn-primary",
+        "btn-secondary",
+        "btn-outline",
+        "btn-ghost",
+    ):
+        return "button"
+
+    if component_type in ("input", "textarea", "select"):
+        if component_type == "input":
+            attributes.setdefault("type", "text")
+            return "input"
+        return "textarea" if component_type == "textarea" else component_type
+
+    return "div"
+
+
+def _build_kelp_component_html(
+    tag: str,
+    component_class: str,
+    content: str,
+    attributes: dict[str, Any],
+) -> str:
+    """Build KelpUI component HTML."""
+    attr_string = " ".join(f'{k}="{v}"' for k, v in attributes.items())
+
+    if tag == "input":
+        return f'<{tag} class="{component_class}" {attr_string}>'
+
+    return f'<{tag} class="{component_class}" {attr_string}>{content}</{tag}>'
+
+
 def register_kelpui_functions(env: Any) -> None:
     """Register KelpUI functions for Jinja2 templates."""
 
@@ -813,31 +848,9 @@ def register_kelpui_functions(env: Any) -> None:
         if "class" in attributes:
             component_class += f" {attributes.pop('class')}"
 
-        # Handle different component types
-        if component_type in (
-            "btn",
-            "btn-primary",
-            "btn-secondary",
-            "btn-outline",
-            "btn-ghost",
-        ):
-            tag = "button"
-        elif component_type in ("input", "textarea", "select"):
-            tag = component_type if component_type != "textarea" else "textarea"
-            if component_type == "input":
-                tag = "input"
-                attributes.setdefault("type", "text")
-        else:
-            tag = "div"
-
-        # Build attributes
-        attr_string = " ".join(f'{k}="{v}"' for k, v in attributes.items())
-
-        # Generate tag
-        if tag in ("input"):
-            return f'<{tag} class="{component_class}" {attr_string}>'
-
-        return f'<{tag} class="{component_class}" {attr_string}>{content}</{tag}>'
+        # Determine tag and build HTML
+        tag = _determine_component_tag(component_type, attributes)
+        return _build_kelp_component_html(tag, component_class, content, attributes)
 
 
 # ACB 0.19.0+ compatibility

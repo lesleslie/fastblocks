@@ -79,7 +79,7 @@ from ._advanced_manager import (
     AutocompleteItem,
     FragmentInfo,
     SecurityLevel,
-    TemplateError,
+    TemplateError,  # Explicitly export TemplateError
     TemplateValidationResult,
     ValidationLevel,
 )
