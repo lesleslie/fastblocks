@@ -1,7 +1,7 @@
-"""Advanced Template Management Integration Module.
+"""Hybrid Template Management Integration Module.
 
-This module integrates all advanced template management components:
-- Advanced Template Manager with validation and autocomplete
+This module integrates all Hybrid template management components:
+- Hybrid Template Manager with validation and autocomplete
 - Async Template Renderer with performance optimization
 - Block Renderer for HTMX fragments and partials
 - Enhanced filters for secondary adapters
@@ -27,7 +27,7 @@ from acb.depends import depends
 from starlette.requests import Request
 from starlette.responses import Response
 
-from ._advanced_manager import AdvancedTemplateManager, AdvancedTemplatesSettings
+from ._advanced_manager import HybridTemplatesManager, HybridTemplatesSettings
 from ._async_filters import FASTBLOCKS_ASYNC_FILTERS
 from ._async_renderer import AsyncTemplateRenderer, RenderContext, RenderMode
 from ._block_renderer import BlockRenderer, BlockRenderRequest, BlockUpdateMode
@@ -36,13 +36,13 @@ from ._filters import FASTBLOCKS_FILTERS
 from .jinja2 import Templates
 
 
-class AdvancedTemplatesIntegration:
-    """Unified interface for advanced template management features."""
+class HybridTemplates:
+    """Unified interface for Hybrid template management features."""
 
     def __init__(self) -> None:
-        self.settings = AdvancedTemplatesSettings()
+        self.settings = HybridTemplatesSettings()
         self.base_templates: Templates | None = None
-        self.advanced_manager: AdvancedTemplateManager | None = None
+        self.hybrid_manager: HybridTemplatesManager | None = None
         self.async_renderer: AsyncTemplateRenderer | None = None
         self.block_renderer: BlockRenderer | None = None
         self._initialized = False
@@ -59,19 +59,19 @@ class AdvancedTemplatesIntegration:
             self.base_templates = Templates()
             await self.base_templates.init()
 
-        # Initialize advanced manager
-        self.advanced_manager = AdvancedTemplateManager(self.settings)
-        await self.advanced_manager.initialize()
+        # Initialize Hybrid manager
+        self.hybrid_manager = HybridTemplatesManager(self.settings)
+        await self.hybrid_manager.initialize()
 
         # Initialize async renderer
         self.async_renderer = AsyncTemplateRenderer(
-            base_templates=self.base_templates, advanced_manager=self.advanced_manager
+            base_templates=self.base_templates, hybrid_manager=self.hybrid_manager
         )
         await self.async_renderer.initialize()
 
         # Initialize block renderer
         self.block_renderer = BlockRenderer(
-            async_renderer=self.async_renderer, advanced_manager=self.advanced_manager
+            async_renderer=self.async_renderer, hybrid_manager=self.hybrid_manager
         )
         await self.block_renderer.initialize()
 
@@ -115,10 +115,10 @@ class AdvancedTemplatesIntegration:
         context: dict[str, t.Any] | None = None,
     ) -> dict[str, t.Any]:
         """Validate template and return results."""
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             await self.initialize()
 
-        result = await self.advanced_manager.validate_template(  # type: ignore[union-attr]
+        result = await self.hybrid_manager.validate_template(  # type: ignore[union-attr]
             template_source, template_name, context
         )
 
@@ -155,10 +155,10 @@ class AdvancedTemplatesIntegration:
         self, context: str, cursor_position: int = 0, template_name: str = "unknown"
     ) -> list[dict[str, t.Any]]:
         """Get autocomplete suggestions for template editing."""
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             await self.initialize()
 
-        suggestions = await self.advanced_manager.get_autocomplete_suggestions(  # type: ignore[union-attr]
+        suggestions = await self.hybrid_manager.get_autocomplete_suggestions(  # type: ignore[union-attr]
             context, cursor_position, template_name
         )
 
@@ -179,10 +179,10 @@ class AdvancedTemplatesIntegration:
         self, template_name: str
     ) -> list[dict[str, t.Any]]:
         """Get available fragments for a template."""
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             await self.initialize()
 
-        fragments = await self.advanced_manager.get_fragments_for_template(  # type: ignore[union-attr]
+        fragments = await self.hybrid_manager.get_fragments_for_template(  # type: ignore[union-attr]
             template_name
         )
 
@@ -207,10 +207,10 @@ class AdvancedTemplatesIntegration:
         secure: bool = False,
     ) -> str:
         """Render a template fragment."""
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             await self.initialize()
 
-        return await self.advanced_manager.render_fragment(  # type: ignore[union-attr]
+        return await self.hybrid_manager.render_fragment(  # type: ignore[union-attr]
             fragment_name, context, template_name, secure
         )
 
@@ -227,7 +227,7 @@ class AdvancedTemplatesIntegration:
         secure: bool = False,
         **kwargs: t.Any,
     ) -> Response:
-        """Render template with advanced features."""
+        """Render template with Hybrid features."""
         if not self.async_renderer:
             await self.initialize()
 
@@ -327,7 +327,7 @@ class AdvancedTemplatesIntegration:
         if not self.block_renderer:
             raise RuntimeError("Block renderer not initialized")
 
-        from .block_renderer import BlockTrigger, BlockUpdateMode
+        from ._block_renderer import BlockTrigger, BlockUpdateMode
 
         # Map string values to enums
         update_mode_mapping = {
@@ -394,8 +394,8 @@ class AdvancedTemplatesIntegration:
 
     def clear_caches(self) -> None:
         """Clear all template caches."""
-        if self.advanced_manager:
-            self.advanced_manager.clear_caches()
+        if self.hybrid_manager:
+            self.hybrid_manager.clear_caches()
 
         if self.async_renderer:
             self.async_renderer.clear_cache()
@@ -403,31 +403,31 @@ class AdvancedTemplatesIntegration:
     # Utility API
     async def precompile_templates(self) -> dict[str, t.Any]:
         """Precompile templates for performance optimization."""
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             await self.initialize()
 
-        compiled = await self.advanced_manager.precompile_templates()  # type: ignore[union-attr]
+        compiled = await self.hybrid_manager.precompile_templates()  # type: ignore[union-attr]
         return {name: True for name in compiled.keys()}
 
     async def get_template_dependencies(self, template_name: str) -> list[str]:
         """Get dependencies for a template."""
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             await self.initialize()
 
-        deps = await self.advanced_manager.get_template_dependencies(template_name)  # type: ignore[union-attr]
+        deps = await self.hybrid_manager.get_template_dependencies(template_name)  # type: ignore[union-attr]
         return list(deps)
 
 
 # Global integration instance
-_integration_instance: AdvancedTemplatesIntegration | None = None
+_integration_instance: HybridTemplates | None = None
 
 
-async def get_advanced_templates() -> AdvancedTemplatesIntegration:
-    """Get or create the global advanced templates integration instance."""
+async def get_hybrid_templates() -> HybridTemplates:
+    """Get or create the global Hybrid templates integration instance."""
     global _integration_instance
 
     if _integration_instance is None:
-        _integration_instance = AdvancedTemplatesIntegration()
+        _integration_instance = HybridTemplates()
         await _integration_instance.initialize()
 
     return _integration_instance
@@ -440,7 +440,7 @@ async def validate_template_source(
     context: dict[str, t.Any] | None = None,
 ) -> dict[str, t.Any]:
     """Validate template source code."""
-    integration = await get_advanced_templates()
+    integration = await get_hybrid_templates()
     return await integration.validate_template(template_source, template_name, context)
 
 
@@ -448,7 +448,7 @@ async def get_template_autocomplete(
     context: str, cursor_position: int = 0, template_name: str = "unknown"
 ) -> list[dict[str, t.Any]]:
     """Get autocomplete suggestions for template editing."""
-    integration = await get_advanced_templates()
+    integration = await get_hybrid_templates()
     return await integration.get_autocomplete_suggestions(
         context, cursor_position, template_name
     )
@@ -461,7 +461,7 @@ async def render_htmx_block(
     update_mode: str = "replace",
 ) -> Response:
     """Render HTMX block with appropriate headers."""
-    integration = await get_advanced_templates()
+    integration = await get_hybrid_templates()
     return await integration.render_block(request, block_id, context, update_mode)
 
 
@@ -472,7 +472,7 @@ async def render_template_fragment(
     template_name: str | None = None,
 ) -> Response:
     """Render template fragment for HTMX."""
-    integration = await get_advanced_templates()
+    integration = await get_hybrid_templates()
     return await integration.render_htmx_fragment(
         request, fragment_name, context, template_name
     )
@@ -483,4 +483,4 @@ MODULE_STATUS = AdapterStatus.STABLE
 
 # Register the integration
 with suppress(Exception):
-    depends.set("advanced_templates", get_advanced_templates)
+    depends.set(Templates, get_hybrid_templates)

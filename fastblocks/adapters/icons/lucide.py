@@ -4,13 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import IconsBase
+from ._base import IconsBase, IconsBaseSettings
 
 
-class LucideSettings(Settings):  # type: ignore[misc]
+class LucideIconsSettings(IconsBaseSettings):  # type: ignore[misc]
     """Lucide-specific settings."""
 
     version: str = "0.263.1"
@@ -19,7 +18,7 @@ class LucideSettings(Settings):  # type: ignore[misc]
     use_svg: bool = True  # Use SVG icons vs icon font
 
 
-class LucideAdapter(IconsBase):
+class LucideIcons(IconsBase):
     """Lucide icons adapter implementation."""
 
     # Required ACB 0.19.0+ metadata
@@ -106,7 +105,7 @@ class LucideAdapter(IconsBase):
     def __init__(self) -> None:
         """Initialize Lucide adapter."""
         super().__init__()
-        self.settings = LucideSettings()
+        self.settings = LucideIconsSettings()
 
         # Register with ACB dependency system
         with suppress(Exception):
@@ -148,7 +147,8 @@ class LucideAdapter(IconsBase):
 
         return self._get_font_icon_tag(lucide_name, **attributes)
 
-    def _get_svg_icon_tag(self, icon_name: str, **attributes: Any) -> str:
+    @staticmethod
+    def _get_svg_icon_tag(icon_name: str, **attributes: Any) -> str:
         """Generate SVG icon tag for JavaScript initialization."""
         # Build attributes string
         attr_parts = [f'data-lucide="{icon_name}"']
@@ -172,7 +172,8 @@ class LucideAdapter(IconsBase):
         attrs_str = " ".join(attr_parts)
         return f"<i {attrs_str}></i>"
 
-    def _get_font_icon_tag(self, icon_name: str, **attributes: Any) -> str:
+    @staticmethod
+    def _get_font_icon_tag(icon_name: str, **attributes: Any) -> str:
         """Generate font icon tag."""
         icon_class = f"lucide lucide-{icon_name}"
 
@@ -224,7 +225,6 @@ class LucideAdapter(IconsBase):
         return f"{icon_tag} {text}"
 
     def get_icon_button(self, icon_name: str, **attributes: Any) -> str:
-        """Generate button with icon."""
         icon_tag = self.get_icon_tag(icon_name)
 
         # Extract button-specific attributes
@@ -242,3 +242,11 @@ class LucideAdapter(IconsBase):
 
         attrs_str = " ".join(attr_parts)
         return f"<button {attrs_str}>{icon_tag}</button>"
+
+
+IconsSettings = LucideIconsSettings
+Icons = LucideIcons
+
+depends.set(Icons, "lucide")
+
+__all__ = ["LucideIcons", "LucideIconsSettings", "IconsSettings", "Icons"]

@@ -1033,3 +1033,5 @@ MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
     depends.set(Templates)
+
+__all__ = ["Templates", "TemplatesSettings"]

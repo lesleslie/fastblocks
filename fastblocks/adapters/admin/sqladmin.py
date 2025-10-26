@@ -57,4 +57,4 @@ MODULE_ID = UUID("01937d86-7f5d-7e6f-b120-4567890123de")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    depends.set(Admin)
+    depends.set(Admin, "sqladmin")

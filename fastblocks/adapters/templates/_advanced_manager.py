@@ -48,8 +48,8 @@ from jinja2.runtime import StrictUndefined as RuntimeStrictUndefined
 from .jinja2 import Templates, TemplatesSettings
 
 __all__ = [
-    "AdvancedTemplateManager",
-    "AdvancedTemplatesSettings",
+    "HybridTemplatesManager",
+    "HybridTemplatesSettings",
     "AutocompleteItem",
     "FragmentInfo",
     "SecurityLevel",
@@ -250,7 +250,7 @@ def _default_sandbox_tags() -> list[str]:
     ]
 
 
-class AdvancedTemplatesSettings(TemplatesSettings):
+class HybridTemplatesSettings(TemplatesSettings):
     """Advanced template settings with enhanced features."""
 
     # Validation settings
@@ -290,11 +290,11 @@ class AdvancedTemplatesSettings(TemplatesSettings):
         super().__init__(**data)
 
 
-class AdvancedTemplateManager:
+class HybridTemplatesManager:
     """Advanced template management with validation, fragments, and autocomplete."""
 
-    def __init__(self, settings: AdvancedTemplatesSettings | None = None) -> None:
-        self.settings = settings or AdvancedTemplatesSettings()
+    def __init__(self, settings: HybridTemplatesSettings | None = None) -> None:
+        self.settings = settings or HybridTemplatesSettings()
         self.base_templates: Templates | None = None
         self._validation_cache: dict[str, TemplateValidationResult] = {}
         self._fragment_cache: dict[str, list[FragmentInfo]] = {}
@@ -422,9 +422,8 @@ class AdvancedTemplateManager:
         self._validation_cache[cache_key] = result
         return result
 
-    def _get_available_variables(
-        self, context: dict[str, t.Any] | None = None
-    ) -> set[str]:
+    @staticmethod
+    def _get_available_variables(context: dict[str, t.Any] | None = None) -> set[str]:
         """Get all available variables from context and adapters."""
         available = set()
 
@@ -739,7 +738,8 @@ class AdvancedTemplateManager:
                 )
             )
 
-    def _add_adapter_function_items(self, items: list[AutocompleteItem]) -> None:
+    @staticmethod
+    def _add_adapter_function_items(items: list[AutocompleteItem]) -> None:
         """Add adapter function autocomplete items."""
         for adapter_name, functions in _ADAPTER_AUTOCOMPLETE_FUNCTIONS.items():
             with suppress(Exception):
@@ -761,8 +761,8 @@ class AdvancedTemplateManager:
         items: list[AutocompleteItem] = []
 
         # FastBlocks-specific filters from our filter modules
-        from .async_filters import FASTBLOCKS_ASYNC_FILTERS
-        from .filters import FASTBLOCKS_FILTERS
+        from ._async_filters import FASTBLOCKS_ASYNC_FILTERS
+        from ._filters import FASTBLOCKS_FILTERS
 
         # Add sync filters
         self._add_filter_items(items, FASTBLOCKS_FILTERS, "filter")
@@ -775,7 +775,8 @@ class AdvancedTemplateManager:
 
         return items
 
-    def _get_template_autocomplete(self) -> list[AutocompleteItem]:
+    @staticmethod
+    def _get_template_autocomplete() -> list[AutocompleteItem]:
         """Get autocomplete items for template-specific variables."""
         items = []
 
@@ -866,7 +867,8 @@ class AdvancedTemplateManager:
 
         return filtered[:10]  # Return top 10 matches
 
-    def _extract_current_word(self, text: str) -> str:
+    @staticmethod
+    def _extract_current_word(text: str) -> str:
         """Extract the current word being typed from template context."""
         # Look for word characters at the end of the text
         match = re.search(
@@ -987,4 +989,4 @@ MODULE_STATUS = AdapterStatus.EXPERIMENTAL
 
 # Register the advanced manager
 with suppress(Exception):
-    depends.set("advanced_template_manager", AdvancedTemplateManager)
+    depends.set("hybrid_template_manager", HybridTemplatesManager)

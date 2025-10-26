@@ -4,13 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import ImagesBase
+from ._base import ImagesBase, ImagesBaseSettings
 
 
-class ImageKitSettings(Settings):  # type: ignore[misc]
+class ImageKitImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
     """ImageKit-specific settings."""
 
     public_key: str
@@ -19,7 +18,7 @@ class ImageKitSettings(Settings):  # type: ignore[misc]
     upload_folder: str = "fastblocks"
 
 
-class ImageKitAdapter(ImagesBase):
+class ImageKitImages(ImagesBase):
     """ImageKit image adapter implementation."""
 
     # Required ACB 0.19.0+ metadata
@@ -70,7 +69,6 @@ class ImageKitAdapter(ImagesBase):
         return f"{base_url}/{image_id}"
 
     def get_img_tag(self, image_id: str, alt: str, **attributes: Any) -> str:
-        """Generate complete img tag with ImageKit URL."""
         url = self.get_image_url(image_id, attributes.pop("transformations", None))
 
         # Build attributes string
@@ -85,3 +83,11 @@ class ImageKitAdapter(ImagesBase):
             attr_parts.append('loading="lazy"')
 
         return f"<img {' '.join(attr_parts)}>"
+
+
+ImagesSettings = ImageKitImagesSettings
+Images = ImageKitImages
+
+depends.set(Images, "imagekit")
+
+__all__ = ["ImageKitImages", "ImageKitImagesSettings", "Images", "ImagesSettings"]

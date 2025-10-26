@@ -4,13 +4,12 @@ from contextlib import suppress
 from urllib.parse import quote_plus
 from uuid import UUID
 
-from acb.config import Settings  # type: ignore[attr-defined]
 from acb.depends import depends
 
-from ._base import FontsBase
+from ._base import FontsBase, FontsBaseSettings
 
 
-class GoogleFontsSettings(Settings):  # type: ignore[misc]
+class GoogleFontsSettings(FontsBaseSettings):  # type: ignore[misc]
     """Google Fonts-specific settings."""
 
     api_key: str | None = None  # Optional API key for advanced features
@@ -21,7 +20,7 @@ class GoogleFontsSettings(Settings):  # type: ignore[misc]
     preconnect: bool = True  # Add preconnect link for performance
 
 
-class GoogleFontsAdapter(FontsBase):
+class GoogleFonts(FontsBase):
     """Google Fonts adapter implementation."""
 
     # Required ACB 0.19.0+ metadata
@@ -237,3 +236,9 @@ class GoogleFontsAdapter(FontsBase):
             return import_html
 
         return await self.get_font_import()
+
+
+FontsSettings = GoogleFontsSettings
+Fonts = GoogleFonts
+
+depends.set(Fonts, "google")

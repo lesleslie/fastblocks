@@ -8,7 +8,7 @@ from acb.config import AdapterBase, Settings
 from acb.depends import depends
 
 
-class StylesBaseSettings(Settings):  # type: ignore[misc]
+class StyleBaseSettings(Settings):  # type: ignore[misc]
     """Base settings for style adapters."""
 
     cdn_url: str | None = None
@@ -16,14 +16,14 @@ class StylesBaseSettings(Settings):  # type: ignore[misc]
     additional_stylesheets: list[str] = []
 
 
-class StylesProtocol(Protocol):
+class StyleProtocol(Protocol):
     """Protocol for style adapter implementations."""
 
     def get_stylesheet_links(self) -> list[str]: ...
     def get_component_class(self, component: str) -> str: ...
 
 
-class StylesBase(AdapterBase):  # type: ignore[misc]
+class StyleBase(AdapterBase):  # type: ignore[misc]
     """Base class for style adapters."""
 
     # Required ACB 0.19.0+ metadata

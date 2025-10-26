@@ -30,7 +30,7 @@ from anyio import Path as AsyncPath
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response, StreamingResponse
 
-from ._advanced_manager import AdvancedTemplateManager, TemplateValidationResult
+from ._advanced_manager import HybridTemplatesManager, TemplateValidationResult
 from ._performance_optimizer import (
     PerformanceMetrics,
     PerformanceOptimizer,
@@ -97,12 +97,12 @@ class AsyncTemplateRenderer:
     def __init__(
         self,
         base_templates: Templates | None = None,
-        advanced_manager: AdvancedTemplateManager | None = None,
+        hybrid_manager: HybridTemplatesManager | None = None,
         cache_strategy: CacheStrategy = CacheStrategy.MEMORY,
         performance_optimizer: PerformanceOptimizer | None = None,
     ) -> None:
         self.base_templates = base_templates
-        self.advanced_manager = advanced_manager
+        self.hybrid_manager = hybrid_manager
         self.cache_strategy = cache_strategy
         self.performance_optimizer = (
             performance_optimizer or get_performance_optimizer()
@@ -120,12 +120,12 @@ class AsyncTemplateRenderer:
                 self.base_templates = Templates()
                 await self.base_templates.init()
 
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             try:
-                self.advanced_manager = depends.get("advanced_template_manager")
+                self.hybrid_manager = depends.get("hybrid_template_manager")
             except Exception:
-                self.advanced_manager = AdvancedTemplateManager()
-                await self.advanced_manager.initialize()
+                self.hybrid_manager = HybridTemplatesManager()
+                await self.hybrid_manager.initialize()
 
     async def render(self, render_context: RenderContext) -> RenderResult:
         """Render template with enhanced error handling and optimization."""
@@ -262,7 +262,7 @@ class AsyncTemplateRenderer:
         self, render_context: RenderContext
     ) -> TemplateValidationResult:
         """Validate template before rendering."""
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             return TemplateValidationResult(is_valid=True)
 
         try:
@@ -270,7 +270,7 @@ class AsyncTemplateRenderer:
             env = self.base_templates.app.env  # type: ignore[union-attr]
             source, _ = env.loader.get_source(env, render_context.template_name)
 
-            return await self.advanced_manager.validate_template(
+            return await self.hybrid_manager.validate_template(
                 source, render_context.template_name, render_context.context
             )
         except Exception:
@@ -331,8 +331,8 @@ class AsyncTemplateRenderer:
         )
 
         # Use secure environment if requested
-        if render_context.secure_render and self.advanced_manager:
-            env = self.advanced_manager._get_template_environment(secure=True)
+        if render_context.secure_render and self.hybrid_manager:
+            env = self.hybrid_manager._get_template_environment(secure=True)
             template = env.get_template(render_context.template_name)
 
         rendered = await template.render_async(render_context.context)
@@ -340,13 +340,13 @@ class AsyncTemplateRenderer:
 
     async def _render_fragment(self, render_context: RenderContext) -> str:
         """Render template fragment for HTMX."""
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             raise RuntimeError("Advanced manager required for fragment rendering")
 
         if not render_context.fragment_name:
             raise ValueError("Fragment name required for fragment rendering")
 
-        return await self.advanced_manager.render_fragment(
+        return await self.hybrid_manager.render_fragment(
             render_context.fragment_name,
             render_context.context,
             render_context.template_name,

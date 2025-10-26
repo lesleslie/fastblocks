@@ -8,6 +8,7 @@ import typing as t
 from pathlib import Path
 
 import yaml
+from acb.actions.hash import hash
 from acb.debug import debug
 from anyio import Path as AsyncPath
 
@@ -449,9 +450,8 @@ async def _get_storage_file_info(
         content = await bucket_obj.read(file_path)
         metadata = await bucket_obj.stat(file_path)
 
-        import hashlib
-
-        content_hash = hashlib.blake2b(content).hexdigest()
+        # ACB's Blake3 is 10x faster than Blake2b for cryptographic hashing
+        content_hash = await hash.blake3(content)
 
         return {
             "exists": True,

@@ -6,14 +6,13 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import httpx
-from acb.config import Settings
 from acb.depends import depends
 from pydantic import SecretStr
 
-from ._base import ImagesBase
+from ._base import ImagesBase, ImagesBaseSettings
 
 
-class CloudflareImagesSettings(Settings):  # type: ignore[misc]
+class CloudflareImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
     """Settings for Cloudflare Images adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -35,7 +34,7 @@ class CloudflareImagesSettings(Settings):  # type: ignore[misc]
     r2_public_url: str | None = None
 
 
-class CloudflareImagesAdapter(ImagesBase):
+class CloudflareImages(ImagesBase):
     """Cloudflare Images adapter with R2 storage integration."""
 
     # Required ACB 0.19.0+ metadata
@@ -127,7 +126,8 @@ class CloudflareImagesAdapter(ImagesBase):
             return f"{self.settings.delivery_url}/{image_id}"
         return f"https://api.cloudflare.com/client/v4/accounts/{self.settings.account_id}/images/v1/{image_id}"
 
-    def _build_transformation_parts(self, transformations: dict[str, Any]) -> list[str]:
+    @staticmethod
+    def _build_transformation_parts(transformations: dict[str, Any]) -> list[str]:
         """Build transformation query parameters."""
         # Common transformations
         common_parts = [
@@ -248,7 +248,7 @@ def register_cloudflare_filters(env: Any) -> None:
     async def cf_image_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for Cloudflare Images URLs."""
         images = depends.get("images")
-        if isinstance(images, CloudflareImagesAdapter):
+        if isinstance(images, CloudflareImages):
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"  # Fallback
 
@@ -256,7 +256,7 @@ def register_cloudflare_filters(env: Any) -> None:
     def cf_img_tag_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for complete Cloudflare img tags."""
         images = depends.get("images")
-        if isinstance(images, CloudflareImagesAdapter):
+        if isinstance(images, CloudflareImages):
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'  # Fallback
 
@@ -269,7 +269,7 @@ def register_cloudflare_filters(env: Any) -> None:
     ) -> str:
         """Generate responsive image with multiple sizes."""
         images = depends.get("images")
-        if not isinstance(images, CloudflareImagesAdapter):
+        if not isinstance(images, CloudflareImages):
             return f'<img src="#{image_id}" alt="{alt}">'
 
         # Generate srcset for different screen sizes
@@ -307,9 +307,15 @@ def register_cloudflare_filters(env: Any) -> None:
         return f"<img {attr_string}>"
 
 
+ImagesSettings = CloudflareImagesSettings
+Images = CloudflareImages
+
+
 # ACB 0.19.0+ compatibility
 __all__ = [
-    "CloudflareImagesAdapter",
+    "CloudflareImages",
     "CloudflareImagesSettings",
     "register_cloudflare_filters",
+    "Images",
+    "ImagesSettings",
 ]

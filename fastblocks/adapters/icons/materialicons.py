@@ -4,10 +4,9 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import IconsBase
+from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
     add_accessibility_attributes,
     build_attr_string,
@@ -18,7 +17,7 @@ from ._utils import (
 )
 
 
-class MaterialIconsSettings(Settings):  # type: ignore[misc]
+class MaterialIconsSettings(IconsBaseSettings):  # type: ignore[misc]
     """Settings for Material Icons adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -118,7 +117,7 @@ class MaterialIconsSettings(Settings):  # type: ignore[misc]
     }
 
 
-class MaterialIconsAdapter(IconsBase):
+class MaterialIcons(IconsBase):
     """Material Icons adapter with multiple themes and comprehensive icon set."""
 
     # Required ACB 0.19.0+ metadata
@@ -608,7 +607,8 @@ class MaterialIconsAdapter(IconsBase):
 
         return f"<button {attr_string}>{content}</button>"
 
-    def get_available_icons(self) -> dict[str, list[str]]:
+    @staticmethod
+    def get_available_icons() -> dict[str, list[str]]:
         """Get list of available Material Icons by category."""
         return {
             "action": [
@@ -913,9 +913,16 @@ def register_materialicons_filters(env: Any) -> None:
     _register_material_chip_functions(env)
 
 
+IconsSettings = MaterialIconsSettings
+Icons = MaterialIcons
+
+depends.set(Icons, "materialicons")
+
 # ACB 0.19.0+ compatibility
 __all__ = [
-    "MaterialIconsAdapter",
+    "MaterialIcons",
     "MaterialIconsSettings",
     "register_materialicons_filters",
+    "Icons",
+    "IconsSettings",
 ]

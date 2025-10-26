@@ -5,13 +5,12 @@ from contextlib import suppress
 from pathlib import Path
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import FontsBase
+from ._base import FontsBase, FontsBaseSettings
 
 
-class FontSquirrelSettings(Settings):  # type: ignore[misc]
+class FontSquirrelFontsSettings(FontsBaseSettings):  # type: ignore[misc]
     """Font Squirrel-specific settings."""
 
     fonts_dir: str = "/static/fonts"
@@ -20,7 +19,7 @@ class FontSquirrelSettings(Settings):  # type: ignore[misc]
     display: str = "swap"
 
 
-class FontSquirrelAdapter(FontsBase):
+class FontSquirrelFonts(FontsBase):
     """Font Squirrel adapter for self-hosted fonts."""
 
     # Required ACB 0.19.0+ metadata
@@ -338,3 +337,9 @@ class FontSquirrelAdapter(FontsBase):
                 )
 
         return validation_results
+
+
+FontsSettings = FontSquirrelFontsSettings
+Fonts = FontSquirrelFonts
+
+depends.set(Fonts, "squirrel")

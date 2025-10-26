@@ -4,10 +4,9 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import IconsBase
+from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
     add_accessibility_attributes,
     build_attr_string,
@@ -18,7 +17,7 @@ from ._utils import (
 )
 
 
-class RemixIconSettings(Settings):  # type: ignore[misc]
+class RemixIconSettings(IconsBaseSettings):  # type: ignore[misc]
     """Settings for Remix Icon adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -91,7 +90,7 @@ class RemixIconSettings(Settings):  # type: ignore[misc]
     }
 
 
-class RemixIconAdapter(IconsBase):
+class RemixIcon(IconsBase):
     """Remix Icon adapter with extensive icon library."""
 
     # Required ACB 0.19.0+ metadata
@@ -495,7 +494,8 @@ class RemixIconAdapter(IconsBase):
         </span>
         """
 
-    def get_available_icons(self) -> dict[str, list[str]]:
+    @staticmethod
+    def get_available_icons() -> dict[str, list[str]]:
         """Get list of available icons by category."""
         return {
             "general": [
@@ -739,5 +739,17 @@ def register_remixicon_filters(env: Any) -> None:
     _register_ri_button_functions(env)
 
 
+IconsSettings = RemixIconSettings
+Icons = RemixIcon
+
+depends.set(Icons, "remixicon")
+
+
 # ACB 0.19.0+ compatibility
-__all__ = ["RemixIconAdapter", "RemixIconSettings", "register_remixicon_filters"]
+__all__ = [
+    "RemixIcon",
+    "RemixIconSettings",
+    "register_remixicon_filters",
+    "Icons",
+    "IconsSettings",
+]

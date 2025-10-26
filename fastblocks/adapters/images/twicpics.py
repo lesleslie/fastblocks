@@ -7,14 +7,13 @@ from urllib.parse import quote
 from uuid import UUID
 
 import httpx
-from acb.config import Settings
 from acb.depends import depends
 from pydantic import SecretStr
 
-from ._base import ImagesBase
+from ._base import ImagesBase, ImagesBaseSettings
 
 
-class TwicPicsSettings(Settings):  # type: ignore[misc]
+class TwicPicsImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
     """Settings for TwicPics adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -38,7 +37,7 @@ class TwicPicsSettings(Settings):  # type: ignore[misc]
     timeout: int = 30
 
 
-class TwicPicsAdapter(ImagesBase):
+class TwicPicsImages(ImagesBase):
     """TwicPics adapter with real-time image optimization."""
 
     # Required ACB 0.19.0+ metadata
@@ -48,7 +47,7 @@ class TwicPicsAdapter(ImagesBase):
     def __init__(self) -> None:
         """Initialize TwicPics adapter."""
         super().__init__()
-        self.settings: TwicPicsSettings | None = None
+        self.settings: TwicPicsImagesSettings | None = None
         self._client: httpx.AsyncClient | None = None
 
         # Register with ACB dependency system
@@ -59,7 +58,7 @@ class TwicPicsAdapter(ImagesBase):
         """Get or create HTTP client."""
         if not self._client:
             if not self.settings:
-                self.settings = TwicPicsSettings()
+                self.settings = TwicPicsImagesSettings()
 
             headers = {}
             if self.settings.api_key.get_secret_value():
@@ -79,7 +78,7 @@ class TwicPicsAdapter(ImagesBase):
         # and then reference through TwicPics. This is a simplified implementation.
 
         if not self.settings:
-            self.settings = TwicPicsSettings()
+            self.settings = TwicPicsImagesSettings()
 
         # For demo purposes, we'll create a reference based on filename
         # In real implementation, you'd upload to your storage backend
@@ -153,7 +152,7 @@ class TwicPicsAdapter(ImagesBase):
     ) -> str:
         """Generate TwicPics URL with real-time transformations."""
         if not self.settings:
-            self.settings = TwicPicsSettings()
+            self.settings = TwicPicsImagesSettings()
 
         base_url = f"https://{self.settings.domain}/{image_id}"
 
@@ -297,7 +296,7 @@ def register_twicpics_filters(env: Any) -> None:
     async def twic_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for TwicPics URLs."""
         images = depends.get("images")
-        if isinstance(images, TwicPicsAdapter):
+        if isinstance(images, TwicPicsImages):
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"
 
@@ -305,7 +304,7 @@ def register_twicpics_filters(env: Any) -> None:
     def twic_img_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for TwicPics img tags."""
         images = depends.get("images")
-        if isinstance(images, TwicPicsAdapter):
+        if isinstance(images, TwicPicsImages):
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'
 
@@ -318,7 +317,7 @@ def register_twicpics_filters(env: Any) -> None:
     ) -> str:
         """Generate responsive image with TwicPics optimization."""
         images = depends.get("images")
-        if isinstance(images, TwicPicsAdapter):
+        if isinstance(images, TwicPicsImages):
             return images.get_responsive_img_tag(
                 image_id, alt, breakpoints, **attributes
             )
@@ -330,12 +329,23 @@ def register_twicpics_filters(env: Any) -> None:
     ) -> str:
         """Generate ultra-low quality placeholder URL."""
         images = depends.get("images")
-        if isinstance(images, TwicPicsAdapter):
+        if isinstance(images, TwicPicsImages):
             return await images.get_image_url(
                 image_id, {"width": width, "quality": quality}
             )
         return f"#{image_id}"
 
 
+ImagesSettings = TwicPicsImagesSettings
+Images = TwicPicsImages
+
+depends.set(Images, "twicpics")
+
 # ACB 0.19.0+ compatibility
-__all__ = ["TwicPicsAdapter", "TwicPicsSettings", "register_twicpics_filters"]
+__all__ = [
+    "TwicPicsImages",
+    "TwicPicsImagesSettings",
+    "register_twicpics_filters",
+    "Images",
+    "ImagesSettings",
+]

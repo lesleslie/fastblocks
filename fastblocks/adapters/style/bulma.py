@@ -4,13 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import StylesBase
+from ._base import StyleBaseSettings
 
 
-class BulmaSettings(Settings):  # type: ignore[misc]
+class BulmaStyleSettings(StyleBaseSettings):  # type: ignore[misc]
     """Bulma-specific settings."""
 
     version: str = "0.9.4"
@@ -18,7 +17,7 @@ class BulmaSettings(Settings):  # type: ignore[misc]
     custom_variables: dict[str, str] = {}
 
 
-class BulmaAdapter(StylesBase):
+class BulmaStyle(StylesBase):
     """Bulma CSS framework adapter implementation."""
 
     # Required ACB 0.19.0+ metadata
@@ -138,3 +137,11 @@ class BulmaAdapter(StylesBase):
             return f"<div {attrs_str}>{content}</div>"
 
         return f"<div {attrs_str}>{content}</div>"
+
+
+StyleSettings = BulmaStyleSettings
+Style = BulmaStyle
+
+depends.set(Style, "bulma")
+
+__all__ = ["BulmaStyle", "Style", "StyleSettings", "BulmaStyleSettings"]

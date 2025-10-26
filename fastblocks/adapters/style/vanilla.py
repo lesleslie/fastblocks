@@ -4,13 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import StylesBase
+from ._base import StyleBase, StyleBaseSettings
 
 
-class VanillaSettings(Settings):  # type: ignore[misc]
+class VanillaStyleSettings(StyleBaseSettings):  # type: ignore[misc]
     """Vanilla CSS-specific settings."""
 
     css_paths: list[str] = ["/static/css/base.css"]
@@ -18,7 +17,7 @@ class VanillaSettings(Settings):  # type: ignore[misc]
     css_variables: dict[str, str] = {}
 
 
-class VanillaAdapter(StylesBase):
+class VanillaStyle(StyleBase):
     """Vanilla CSS adapter for custom stylesheets."""
 
     # Required ACB 0.19.0+ metadata
@@ -73,7 +72,7 @@ class VanillaAdapter(StylesBase):
     def __init__(self) -> None:
         """Initialize Vanilla CSS adapter."""
         super().__init__()
-        self.settings = VanillaSettings()
+        self.settings = VanillaStyleSettings()
 
         # Register with ACB dependency system
         with suppress(Exception):
@@ -102,7 +101,8 @@ class VanillaAdapter(StylesBase):
 
         return ":root {\n" + "\n".join(variables) + "\n}"
 
-    def get_utility_classes(self) -> dict[str, str]:
+    @staticmethod
+    def get_utility_classes() -> dict[str, str]:
         """Get semantic utility classes for common patterns."""
         return {
             "text_center": "text--center",
@@ -153,7 +153,8 @@ class VanillaAdapter(StylesBase):
 
         return f"<div {attrs_str}>{content}</div>"
 
-    def generate_base_css(self) -> str:
+    @staticmethod
+    def generate_base_css() -> str:
         """Generate a basic CSS foundation for vanilla styling."""
         return """
 /* FastBlocks Vanilla CSS Base */
@@ -203,3 +204,11 @@ class VanillaAdapter(StylesBase):
 .grid { display: grid; gap: 1rem; }
 .card { border: 1px solid #dee2e6; border-radius: 0.25rem; }
 """
+
+
+StyleSettings = VanillaStyleSettings
+Style = VanillaStyle
+
+depends.set(Style, "vanilla")
+
+__all__ = ["VanillaStyle", "VanillaStyleSettings", "Style", "StyleSettings"]

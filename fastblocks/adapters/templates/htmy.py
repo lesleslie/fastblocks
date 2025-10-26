@@ -703,5 +703,10 @@ class HTMYTemplates(TemplatesBase):
 MODULE_ID = UUID("01937d86-e1f2-7890-abcd-ef1234567890")
 MODULE_STATUS = AdapterStatus.STABLE if AdapterStatus is not None else None
 
+TemplatesSettings = HTMYTemplatesSettings
+Templates = HTMYTemplates
+
 with suppress(Exception):
-    depends.set(HTMYTemplates)
+    depends.set(Templates, "htmy")
+
+__all__ = ["Templates", "TemplatesSettings", "HTMYTemplatesSettings", "HTMYTemplates"]

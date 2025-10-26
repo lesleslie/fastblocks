@@ -4,10 +4,9 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import IconsBase
+from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
     add_accessibility_attributes,
     build_attr_string,
@@ -18,7 +17,7 @@ from ._utils import (
 )
 
 
-class HeroiconsSettings(Settings):  # type: ignore[misc]
+class HeroiconsIconsSettings(IconsBaseSettings):  # type: ignore[misc]
     """Settings for Heroicons adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -89,7 +88,7 @@ class HeroiconsSettings(Settings):  # type: ignore[misc]
     }
 
 
-class HeroiconsAdapter(IconsBase):
+class HeroiconsIcons(IconsBase):
     """Heroicons adapter with outline/solid/mini variants."""
 
     # Required ACB 0.19.0+ metadata
@@ -99,7 +98,7 @@ class HeroiconsAdapter(IconsBase):
     def __init__(self) -> None:
         """Initialize Heroicons adapter."""
         super().__init__()
-        self.settings: HeroiconsSettings | None = None
+        self.settings: HeroiconsIconsSettings | None = None
 
         # Register with ACB dependency system
         with suppress(Exception):
@@ -108,7 +107,7 @@ class HeroiconsAdapter(IconsBase):
     def get_stylesheet_links(self) -> list[str]:
         """Get Heroicons stylesheet links."""
         if not self.settings:
-            self.settings = HeroiconsSettings()
+            self.settings = HeroiconsIconsSettings()
 
         links = []
 
@@ -121,7 +120,7 @@ class HeroiconsAdapter(IconsBase):
     def _generate_heroicons_css(self) -> str:
         """Generate Heroicons-specific CSS."""
         if not self.settings:
-            self.settings = HeroiconsSettings()
+            self.settings = HeroiconsIconsSettings()
 
         return f"""
 /* Heroicons Base Styles */
@@ -260,9 +259,8 @@ class HeroiconsAdapter(IconsBase):
 """
 
     def get_icon_class(self, icon_name: str, variant: str | None = None) -> str:
-        """Get Heroicons icon class with variant support."""
         if not self.settings:
-            self.settings = HeroiconsSettings()
+            self.settings = HeroiconsIconsSettings()
 
         # Resolve icon aliases
         if icon_name in self.settings.icon_aliases:
@@ -285,9 +283,8 @@ class HeroiconsAdapter(IconsBase):
         size: str | None = None,
         **attributes: Any,
     ) -> str:
-        """Generate Heroicons SVG tag with full customization."""
         if not self.settings:
-            self.settings = HeroiconsSettings()
+            self.settings = HeroiconsIconsSettings()
 
         # Resolve icon aliases
         if icon_name in self.settings.icon_aliases:
@@ -408,11 +405,12 @@ class HeroiconsAdapter(IconsBase):
     def get_icon_sprite_url(self, variant: str = "outline") -> str:
         """Get URL for Heroicons sprite file."""
         if not self.settings:
-            self.settings = HeroiconsSettings()
+            self.settings = HeroiconsIconsSettings()
 
         return f"{self.settings.cdn_url}@{self.settings.version}/{variant}.svg"
 
-    def get_available_icons(self) -> dict[str, list[str]]:
+    @staticmethod
+    def get_available_icons() -> dict[str, list[str]]:
         """Get list of available icons by category."""
         return {
             "general": [
@@ -498,7 +496,7 @@ def _create_hero_button(
     icon: str | None,
     variant: str,
     icon_position: str,
-    icons: HeroiconsAdapter,
+    icons: HeroiconsIcons,
     **attributes: Any,
 ) -> str:
     """Build button HTML with Heroicons icon."""
@@ -527,7 +525,7 @@ def _create_hero_badge(
     text: str,
     icon: str | None,
     variant: str,
-    icons: HeroiconsAdapter,
+    icons: HeroiconsIcons,
     **attributes: Any,
 ) -> str:
     """Build badge HTML with Heroicons icon."""
@@ -559,7 +557,7 @@ def register_heroicons_filters(env: Any) -> None:
     ) -> str:
         """Template filter for Heroicons."""
         icons = depends.get("icons")
-        if isinstance(icons, HeroiconsAdapter):
+        if isinstance(icons, HeroiconsIcons):
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
 
@@ -567,7 +565,7 @@ def register_heroicons_filters(env: Any) -> None:
     def heroicon_class_filter(icon_name: str, variant: str = "outline") -> str:
         """Template filter for Heroicons classes."""
         icons = depends.get("icons")
-        if isinstance(icons, HeroiconsAdapter):
+        if isinstance(icons, HeroiconsIcons):
             return icons.get_icon_class(icon_name, variant)
         return f"heroicon-{icon_name}"
 
@@ -575,7 +573,7 @@ def register_heroicons_filters(env: Any) -> None:
     def heroicons_stylesheet_links() -> str:
         """Global function for Heroicons stylesheet links."""
         icons = depends.get("icons")
-        if isinstance(icons, HeroiconsAdapter):
+        if isinstance(icons, HeroiconsIcons):
             return "\n".join(icons.get_stylesheet_links())
         return ""
 
@@ -589,7 +587,7 @@ def register_heroicons_filters(env: Any) -> None:
     ) -> str:
         """Generate button with Heroicons icon."""
         icons = depends.get("icons")
-        if isinstance(icons, HeroiconsAdapter):
+        if isinstance(icons, HeroiconsIcons):
             return _create_hero_button(
                 text, icon, variant, icon_position, icons, **attributes
             )
@@ -601,10 +599,22 @@ def register_heroicons_filters(env: Any) -> None:
     ) -> str:
         """Generate badge with Heroicons icon."""
         icons = depends.get("icons")
-        if isinstance(icons, HeroiconsAdapter):
+        if isinstance(icons, HeroiconsIcons):
             return _create_hero_badge(text, icon, variant, icons, **attributes)
         return f"<span class='badge'>{text}</span>"
 
 
+IconsSettings = HeroiconsIconsSettings
+Icons = HeroiconsIcons
+
+depends.set(Icons, "heroicons")
+
+
 # ACB 0.19.0+ compatibility
-__all__ = ["HeroiconsAdapter", "HeroiconsSettings", "register_heroicons_filters"]
+__all__ = [
+    "HeroiconsIcons",
+    "HeroiconsIconsSettings",
+    "register_heroicons_filters",
+    "Icons",
+    "IconsSettings",
+]

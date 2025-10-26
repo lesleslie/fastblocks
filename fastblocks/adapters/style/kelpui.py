@@ -4,13 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import StylesBase
+from ._base import StyleBase, StyleBaseSettings
 
 
-class KelpUISettings(Settings):  # type: ignore[misc]
+class KelpUIStyleSettings(StyleBaseSettings):  # type: ignore[misc]
     """Settings for KelpUI styles adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -85,7 +84,7 @@ class KelpUISettings(Settings):  # type: ignore[misc]
     enable_animations: bool = True
 
 
-class KelpUIAdapter(StylesBase):
+class KelpUIStyle(StyleBase):
     """KelpUI styles adapter with modern component system."""
 
     # Required ACB 0.19.0+ metadata
@@ -95,7 +94,7 @@ class KelpUIAdapter(StylesBase):
     def __init__(self) -> None:
         """Initialize KelpUI adapter."""
         super().__init__()
-        self.settings: KelpUISettings | None = None
+        self.settings: KelpUIStyleSettings | None = None
 
         # Register with ACB dependency system
         with suppress(Exception):
@@ -104,7 +103,7 @@ class KelpUIAdapter(StylesBase):
     def get_stylesheet_links(self) -> list[str]:
         """Get KelpUI stylesheet links."""
         if not self.settings:
-            self.settings = KelpUISettings()
+            self.settings = KelpUIStyleSettings()
 
         links = []
 
@@ -128,7 +127,7 @@ class KelpUIAdapter(StylesBase):
     def _generate_kelpui_css(self) -> str:
         """Generate KelpUI CSS framework."""
         if not self.settings:
-            self.settings = KelpUISettings()
+            self.settings = KelpUIStyleSettings()
 
         # Generate color variables based on HSL
         color_vars = self._generate_color_variables()
@@ -478,7 +477,7 @@ body {{
     def _generate_color_variables(self) -> str:
         """Generate CSS color variables based on HSL."""
         if not self.settings:
-            self.settings = KelpUISettings()
+            self.settings = KelpUIStyleSettings()
 
         def hsl_colors(hue: int, prefix: str) -> str:
             """Generate HSL color scale."""
@@ -524,7 +523,7 @@ body {{
     def _generate_spacing_variables(self) -> str:
         """Generate spacing variables."""
         if not self.settings:
-            self.settings = KelpUISettings()
+            self.settings = KelpUIStyleSettings()
 
         vars_css = ""
         for i, value in enumerate(self.settings.spacing_scale):
@@ -537,7 +536,7 @@ body {{
     def _generate_typography_variables(self) -> str:
         """Generate typography variables."""
         if not self.settings:
-            self.settings = KelpUISettings()
+            self.settings = KelpUIStyleSettings()
 
         font_vars = f"""
     /* Typography System */
@@ -553,7 +552,7 @@ body {{
     def _generate_radius_variables(self) -> str:
         """Generate border radius variables."""
         if not self.settings:
-            self.settings = KelpUISettings()
+            self.settings = KelpUIStyleSettings()
 
         radius_vars = "    /* Border Radius System */\n"
         for name, value in self.settings.radius_scale.items():
@@ -561,7 +560,8 @@ body {{
 
         return radius_vars
 
-    def _generate_utility_classes(self) -> str:
+    @staticmethod
+    def _generate_utility_classes() -> str:
         """Generate utility classes."""
         return """
 /* Text Utilities */
@@ -635,7 +635,8 @@ body {{
 .kelp-shadow-lg { box-shadow: var(--kelp-shadow-lg); }
 .kelp-shadow-none { box-shadow: none; }"""
 
-    def _generate_responsive_classes(self) -> str:
+    @staticmethod
+    def _generate_responsive_classes() -> str:
         """Generate responsive design classes."""
         return """
 /* Responsive Design */
@@ -853,5 +854,17 @@ def register_kelpui_functions(env: Any) -> None:
         return _build_kelp_component_html(tag, component_class, content, attributes)
 
 
+StyleSettings = KelpUIStyleSettings
+Style = KelpUIStyle
+
+depends.set(Style, "kelpui")
+
+
 # ACB 0.19.0+ compatibility
-__all__ = ["KelpUIAdapter", "KelpUISettings", "register_kelpui_functions"]
+__all__ = [
+    "KelpUIStyle",
+    "KelpUIStyleSettings",
+    "register_kelpui_functions",
+    "Style",
+    "StyleSettings",
+]

@@ -156,4 +156,4 @@ MODULE_ID = UUID("01937d86-5f3b-7c4d-9e0f-2345678901bc")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    depends.set(Auth)
+    depends.set(Auth, "basic")

@@ -4,13 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import ImagesBase
+from ._base import ImagesBase, ImagesBaseSettings
 
 
-class CloudinarySettings(Settings):  # type: ignore[misc]
+class CloudinaryImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
     """Cloudinary-specific settings."""
 
     cloud_name: str
@@ -20,7 +19,7 @@ class CloudinarySettings(Settings):  # type: ignore[misc]
     upload_preset: str | None = None
 
 
-class CloudinaryAdapter(ImagesBase):
+class CloudinaryImages(ImagesBase):
     """Cloudinary image adapter implementation."""
 
     # Required ACB 0.19.0+ metadata
@@ -30,7 +29,7 @@ class CloudinaryAdapter(ImagesBase):
     def __init__(self) -> None:
         """Initialize Cloudinary adapter."""
         super().__init__()
-        self.settings = CloudinarySettings()
+        self.settings = CloudinaryImagesSettings()
 
         # Register with ACB dependency system
         with suppress(Exception):
@@ -71,7 +70,6 @@ class CloudinaryAdapter(ImagesBase):
         return f"{base_url}/{image_id}"
 
     def get_img_tag(self, image_id: str, alt: str, **attributes: Any) -> str:
-        """Generate complete img tag with Cloudinary URL."""
         url = self.get_image_url(image_id, attributes.pop("transformations", None))
 
         # Build attributes string
@@ -86,3 +84,11 @@ class CloudinaryAdapter(ImagesBase):
             attr_parts.append('loading="lazy"')
 
         return f"<img {' '.join(attr_parts)}>"
+
+
+ImagesSettings = CloudinaryImagesSettings
+Images = CloudinaryImages
+
+depends.set(Images, "cloudinary")
+
+__all__ = ["CloudinaryImages", "CloudinaryImagesSettings", "Images", "ImagesSettings"]

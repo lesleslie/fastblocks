@@ -19,7 +19,7 @@ This package provides comprehensive template management with:
 - Multi-IDE syntax highlighting and language support
 
 Key Components:
-- AdvancedTemplateManager: Core validation and autocomplete
+- HybridTemplatesManager: Core validation and autocomplete
 - AsyncTemplateRenderer: High-performance async rendering
 - BlockRenderer: HTMX-optimized block rendering
 - FastBlocksSyntaxSupport: IDE integration and autocomplete
@@ -30,7 +30,7 @@ Key Components:
 Usage:
 ```python
 from fastblocks.adapters.templates import (
-    get_advanced_templates,
+    get_hybrid_templates,
     validate_template_source,
     get_template_autocomplete,
     render_htmx_block,
@@ -39,8 +39,8 @@ from fastblocks.adapters.templates import (
     FastBlocksLanguageServer,
 )
 
-# Get advanced templates integration
-integration = await get_advanced_templates()
+# Get hybrid templates integration
+integration = await get_hybrid_templates()
 
 # Validate template
 result = await validate_template_source(template_source, "my_template.html")
@@ -74,10 +74,10 @@ python -m fastblocks start-language-server --port 7777
 """
 
 from ._advanced_manager import (
-    AdvancedTemplateManager,
-    AdvancedTemplatesSettings,
     AutocompleteItem,
     FragmentInfo,
+    HybridTemplatesManager,
+    HybridTemplatesSettings,
     SecurityLevel,
     TemplateError,  # Explicitly export TemplateError
     TemplateValidationResult,
@@ -116,9 +116,9 @@ from ._syntax_support import (
     SyntaxError,
     register_syntax_filters,
 )
-from .integration import (
-    AdvancedTemplatesIntegration,
-    get_advanced_templates,
+from .hybrid import (
+    HybridTemplates,
+    get_hybrid_templates,
     get_template_autocomplete,
     render_htmx_block,
     render_template_fragment,
@@ -128,20 +128,20 @@ from .jinja2 import Templates, TemplatesSettings
 
 __all__ = [
     # Main integration
-    "AdvancedTemplatesIntegration",
-    "get_advanced_templates",
+    "HybridTemplates",
+    "get_hybrid_templates",
     # Convenience functions
     "validate_template_source",
     "get_template_autocomplete",
     "render_htmx_block",
     "render_template_fragment",
     # Core components
-    "AdvancedTemplateManager",
+    "HybridTemplatesManager",
     "AsyncTemplateRenderer",
     "BlockRenderer",
     "Templates",
     # Settings and configuration
-    "AdvancedTemplatesSettings",
+    "HybridTemplatesSettings",
     "TemplatesSettings",
     "ValidationLevel",
     "SecurityLevel",

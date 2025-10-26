@@ -4,13 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import StylesBase
+from ._base import StyleBase, StyleBaseSettings
 
 
-class WebAwesomeSettings(Settings):  # type: ignore[misc]
+class WebAwesomeStyleSettings(StyleBaseSettings):  # type: ignore[misc]
     """Settings for WebAwesome styles adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -46,7 +45,7 @@ class WebAwesomeSettings(Settings):  # type: ignore[misc]
     line_height: str = "1.6"
 
 
-class WebAwesomeAdapter(StylesBase):
+class WebAwesomeStyle(StyleBase):
     """WebAwesome styles adapter with integrated icons and components."""
 
     # Required ACB 0.19.0+ metadata
@@ -430,12 +429,15 @@ body {{
             "xl": "1200px",
         }
 
-        for breakpoint, width in breakpoints.items():
+        for _breakpoint, width in breakpoints.items():
             css += f"\n@media (min-width: {width}) {{\n"
 
             for i in range(1, self.settings.grid_columns + 1):
                 percentage = (i / self.settings.grid_columns) * 100
-                css += f"  .wa-col-{breakpoint}-{i} {{ flex: 0 0 {percentage:.4f}%; max-width: {percentage:.4f}%; }}\n"
+                css += (
+                    f"  .wa-col-{_breakpoint}-{i} {{ flex: 0 0 {percentage:.4f}%; "
+                    f"max-width: {percentage:.4f}%; }}\n"
+                )
 
             css += "}\n"
 
@@ -496,7 +498,8 @@ body {{
 
         return class_map.get(component, f"wa-{component}")
 
-    def get_icon_class(self, icon_name: str, style: str = "solid") -> str:
+    @staticmethod
+    def get_icon_class(icon_name: str, style: str = "solid") -> str:
         """Get FontAwesome icon class integrated with WebAwesome."""
         prefix_map = {
             "solid": "fas",
@@ -606,5 +609,16 @@ def register_webawesome_functions(env: Any) -> None:
     _register_wa_card_functions(env)
 
 
+StyleSettings = WebAwesomeStyleSettings
+Style = WebAwesomeStyle
+
+depends.set(Style, "webawesome")
+
 # ACB 0.19.0+ compatibility
-__all__ = ["WebAwesomeAdapter", "WebAwesomeSettings", "register_webawesome_functions"]
+__all__ = [
+    "WebAwesomeStyle",
+    "WebAwesomeStyleSettings",
+    "register_webawesome_functions",
+    "Style",
+    "StyleSettings",
+]

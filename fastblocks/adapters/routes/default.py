@@ -238,4 +238,4 @@ MODULE_ID = UUID("01937d86-6f4c-7d5e-a01f-3456789012cd")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    depends.set(Routes)
+    depends.set(Routes, "default")

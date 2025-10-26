@@ -30,7 +30,7 @@ from jinja2.nodes import Block, Extends, Include
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
-from ._advanced_manager import AdvancedTemplateManager
+from ._advanced_manager import HybridTemplatesManager
 from ._async_renderer import AsyncTemplateRenderer, RenderContext, RenderMode
 
 
@@ -160,10 +160,10 @@ class BlockRenderer:
     def __init__(
         self,
         async_renderer: AsyncTemplateRenderer | None = None,
-        advanced_manager: AdvancedTemplateManager | None = None,
+        hybrid_manager: HybridTemplatesManager | None = None,
     ) -> None:
         self.async_renderer = async_renderer
-        self.advanced_manager = advanced_manager
+        self.hybrid_manager = hybrid_manager
         self.registry = BlockRegistry()
         self._render_cache: dict[str, tuple[str, float]] = {}
 
@@ -173,12 +173,12 @@ class BlockRenderer:
             self.async_renderer = AsyncTemplateRenderer()
             await self.async_renderer.initialize()
 
-        if not self.advanced_manager:
+        if not self.hybrid_manager:
             try:
-                self.advanced_manager = depends.get("advanced_template_manager")
+                self.hybrid_manager = depends.get("hybrid_template_manager")
             except Exception:
-                self.advanced_manager = AdvancedTemplateManager()
-                await self.advanced_manager.initialize()
+                self.hybrid_manager = HybridTemplatesManager()
+                await self.hybrid_manager.initialize()
 
         # Auto-discover blocks from templates
         await self._discover_blocks()
@@ -403,8 +403,8 @@ class BlockRenderer:
         dependencies = []
 
         # Add template dependencies
-        if self.advanced_manager:
-            template_deps = await self.advanced_manager.get_template_dependencies(
+        if self.hybrid_manager:
+            template_deps = await self.hybrid_manager.get_template_dependencies(
                 block_def.template_name
             )
             dependencies.extend(template_deps)

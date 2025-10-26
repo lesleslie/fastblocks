@@ -4,13 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import IconsBase
+from ._base import IconsBase, IconsBaseSettings
 
 
-class PhosphorSettings(Settings):  # type: ignore[misc]
+class PhosphorIconsSettings(IconsBaseSettings):  # type: ignore[misc]
     """Settings for Phosphor icons adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -71,7 +70,7 @@ class PhosphorSettings(Settings):  # type: ignore[misc]
     }
 
 
-class PhosphorAdapter(IconsBase):
+class PhosphorIcons(IconsBase):
     """Phosphor icons adapter with multiple variants support."""
 
     # Required ACB 0.19.0+ metadata
@@ -578,5 +577,16 @@ def register_phosphor_filters(env: Any) -> None:
     _register_ph_interactive_functions(env)
 
 
+IconsSettings = PhosphorIconsSettings
+Icons = PhosphorIcons
+
+depends.set(Icons, "phosphor")
+
 # ACB 0.19.0+ compatibility
-__all__ = ["PhosphorAdapter", "PhosphorSettings", "register_phosphor_filters"]
+__all__ = [
+    "PhosphorIcons",
+    "PhosphorIconsSettings",
+    "register_phosphor_filters",
+    "Icons",
+    "IconsSettings",
+]

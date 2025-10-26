@@ -39,14 +39,6 @@
       ],
       "type": "stdio"
     },
-    "git": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@cyanheads/git-mcp-server@2.3.5"
-      ],
-      "type": "stdio"
-    },
     "github": {
       "url": "http://localhost:3038/mcp",
       "type": "http"
@@ -75,7 +67,7 @@
       ],
       "type": "stdio"
     },
-    "filesystem": {
+    "rust-filesystem": {
       "command": "rust-mcp-filesystem",
       "args": [
         "-w",

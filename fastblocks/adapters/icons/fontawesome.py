@@ -4,13 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
 from acb.depends import depends
 
-from ._base import IconsBase
+from ._base import IconsBase, IconsBaseSettings
 
 
-class FontAwesomeSettings(Settings):  # type: ignore[misc]
+class FontAwesomeIconsSettings(IconsBaseSettings):  # type: ignore[misc]
     """FontAwesome-specific settings."""
 
     version: str = "6.4.0"
@@ -21,7 +20,7 @@ class FontAwesomeSettings(Settings):  # type: ignore[misc]
     kit_url: str | None = None  # For FontAwesome kit users
 
 
-class FontAwesomeAdapter(IconsBase):
+class FontAwesomeIcons(IconsBase):
     """FontAwesome icons adapter implementation."""
 
     # Required ACB 0.19.0+ metadata
@@ -108,7 +107,7 @@ class FontAwesomeAdapter(IconsBase):
     def __init__(self) -> None:
         """Initialize FontAwesome adapter."""
         super().__init__()
-        self.settings = FontAwesomeSettings()
+        self.settings = FontAwesomeIconsSettings()
 
         # Register with ACB dependency system
         with suppress(Exception):
@@ -172,7 +171,8 @@ class FontAwesomeAdapter(IconsBase):
         attrs_str = " ".join(attr_parts)
         return f"<i {attrs_str}></i>"
 
-    def _get_style_prefix(self, style: str) -> str:
+    @staticmethod
+    def _get_style_prefix(style: str) -> str:
         """Get FontAwesome style prefix."""
         style_map = {
             "solid": "fas",
@@ -196,7 +196,6 @@ class FontAwesomeAdapter(IconsBase):
         return f"{icon_tag} {text}"
 
     def get_icon_button(self, icon_name: str, **attributes: Any) -> str:
-        """Generate button with icon."""
         icon_tag = self.get_icon_tag(icon_name)
 
         # Extract button-specific attributes
@@ -214,3 +213,11 @@ class FontAwesomeAdapter(IconsBase):
 
         attrs_str = " ".join(attr_parts)
         return f"<button {attrs_str}>{icon_tag}</button>"
+
+
+IconsSettings = FontAwesomeIconsSettings
+Icons = FontAwesomeIcons
+
+depends.set(Icons, "fontawesome")
+
+__all__ = ["Icons", "IconsSettings", "FontAwesomeIcons", "FontAwesomeIconsSettings"]
