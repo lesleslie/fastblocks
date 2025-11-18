@@ -637,7 +637,7 @@ def _register_ri_basic_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Template filter for Remix Icons."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, RemixIconAdapter):
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
@@ -645,7 +645,7 @@ def _register_ri_basic_filters(env: Any) -> None:
     @env.filter("ri_class")  # type: ignore[misc]
     def ri_class_filter(icon_name: str, variant: str | None = None) -> str:
         """Template filter for Remix Icon classes."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, RemixIconAdapter):
             return icons.get_icon_class(icon_name, variant)
         return f"ri-{icon_name}"
@@ -653,7 +653,7 @@ def _register_ri_basic_filters(env: Any) -> None:
     @env.global_("remixicon_stylesheet_links")  # type: ignore[misc]
     def remixicon_stylesheet_links() -> str:
         """Global function for Remix Icon stylesheet links."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, RemixIconAdapter):
             return "\n".join(icons.get_stylesheet_links())
         return ""
@@ -671,7 +671,7 @@ def _register_ri_advanced_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate stacked Remix Icons."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, RemixIconAdapter):
             return icons.get_stacked_icons(
                 background_icon,
@@ -690,7 +690,7 @@ def _register_ri_advanced_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate gradient Remix Icon."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, RemixIconAdapter):
             attributes["color"] = f"gradient-{gradient_type}"
             return icons.get_icon_tag(icon_name, variant, **attributes)
@@ -709,7 +709,7 @@ def _register_ri_button_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate button with Remix Icon."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if not isinstance(icons, RemixIconAdapter):
             return f"<button>{text}</button>"
 

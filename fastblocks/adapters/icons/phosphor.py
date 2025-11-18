@@ -478,7 +478,7 @@ def _register_ph_basic_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Template filter for Phosphor icons."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, PhosphorAdapter):
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
@@ -486,7 +486,7 @@ def _register_ph_basic_filters(env: Any) -> None:
     @env.filter("ph_class")  # type: ignore[misc]
     def ph_class_filter(icon_name: str, variant: str = "regular") -> str:
         """Template filter for Phosphor icon classes."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, PhosphorAdapter):
             return icons.get_icon_class(icon_name, variant)
         return f"ph-{icon_name}"
@@ -494,7 +494,7 @@ def _register_ph_basic_filters(env: Any) -> None:
     @env.global_("phosphor_stylesheet_links")  # type: ignore[misc]
     def phosphor_stylesheet_links() -> str:
         """Global function for Phosphor stylesheet links."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, PhosphorAdapter):
             return "\n".join(icons.get_stylesheet_links())
         return ""
@@ -511,7 +511,7 @@ def _register_ph_duotone_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate duotone Phosphor icon."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, PhosphorAdapter):
             return icons.get_duotone_icon_tag(
                 icon_name, primary_color, secondary_color, **attributes
@@ -530,7 +530,7 @@ def _register_ph_interactive_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate interactive Phosphor icon with action."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if not isinstance(icons, PhosphorAdapter):
             return f"<!-- {icon_name} -->"
 
@@ -550,7 +550,7 @@ def _register_ph_interactive_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate button with Phosphor icon."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if not isinstance(icons, PhosphorAdapter):
             return f"<button>{text or icon_name}</button>"
 

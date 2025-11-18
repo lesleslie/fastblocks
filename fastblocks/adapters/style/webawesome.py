@@ -523,7 +523,7 @@ def _register_wa_basic_filters(env: Any) -> None:
     @env.global_("wa_stylesheet_links")  # type: ignore[misc]
     def wa_stylesheet_links() -> str:
         """Global function for WebAwesome stylesheet links."""
-        styles = depends.get("styles")
+        styles = depends.get_sync("styles")
         if isinstance(styles, WebAwesomeAdapter):
             return "\n".join(styles.get_stylesheet_links())
         return ""
@@ -531,7 +531,7 @@ def _register_wa_basic_filters(env: Any) -> None:
     @env.filter("wa_class")  # type: ignore[misc]
     def wa_class_filter(component: str) -> str:
         """Filter for getting WebAwesome component classes."""
-        styles = depends.get("styles")
+        styles = depends.get_sync("styles")
         if isinstance(styles, WebAwesomeAdapter):
             return styles.get_component_class(component)
         return component
@@ -539,7 +539,7 @@ def _register_wa_basic_filters(env: Any) -> None:
     @env.filter("wa_icon")  # type: ignore[misc]
     def wa_icon_filter(icon_name: str, style: str = "solid") -> str:
         """Filter for WebAwesome icon classes."""
-        styles = depends.get("styles")
+        styles = depends.get_sync("styles")
         if isinstance(styles, WebAwesomeAdapter):
             return styles.get_icon_class(icon_name, style)
         return f"fa-{icon_name}"
@@ -553,7 +553,7 @@ def _register_wa_button_functions(env: Any) -> None:
         text: str, variant: str = "primary", icon: str | None = None, **attributes: Any
     ) -> str:
         """Generate WebAwesome button with optional icon."""
-        styles = depends.get("styles")
+        styles = depends.get_sync("styles")
         if not isinstance(styles, WebAwesomeAdapter):
             return f'<button class="btn">{text}</button>'
 
@@ -581,7 +581,7 @@ def _register_wa_card_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate WebAwesome card component."""
-        styles = depends.get("styles")
+        styles = depends.get_sync("styles")
         if not isinstance(styles, WebAwesomeAdapter):
             return f'<div class="card">{content}</div>'
 

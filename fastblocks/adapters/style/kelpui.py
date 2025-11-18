@@ -821,7 +821,7 @@ def register_kelpui_functions(env: Any) -> None:
     @env.global_("kelp_stylesheet_links")  # type: ignore[misc]
     def kelp_stylesheet_links() -> str:
         """Global function for KelpUI stylesheet links."""
-        styles = depends.get("styles")
+        styles = depends.get_sync("styles")
         if isinstance(styles, KelpUIAdapter):
             return "\n".join(styles.get_stylesheet_links())
         return ""
@@ -829,7 +829,7 @@ def register_kelpui_functions(env: Any) -> None:
     @env.filter("kelp_class")  # type: ignore[misc]
     def kelp_class_filter(component: str) -> str:
         """Filter for getting KelpUI component classes."""
-        styles = depends.get("styles")
+        styles = depends.get_sync("styles")
         if isinstance(styles, KelpUIAdapter):
             return styles.get_component_class(component)
         return component
@@ -839,7 +839,7 @@ def register_kelpui_functions(env: Any) -> None:
         component_type: str, content: str = "", **attributes: Any
     ) -> str:
         """Generate KelpUI component."""
-        styles = depends.get("styles")
+        styles = depends.get_sync("styles")
         if not isinstance(styles, KelpUIAdapter):
             return f"<div>{content}</div>"
 

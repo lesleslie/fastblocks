@@ -11,7 +11,7 @@ def img_tag(image_id: str, alt: str, **attributes: Any) -> str:
     Usage in templates:
         [[ img_tag('product.jpg', 'Product Image', width=300, class='responsive') ]]
     """
-    images = depends.get("images")
+    images = depends.get_sync("images")
     if images:
         result = images.get_img_tag(image_id, alt, **attributes)
         return (
@@ -36,7 +36,7 @@ def image_url(image_id: str, **transformations: Any) -> str:
         [[ image_url('product.jpg', width=300, height=200, crop='fill') ]]
         [[ await async_image_url('product.jpg', width=300, height=200, crop='fill') ]]  # async version
     """
-    images = depends.get("images")
+    images = depends.get_sync("images")
     if images and hasattr(images, "get_sync_image_url"):
         # Some adapters may provide sync methods for simple URLs
         result = images.get_sync_image_url(image_id, **transformations)
@@ -85,7 +85,7 @@ def style_class(component: str, **modifiers: Any) -> str:
     Usage in templates:
         [[ style_class('button', variant='primary', size='large') ]]
     """
-    styles = depends.get("styles")
+    styles = depends.get_sync("styles")
     if not styles:
         # Fallback to semantic class name
         return component.replace("_", "-")
@@ -100,7 +100,7 @@ def icon_tag(icon_name: str, **attributes: Any) -> str:
     Usage in templates:
         [[ icon_tag('home', class='nav-icon', size='24') ]]
     """
-    icons = depends.get("icons")
+    icons = depends.get_sync("icons")
     if icons:
         result = icons.get_icon_tag(icon_name, **attributes)
         return str(result) if result is not None else f"[{icon_name}]"
@@ -117,7 +117,7 @@ def icon_with_text(
     Usage in templates:
         [[ icon_with_text('save', 'Save Changes', position='left') ]]
     """
-    icons = depends.get("icons")
+    icons = depends.get_sync("icons")
     if icons and hasattr(icons, "get_icon_with_text"):
         result = icons.get_icon_with_text(icon_name, text, position, **attributes)
         return (
@@ -145,7 +145,7 @@ def font_import() -> str:
             [[ await async_font_import() ]]  # async version for full functionality
         [% endblock %]
     """
-    fonts = depends.get("fonts")
+    fonts = depends.get_sync("fonts")
     if fonts and hasattr(fonts, "get_sync_font_import"):
         # Some adapters may provide sync methods for basic imports
         result = fonts.get_sync_font_import()
@@ -169,7 +169,7 @@ def font_family(font_type: str = "primary") -> str:
             h1 { font-family: [[ font_family('heading') ]]; }
         </style>
     """
-    fonts = depends.get("fonts")
+    fonts = depends.get_sync("fonts")
     if fonts:
         result = fonts.get_font_family(font_type)
         return str(result) if result is not None else "inherit"
@@ -196,12 +196,12 @@ def stylesheet_links() -> str:
     links = []
 
     # Get style framework links
-    styles = depends.get("styles")
+    styles = depends.get_sync("styles")
     if styles:
         links.extend(styles.get_stylesheet_links())
 
     # Get icon framework links
-    icons = depends.get("icons")
+    icons = depends.get_sync("icons")
     if icons and hasattr(icons, "get_stylesheet_links"):
         links.extend(icons.get_stylesheet_links())
 
@@ -214,7 +214,7 @@ def component_html(component: str, content: str = "", **attributes: Any) -> str:
     Usage in templates:
         [[ component_html('button', 'Click Me', variant='primary', class='my-btn') ]]
     """
-    styles = depends.get("styles")
+    styles = depends.get_sync("styles")
     if styles and hasattr(styles, "build_component_html"):
         result = styles.build_component_html(component, content, **attributes)
         return (
@@ -450,7 +450,7 @@ def htmx_img_swap(
         <img [[ htmx_img_swap('product.jpg', {'width': 300},
                              trigger='mouseenter once', target='this') ]]>
     """
-    images = depends.get("images")
+    images = depends.get_sync("images")
     if not images:
         return htmx_attrs(**attributes)
 

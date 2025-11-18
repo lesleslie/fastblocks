@@ -784,7 +784,7 @@ def _register_material_basic_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Template filter for Material Icons."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, MaterialIconsAdapter):
             return icons.get_icon_tag(icon_name, theme=theme, size=size, **attributes)
         return f"<!-- {icon_name} -->"
@@ -792,7 +792,7 @@ def _register_material_basic_filters(env: Any) -> None:
     @env.filter("material_class")  # type: ignore[misc]
     def material_class_filter(icon_name: str, theme: str | None = None) -> str:
         """Template filter for Material Icons classes."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, MaterialIconsAdapter):
             return icons.get_icon_class(icon_name, theme)
         return "material-icons"
@@ -800,7 +800,7 @@ def _register_material_basic_filters(env: Any) -> None:
     @env.global_("materialicons_stylesheet_links")  # type: ignore[misc]
     def materialicons_stylesheet_links() -> str:
         """Global function for Material Icons stylesheet links."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, MaterialIconsAdapter):
             return "\n".join(icons.get_stylesheet_links())
         return ""
@@ -817,7 +817,7 @@ def _register_material_fab_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate Material Design Floating Action Button."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, MaterialIconsAdapter):
             return icons.get_fab_tag(icon_name, variant, theme, **attributes)
         return f"<button class='fab'>{icon_name}</button>"
@@ -835,7 +835,7 @@ def _register_material_button_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate button with Material Icon."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if not isinstance(icons, MaterialIconsAdapter):
             return f"<button>{text}</button>"
 
@@ -876,7 +876,7 @@ def _register_material_chip_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate Material Design chip with icon."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if not isinstance(icons, MaterialIconsAdapter):
             return f"<div class='chip'>{text}</div>"
 
