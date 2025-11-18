@@ -1,20 +1,19 @@
 """Tests for static files synchronization functionality."""
 
-import pytest
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
-from anyio import Path as AsyncPath
 
+import pytest
+from anyio import Path as AsyncPath
 from fastblocks.actions.sync.static import (
-    StaticSyncResult,
-    sync_static,
-    warm_static_cache,
-    backup_static_files,
-    _is_cacheable_file,
     CACHEABLE_EXTENSIONS,
     NON_CACHEABLE_EXTENSIONS,
+    StaticSyncResult,
+    _is_cacheable_file,
+    backup_static_files,
+    sync_static,
+    warm_static_cache,
 )
-from fastblocks.actions.sync.strategies import SyncStrategy, SyncDirection
+from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
 
 
 @pytest.fixture
@@ -57,12 +56,14 @@ def mock_strategy():
 @pytest.fixture
 def mock_depends_get(mock_storage, mock_cache):
     """Create a mock for depends.get that returns adapters."""
+
     async def _get(name):
         if name == "storage":
             return mock_storage
         elif name == "cache":
             return mock_cache
         return None
+
     return AsyncMock(side_effect=_get)
 
 
@@ -89,7 +90,7 @@ class TestStaticSyncResult:
         result = StaticSyncResult(
             assets_processed=assets,
             mime_types_detected=mime_types,
-            cache_invalidated=cache_inv
+            cache_invalidated=cache_inv,
         )
 
         assert result.assets_processed == assets
@@ -156,10 +157,11 @@ class TestSyncStatic:
     @pytest.mark.asyncio
     async def test_sync_static_no_storage_adapter(self, mock_strategy):
         """Test sync_static handles missing storage adapter."""
+
         async def _get_none(name):
             return None
 
-        with patch('acb.depends.depends.get', AsyncMock(side_effect=_get_none)):
+        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get_none)):
             result = await sync_static(strategy=mock_strategy)
 
             assert len(result.errors) > 0
@@ -168,8 +170,8 @@ class TestSyncStatic:
     @pytest.mark.asyncio
     async def test_sync_static_no_files_found(self, mock_depends_get, mock_strategy):
         """Test sync_static with no static files."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.static.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
@@ -180,49 +182,52 @@ class TestSyncStatic:
                 assert len(result.synced_items) == 0
 
     @pytest.mark.asyncio
-    async def test_sync_static_with_file_patterns(self, mock_depends_get, mock_strategy):
+    async def test_sync_static_with_file_patterns(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_static with custom file patterns."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.static.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
 
                 result = await sync_static(
-                    file_patterns=["*.css", "*.js"],
-                    strategy=mock_strategy
+                    file_patterns=["*.css", "*.js"], strategy=mock_strategy
                 )
 
                 assert isinstance(result, StaticSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_static_with_exclude_patterns(self, mock_depends_get, mock_strategy):
+    async def test_sync_static_with_exclude_patterns(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_static with exclude patterns."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.static.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
 
                 result = await sync_static(
-                    exclude_patterns=["*.tmp", "*.log"],
-                    strategy=mock_strategy
+                    exclude_patterns=["*.tmp", "*.log"], strategy=mock_strategy
                 )
 
                 assert isinstance(result, StaticSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_static_custom_storage_bucket(self, mock_depends_get, mock_strategy):
+    async def test_sync_static_custom_storage_bucket(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_static with custom storage bucket."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.static.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
 
                 result = await sync_static(
-                    storage_bucket="custom_bucket",
-                    strategy=mock_strategy
+                    storage_bucket="custom_bucket", strategy=mock_strategy
                 )
 
                 assert isinstance(result, StaticSyncResult)
@@ -230,19 +235,20 @@ class TestSyncStatic:
     @pytest.mark.asyncio
     async def test_sync_static_with_custom_path(self, mock_depends_get, mock_strategy):
         """Test sync_static with custom static path."""
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             custom_path = AsyncPath("custom/static")
 
-            with patch.object(custom_path, 'exists', AsyncMock(return_value=False)):
+            with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
                 result = await sync_static(
-                    static_path=custom_path,
-                    strategy=mock_strategy
+                    static_path=custom_path, strategy=mock_strategy
                 )
 
                 assert isinstance(result, StaticSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_static_handles_exceptions(self, mock_storage, mock_cache, mock_strategy):
+    async def test_sync_static_handles_exceptions(
+        self, mock_storage, mock_cache, mock_strategy
+    ):
         """Test sync_static handles exceptions gracefully."""
         mock_storage._create_bucket.side_effect = Exception("Storage error")
 
@@ -253,8 +259,8 @@ class TestSyncStatic:
                 return mock_cache
             return None
 
-        with patch('acb.depends.depends.get', AsyncMock(side_effect=_get)):
-            with patch('fastblocks.actions.sync.static.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get)):
+            with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
@@ -270,10 +276,11 @@ class TestWarmStaticCache:
     @pytest.mark.asyncio
     async def test_warm_cache_no_cache_adapter(self):
         """Test warm_static_cache when cache adapter not available."""
+
         async def _get_none(name):
             return None
 
-        with patch('acb.depends.depends.get', AsyncMock(side_effect=_get_none)):
+        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get_none)):
             result = await warm_static_cache()
 
             assert len(result["errors"]) > 0
@@ -281,7 +288,7 @@ class TestWarmStaticCache:
     @pytest.mark.asyncio
     async def test_warm_cache_with_default_paths(self, mock_depends_get):
         """Test warm_static_cache with default static paths."""
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await warm_static_cache()
 
             assert "warmed" in result
@@ -293,7 +300,7 @@ class TestWarmStaticCache:
         """Test warm_static_cache with custom paths."""
         custom_paths = ["custom/style.css", "custom/script.js"]
 
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await warm_static_cache(static_paths=custom_paths)
 
             assert "warmed" in result
@@ -301,7 +308,7 @@ class TestWarmStaticCache:
     @pytest.mark.asyncio
     async def test_warm_cache_with_custom_namespace(self, mock_depends_get):
         """Test warm_static_cache with custom cache namespace."""
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await warm_static_cache(cache_namespace="custom_static")
 
             assert "warmed" in result
@@ -318,7 +325,7 @@ class TestWarmStaticCache:
                 return mock_cache
             return None
 
-        with patch('acb.depends.depends.get', AsyncMock(side_effect=_get)):
+        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get)):
             result = await warm_static_cache(static_paths=["test.css"])
 
             assert "errors" in result
@@ -330,7 +337,7 @@ class TestBackupStaticFiles:
     @pytest.mark.asyncio
     async def test_backup_static_path_not_exists(self):
         """Test backup_static_files when path doesn't exist."""
-        with patch('fastblocks.actions.sync.static.AsyncPath') as MockAsyncPath:
+        with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
             mock_path = AsyncMock()
             mock_path.exists = AsyncMock(return_value=False)
             MockAsyncPath.return_value = mock_path
@@ -345,7 +352,7 @@ class TestBackupStaticFiles:
         """Test backup_static_files with custom path."""
         custom_path = AsyncPath("custom/static")
 
-        with patch.object(custom_path, 'exists', AsyncMock(return_value=False)):
+        with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
             result = await backup_static_files(static_path=custom_path)
 
             assert len(result["errors"]) > 0
@@ -353,7 +360,7 @@ class TestBackupStaticFiles:
     @pytest.mark.asyncio
     async def test_backup_static_with_custom_suffix(self):
         """Test backup_static_files with custom backup suffix."""
-        with patch('fastblocks.actions.sync.static.AsyncPath') as MockAsyncPath:
+        with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
             mock_path = AsyncMock()
             mock_path.exists = AsyncMock(return_value=False)
             MockAsyncPath.return_value = mock_path
@@ -365,7 +372,7 @@ class TestBackupStaticFiles:
     @pytest.mark.asyncio
     async def test_backup_static_handles_exceptions(self):
         """Test backup_static_files handles exceptions."""
-        with patch('fastblocks.actions.sync.static.AsyncPath') as MockAsyncPath:
+        with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
             mock_path = AsyncMock()
             mock_path.exists = AsyncMock(return_value=True)
             # Make rglob raise an exception

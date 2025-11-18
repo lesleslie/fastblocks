@@ -7,17 +7,16 @@ Focuses on:
 - Integration with storage and cache layers
 """
 
-import pytest
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open
-from anyio import Path as AsyncPath
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+from anyio import Path as AsyncPath
 from fastblocks.adapters.templates.htmy import (
+    ComponentCompilationError,
+    ComponentNotFound,
     HTMYComponentRegistry,
     HTMYTemplates,
     HTMYTemplatesSettings,
-    ComponentNotFound,
-    ComponentCompilationError,
 )
 
 
@@ -277,7 +276,7 @@ class TestHTMYTemplatesSettings:
             searchpaths=["/custom/path"],
             cache_timeout=600,
             debug_components=True,
-            enable_hot_reload=False
+            enable_hot_reload=False,
         )
 
         assert settings.searchpaths == ["/custom/path"]
@@ -301,10 +300,7 @@ class TestHTMYTemplates:
 
     def test_initialization_with_kwargs(self):
         """Test HTMYTemplates initialization with kwargs."""
-        templates = HTMYTemplates(
-            cache_timeout=600,
-            debug_components=True
-        )
+        templates = HTMYTemplates(cache_timeout=600, debug_components=True)
 
         assert templates.settings.cache_timeout == 600
         assert templates.settings.debug_components is True
@@ -312,7 +308,9 @@ class TestHTMYTemplates:
     @pytest.mark.asyncio
     async def test_get_component_searchpaths_no_app_adapter(self):
         """Test get_component_searchpaths with no app adapter."""
-        with patch('fastblocks.adapters.templates.htmy.root_path', return_value="/project"):
+        with patch(
+            "fastblocks.adapters.templates.htmy.root_path", return_value="/project"
+        ):
             templates = HTMYTemplates()
 
             searchpaths = await templates.get_component_searchpaths(None)
@@ -325,10 +323,16 @@ class TestHTMYTemplates:
         mock_app = MagicMock()
         mock_app.category = "app"
 
-        with patch('fastblocks.adapters.templates.htmy.root_path', return_value="/project"):
+        with patch(
+            "fastblocks.adapters.templates.htmy.root_path", return_value="/project"
+        ):
             templates = HTMYTemplates()
 
-            with patch.object(templates, 'get_searchpath', return_value=[AsyncPath("/project/templates/app")]):
+            with patch.object(
+                templates,
+                "get_searchpath",
+                return_value=[AsyncPath("/project/templates/app")],
+            ):
                 searchpaths = await templates.get_component_searchpaths(mock_app)
 
                 assert len(searchpaths) == 1
@@ -343,10 +347,14 @@ class TestHTMYTemplates:
         def mock_root_path():
             return "/custom/root"
 
-        with patch('fastblocks.adapters.templates.htmy.root_path', mock_root_path):
+        with patch("fastblocks.adapters.templates.htmy.root_path", mock_root_path):
             templates = HTMYTemplates()
 
-            with patch.object(templates, 'get_searchpath', return_value=[AsyncPath("/custom/root/templates/admin")]):
+            with patch.object(
+                templates,
+                "get_searchpath",
+                return_value=[AsyncPath("/custom/root/templates/admin")],
+            ):
                 searchpaths = await templates.get_component_searchpaths(mock_app)
 
                 assert len(searchpaths) == 1
@@ -405,9 +413,7 @@ class TestHTMYRegistryIntegration:
 
         # Create registry
         registry = HTMYComponentRegistry(
-            searchpaths=[AsyncPath(comp_dir)],
-            cache=mock_cache,
-            storage=mock_storage
+            searchpaths=[AsyncPath(comp_dir)], cache=mock_cache, storage=mock_storage
         )
 
         # Discover components
@@ -423,11 +429,11 @@ class TestHTMYRegistryIntegration:
         # Setup component directory
         comp_dir = tmp_path / "components"
         comp_dir.mkdir()
-        source_code = '''
+        source_code = """
 class TestComponent:
     def htmy(self, context):
         return "<div>Test</div>"
-'''
+"""
         (comp_dir / "test_comp.py").write_text(source_code)
 
         mock_cache = AsyncMock()
@@ -435,8 +441,7 @@ class TestComponent:
         mock_cache.set = AsyncMock()
 
         registry = HTMYComponentRegistry(
-            searchpaths=[AsyncPath(comp_dir)],
-            cache=mock_cache
+            searchpaths=[AsyncPath(comp_dir)], cache=mock_cache
         )
 
         # First access - should cache

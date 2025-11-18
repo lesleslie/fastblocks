@@ -265,7 +265,11 @@ class ConfigurationManager:
 
         try:
             # Validate configuration schema
-            config_dict = config.model_dump() if hasattr(config, "model_dump") else config.__dict__
+            config_dict = (
+                config.model_dump()
+                if hasattr(config, "model_dump")
+                else config.__dict__
+            )
             ConfigurationSchema(**config_dict)
         except ValidationError as e:
             result.status = ConfigurationStatus.ERROR

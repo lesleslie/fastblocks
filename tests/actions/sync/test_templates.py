@@ -1,14 +1,14 @@
 """Tests for template synchronization functionality."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from anyio import Path as AsyncPath
+from unittest.mock import AsyncMock, patch
 
+import pytest
+from anyio import Path as AsyncPath
+from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
 from fastblocks.actions.sync.templates import (
     TemplateSyncResult,
     sync_templates,
 )
-from fastblocks.actions.sync.strategies import SyncStrategy, SyncDirection
 
 
 @pytest.fixture
@@ -52,12 +52,14 @@ def mock_strategy():
 @pytest.fixture
 def mock_depends_get(mock_storage, mock_cache):
     """Create a mock for depends.get that returns adapters."""
+
     async def _get(name):
         if name == "storage":
             return mock_storage
         elif name == "cache":
             return mock_cache
         return None
+
     return AsyncMock(side_effect=_get)
 
 
@@ -80,8 +82,7 @@ class TestTemplateSyncResult:
         bytecode = ["bccache:index.html"]
 
         result = TemplateSyncResult(
-            cache_invalidated=cache_inv,
-            bytecode_cleared=bytecode
+            cache_invalidated=cache_inv, bytecode_cleared=bytecode
         )
 
         assert result.cache_invalidated == cache_inv
@@ -149,10 +150,11 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_no_storage_adapter(self, mock_strategy):
         """Test sync_templates handles missing storage adapter."""
+
         async def _get_none(name):
             return None
 
-        with patch('acb.depends.depends.get', AsyncMock(side_effect=_get_none)):
+        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get_none)):
             result = await sync_templates(strategy=mock_strategy)
 
             assert len(result.errors) > 0
@@ -161,22 +163,29 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_defaults(self, mock_depends_get):
         """Test sync_templates with default parameters."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates()
 
                 assert isinstance(result, TemplateSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_templates_with_custom_paths(self, mock_depends_get, mock_strategy):
+    async def test_sync_templates_with_custom_paths(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_templates with custom template paths."""
         custom_paths = [AsyncPath("custom/templates")]
 
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(
-                    template_paths=custom_paths,
-                    strategy=mock_strategy
+                    template_paths=custom_paths, strategy=mock_strategy
                 )
 
                 assert isinstance(result, TemplateSyncResult)
@@ -186,23 +195,27 @@ class TestSyncTemplates:
         """Test sync_templates with custom patterns."""
         patterns = ["*.html", "*.jinja2"]
 
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
-                result = await sync_templates(
-                    patterns=patterns,
-                    strategy=mock_strategy
-                )
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
+                result = await sync_templates(patterns=patterns, strategy=mock_strategy)
 
                 assert isinstance(result, TemplateSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_templates_with_storage_bucket(self, mock_depends_get, mock_strategy):
+    async def test_sync_templates_with_storage_bucket(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_templates with custom storage bucket."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(
-                    storage_bucket="custom_bucket",
-                    strategy=mock_strategy
+                    storage_bucket="custom_bucket", strategy=mock_strategy
                 )
 
                 assert isinstance(result, TemplateSyncResult)
@@ -210,8 +223,11 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_direction_cloud_to_local(self, mock_depends_get):
         """Test sync_templates with cloud_to_local direction."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(direction="cloud_to_local")
 
                 assert isinstance(result, TemplateSyncResult)
@@ -220,8 +236,11 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_direction_local_to_cloud(self, mock_depends_get):
         """Test sync_templates with local_to_cloud direction."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(direction="local_to_cloud")
 
                 assert isinstance(result, TemplateSyncResult)
@@ -230,38 +249,56 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_direction_bidirectional(self, mock_depends_get):
         """Test sync_templates with bidirectional direction."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(direction="bidirectional")
 
                 assert isinstance(result, TemplateSyncResult)
                 assert result.direction == "bidirectional"
 
     @pytest.mark.asyncio
-    async def test_sync_templates_with_conflict_strategy_local_wins(self, mock_depends_get):
+    async def test_sync_templates_with_conflict_strategy_local_wins(
+        self, mock_depends_get
+    ):
         """Test sync_templates with local_wins conflict strategy."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(conflict_strategy="local_wins")
 
                 assert isinstance(result, TemplateSyncResult)
                 assert result.conflict_strategy == "local_wins"
 
     @pytest.mark.asyncio
-    async def test_sync_templates_with_conflict_strategy_remote_wins(self, mock_depends_get):
+    async def test_sync_templates_with_conflict_strategy_remote_wins(
+        self, mock_depends_get
+    ):
         """Test sync_templates with remote_wins conflict strategy."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(conflict_strategy="remote_wins")
 
                 assert isinstance(result, TemplateSyncResult)
                 assert result.conflict_strategy == "remote_wins"
 
     @pytest.mark.asyncio
-    async def test_sync_templates_with_conflict_strategy_newest_wins(self, mock_depends_get):
+    async def test_sync_templates_with_conflict_strategy_newest_wins(
+        self, mock_depends_get
+    ):
         """Test sync_templates with newest_wins conflict strategy."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(conflict_strategy="newest_wins")
 
                 assert isinstance(result, TemplateSyncResult)
@@ -270,8 +307,11 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_dry_run_enabled(self, mock_depends_get):
         """Test sync_templates with dry_run enabled."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(dry_run=True)
 
                 assert isinstance(result, TemplateSyncResult)
@@ -282,16 +322,21 @@ class TestSyncTemplates:
         """Test sync_templates with filters."""
         filters = {"include_patterns": ["*.html"]}
 
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.templates._discover_template_files', AsyncMock(return_value=[])):
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch(
+                "fastblocks.actions.sync.templates._discover_template_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await sync_templates(filters=filters)
 
                 assert isinstance(result, TemplateSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_templates_handles_initialization_exceptions(self, mock_strategy):
+    async def test_sync_templates_handles_initialization_exceptions(
+        self, mock_strategy
+    ):
         """Test sync_templates handles initialization exceptions."""
-        with patch('acb.depends.depends.get', side_effect=Exception("Init error")):
+        with patch("acb.depends.depends.get", side_effect=Exception("Init error")):
             result = await sync_templates(strategy=mock_strategy)
 
             assert isinstance(result, TemplateSyncResult)

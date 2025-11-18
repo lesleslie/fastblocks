@@ -12,7 +12,7 @@ from contextlib import suppress
 from uuid import UUID
 
 from acb.adapters import AdapterStatus
-from acb.depends import depends, Inject
+from acb.depends import Inject, depends
 from starlette.applications import Starlette
 from fastblocks.applications import FastBlocks
 

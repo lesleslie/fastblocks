@@ -1,17 +1,17 @@
 """Tests for settings synchronization functionality."""
 
-import pytest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
-from anyio import Path as AsyncPath
 
+import pytest
+from anyio import Path as AsyncPath
 from fastblocks.actions.sync.settings import (
     SettingsSyncResult,
-    sync_settings,
     backup_settings,
+    sync_settings,
     validate_all_settings,
 )
-from fastblocks.actions.sync.strategies import SyncStrategy, SyncDirection
+from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
 
 
 @pytest.fixture
@@ -61,10 +61,12 @@ def mock_async_path():
 @pytest.fixture
 def mock_depends_get(mock_storage):
     """Create a mock for depends.get that returns the storage adapter."""
+
     async def _get(name):
         if name == "storage":
             return mock_storage
         return None
+
     return AsyncMock(side_effect=_get)
 
 
@@ -85,10 +87,7 @@ class TestSettingsSyncResult:
         config = ["adapter1", "adapter2"]
         adapters = ["adapter1"]
 
-        result = SettingsSyncResult(
-            config_reloaded=config,
-            adapters_affected=adapters
-        )
+        result = SettingsSyncResult(config_reloaded=config, adapters_affected=adapters)
 
         assert result.config_reloaded == config
         assert result.adapters_affected == adapters
@@ -100,10 +99,11 @@ class TestSyncSettings:
     @pytest.mark.asyncio
     async def test_sync_settings_no_storage_adapter(self, mock_strategy):
         """Test sync_settings handles missing storage adapter."""
+
         async def _get_none(name):
             return None
 
-        with patch('acb.depends.depends.get', AsyncMock(side_effect=_get_none)):
+        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get_none)):
             result = await sync_settings(strategy=mock_strategy)
 
             assert len(result.errors) > 0
@@ -112,8 +112,8 @@ class TestSyncSettings:
     @pytest.mark.asyncio
     async def test_sync_settings_no_files_found(self, mock_depends_get, mock_strategy):
         """Test sync_settings with no settings files."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.settings.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
@@ -124,64 +124,68 @@ class TestSyncSettings:
                 assert len(result.synced_items) == 0
 
     @pytest.mark.asyncio
-    async def test_sync_settings_with_adapter_filter(self, mock_depends_get, mock_strategy):
+    async def test_sync_settings_with_adapter_filter(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_settings with specific adapter names."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.settings.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
 
                 result = await sync_settings(
-                    adapter_names=["adapter1", "adapter2"],
-                    strategy=mock_strategy
+                    adapter_names=["adapter1", "adapter2"], strategy=mock_strategy
                 )
 
                 assert isinstance(result, SettingsSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_settings_with_reload_disabled(self, mock_depends_get, mock_strategy):
+    async def test_sync_settings_with_reload_disabled(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_settings with config reload disabled."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.settings.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
 
                 result = await sync_settings(
-                    reload_config=False,
-                    strategy=mock_strategy
+                    reload_config=False, strategy=mock_strategy
                 )
 
                 assert isinstance(result, SettingsSyncResult)
                 assert len(result.config_reloaded) == 0
 
     @pytest.mark.asyncio
-    async def test_sync_settings_custom_storage_bucket(self, mock_depends_get, mock_strategy):
+    async def test_sync_settings_custom_storage_bucket(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_settings with custom storage bucket."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            with patch('fastblocks.actions.sync.settings.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", mock_depends_get):
+            with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
 
                 result = await sync_settings(
-                    storage_bucket="custom_bucket",
-                    strategy=mock_strategy
+                    storage_bucket="custom_bucket", strategy=mock_strategy
                 )
 
                 assert isinstance(result, SettingsSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_settings_with_custom_path(self, mock_depends_get, mock_strategy):
+    async def test_sync_settings_with_custom_path(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_settings with custom settings path."""
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             custom_path = AsyncPath("custom/settings")
 
-            with patch.object(custom_path, 'exists', AsyncMock(return_value=False)):
+            with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
                 result = await sync_settings(
-                    settings_path=custom_path,
-                    strategy=mock_strategy
+                    settings_path=custom_path, strategy=mock_strategy
                 )
 
                 assert isinstance(result, SettingsSyncResult)
@@ -196,8 +200,8 @@ class TestSyncSettings:
                 return mock_storage
             return None
 
-        with patch('acb.depends.depends.get', AsyncMock(side_effect=_get)):
-            with patch('fastblocks.actions.sync.settings.AsyncPath') as MockAsyncPath:
+        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get)):
+            with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
                 MockAsyncPath.return_value = mock_path
@@ -213,7 +217,7 @@ class TestBackupSettings:
     @pytest.mark.asyncio
     async def test_backup_settings_path_not_exists(self):
         """Test backup_settings when path doesn't exist."""
-        with patch('fastblocks.actions.sync.settings.AsyncPath') as MockAsyncPath:
+        with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
             mock_path = AsyncMock()
             mock_path.exists = AsyncMock(return_value=False)
             MockAsyncPath.return_value = mock_path
@@ -228,7 +232,7 @@ class TestBackupSettings:
         """Test backup_settings with custom path."""
         custom_path = AsyncPath("custom/settings")
 
-        with patch.object(custom_path, 'exists', AsyncMock(return_value=False)):
+        with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
             result = await backup_settings(settings_path=custom_path)
 
             assert len(result["errors"]) > 0
@@ -236,7 +240,7 @@ class TestBackupSettings:
     @pytest.mark.asyncio
     async def test_backup_settings_with_custom_suffix(self):
         """Test backup_settings with custom backup suffix."""
-        with patch('fastblocks.actions.sync.settings.AsyncPath') as MockAsyncPath:
+        with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
             mock_path = AsyncMock()
             mock_path.exists = AsyncMock(return_value=False)
             MockAsyncPath.return_value = mock_path
@@ -248,7 +252,7 @@ class TestBackupSettings:
     @pytest.mark.asyncio
     async def test_backup_settings_handles_exceptions(self):
         """Test backup_settings handles exceptions."""
-        with patch('fastblocks.actions.sync.settings.AsyncPath') as MockAsyncPath:
+        with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
             mock_path = AsyncMock()
             mock_path.exists = AsyncMock(return_value=True)
             # Make rglob raise an exception
@@ -266,12 +270,15 @@ class TestValidateSettings:
     @pytest.mark.asyncio
     async def test_validate_all_settings_no_files(self):
         """Test validate_all_settings with no files."""
-        with patch('fastblocks.actions.sync.settings.AsyncPath') as MockAsyncPath:
+        with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
             mock_path = AsyncMock()
             mock_path.exists = AsyncMock(return_value=False)
             MockAsyncPath.return_value = mock_path
 
-            with patch('fastblocks.actions.sync.settings._discover_settings_files', AsyncMock(return_value=[])):
+            with patch(
+                "fastblocks.actions.sync.settings._discover_settings_files",
+                AsyncMock(return_value=[]),
+            ):
                 result = await validate_all_settings()
 
                 assert result["total_checked"] == 0
@@ -286,7 +293,10 @@ class TestValidateSettings:
 
         settings_files = [{"local_path": mock_file}]
 
-        with patch('fastblocks.actions.sync.settings._discover_settings_files', AsyncMock(return_value=settings_files)):
+        with patch(
+            "fastblocks.actions.sync.settings._discover_settings_files",
+            AsyncMock(return_value=settings_files),
+        ):
             result = await validate_all_settings()
 
             assert result["total_checked"] == 1
@@ -301,7 +311,10 @@ class TestValidateSettings:
 
         settings_files = [{"local_path": mock_file}]
 
-        with patch('fastblocks.actions.sync.settings._discover_settings_files', AsyncMock(return_value=settings_files)):
+        with patch(
+            "fastblocks.actions.sync.settings._discover_settings_files",
+            AsyncMock(return_value=settings_files),
+        ):
             result = await validate_all_settings()
 
             assert result["total_checked"] == 1
@@ -315,7 +328,10 @@ class TestValidateSettings:
 
         settings_files = [{"local_path": mock_file}]
 
-        with patch('fastblocks.actions.sync.settings._discover_settings_files', AsyncMock(return_value=settings_files)):
+        with patch(
+            "fastblocks.actions.sync.settings._discover_settings_files",
+            AsyncMock(return_value=settings_files),
+        ):
             result = await validate_all_settings()
 
             assert result["total_checked"] == 1
@@ -326,7 +342,10 @@ class TestValidateSettings:
         """Test validate_all_settings with custom path."""
         custom_path = AsyncPath("custom/settings")
 
-        with patch('fastblocks.actions.sync.settings._discover_settings_files', AsyncMock(return_value=[])):
+        with patch(
+            "fastblocks.actions.sync.settings._discover_settings_files",
+            AsyncMock(return_value=[]),
+        ):
             result = await validate_all_settings(settings_path=custom_path)
 
             assert "total_checked" in result
@@ -334,7 +353,10 @@ class TestValidateSettings:
     @pytest.mark.asyncio
     async def test_validate_all_settings_handles_exceptions(self):
         """Test validate_all_settings handles exceptions."""
-        with patch('fastblocks.actions.sync.settings._discover_settings_files', side_effect=Exception("Discovery error")):
+        with patch(
+            "fastblocks.actions.sync.settings._discover_settings_files",
+            side_effect=Exception("Discovery error"),
+        ):
             result = await validate_all_settings()
 
             assert "error" in result

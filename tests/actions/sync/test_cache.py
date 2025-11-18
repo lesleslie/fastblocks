@@ -1,8 +1,8 @@
 """Tests for cache synchronization functionality."""
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
+import pytest
 from fastblocks.actions.sync.cache import CacheSyncResult, sync_cache
 from fastblocks.actions.sync.strategies import SyncStrategy
 
@@ -33,10 +33,12 @@ def mock_strategy():
 @pytest.fixture
 def mock_depends_get(mock_cache):
     """Create a mock for depends.get that returns the cache adapter."""
+
     async def _get(name):
         if name == "cache":
             return mock_cache
         return None
+
     return AsyncMock(side_effect=_get)
 
 
@@ -59,9 +61,7 @@ class TestCacheSyncResult:
         cleared = ["namespace1"]
 
         result = CacheSyncResult(
-            invalidated_keys=invalidated,
-            warmed_keys=warmed,
-            cleared_namespaces=cleared
+            invalidated_keys=invalidated, warmed_keys=warmed, cleared_namespaces=cleared
         )
 
         assert result.invalidated_keys == invalidated
@@ -75,10 +75,11 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_no_cache_adapter(self, mock_strategy):
         """Test sync_cache handles missing cache adapter."""
+
         async def _get_none(name):
             return None
 
-        with patch('acb.depends.depends.get', AsyncMock(side_effect=_get_none)):
+        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get_none)):
             result = await sync_cache(strategy=mock_strategy)
 
             assert len(result.errors) > 0
@@ -87,25 +88,23 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_refresh_operation(self, mock_depends_get, mock_strategy):
         """Test sync_cache with refresh operation."""
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await sync_cache(
-                operation="refresh",
-                namespaces=["templates"],
-                strategy=mock_strategy
+                operation="refresh", namespaces=["templates"], strategy=mock_strategy
             )
 
             assert isinstance(result, CacheSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_cache_invalidate_operation(self, mock_depends_get, mock_strategy):
+    async def test_sync_cache_invalidate_operation(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_cache with invalidate operation."""
         keys_to_invalidate = ["key1", "key2"]
 
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await sync_cache(
-                operation="invalidate",
-                keys=keys_to_invalidate,
-                strategy=mock_strategy
+                operation="invalidate", keys=keys_to_invalidate, strategy=mock_strategy
             )
 
             assert isinstance(result, CacheSyncResult)
@@ -114,11 +113,9 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_warm_operation(self, mock_depends_get, mock_strategy):
         """Test sync_cache with warm operation."""
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await sync_cache(
-                operation="warm",
-                namespaces=["templates"],
-                strategy=mock_strategy
+                operation="warm", namespaces=["templates"], strategy=mock_strategy
             )
 
             assert isinstance(result, CacheSyncResult)
@@ -126,11 +123,9 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_clear_operation(self, mock_depends_get, mock_strategy):
         """Test sync_cache with clear operation."""
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await sync_cache(
-                operation="clear",
-                namespaces=["templates"],
-                strategy=mock_strategy
+                operation="clear", namespaces=["templates"], strategy=mock_strategy
             )
 
             assert isinstance(result, CacheSyncResult)
@@ -139,11 +134,8 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_unknown_operation(self, mock_depends_get, mock_strategy):
         """Test sync_cache with unknown operation."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            result = await sync_cache(
-                operation="unknown",
-                strategy=mock_strategy
-            )
+        with patch("acb.depends.depends.get", mock_depends_get):
+            result = await sync_cache(operation="unknown", strategy=mock_strategy)
 
             assert len(result.errors) > 0
             assert any("Unknown cache operation" in str(e) for e in result.errors)
@@ -151,45 +143,39 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_default_namespaces(self, mock_depends_get, mock_strategy):
         """Test sync_cache uses default namespaces when none provided."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            result = await sync_cache(
-                operation="refresh",
-                strategy=mock_strategy
-            )
+        with patch("acb.depends.depends.get", mock_depends_get):
+            result = await sync_cache(operation="refresh", strategy=mock_strategy)
 
             assert isinstance(result, CacheSyncResult)
 
     @pytest.mark.asyncio
     async def test_sync_cache_default_strategy(self, mock_depends_get):
         """Test sync_cache uses default strategy when none provided."""
-        with patch('acb.depends.depends.get', mock_depends_get):
-            result = await sync_cache(
-                operation="refresh",
-                namespaces=["templates"]
-            )
+        with patch("acb.depends.depends.get", mock_depends_get):
+            result = await sync_cache(operation="refresh", namespaces=["templates"])
 
             assert isinstance(result, CacheSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_cache_with_warm_templates_true(self, mock_depends_get, mock_strategy):
+    async def test_sync_cache_with_warm_templates_true(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_cache with warm_templates enabled."""
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await sync_cache(
-                operation="refresh",
-                warm_templates=True,
-                strategy=mock_strategy
+                operation="refresh", warm_templates=True, strategy=mock_strategy
             )
 
             assert isinstance(result, CacheSyncResult)
 
     @pytest.mark.asyncio
-    async def test_sync_cache_with_warm_templates_false(self, mock_depends_get, mock_strategy):
+    async def test_sync_cache_with_warm_templates_false(
+        self, mock_depends_get, mock_strategy
+    ):
         """Test sync_cache with warm_templates disabled."""
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await sync_cache(
-                operation="refresh",
-                warm_templates=False,
-                strategy=mock_strategy
+                operation="refresh", warm_templates=False, strategy=mock_strategy
             )
 
             assert isinstance(result, CacheSyncResult)
@@ -204,11 +190,8 @@ class TestSyncCache:
                 return mock_cache
             return None
 
-        with patch('acb.depends.depends.get', AsyncMock(side_effect=_get)):
-            result = await sync_cache(
-                operation="refresh",
-                strategy=mock_strategy
-            )
+        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get)):
+            result = await sync_cache(operation="refresh", strategy=mock_strategy)
 
             assert isinstance(result, CacheSyncResult)
             assert len(result.errors) > 0
@@ -218,11 +201,11 @@ class TestSyncCache:
         """Test sync_cache with custom namespaces."""
         custom_namespaces = ["custom1", "custom2"]
 
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await sync_cache(
                 operation="refresh",
                 namespaces=custom_namespaces,
-                strategy=mock_strategy
+                strategy=mock_strategy,
             )
 
             assert isinstance(result, CacheSyncResult)
@@ -232,11 +215,9 @@ class TestSyncCache:
         """Test sync_cache with specific keys for invalidation."""
         keys = ["app:cache:key1", "app:cache:key2"]
 
-        with patch('acb.depends.depends.get', mock_depends_get):
+        with patch("acb.depends.depends.get", mock_depends_get):
             result = await sync_cache(
-                operation="invalidate",
-                keys=keys,
-                strategy=mock_strategy
+                operation="invalidate", keys=keys, strategy=mock_strategy
             )
 
             assert isinstance(result, CacheSyncResult)
@@ -245,7 +226,7 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_exception_during_get_depends(self, mock_strategy):
         """Test sync_cache handles exception when getting cache adapter."""
-        with patch('acb.depends.depends.get', side_effect=Exception("Depends error")):
+        with patch("acb.depends.depends.get", side_effect=Exception("Depends error")):
             result = await sync_cache(strategy=mock_strategy)
 
             assert len(result.errors) > 0

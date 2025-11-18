@@ -1,20 +1,19 @@
 """Tests for MCP configuration management."""
 
-import pytest
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
-from dataclasses import asdict
 
+import pytest
 from fastblocks.mcp.configuration import (
-    ConfigurationProfile,
-    ConfigurationStatus,
-    EnvironmentVariable,
     AdapterConfiguration,
-    ConfigurationSchema,
-    ConfigurationValidationResult,
     ConfigurationBackup,
     ConfigurationManager,
+    ConfigurationProfile,
+    ConfigurationSchema,
+    ConfigurationStatus,
+    ConfigurationValidationResult,
+    EnvironmentVariable,
 )
 from fastblocks.mcp.discovery import AdapterInfo
 from fastblocks.mcp.registry import AdapterRegistry
@@ -107,7 +106,7 @@ class TestEnvironmentVariable:
             description="API authentication key",
             secret=True,
             default="default_key",
-            validator_pattern=r"^[A-Za-z0-9]+$"
+            validator_pattern=r"^[A-Za-z0-9]+$",
         )
 
         assert env_var.name == "API_KEY"
@@ -144,11 +143,9 @@ class TestAdapterConfiguration:
             settings={"timeout": 30},
             environment_variables=[env_var],
             dependencies={"database", "cache"},
-            profile_overrides={
-                ConfigurationProfile.PRODUCTION: {"timeout": 60}
-            },
+            profile_overrides={ConfigurationProfile.PRODUCTION: {"timeout": 60}},
             health_check_config={"interval": 30},
-            metadata={"version": "1.0"}
+            metadata={"version": "1.0"},
         )
 
         assert config.name == "auth_adapter"
@@ -183,7 +180,7 @@ class TestConfigurationSchema:
             version="2.0",
             profile=ConfigurationProfile.PRODUCTION,
             adapters={"test": adapter_config},
-            global_settings={"debug": False}
+            global_settings={"debug": False},
         )
 
         assert schema.version == "2.0"
@@ -195,12 +192,7 @@ class TestConfigurationSchema:
         """Test ConfigurationSchema adapters validator."""
         # Test with dict input that should be converted
         schema = ConfigurationSchema(
-            adapters={
-                "test": {
-                    "enabled": True,
-                    "settings": {"foo": "bar"}
-                }
-            }
+            adapters={"test": {"enabled": True, "settings": {"foo": "bar"}}}
         )
 
         assert "test" in schema.adapters
@@ -228,7 +220,7 @@ class TestConfigurationValidationResult:
             errors=["Missing required setting", "Invalid value"],
             warnings=["Deprecated option"],
             info={"checked_adapters": 5},
-            adapter_results={"auth": {"status": "error"}}
+            adapter_results={"auth": {"status": "error"}},
         )
 
         assert result.status == ConfigurationStatus.ERROR
@@ -251,7 +243,7 @@ class TestConfigurationBackup:
             created_at=now,
             profile=ConfigurationProfile.PRODUCTION,
             file_path=Path("/backups/config-123.json"),
-            checksum="abc123def456"
+            checksum="abc123def456",
         )
 
         assert backup.id == "backup-123"
@@ -281,7 +273,7 @@ class TestConfigurationManager:
     @pytest.mark.asyncio
     async def test_initialize(self, config_manager, mock_registry):
         """Test ConfigurationManager initialize method."""
-        with patch.object(config_manager, '_ensure_default_templates', AsyncMock()):
+        with patch.object(config_manager, "_ensure_default_templates", AsyncMock()):
             await config_manager.initialize()
 
             mock_registry.initialize.assert_called_once()
@@ -291,7 +283,7 @@ class TestConfigurationManager:
         """Test getting available adapters."""
         expected_adapters = {
             "auth": MagicMock(spec=AdapterInfo),
-            "database": MagicMock(spec=AdapterInfo)
+            "database": MagicMock(spec=AdapterInfo),
         }
         mock_registry.list_available_adapters.return_value = expected_adapters
 
@@ -301,7 +293,9 @@ class TestConfigurationManager:
         mock_registry.list_available_adapters.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_get_adapter_configuration_schema_not_found(self, config_manager, mock_registry):
+    async def test_get_adapter_configuration_schema_not_found(
+        self, config_manager, mock_registry
+    ):
         """Test getting schema for non-existent adapter."""
         mock_registry.get_adapter_info.return_value = None
 
@@ -309,7 +303,9 @@ class TestConfigurationManager:
             await config_manager.get_adapter_configuration_schema("nonexistent")
 
     @pytest.mark.asyncio
-    async def test_get_adapter_configuration_schema_success(self, config_manager, mock_registry):
+    async def test_get_adapter_configuration_schema_success(
+        self, config_manager, mock_registry
+    ):
         """Test getting schema for existing adapter."""
         adapter_info = MagicMock(spec=AdapterInfo)
         adapter_info.description = "Test adapter"
@@ -327,7 +323,7 @@ class TestConfigurationManager:
     @pytest.mark.asyncio
     async def test_create_configuration_default(self, config_manager):
         """Test creating a default configuration."""
-        with patch.object(config_manager, '_ensure_default_templates', AsyncMock()):
+        with patch.object(config_manager, "_ensure_default_templates", AsyncMock()):
             config = await config_manager.create_configuration()
 
             assert config.profile == ConfigurationProfile.DEVELOPMENT
@@ -335,7 +331,9 @@ class TestConfigurationManager:
             assert config.adapters == {}
 
     @pytest.mark.asyncio
-    async def test_create_configuration_with_adapters(self, config_manager, mock_registry):
+    async def test_create_configuration_with_adapters(
+        self, config_manager, mock_registry
+    ):
         """Test creating configuration with specific adapters."""
         adapter_info = MagicMock(spec=AdapterInfo)
         adapter_info.description = "Auth adapter"
@@ -343,8 +341,7 @@ class TestConfigurationManager:
         mock_registry.get_adapter_info.return_value = adapter_info
 
         config = await config_manager.create_configuration(
-            profile=ConfigurationProfile.PRODUCTION,
-            adapters=["auth"]
+            profile=ConfigurationProfile.PRODUCTION, adapters=["auth"]
         )
 
         assert config.profile == ConfigurationProfile.PRODUCTION
@@ -373,7 +370,7 @@ class TestConfigurationManager:
             "required_setting": None,
             "optional_setting": "default_value",
             "_private_setting": "ignored",
-            "another_optional": 42
+            "another_optional": 42,
         }
 
         categorized = config_manager._categorize_settings(settings_dict)
@@ -382,4 +379,7 @@ class TestConfigurationManager:
         assert len(categorized["optional"]) == 2
         assert categorized["required"][0]["name"] == "required_setting"
         assert any(s["name"] == "optional_setting" for s in categorized["optional"])
-        assert not any(s["name"].startswith("_") for s in categorized["required"] + categorized["optional"])
+        assert not any(
+            s["name"].startswith("_")
+            for s in categorized["required"] + categorized["optional"]
+        )

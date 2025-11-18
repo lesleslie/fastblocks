@@ -241,7 +241,7 @@ class TestGatherComponents:
         """Test gathering with fallback to basic registry."""
         mock_adapter = AsyncMock()
         # Don't set discover_components - let it fall back to htmy_registry
-        if hasattr(mock_adapter, 'discover_components'):
+        if hasattr(mock_adapter, "discover_components"):
             del mock_adapter.discover_components
         mock_adapter.htmy_registry = AsyncMock()
         mock_adapter.htmy_registry.discover_components = AsyncMock(

@@ -1,21 +1,21 @@
 """Tests for MCP tools functionality."""
 
-import pytest
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastblocks.mcp.tools import (
-    create_template,
-    validate_template,
-    list_templates,
-    create_component,
-    list_components,
-    validate_component,
-    configure_adapter,
-    list_adapters,
-    check_adapter_health,
-    _should_skip_variant_dir,
     _determine_template_type,
+    _should_skip_variant_dir,
+    check_adapter_health,
+    configure_adapter,
+    create_component,
+    create_template,
+    list_adapters,
+    list_components,
+    list_templates,
+    validate_component,
+    validate_template,
 )
 
 
@@ -25,7 +25,7 @@ class TestCreateTemplate:
     @pytest.mark.asyncio
     async def test_create_template_jinja2_default(self, tmp_path):
         """Test creating a Jinja2 template with default content."""
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
             result = await create_template(name="user_card")
 
             assert result["success"] is True
@@ -42,10 +42,9 @@ class TestCreateTemplate:
     @pytest.mark.asyncio
     async def test_create_template_htmy(self, tmp_path):
         """Test creating an HTMY template."""
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
             result = await create_template(
-                name="button_component",
-                template_type="htmy"
+                name="button_component", template_type="htmy"
             )
 
             assert result["success"] is True
@@ -61,11 +60,8 @@ class TestCreateTemplate:
     @pytest.mark.asyncio
     async def test_create_template_custom_variant(self, tmp_path):
         """Test creating a template with custom variant."""
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
-            result = await create_template(
-                name="card",
-                variant="bulma"
-            )
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
+            result = await create_template(name="card", variant="bulma")
 
             assert result["success"] is True
             assert "bulma" in result["path"]
@@ -76,11 +72,8 @@ class TestCreateTemplate:
         """Test creating a template with custom content."""
         custom_content = "<div>Custom template content</div>"
 
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
-            result = await create_template(
-                name="custom",
-                content=custom_content
-            )
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
+            result = await create_template(name="custom", content=custom_content)
 
             assert result["success"] is True
             template_path = Path(result["path"])
@@ -89,7 +82,7 @@ class TestCreateTemplate:
     @pytest.mark.asyncio
     async def test_create_template_already_exists(self, tmp_path):
         """Test creating a template that already exists."""
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
             # Create template first time
             await create_template(name="existing")
 
@@ -102,7 +95,9 @@ class TestCreateTemplate:
     @pytest.mark.asyncio
     async def test_create_template_handles_exceptions(self):
         """Test create_template handles exceptions gracefully."""
-        with patch('fastblocks.mcp.tools.Path.cwd', side_effect=Exception("Path error")):
+        with patch(
+            "fastblocks.mcp.tools.Path.cwd", side_effect=Exception("Path error")
+        ):
             result = await create_template(name="test")
 
             assert result["success"] is False
@@ -129,7 +124,7 @@ class TestValidateTemplate:
         async def mock_get(name):
             return None
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await validate_template(str(template_path))
 
             assert result["success"] is False
@@ -147,7 +142,7 @@ class TestValidateTemplate:
         async def mock_get(name):
             return mock_syntax_support
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await validate_template(str(template_path))
 
             assert result["success"] is True
@@ -174,7 +169,7 @@ class TestValidateTemplate:
         async def mock_get(name):
             return mock_syntax_support
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await validate_template(str(template_path))
 
             assert result["success"] is False
@@ -190,7 +185,7 @@ class TestValidateTemplate:
         async def mock_get(name):
             raise Exception("Validation error")
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await validate_template(str(template_path))
 
             assert result["success"] is False
@@ -203,7 +198,7 @@ class TestListTemplates:
     @pytest.mark.asyncio
     async def test_list_templates_no_templates_dir(self, tmp_path):
         """Test listing templates when directory doesn't exist."""
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
             result = await list_templates()
 
             assert result["success"] is False
@@ -219,7 +214,7 @@ class TestListTemplates:
         (templates_dir / "card.html").write_text("card template")
         (templates_dir / "button.html").write_text("button template")
 
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
             result = await list_templates()
 
             assert result["success"] is True
@@ -234,7 +229,7 @@ class TestListTemplates:
         base_dir.mkdir(parents=True)
         (base_dir / "card.html").write_text("card")
 
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
             result = await list_templates(variant="base")
 
             assert result["success"] is True
@@ -246,11 +241,8 @@ class TestCreateComponent:
     @pytest.mark.asyncio
     async def test_create_component_success(self, tmp_path):
         """Test successful component creation."""
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
-            result = await create_component(
-                name="UserCard",
-                component_type="htmy"
-            )
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
+            result = await create_component(name="UserCard", component_type="htmy")
 
             # Component creation should work
             assert "success" in result
@@ -258,7 +250,9 @@ class TestCreateComponent:
     @pytest.mark.asyncio
     async def test_create_component_handles_exceptions(self):
         """Test create_component handles exceptions."""
-        with patch('fastblocks.mcp.tools.Path.cwd', side_effect=Exception("Component error")):
+        with patch(
+            "fastblocks.mcp.tools.Path.cwd", side_effect=Exception("Component error")
+        ):
             result = await create_component(name="Test")
 
             assert result["success"] is False
@@ -270,10 +264,11 @@ class TestListComponents:
     @pytest.mark.asyncio
     async def test_list_components_no_gather(self):
         """Test listing components when gather is not available."""
+
         async def mock_get(name):
             return None
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await list_components()
 
             assert result["success"] is False
@@ -293,7 +288,7 @@ class TestListComponents:
         async def mock_get(name):
             return mock_gather
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await list_components()
 
             assert result["success"] is True
@@ -312,7 +307,7 @@ class TestValidateComponent:
         async def mock_get(name):
             return mock_gather
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await validate_component("NonExistent")
 
             assert result["success"] is False
@@ -328,10 +323,9 @@ class TestConfigureAdapter:
         settings_dir = tmp_path / "settings"
         settings_dir.mkdir()
 
-        with patch('fastblocks.mcp.tools.Path.cwd', return_value=tmp_path):
+        with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
             result = await configure_adapter(
-                adapter_name="test_adapter",
-                settings={"key": "value"}
+                adapter_name="test_adapter", settings={"key": "value"}
             )
 
             assert result["success"] is True
@@ -340,11 +334,10 @@ class TestConfigureAdapter:
     @pytest.mark.asyncio
     async def test_configure_adapter_handles_exceptions(self):
         """Test configure_adapter handles exceptions."""
-        with patch('fastblocks.mcp.tools.Path.cwd', side_effect=Exception("Config error")):
-            result = await configure_adapter(
-                adapter_name="test",
-                settings={}
-            )
+        with patch(
+            "fastblocks.mcp.tools.Path.cwd", side_effect=Exception("Config error")
+        ):
+            result = await configure_adapter(adapter_name="test", settings={})
 
             assert result["success"] is False
 
@@ -355,10 +348,11 @@ class TestListAdapters:
     @pytest.mark.asyncio
     async def test_list_adapters_no_discovery(self):
         """Test listing adapters when discovery is not available."""
+
         async def mock_get(name):
             return None
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await list_adapters()
 
             assert result["success"] is False
@@ -373,7 +367,7 @@ class TestListAdapters:
         async def mock_get(name):
             return mock_discovery
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await list_adapters()
 
             assert result["success"] is True
@@ -394,7 +388,7 @@ class TestListAdapters:
         async def mock_get(name):
             return mock_discovery
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await list_adapters(category="auth")
 
             assert result["success"] is True
@@ -406,10 +400,11 @@ class TestCheckAdapterHealth:
     @pytest.mark.asyncio
     async def test_check_adapter_health_no_health_system(self):
         """Test health check when health system is not available."""
+
         async def mock_get(name):
             return None
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await check_adapter_health()
 
             assert result["success"] is False
@@ -418,15 +413,17 @@ class TestCheckAdapterHealth:
     async def test_check_adapter_health_all_adapters(self):
         """Test checking health of all adapters."""
         mock_health = AsyncMock()
-        mock_health.check_all = AsyncMock(return_value={
-            "auth": {"status": "healthy"},
-            "database": {"status": "healthy"}
-        })
+        mock_health.check_all = AsyncMock(
+            return_value={
+                "auth": {"status": "healthy"},
+                "database": {"status": "healthy"},
+            }
+        )
 
         async def mock_get(name):
             return mock_health
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await check_adapter_health()
 
             assert result["success"] is True
@@ -441,7 +438,7 @@ class TestCheckAdapterHealth:
         async def mock_get(name):
             return mock_health
 
-        with patch('fastblocks.mcp.tools.depends.get', new=mock_get):
+        with patch("fastblocks.mcp.tools.depends.get", new=mock_get):
             result = await check_adapter_health(adapter_name="auth")
 
             assert result["success"] is True

@@ -450,8 +450,13 @@ class TestBaseTemplateLoader:
 
         searchpath = AsyncPath("templates")
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = BaseTemplateLoader(searchpath)
 
                 assert searchpath in loader.searchpath
@@ -460,8 +465,13 @@ class TestBaseTemplateLoader:
         """Test get_supported_extensions returns correct tuple."""
         from fastblocks.adapters.templates.jinja2 import BaseTemplateLoader
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = BaseTemplateLoader()
                 extensions = loader.get_supported_extensions()
 
@@ -472,8 +482,13 @@ class TestBaseTemplateLoader:
         """Test _normalize_template with template argument."""
         from fastblocks.adapters.templates.jinja2 import BaseTemplateLoader
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = BaseTemplateLoader()
                 result = loader._normalize_template("env", "template.html")
 
@@ -491,10 +506,17 @@ class TestBaseTemplateLoader:
         (test_dir / "style.css").write_text("content")
         (test_dir / "script.js").write_text("content")
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = BaseTemplateLoader(AsyncPath(test_dir))
-                templates = await loader._list_templates_for_extensions(("html", "css", "js"))
+                templates = await loader._list_templates_for_extensions(
+                    ("html", "css", "js")
+                )
 
                 assert len(templates) == 3
 
@@ -508,8 +530,13 @@ class TestBaseTemplateLoader:
         template_file = test_dir / "test.html"
         template_file.write_text("content")
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = BaseTemplateLoader(AsyncPath(test_dir))
                 result = await loader._find_template_path_parallel("test.html")
 
@@ -524,8 +551,13 @@ class TestBaseTemplateLoader:
         test_dir = tmp_path / "templates"
         test_dir.mkdir()
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = BaseTemplateLoader(AsyncPath(test_dir))
                 result = await loader._find_template_path_parallel("nonexistent.html")
 
@@ -540,8 +572,13 @@ class TestFileSystemLoader:
         """Test _check_storage_exists when storage is None."""
         from fastblocks.adapters.templates.jinja2 import FileSystemLoader
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = FileSystemLoader()
                 loader.storage = None
 
@@ -557,8 +594,13 @@ class TestFileSystemLoader:
         mock_storage = AsyncMock()
         mock_storage.templates.exists = AsyncMock(return_value=True)
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = FileSystemLoader()
                 loader.storage = mock_storage
 
@@ -574,9 +616,17 @@ class TestFileSystemLoader:
         mock_cache = AsyncMock()
         mock_cache.set = AsyncMock()
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
-                with patch("fastblocks.adapters.templates.jinja2.Templates.get_cache_key", return_value="cache:key"):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                with patch(
+                    "fastblocks.adapters.templates.jinja2.Templates.get_cache_key",
+                    return_value="cache:key",
+                ):
                     loader = FileSystemLoader()
                     loader.cache = mock_cache
 
@@ -589,8 +639,13 @@ class TestFileSystemLoader:
         """Test _cache_template when cache is None."""
         from fastblocks.adapters.templates.jinja2 import FileSystemLoader
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = FileSystemLoader()
                 loader.cache = None
 
@@ -607,8 +662,13 @@ class TestFileSystemLoader:
         (test_dir / "page1.html").write_text("content")
         (test_dir / "page2.html").write_text("content")
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = FileSystemLoader(AsyncPath(test_dir))
                 templates = await loader.list_templates_async()
 
@@ -626,8 +686,13 @@ class TestStorageLoader:
         mock_config = MagicMock()
         mock_config.deployed = True
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = StorageLoader()
                 loader.config = mock_config
 
@@ -642,8 +707,13 @@ class TestStorageLoader:
         """Test list_templates_async with no storage."""
         from fastblocks.adapters.templates.jinja2 import StorageLoader
 
-        with patch("fastblocks.adapters.templates.jinja2.depends.get", side_effect=Exception("Not available")):
-            with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
                 loader = StorageLoader()
                 loader.storage = None
 
@@ -661,8 +731,13 @@ class TestTemplatesEnhanced:
         mock_config.deployed = False
         mock_config.debug.production = False
 
-        with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
-            with patch("fastblocks.adapters.templates.jinja2.depends.get_sync", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.depends.get_sync",
+                return_value=None,
+            ):
                 templates = Templates()
                 templates.config = mock_config
 
@@ -679,8 +754,13 @@ class TestTemplatesEnhanced:
         mock_templates_env = MagicMock()
         mock_templates_env.env = mock_env
 
-        with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
-            with patch("fastblocks.adapters.templates.jinja2.depends.get_sync", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.depends.get_sync",
+                return_value=None,
+            ):
                 templates = Templates()
                 templates.app = mock_templates_env
 
@@ -695,8 +775,13 @@ class TestTemplatesEnhanced:
         """Test render_template without app environment."""
         mock_request = MagicMock()
 
-        with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
-            with patch("fastblocks.adapters.templates.jinja2.depends.get_sync", return_value=None):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.depends.get_sync",
+                return_value=None,
+            ):
                 templates = Templates()
                 templates.app = None
 
@@ -713,9 +798,17 @@ class TestTemplatesEnhanced:
         async def mock_get_no_htmy(name):
             return None
 
-        with patch("fastblocks.adapters.templates.jinja2.get_adapter", return_value=None):
-            with patch("fastblocks.adapters.templates.jinja2.depends.get_sync", return_value=None):
-                with patch("fastblocks.adapters.templates.jinja2.depends.get", new=mock_get_no_htmy):
+        with patch(
+            "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.depends.get_sync",
+                return_value=None,
+            ):
+                with patch(
+                    "fastblocks.adapters.templates.jinja2.depends.get",
+                    new=mock_get_no_htmy,
+                ):
                     templates = Templates()
 
                     result = await templates.render_component(mock_request, "UserCard")

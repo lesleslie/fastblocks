@@ -342,6 +342,7 @@ ______________________________________________________________________
 - [x] Total: 85 tests created, ~490 lines covered
 
 **Key Achievements**:
+
 - Established async mocking patterns for `depends.get()`
 - Tested error handling, edge cases, dry-run modes
 - Integration with cache, storage, and config layers
@@ -371,6 +372,7 @@ ______________________________________________________________________
 - [x] Total: 61 tests created, ~262 lines covered
 
 **Key Achievements**:
+
 - Fixed critical async mocking pattern: `new=` parameter for async functions
 - Bonus coverage in discovery, health, registry modules
 - Comprehensive integration tests
@@ -384,6 +386,7 @@ ______________________________________________________________________
 **Priority**: MEDIUM | **Effort**: 8 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
 **Jinja2 Adapter Enhancement**:
+
 - [x] Enhanced `tests/adapters/templates/test_jinja2.py` (+344 lines)
 - [x] Added 25+ tests for helper functions and loaders
 - [x] Tested `_get_attr_pattern()` caching
@@ -394,6 +397,7 @@ ______________________________________________________________________
 - [x] Status: 15 tests passing, 10 failing (searchpath issues, non-critical)
 
 **HTMY Registry Tests**:
+
 - [x] Created `tests/adapters/templates/test_htmy_registry.py` (447 lines, 33 tests)
 - [x] Tested HTMYComponentRegistry initialization, discovery, caching
 - [x] Tested component source retrieval with multi-layer caching
@@ -414,6 +418,7 @@ ______________________________________________________________________
 **Priority**: HIGH | **Effort**: 4 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
 **Achievements**:
+
 - [x] Created 204 new comprehensive tests across 8 files
 - [x] Pass rate for new tests: ~83% (170/204 passing)
 - [x] All tests follow established async mocking patterns
@@ -422,6 +427,7 @@ ______________________________________________________________________
 - [x] Integration scenarios tested
 
 **Known Issues** (non-critical, documented):
+
 - 15 failing tests in `test_tools.py` (real adapter interactions, helper functions)
 - 10 failing tests in enhanced `test_jinja2.py` (loader searchpath requirements)
 - 13 failing tests in `test_htmy_registry.py` (settings initialization)
@@ -444,15 +450,16 @@ ______________________________________________________________________
    - settings.py: 13% → 35%
    - static.py: 13% → 36%
    - templates.py: 15% → 33%
-2. [x] `fastblocks/mcp/` (0-22% → 46-69%)
+1. [x] `fastblocks/mcp/` (0-22% → 46-69%)
    - configuration.py: 0% → 46%
    - tools.py: 0% → 69%
    - Bonus coverage in discovery, health, registry
-3. [x] `fastblocks/adapters/templates/` (19-28% → 33-46%)
+1. [x] `fastblocks/adapters/templates/` (19-28% → 33-46%)
    - jinja2.py: 19% → 46%
    - htmy.py: 28% → 33% (maintained)
 
 **Strategy Executed**:
+
 - [x] Focused on untested modules with highest impact
 - [x] Created comprehensive test suites with proper mocking
 - [x] Tested error conditions and edge cases
@@ -488,32 +495,38 @@ ______________________________________________________________________
 - [x] Track: Run `uv run pyright fastblocks --stats` regularly
 
 **Phase 4 Commits** (6 total):
+
 1. Icon/image adapter sync fixes (254→231, -23)
-2. MCP and template coroutine fixes (231→221, -10)
-3. Deprecated/unused/constant fixes (221→211, -10)
-4. Undefined variable fixes (211→195, -16)
-5. Unnecessary isinstance fixes (195→182, -13)
-6. Unused function suppression (182→142, -40)
+1. MCP and template coroutine fixes (231→221, -10)
+1. Deprecated/unused/constant fixes (221→211, -10)
+1. Undefined variable fixes (211→195, -16)
+1. Unnecessary isinstance fixes (195→182, -13)
+1. Unused function suppression (182→142, -40)
 
 **Fixes Completed**:
+
 - **Undefined Variables (17→0)**:
+
   - Added missing `Inject` import in sqladmin.py
   - Fixed icon adapter class names: PhosphorSettings → PhosphorIconsSettings
   - Fixed image adapter class names: ImageKitSettings → ImageKitImagesSettings
   - Fixed style adapter class names: KelpUIAdapter → KelpUIStyle, WebAwesomeAdapter → WebAwesomeStyle
-  - Fixed component_name reference in _htmy_components.py
+  - Fixed component_name reference in \_htmy_components.py
 
 - **Unnecessary isinstance (10→0)**:
+
   - Fixed `depends.get()` → `depends.get_sync()` in sync template filters
   - Fixed `depends.get()` → `await depends.get()` in async template filters
-  - Files: cloudflare.py (3), twicpics.py (4), _syntax_support.py (2), config_migration.py (1)
+  - Files: cloudflare.py (3), twicpics.py (4), \_syntax_support.py (2), config_migration.py (1)
 
 - **Unused Function (40→0)**:
+
   - Added `reportUnusedFunction = false` to pyproject.toml
   - False positives: Template filters registered via @env.filter() decorators
   - 40 functions across 9 adapter files
 
 **Remaining Error Categories** (142 total):
+
 - reportAttributeAccessIssue: 62 (43.7% - Inject[Any] type inference)
 - reportCallIssue: 39 (27.5% - API parameter mismatches)
 - reportUnknownParameterType: 14 (9.9%)
@@ -524,14 +537,15 @@ ______________________________________________________________________
 - Others: 8 (5.6%)
 
 **Assessment**:
-- Original target: <50 errors (need -92 more from current 142)
+
+- Original target: \<50 errors (need -92 more from current 142)
 - Achievement: 72% reduction from baseline (501 → 142)
 - Remaining issues are primarily type inference challenges with ACB's Inject[Any] pattern
 - Phase 4 successfully eliminated all fixable categorical errors
 - Further reduction requires either:
   1. More specific type annotations for injected dependencies
-  2. Strategic type ignores for legitimate ACB pattern limitations
-  3. Adjusted target threshold reflecting framework constraints
+  1. Strategic type ignores for legitimate ACB pattern limitations
+  1. Adjusted target threshold reflecting framework constraints
 
 **Success Criteria**: ✅ Significant progress - 72% reduction achieved, strict mode enabled
 
@@ -797,9 +811,9 @@ ______________________________________________________________________
 **Commits:**
 
 1. `test(actions): add comprehensive sync module tests (85 tests, cache/settings/static/templates)`
-2. `test(mcp): add configuration and tools tests (61 tests)`
-3. `test(templates): enhance jinja2 tests with 25+ helper function and loader tests`
-4. `test(templates): add comprehensive HTMY registry and templates tests (33 tests)`
+1. `test(mcp): add configuration and tools tests (61 tests)`
+1. `test(templates): enhance jinja2 tests with 25+ helper function and loader tests`
+1. `test(templates): add comprehensive HTMY registry and templates tests (33 tests)`
 
 **Test Files Created/Enhanced:**
 
