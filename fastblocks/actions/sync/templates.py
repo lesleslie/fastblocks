@@ -192,8 +192,8 @@ async def _initialize_adapters(result: TemplateSyncResult) -> dict[str, t.Any] |
     try:
         from acb.depends import depends
 
-        storage = depends.get("storage")
-        cache = depends.get("cache")
+        storage = await depends.get("storage")
+        cache = await depends.get("cache")
         if not storage:
             result.errors.append(Exception("Storage adapter not available"))
             return None
@@ -668,8 +668,8 @@ async def warm_template_cache(
     try:
         from acb.depends import depends
 
-        cache = depends.get("cache")
-        storage = depends.get("storage")
+        cache = await depends.get("cache")
+        storage = await depends.get("storage")
 
         if not cache or not storage:
             result["errors"].append(Exception("Cache or storage not available"))
@@ -720,7 +720,7 @@ async def get_template_sync_status(
     try:
         from acb.depends import depends
 
-        storage = depends.get("storage")
+        storage = await depends.get("storage")
 
         if not storage:
             status["error"] = "Storage adapter not available"

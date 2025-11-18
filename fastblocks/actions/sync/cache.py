@@ -45,7 +45,7 @@ async def sync_cache(
     try:
         from acb.depends import depends
 
-        cache = depends.get("cache")
+        cache = await depends.get("cache")
 
         if not cache:
             result.errors.append(Exception("Cache adapter not available"))
@@ -229,7 +229,7 @@ async def _warm_template_cache(
     try:
         from acb.depends import depends
 
-        storage = depends.get("storage")
+        storage = await depends.get("storage")
 
         if not storage:
             debug("Storage not available for template warming")
@@ -309,7 +309,7 @@ async def invalidate_template_cache(
     try:
         from acb.depends import depends
 
-        cache = depends.get("cache")
+        cache = await depends.get("cache")
 
         if not cache:
             result["errors"].append("Cache adapter not available")
@@ -377,7 +377,7 @@ async def get_cache_stats(
 async def _get_cache_adapter(stats: dict[str, t.Any]) -> t.Any:
     from acb.depends import depends
 
-    cache = depends.get("cache")
+    cache = await depends.get("cache")
     if not cache:
         stats["errors"].append("Cache adapter not available")
     return cache
