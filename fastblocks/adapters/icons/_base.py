@@ -44,3 +44,7 @@ class IconsBase(AdapterBase):  # type: ignore[misc]
     def get_icon_tag(self, icon_name: str, **attributes: Any) -> str:
         """Generate complete icon tags with attributes."""
         raise NotImplementedError()
+
+    def get_stylesheet_links(self) -> list[str]:
+        """Get stylesheet link tags for the icon library."""
+        raise NotImplementedError()
