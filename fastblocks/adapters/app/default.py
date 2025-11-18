@@ -34,9 +34,8 @@ class AppSettings(AppBaseSettings):
 
     def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)
-        with suppress(Exception):
-            config = depends.get("config")
-            self.url = self.url if not config.deployed else f"https://{self.domain}"
+        # Note: URL configuration moved to runtime initialization
+        # to avoid coroutine access in __init__
         token_prefix = self.token_id or "_fb_"
         self.token_id = "".join(
             [token_prefix, b64encode(self.name.encode()).decode().rstrip("=")],
@@ -112,7 +111,7 @@ class FastBlocksApp(FastBlocks):
         from aioconsole import aprint
         from pyfiglet import Figlet
 
-        config = depends.get("config")
+        config = await depends.get("config")
         app_name = getattr(config.app, "name", "FastBlocks")
         startup_time = self._get_startup_time()
         debug_enabled = self._get_debug_enabled(config)
@@ -130,13 +129,13 @@ class FastBlocksApp(FastBlocks):
         for line in info_lines:
             self._clean_and_center_line(line, colors)
 
-    def _display_simple_startup(self) -> None:
+    async def _display_simple_startup(self) -> None:
         from contextlib import suppress
 
         with suppress(Exception):
             from acb.depends import depends
 
-            config = depends.get("config")
+            config = await depends.get("config")
             getattr(config.app, "name", "FastBlocks")
             self._get_startup_time()
 
@@ -144,7 +143,7 @@ class FastBlocksApp(FastBlocks):
         try:
             await self._display_fancy_startup()
         except Exception:
-            self._display_simple_startup()
+            await self._display_simple_startup()
 
     @asynccontextmanager
     async def lifespan(self, app: "FastBlocks") -> t.AsyncIterator[None]:
@@ -213,15 +212,15 @@ class App(AppBase):
         self._init_start_time = time.time()
         await self.fastblocks_app.init()
         try:
-            self.templates = depends.get("templates")
+            self.templates = await depends.get("templates")
         except Exception:
             self.templates = None
         try:
-            self.models = depends.get("models")
+            self.models = await depends.get("models")
         except Exception:
             self.models = None
         try:
-            routes_adapter = depends.get("routes")
+            routes_adapter = await depends.get("routes")
             self.router = routes_adapter
             self.fastblocks_app.routes.extend(routes_adapter.routes)
         except Exception:
@@ -247,12 +246,12 @@ class App(AppBase):
     async def post_startup(self) -> None:
         await self.fastblocks_app.post_startup()
 
-    def _setup_admin_adapter(self, app: FastBlocks) -> None:
+    async def _setup_admin_adapter(self, app: FastBlocks) -> None:
         if not get_adapter("admin"):
             return
-        sql = depends.get("sql")
-        auth = depends.get("auth")
-        admin = depends.get("admin")
+        sql = await depends.get("sql")
+        auth = await depends.get("auth")
+        admin = await depends.get("admin")
         admin.__init__(
             app,
             engine=sql.engine,
@@ -265,7 +264,7 @@ class App(AppBase):
         self.router.routes.insert(0, self.router.routes.pop())
 
     async def _startup_sequence(self, app: FastBlocks) -> None:
-        self._setup_admin_adapter(app)
+        await self._setup_admin_adapter(app)
         await self.post_startup()
         main_start_time = perf_counter() - main_start
         self.logger.warning(f"App started in {main_start_time} s")
