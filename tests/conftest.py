@@ -3238,6 +3238,31 @@ class MockPrefixLoader(MockAsyncBaseLoader):
         return sorted(templates)
 
 
+@pytest.fixture(autouse=True)
+def cleanup_acb_depends():
+    """Clean up ACB depends registry after each test to prevent interdependencies."""
+    yield
+
+    # Clean up ACB depends registry after test
+    try:
+        from acb import depends
+
+        # Clear the internal registry if it exists
+        if hasattr(depends, '_registry'):
+            depends._registry.clear()
+        if hasattr(depends, '_instances'):
+            depends._instances.clear()
+        if hasattr(depends, '_singletons'):
+            depends._singletons.clear()
+
+        # Also clear any module-level caches
+        if hasattr(depends, 'reset'):
+            depends.reset()
+    except (ImportError, AttributeError):
+        # ACB might be mocked or not available, that's okay
+        pass
+
+
 # Use the function to prevent unused warning - call at end after all classes are defined
 _setup_fastblocks_module_structure()
 # Now only creates modules that don't already exist
