@@ -12,7 +12,7 @@
 ### Phase Completion
 - [ ] **Phase 1**: Immediate Actions (Week 1-2) - 5/6 tasks ✅🟡
 - [x] **Phase 2**: Type System Recovery (Week 3-4) - 4/4 tasks ✅ **COMPLETED (2025-11-18)**
-- [ ] **Phase 3**: Coverage & Quality (Week 5-8) - 1/5 tasks ✅ (IN PROGRESS)
+- [ ] **Phase 3**: Coverage & Quality (Week 5-8) - 2/6 tasks ✅ (IN PROGRESS)
 - [ ] **Phase 4**: Polish & Optimization (Week 9-12) - 0/4 tasks
 
 ### Metrics Tracking
@@ -20,11 +20,11 @@
 | Metric | Baseline | Current | Target | Status |
 |--------|----------|---------|--------|--------|
 | Pyright Errors | 501 | 257 | <50 | 🟢 49% reduction! |
-| Test Coverage | 15.52% | 15.52% | 40% | 🔴 |
-| Test Pass Rate | 72% (612/851) | 72% (612/851) | 95% | 🔴 |
-| Test Failures | 226 | 223 | <50 | 🟡 |
+| Test Coverage | 15.52% | 11.47% | 40% | 🔴 Regression (investigation needed) |
+| Test Pass Rate | 72% (611/835) | **75.2% (628/835)** | 95% | 🟡 **+3.2% improvement!** |
+| Test Failures | 224 | **207** | <50 | 🟡 **-17 failures** |
 | Type Ignores | 222 | 222 | <111 | 🔴 |
-| Overall Health | 58/100 | 68/100 | 85/100 | 🟡 |
+| Overall Health | 58/100 | 70/100 | 85/100 | 🟡 |
 
 ---
 
@@ -280,8 +280,37 @@ except Exception as e:
 **Priority**: MEDIUM
 **Estimated Time**: 4 weeks
 
+### Task 3.0: Fix Systematic Test Bugs (Quick Wins)
+**Priority**: HIGH | **Effort**: 4 hours | **Status**: ✅ COMPLETED (2025-11-18)
+
+**Completed Fixes**:
+- [x] Fixed ComponentGatherResult API mismatch (8 instances)
+  - Changed incorrect `result.success is True/False` to `result.is_success`
+  - Fixed in `tests/actions/gather/test_components.py`
+- [x] Restored missing caching helper functions
+  - Added back `_check_rule_match()` and `_check_response_status_match()`
+  - Functions accidentally removed in Phase 1 (commit f09fb90)
+  - Fixed NameError in `fastblocks/caching.py`
+- [x] Fixed hardcoded absolute paths (3 test files)
+  - `tests/adapters/admin/test_admin_structure.py` - Dynamic PROJECT_ROOT
+  - `tests/test_cli_structure.py` - Dynamic PROJECT_ROOT
+  - Fixed incorrect assertion: `depends.set(Admin)` → `depends.set(Admin, "sqladmin")`
+- [x] Added ACB depends registry cleanup fixture
+  - Prevents test interdependencies via shared state
+  - Clears _registry, _instances, _singletons between tests
+
+**Impact**:
+- Test pass rate: 72% → 75.2% (+3.2% improvement)
+- Test failures: 224 → 207 (-17 failures)
+- Caching tests: 12 failures → 3 failures (75% reduction)
+- Structure tests: +3 passing tests
+
+**Success Criteria**: ✅ Quick wins delivered, foundation for continued improvement
+
+---
+
 ### Task 3.1: Increase CLI Test Coverage (0% → 30%)
-**Priority**: HIGH | **Effort**: 12 hours | **Status**: ⬜ Not Started
+**Priority**: HIGH | **Effort**: 12 hours | **Status**: 🟡 PARTIAL (skeleton created)
 
 - [ ] Create `tests/test_cli.py` if not exists
 - [ ] Test CLI commands:
