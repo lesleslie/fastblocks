@@ -376,7 +376,7 @@ class RemixIcon(IconsBase):
 
         return f"ri {resolved_name}"
 
-    def get_icon_tag(  # type: ignore[override]  # Intentional API extension with variant/size
+    def get_icon_tag(
         self,
         icon_name: str,
         variant: str | None = None,

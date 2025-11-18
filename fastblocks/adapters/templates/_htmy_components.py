@@ -136,8 +136,8 @@ class ComponentBase(ABC):
     async def async_htmy(self, context: dict[str, Any]) -> str:
         """Async version of htmy method."""
         if asyncio.iscoroutinefunction(self.htmy):
-            return await self.htmy(context)  # type: ignore[no-any-return]
-        return self.htmy(context)  # type: ignore[no-any-return]
+            return t.cast(str, await self.htmy(context))
+        return t.cast(str, self.htmy(context))
 
     def add_child(self, child: "ComponentBase") -> None:
         """Add a child component."""

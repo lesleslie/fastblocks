@@ -38,8 +38,8 @@ except ImportError:
     from typing import Any as EventPublisher  # type: ignore[misc]
     from typing import Any as EventSubscription  # type: ignore[misc]
 
-    create_event = None  # type: ignore[assignment]
-    event_handler = None  # type: ignore[assignment]
+    create_event = t.cast(t.Any, None)
+    event_handler = t.cast(t.Any, None)
 
 
 # FastBlocks Event Types

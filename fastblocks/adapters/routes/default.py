@@ -115,7 +115,7 @@ class Index(FastBlocksEndpoint):
                 headers=headers,
                 context=context,
             )
-            return result  # type: ignore[no-any-return]
+            return t.cast(Response, result)
         except TemplateNotFound:
             raise HTTPException(status_code=404)
 
@@ -137,7 +137,7 @@ class Block(FastBlocksEndpoint):
             result = await self.templates.render_template(
                 request, block, context=context
             )
-            return result  # type: ignore[no-any-return]
+            return t.cast(Response, result)
         except TemplateNotFound:
             raise HTTPException(status_code=404)
 
@@ -163,7 +163,7 @@ class Component(FastBlocksEndpoint):
             result = await htmy.render_component(
                 request, component_name, context=context
             )
-            return result  # type: ignore[no-any-return]
+            return t.cast(Response, result)
         except Exception as e:
             debug(f"Component '{component_name}' not found: {e}")
             raise HTTPException(status_code=404)

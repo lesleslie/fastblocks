@@ -289,7 +289,7 @@ class PhosphorIcons(IconsBase):
 
         return icon_class
 
-    def get_icon_tag(  # type: ignore[override]
+    def get_icon_tag(
         self,
         icon_name: str,
         variant: str | None = None,

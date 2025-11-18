@@ -227,7 +227,7 @@ class BlockRenderer:
                 self.registry.register_block(block_def)
 
             # Find extends and includes for hierarchy
-            for node in parsed.find_all((Extends, Include)):  # type: ignore[assignment]
+            for node in t.cast(t.Any, parsed.find_all((Extends, Include))):
                 # Template attribute value extraction at runtime
                 if hasattr(node, "template") and hasattr(node.template, "value"):
                     parent_template = node.template.value  # type: ignore[attr-defined]

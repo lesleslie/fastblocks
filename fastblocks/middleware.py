@@ -140,17 +140,17 @@ class CurrentRequestMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> t.Any:  # type: ignore[func-returns-value,no-any-return]
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> t.Any:
         if scope[MiddlewareUtils.TYPE] not in (
             MiddlewareUtils.HTTP,
             MiddlewareUtils.WEBSOCKET,
         ):
             await self.app(scope, receive, send)
-            return None  # type: ignore[func-returns-value]
+            return t.cast(t.Any, None)
         local_scope = _request_ctx_var.set(scope)
-        response = await self.app(scope, receive, send)  # type: ignore[func-returns-value]
+        response = await self.app(scope, receive, send)
         _request_ctx_var.reset(local_scope)
-        return response  # type: ignore[no-any-return]
+        return t.cast(t.Any, response)
 
 
 class SecureHeadersMiddleware:
