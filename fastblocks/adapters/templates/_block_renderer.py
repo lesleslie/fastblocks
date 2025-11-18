@@ -175,7 +175,7 @@ class BlockRenderer:
 
         if not self.hybrid_manager:
             try:
-                self.hybrid_manager = depends.get("hybrid_template_manager")
+                self.hybrid_manager = await depends.get("hybrid_template_manager")
             except Exception:
                 self.hybrid_manager = HybridTemplatesManager()
                 await self.hybrid_manager.initialize()

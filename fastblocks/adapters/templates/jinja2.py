@@ -674,7 +674,7 @@ class Templates(TemplatesBase):
         if app_adapter is not None:
             return app_adapter
         with suppress(Exception):
-            app_adapter = depends.get("app")
+            app_adapter = depends.get_sync("app")
             if app_adapter is not None:
                 return app_adapter
 
@@ -829,7 +829,7 @@ class Templates(TemplatesBase):
                         await cache.clear(namespace)
                 self.logger.debug("Template caches cleared")
                 with suppress(Exception):
-                    htmy_adapter = depends.get("htmy")
+                    htmy_adapter = await depends.get("htmy")
                     if htmy_adapter:
                         await htmy_adapter.clear_component_cache()
                         self.logger.debug("HTMY component caches cleared via adapter")
@@ -843,7 +843,7 @@ class Templates(TemplatesBase):
             **kwargs: t.Any,
         ) -> str:
             try:
-                htmy_adapter = depends.get("htmy")
+                htmy_adapter = await depends.get("htmy")
                 if htmy_adapter:
                     htmy_adapter.jinja_templates = self
 
@@ -966,7 +966,7 @@ class Templates(TemplatesBase):
         **kwargs: t.Any,
     ) -> t.Any:
         try:
-            htmy_adapter = depends.get("htmy")
+            htmy_adapter = await depends.get("htmy")
             if htmy_adapter:
                 htmy_adapter.jinja_templates = self
                 return await htmy_adapter.render_component(
