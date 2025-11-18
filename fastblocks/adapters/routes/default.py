@@ -73,18 +73,16 @@ class RoutesSettings(RoutesBaseSettings): ...
 
 
 class FastBlocksEndpoint(HTTPEndpoint):
-    @depends.inject  # type: ignore[misc]
     def __init__(
         self,
         scope: Scope,
         receive: Receive,
         send: Send,
-        config: Inject[Config] | None = None,
-        templates: Inject[t.Any] | None = None,
+        config: Config | None = None,
     ) -> None:
         super().__init__(scope, receive, send)
-        self.config = config or depends.get(Config)
-        self.templates = templates
+        self.config = config or depends.get_sync(Config)
+        self.templates = depends.get_sync("templates")
 
 
 class Index(FastBlocksEndpoint):

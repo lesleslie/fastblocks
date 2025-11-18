@@ -11,7 +11,7 @@ from uuid import UUID
 
 from acb.adapters import AdapterStatus
 from acb.debug import debug
-from acb.depends import Inject, depends
+from acb.depends import depends
 
 from ._base import SitemapBase, SitemapBaseSettings
 from .core import BaseSitemap, SitemapApp
@@ -25,16 +25,15 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
     sitemap: SitemapApp | None = None
     _background_task: asyncio.Task[t.Any] | None = None
 
-    @depends.inject
-    def __init__(self, routes: Inject[t.Any] | None = None) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self._underlying_adapter = None
-        self._routes_adapter = routes
 
     async def items(self) -> t.Any:
         try:
-            if self._routes_adapter and hasattr(self._routes_adapter, "routes"):
-                route_paths = [r.path for r in self._routes_adapter.routes]
+            routes_adapter = await depends.get("routes")
+            if routes_adapter and hasattr(routes_adapter, "routes"):
+                route_paths = [r.path for r in routes_adapter.routes]
                 debug(f"CachedSitemap: Cached {len(route_paths)} routes")
                 return route_paths
             return []

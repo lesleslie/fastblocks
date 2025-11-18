@@ -11,7 +11,7 @@ from uuid import UUID
 
 from acb.adapters import AdapterStatus
 from acb.debug import debug
-from acb.depends import Inject, depends
+from acb.depends import depends
 
 from ._base import SitemapBase, SitemapBaseSettings
 from .core import BaseSitemap, SitemapApp
@@ -24,17 +24,13 @@ class NativeSitemapSettings(SitemapBaseSettings):
 class NativeSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
     sitemap: SitemapApp | None = None
 
-    @depends.inject
-    def __init__(self, routes: Inject[t.Any] | None = None, **kwargs: t.Any) -> None:
-        super().__init__(**kwargs)
-        self._routes_adapter = routes
-
     def items(self) -> t.Any:
         try:
-            if not self._routes_adapter or not hasattr(self._routes_adapter, "routes"):
+            routes_adapter = depends.get_sync("routes")
+            if not routes_adapter or not hasattr(routes_adapter, "routes"):
                 debug("NativeSitemap: No routes adapter found")
                 return []
-            route_paths = [r.path for r in self._routes_adapter.routes]
+            route_paths = [r.path for r in routes_adapter.routes]
             debug(f"NativeSitemap: Found {len(route_paths)} routes")
             filtered_paths = self._filter_routes(route_paths)
             debug(f"NativeSitemap: Filtered to {len(filtered_paths)} routes")
