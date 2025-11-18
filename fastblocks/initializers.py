@@ -37,7 +37,7 @@ class ApplicationInitializer:
 
     def _load_acb_modules(self) -> None:
         try:
-            logger = depends.get("logger")
+            logger = depends.get_sync("logger")
             logger_class: type[t.Any] | None = (
                 logger.__class__ if logger is not None else None
             )

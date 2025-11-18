@@ -44,22 +44,22 @@ def get_global_template_context() -> dict[str, Any]:
 
     # Add adapter instances to global context
     with suppress(Exception):
-        images = depends.get("images")
+        images = depends.get_sync("images")
         if images:
             context["images_adapter"] = images
 
     with suppress(Exception):
-        styles = depends.get("styles")
+        styles = depends.get_sync("styles")
         if styles:
             context["styles_adapter"] = styles
 
     with suppress(Exception):
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if icons:
             context["icons_adapter"] = icons
 
     with suppress(Exception):
-        fonts = depends.get("fonts")
+        fonts = depends.get_sync("fonts")
         if fonts:
             context["fonts_adapter"] = fonts
 
