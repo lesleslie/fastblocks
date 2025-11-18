@@ -447,7 +447,7 @@ class HybridTemplatesManager:
                 "storage",
             ):
                 with suppress(Exception):
-                    adapter = depends.get(adapter_name)
+                    adapter = depends.get_sync(adapter_name)
                     if adapter:
                         available.add(adapter_name)
 
@@ -743,7 +743,7 @@ class HybridTemplatesManager:
         """Add adapter function autocomplete items."""
         for adapter_name, functions in _ADAPTER_AUTOCOMPLETE_FUNCTIONS.items():
             with suppress(Exception):
-                adapter = depends.get(adapter_name)
+                adapter = depends.get_sync(adapter_name)
                 if adapter:
                     for func_name in functions:
                         if hasattr(adapter, func_name):

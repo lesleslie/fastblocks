@@ -242,7 +242,7 @@ async def _gather_application_dependencies(
 
         for dep_name in dependency_patterns:
             try:
-                dependency = depends.get(dep_name)
+                dependency = await depends.get(dep_name)
                 if dependency is not None:
                     dependencies[dep_name] = dependency
                     debug(f"Gathered dependency: {dep_name}")

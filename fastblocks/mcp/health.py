@@ -143,7 +143,7 @@ class HealthCheckSystem:
         try:
             from acb.depends import depends
 
-            registered_adapter = depends.get(adapter_name)
+            registered_adapter = depends.get_sync(adapter_name)
             if registered_adapter:
                 checks.append("Registered with ACB")
             else:
