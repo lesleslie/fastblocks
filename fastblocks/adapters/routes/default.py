@@ -80,10 +80,11 @@ class FastBlocksEndpoint(HTTPEndpoint):
         receive: Receive,
         send: Send,
         config: Inject[Config] | None = None,
+        templates: Inject[t.Any] | None = None,
     ) -> None:
         super().__init__(scope, receive, send)
         self.config = config or depends.get(Config)
-        self.templates = depends.get("templates")
+        self.templates = templates
 
 
 class Index(FastBlocksEndpoint):
@@ -99,7 +100,7 @@ class Index(FastBlocksEndpoint):
             template = f"{page.lstrip('/')}.html"
             headers["hx-push-url"] = "/" if page == "home" else page
         debug(page, template)
-        context = create_query_context(request, base_context={"page": page.lstrip("/")})
+        context = await create_query_context(request, base_context={"page": page.lstrip("/")})
         query_params = getattr(request, "query_params", {})
         if "model" in query_params:
             model_name = query_params["model"]
@@ -124,7 +125,7 @@ class Block(FastBlocksEndpoint):
         debug(request)
         path_params = getattr(request, "path_params", {})
         block = f"blocks/{path_params.get('block', 'default')}.html"
-        context = create_query_context(request)
+        context = await create_query_context(request)
         query_params = getattr(request, "query_params", {})
         if "model" in query_params:
             model_name = query_params["model"]
@@ -146,7 +147,7 @@ class Component(FastBlocksEndpoint):
         debug(request)
         component_name = getattr(request, "path_params", {}).get("component", "default")
         query_params = getattr(request, "query_params", {})
-        context = create_query_context(request, base_context=dict(query_params))
+        context = await create_query_context(request, base_context=dict(query_params))
         if "model" in query_params:
             model_name = query_params["model"]
             if f"{model_name}_parser" in context:
@@ -154,7 +155,7 @@ class Component(FastBlocksEndpoint):
                 context[f"{model_name}_list"] = await parser.parse_and_execute()
                 context[f"{model_name}_count"] = await parser.get_count()
         try:
-            htmy = depends.get("htmy")
+            htmy = await depends.get("htmy")
             if htmy is None:
                 raise HTTPException(
                     status_code=500, detail="HTMY adapter not available"
