@@ -339,7 +339,10 @@ class TestCachingFunctions:
         # Skip this test for now as it requires more complex mocking
         pytest.skip("This test requires more complex mocking of hash.md5")
 
-    def test_generate_cache_key_invalid_method(self, mock_request: MagicMock) -> None:
+    @pytest.mark.asyncio
+    async def test_generate_cache_key_invalid_method(
+        self, mock_request: MagicMock
+    ) -> None:
         """Test generate_cache_key with a non-cacheable method."""
         # Set up the mock request
         mock_request.method = "POST"
@@ -348,7 +351,7 @@ class TestCachingFunctions:
         mock_config = MagicMock()
         mock_config.app.name = "testapp"
         # Call generate_cache_key
-        cache_key = generate_cache_key(
+        cache_key = await generate_cache_key(
             mock_request.url,
             method=mock_request.method,
             headers=mock_request.headers,
@@ -567,7 +570,7 @@ class TestCachingFunctions:
         mock_config.app.name = "testapp"
 
         # Call generate_cache_key with varying headers
-        cache_key = generate_cache_key(
+        cache_key = await generate_cache_key(
             mock_request.url,
             method=mock_request.method,
             headers=mock_request.headers,
