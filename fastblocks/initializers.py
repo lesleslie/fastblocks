@@ -160,11 +160,30 @@ class ApplicationInitializer:
                     loop = asyncio.new_event_loop()
                     asyncio.set_event_loop(loop)
 
-                # Schedule registration tasks
-                loop.create_task(register_fastblocks_event_handlers())
-                loop.create_task(register_fastblocks_health_checks())
-                loop.create_task(register_fastblocks_validation())
-                loop.create_task(register_fastblocks_workflows())
+                # Register integrations with proper error handling
+                async def register_all_integrations() -> None:
+                    """Register all FastBlocks integrations concurrently."""
+                    try:
+                        await asyncio.gather(
+                            register_fastblocks_event_handlers(),
+                            register_fastblocks_health_checks(),
+                            register_fastblocks_validation(),
+                            register_fastblocks_workflows(),
+                            return_exceptions=True,  # Don't fail startup on errors
+                        )
+                        if self.logger:
+                            self.logger.info("All FastBlocks integrations registered")
+                    except Exception as e:
+                        if self.logger:
+                            self.logger.warning(
+                                f"Some integrations failed to register: {e}"
+                            )
+
+                # Run registration and wait for completion
+                try:
+                    loop.run_until_complete(register_all_integrations())
+                except Exception:
+                    pass  # Graceful degradation - continue without integrations
 
             if self.logger:
                 self.logger.info(

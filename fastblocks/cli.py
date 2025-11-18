@@ -902,10 +902,10 @@ def start_language_server(
                 console.print("[green]Language Server started successfully![/green]")
                 console.print(f"Connect your IDE to: {host}:{port}")
 
-                # Keep server running
+                # Keep server running using event-based approach
+                stop_event = asyncio.Event()
                 try:
-                    while True:
-                        await asyncio.sleep(1)
+                    await stop_event.wait()
                 except KeyboardInterrupt:
                     console.print("\n[yellow]Language server stopped.[/yellow]")
 
