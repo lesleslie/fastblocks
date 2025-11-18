@@ -232,7 +232,7 @@ class TestGatherComponents:
             htmy_adapter=mock_htmy_adapter, strategy=strategy
         )
 
-        assert result.success is True
+        assert result.is_success is True
         # Should only include HTMX components due to filter
         # Note: Implementation details may vary
 
@@ -249,7 +249,7 @@ class TestGatherComponents:
 
         result = await gather_components(htmy_adapter=mock_adapter)
 
-        assert result.success is True
+        assert result.is_success is True
         assert "basic_component" in result.components
 
     @pytest.mark.asyncio
@@ -261,7 +261,7 @@ class TestGatherComponents:
 
         result = await gather_components(htmy_adapter=mock_htmy_adapter)
 
-        assert result.success is False
+        assert result.is_success is False
         assert "Discovery failed" in result.error_message
 
     @pytest.mark.asyncio
@@ -273,7 +273,7 @@ class TestGatherComponents:
             htmy_adapter=mock_htmy_adapter, searchpaths=custom_paths
         )
 
-        assert result.success is True
+        assert result.is_success is True
         assert result.searchpaths == custom_paths
 
 
@@ -483,7 +483,7 @@ class TestIntegrationScenarios:
 
         # Step 1: Gather components
         gather_result = await gather_components(htmy_adapter=mock_htmy_adapter)
-        assert gather_result.success is True
+        assert gather_result.is_success is True
 
         # Step 2: Analyze specific component dependencies
         deps_result = await gather_component_dependencies(
@@ -511,8 +511,8 @@ class TestIntegrationScenarios:
         )
 
         # Both should succeed
-        assert htmx_result.success is True
-        assert dataclass_result.success is True
+        assert htmx_result.is_success is True
+        assert dataclass_result.is_success is True
 
     @pytest.mark.asyncio
     async def test_performance_with_large_component_set(self):
@@ -541,7 +541,7 @@ class TestIntegrationScenarios:
         result = await gather_components(htmy_adapter=mock_adapter, strategy=strategy)
         end_time = datetime.now()
 
-        assert result.success is True
+        assert result.is_success is True
         assert result.component_count == 100
 
         # Should complete in reasonable time (less than 5 seconds for mock operations)
