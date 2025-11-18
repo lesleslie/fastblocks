@@ -8,7 +8,9 @@
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-30.1%25-red)
+![Coverage](https://img.shields.io/badge/coverage-33.00%25-yellow)
+![Type Safety](https://img.shields.io/badge/pyright-150_errors-yellow)
+![Code Health](https://img.shields.io/badge/health_score-82%2F100-brightgreen)
 
 ## What is FastBlocks?
 
