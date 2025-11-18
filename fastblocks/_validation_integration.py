@@ -41,7 +41,7 @@ from enum import Enum
 from acb.depends import depends
 
 # Try to import ACB validation components
-ACB_VALIDATION_AVAILABLE = False
+acb_validation_available = False
 ValidationService = None
 ValidationSchema = None
 InputSanitizer = None
@@ -58,7 +58,7 @@ with suppress(ImportError):
         OutputValidator,
     )
 
-    ACB_VALIDATION_AVAILABLE = True
+    acb_validation_available = True
 
 
 class ValidationType(str, Enum):
@@ -116,7 +116,7 @@ class FastBlocksValidationService:
             self._initialized = True
 
             # Try to get ACB ValidationService
-            if ACB_VALIDATION_AVAILABLE:
+            if acb_validation_available:
                 with suppress(Exception):
                     self._service = depends.get("validation_service")
                     if self._service:
@@ -126,7 +126,7 @@ class FastBlocksValidationService:
     @property
     def available(self) -> bool:
         """Check if ACB ValidationService is available."""
-        return ACB_VALIDATION_AVAILABLE and self._service is not None
+        return acb_validation_available and self._service is not None
 
     def _sanitize_context_value(
         self,
@@ -770,7 +770,7 @@ def validate_template_context(
             # Validate context
             service = get_validation_service()
             (
-                is_valid,
+                _is_valid,
                 sanitized_context,
                 errors,
             ) = await service.validate_template_context(
@@ -1004,7 +1004,7 @@ async def register_fastblocks_validation() -> bool:
     Returns:
         True if registration successful, False otherwise
     """
-    if not ACB_VALIDATION_AVAILABLE:
+    if not acb_validation_available:
         return False
 
     try:
@@ -1029,5 +1029,5 @@ __all__ = [
     "validate_form_input",
     "validate_api_contract",
     "register_fastblocks_validation",
-    "ACB_VALIDATION_AVAILABLE",
+    "acb_validation_available",
 ]

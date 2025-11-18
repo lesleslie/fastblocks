@@ -35,7 +35,7 @@ from datetime import datetime
 from acb.depends import depends
 
 # Try to import ACB workflows
-ACB_WORKFLOWS_AVAILABLE = False
+acb_workflows_available = False
 BasicWorkflowEngine = None
 WorkflowDefinition = None
 WorkflowStep = None
@@ -47,7 +47,7 @@ with suppress(ImportError):
         WorkflowStep,
     )
 
-    ACB_WORKFLOWS_AVAILABLE = True
+    acb_workflows_available = True
 
 
 class FastBlocksWorkflowService:
@@ -68,7 +68,7 @@ class FastBlocksWorkflowService:
             self._initialized = True
 
             # Try to get ACB workflow engine
-            if ACB_WORKFLOWS_AVAILABLE and BasicWorkflowEngine:
+            if acb_workflows_available and BasicWorkflowEngine:
                 with suppress(Exception):
                     self._engine = BasicWorkflowEngine(
                         max_concurrent_steps=3,  # Conservative concurrency
@@ -79,7 +79,7 @@ class FastBlocksWorkflowService:
     @property
     def available(self) -> bool:
         """Check if ACB Workflows is available."""
-        return ACB_WORKFLOWS_AVAILABLE and self._engine is not None
+        return acb_workflows_available and self._engine is not None
 
 
 # Singleton instance
@@ -623,7 +623,7 @@ async def register_fastblocks_workflows() -> bool:
     Returns:
         True if registration successful, False otherwise
     """
-    if not ACB_WORKFLOWS_AVAILABLE:
+    if not acb_workflows_available:
         return False
 
     try:
@@ -646,5 +646,5 @@ __all__ = [
     "execute_template_cleanup",
     "execute_performance_optimization",
     "register_fastblocks_workflows",
-    "ACB_WORKFLOWS_AVAILABLE",
+    "acb_workflows_available",
 ]

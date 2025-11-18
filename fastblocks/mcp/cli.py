@@ -317,7 +317,7 @@ def health(
     """Perform health checks on adapters."""
 
     async def _health() -> None:
-        registry, health_system = await get_registry_and_health()
+        _registry, health_system = await get_registry_and_health()
 
         if all:
             results = await health_system.check_all_adapters()
