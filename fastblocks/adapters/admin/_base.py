@@ -6,4 +6,4 @@ class AdminBaseSettings(Settings):
     title: str = "FastBlocks Dashboard"
 
 
-class AdminBase(AdapterBase): ...  # type: ignore[misc]
+class AdminBase(AdapterBase): ...

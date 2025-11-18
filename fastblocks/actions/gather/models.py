@@ -110,7 +110,7 @@ def _get_default_model_base_classes() -> list[type]:
     with suppress(ImportError):
         from pydantic import BaseModel  # type: ignore[import-untyped]
 
-        base_classes.append(BaseModel)  # type: ignore[arg-type]
+        base_classes.append(t.cast(t.Any, BaseModel))
 
     return base_classes
 

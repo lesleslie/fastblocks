@@ -23,7 +23,7 @@ async def safe_await(func_or_value: t.Any) -> t.Any:
     if callable(func_or_value):
         try:
             result = func_or_value()
-            if hasattr(result, "__await__") and callable(result.__await__):  # type: ignore[misc]
+            if hasattr(result, "__await__") and callable(result.__await__):
                 return await t.cast("t.Awaitable[t.Any]", result)
             return result
         except Exception:

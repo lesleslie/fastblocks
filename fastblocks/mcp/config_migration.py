@@ -300,7 +300,7 @@ class ConfigurationMigrationManager:
     def _add_validation_to_env_vars(self, env_vars: list[dict[str, Any]]) -> None:
         """Add validation patterns to environment variables."""
         for env_var in env_vars:
-            if isinstance(env_var, dict) and "validator_pattern" not in env_var:  # type: ignore[reportUnnecessaryIsInstance]
+            if isinstance(env_var, dict) and "validator_pattern" not in env_var:
                 env_var["validator_pattern"] = self._suggest_validation_pattern(
                     env_var.get("name", "")
                 )
@@ -480,12 +480,16 @@ class ConfigurationMigrationManager:
             return error_result
 
         # Perform migration
-        result = await self.migrate_configuration(config_data, target_version)  # type: ignore[arg-type]
+        result = await self.migrate_configuration(
+            cast(dict[str, Any], config_data), target_version
+        )
 
         if result.success:
             # Save migrated configuration
             output_path = output_file or config_file
-            self._save_config_file(config_data, output_path, result)  # type: ignore[arg-type]
+            self._save_config_file(
+                cast(dict[str, Any], config_data), output_path, result
+            )
 
         return result
 

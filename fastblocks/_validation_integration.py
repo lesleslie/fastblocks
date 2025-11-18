@@ -103,7 +103,7 @@ class FastBlocksValidationService:
     def __new__(cls) -> "FastBlocksValidationService":
         """Singleton pattern - ensure only one instance exists."""
         if cls._instance is None:
-            cls._instance = super().__new__(cls)  # type: ignore[misc]
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self) -> None:

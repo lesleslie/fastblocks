@@ -334,7 +334,7 @@ class HybridTemplatesManager:
             # Create sandboxed environment
             sandbox_env = SandboxedEnvironment(
                 loader=env.loader,
-                extensions=list(env.extensions.values()),  # type: ignore[arg-type]
+                extensions=t.cast(t.Any, list(env.extensions.values())),
                 undefined=StrictUndefined
                 if self.settings.strict_undefined
                 else RuntimeStrictUndefined,
@@ -968,7 +968,7 @@ class HybridTemplatesManager:
             # Find extends, includes, and imports
             node: t.Any
             # find_all accepts strings but type stubs expect Node types
-            for node in parsed.find_all(("Extends", "Include", "FromImport")):  # type: ignore[arg-type]
+            for node in parsed.find_all(t.cast(t.Any, ("Extends", "Include", "FromImport"))):
                 if hasattr(node, "template") and hasattr(node.template, "value"):
                     dependencies.add(node.template.value)
 

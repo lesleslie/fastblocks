@@ -230,7 +230,9 @@ class FastBlocksLanguageServer:
             }
 
             if error.fix_suggestion:
-                diagnostic["data"] = {"fix": error.fix_suggestion}  # type: ignore[typeddict-item]
+                t.cast(dict[str, t.Any], diagnostic)["data"] = {
+                    "fix": error.fix_suggestion
+                }
 
             diagnostics.append(diagnostic)
 

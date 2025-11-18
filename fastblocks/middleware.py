@@ -237,7 +237,7 @@ class CacheMiddleware:
         self.validator.check_for_duplicate_middleware(app)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        cache = self.key_manager.get_cache_instance()  # type: ignore[no-untyped-call]
+        cache = self.key_manager.get_cache_instance()
         self.cache = cache
         if scope["type"] != "http":
             await self.app(scope, receive, send)

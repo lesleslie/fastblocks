@@ -219,7 +219,7 @@ class BlockRenderer:
 
                 # Extract variables used in this block
                 # find_undeclared_variables accepts Block nodes at runtime
-                block_def.variables = meta.find_undeclared_variables(node)  # type: ignore[arg-type]
+                block_def.variables = meta.find_undeclared_variables(t.cast(t.Any, node))
 
                 # Check for HTMX attributes in block content
                 block_def.htmx_attrs = self._extract_htmx_attrs(source, node.name)
