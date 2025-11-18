@@ -686,7 +686,7 @@ def register_syntax_filters(env: Any) -> None:
     @env.filter("format_template")  # type: ignore[misc]
     def format_template_filter(content: str) -> str:
         """Template filter for formatting FastBlocks templates."""
-        syntax_support = depends.get("syntax_support")
+        syntax_support = depends.get_sync("syntax_support")
         if isinstance(syntax_support, FastBlocksSyntaxSupport):
             return syntax_support.format_template(content)
         return content
@@ -694,7 +694,7 @@ def register_syntax_filters(env: Any) -> None:
     @env.global_("syntax_check")  # type: ignore[misc]
     def syntax_check_global(content: str) -> list[dict[str, Any]]:
         """Global function for syntax checking."""
-        syntax_support = depends.get("syntax_support")
+        syntax_support = depends.get_sync("syntax_support")
         if isinstance(syntax_support, FastBlocksSyntaxSupport):
             errors = syntax_support.check_syntax(content)
             return [

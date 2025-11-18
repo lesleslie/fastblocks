@@ -300,7 +300,7 @@ class ConfigurationMigrationManager:
     def _add_validation_to_env_vars(self, env_vars: list[dict[str, Any]]) -> None:
         """Add validation patterns to environment variables."""
         for env_var in env_vars:
-            if isinstance(env_var, dict) and "validator_pattern" not in env_var:
+            if isinstance(env_var, dict) and "validator_pattern" not in env_var:  # type: ignore[reportUnnecessaryIsInstance]
                 env_var["validator_pattern"] = self._suggest_validation_pattern(
                     env_var.get("name", "")
                 )
