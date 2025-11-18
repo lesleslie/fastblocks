@@ -556,7 +556,7 @@ def register_heroicons_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Template filter for Heroicons."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, HeroiconsIcons):
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
@@ -564,7 +564,7 @@ def register_heroicons_filters(env: Any) -> None:
     @env.filter("heroicon_class")  # type: ignore[misc]  # Jinja2 decorator preserves signature
     def heroicon_class_filter(icon_name: str, variant: str = "outline") -> str:
         """Template filter for Heroicons classes."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, HeroiconsIcons):
             return icons.get_icon_class(icon_name, variant)
         return f"heroicon-{icon_name}"
@@ -572,7 +572,7 @@ def register_heroicons_filters(env: Any) -> None:
     @env.global_("heroicons_stylesheet_links")  # type: ignore[misc]  # Jinja2 decorator preserves signature
     def heroicons_stylesheet_links() -> str:
         """Global function for Heroicons stylesheet links."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, HeroiconsIcons):
             return "\n".join(icons.get_stylesheet_links())
         return ""
@@ -586,7 +586,7 @@ def register_heroicons_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate button with Heroicons icon."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, HeroiconsIcons):
             return _create_hero_button(
                 text, icon, variant, icon_position, icons, **attributes
@@ -598,7 +598,7 @@ def register_heroicons_filters(env: Any) -> None:
         text: str, icon: str | None = None, variant: str = "outline", **attributes: Any
     ) -> str:
         """Generate badge with Heroicons icon."""
-        icons = depends.get("icons")
+        icons = depends.get_sync("icons")
         if isinstance(icons, HeroiconsIcons):
             return _create_hero_badge(text, icon, variant, icons, **attributes)
         return f"<span class='badge'>{text}</span>"
