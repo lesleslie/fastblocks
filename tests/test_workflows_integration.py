@@ -31,6 +31,7 @@ def workflow_service():
     return get_workflow_service()
 
 
+@pytest.mark.integration
 class TestWorkflowServiceBasics:
     """Test basic workflow service functionality."""
 
@@ -50,6 +51,7 @@ class TestWorkflowServiceBasics:
         assert isinstance(ACB_WORKFLOWS_AVAILABLE, bool)
 
 
+@pytest.mark.integration
 class TestCacheWarmingWorkflow:
     """Test cache warming workflow functionality."""
 
@@ -125,6 +127,7 @@ class TestCacheWarmingWorkflow:
         assert result["state"] in ["completed", "skipped"]
 
 
+@pytest.mark.integration
 class TestTemplateCleanupWorkflow:
     """Test template cleanup workflow functionality."""
 
@@ -202,6 +205,7 @@ class TestTemplateCleanupWorkflow:
         assert result["state"] in ["completed", "skipped"]
 
 
+@pytest.mark.integration
 class TestPerformanceOptimizationWorkflow:
     """Test performance optimization workflow functionality."""
 
@@ -272,6 +276,7 @@ class TestPerformanceOptimizationWorkflow:
         assert result["state"] in ["completed", "skipped"]
 
 
+@pytest.mark.integration
 class TestActionHandlers:
     """Test individual action handler functions."""
 
@@ -375,6 +380,7 @@ class TestActionHandlers:
         assert "status" in result
 
 
+@pytest.mark.integration
 class TestManualFallbacks:
     """Test manual fallback implementations."""
 
@@ -450,6 +456,7 @@ class TestManualFallbacks:
         assert "index_rebuild" in results
 
 
+@pytest.mark.integration
 class TestGracefulDegradation:
     """Test graceful degradation when ACB unavailable."""
 
@@ -481,6 +488,7 @@ class TestGracefulDegradation:
         assert result["workflow_id"] == "performance-optimization"
 
 
+@pytest.mark.integration
 class TestWorkflowResultStructure:
     """Test workflow result structure consistency."""
 
@@ -521,6 +529,7 @@ class TestWorkflowResultStructure:
         assert has_workflow_keys or has_manual_mode
 
 
+@pytest.mark.integration
 class TestRegistration:
     """Test workflow service registration."""
 
@@ -550,6 +559,7 @@ class TestRegistration:
             assert hasattr(_workflows_integration, export), f"Missing export: {export}"
 
 
+@pytest.mark.integration
 class TestWorkflowParameters:
     """Test workflow parameter handling."""
 
@@ -600,6 +610,7 @@ class TestWorkflowParameters:
             assert result["workflow_id"] == "template-cleanup"
 
 
+@pytest.mark.integration
 class TestWorkflowTiming:
     """Test workflow execution timing and timeout behavior."""
 

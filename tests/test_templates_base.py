@@ -52,6 +52,7 @@ from fastblocks.adapters.templates._base import (
 )
 
 
+@pytest.mark.unit
 class TestSafeAwait:
     @pytest.mark.asyncio
     async def test_safe_await_with_awaitable(self) -> None:
@@ -106,6 +107,7 @@ class TestSafeAwait:
         assert result is True
 
 
+@pytest.mark.unit
 class TestTemplatesBaseSettings:
     def test_templates_base_settings_init_deployed(self) -> None:
         """Test TemplatesBaseSettings initialization with deployed config."""
@@ -132,6 +134,7 @@ class TestTemplatesBaseSettings:
         assert settings.cache_timeout == 1
 
 
+@pytest.mark.unit
 class TestTemplatesBase:
     @pytest.fixture
     def mock_config(self) -> Any:
@@ -233,6 +236,7 @@ class TestTemplatesBase:
         assert base.admin_searchpaths is None
 
 
+@pytest.mark.unit
 class TestSafeAwaitAdditional:
     @pytest.mark.asyncio
     async def test_safe_await_with_coroutine_function(self) -> None:
@@ -281,6 +285,7 @@ class TestSafeAwaitAdditional:
         assert isinstance(result, NonCallableAwait)
 
 
+@pytest.mark.unit
 def test_templates_base_settings_default_values() -> None:
     """Test TemplatesBaseSettings default values."""
     mock_config = MagicMock()

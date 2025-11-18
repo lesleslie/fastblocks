@@ -98,6 +98,7 @@ class HybridTemplateEndpoint(HTTPEndpoint):
         )
 
 
+@pytest.mark.unit
 class TestHTMYEndpoints:
     """Test suite for HTTPEndpoints using HTMY components."""
 
@@ -249,6 +250,7 @@ class TestHTMYEndpoints:
         assert kwargs["title"] == "HTMY Endpoint Test"
 
 
+@pytest.mark.unit
 class TestHTMYEndpointIntegration:
     """Integration tests for HTMY endpoints with FastBlocks features."""
 

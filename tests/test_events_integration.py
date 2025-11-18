@@ -128,12 +128,14 @@ def sample_admin_event():
 # Basic availability tests
 
 
+@pytest.mark.integration
 def test_acb_events_import():
     """Test that ACB events availability is detected."""
     # Should be True or False depending on ACB installation
     assert isinstance(ACB_EVENTS_AVAILABLE, bool)
 
 
+@pytest.mark.integration
 def test_event_types_defined():
     """Test that FastBlocks event types are defined."""
     assert hasattr(FastBlocksEventType, "CACHE_INVALIDATED")
@@ -145,6 +147,7 @@ def test_event_types_defined():
 # Payload dataclass tests
 
 
+@pytest.mark.integration
 def test_cache_invalidation_payload():
     """Test CacheInvalidationPayload creation."""
     payload = CacheInvalidationPayload(
@@ -160,6 +163,7 @@ def test_cache_invalidation_payload():
     assert payload.affected_templates == ["test.html"]
 
 
+@pytest.mark.integration
 def test_template_render_payload():
     """Test TemplateRenderPayload creation."""
     payload = TemplateRenderPayload(
@@ -177,6 +181,7 @@ def test_template_render_payload():
     assert payload.context_size == 512
 
 
+@pytest.mark.integration
 def test_htmx_update_payload():
     """Test HtmxUpdatePayload creation."""
     payload = HtmxUpdatePayload(
@@ -192,6 +197,7 @@ def test_htmx_update_payload():
     assert payload.trigger_data == {"count": 5}
 
 
+@pytest.mark.integration
 def test_admin_action_payload():
     """Test AdminActionPayload creation."""
     payload = AdminActionPayload(
@@ -213,6 +219,7 @@ def test_admin_action_payload():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_cache_invalidation_handler(mock_cache_adapter, sample_cache_event):
     """Test cache invalidation handler."""
     from unittest.mock import patch
@@ -234,6 +241,7 @@ async def test_cache_invalidation_handler(mock_cache_adapter, sample_cache_event
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_template_render_handler(sample_template_event):
     """Test template render handler."""
     from acb.events import EventHandlerResult
@@ -254,6 +262,7 @@ async def test_template_render_handler(sample_template_event):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_template_render_handler_stats():
     """Test template render handler statistics collection."""
     from acb.events import create_event
@@ -285,6 +294,7 @@ async def test_template_render_handler_stats():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_htmx_update_handler(sample_htmx_event):
     """Test HTMX update handler."""
     from acb.events import EventHandlerResult
@@ -300,6 +310,7 @@ async def test_htmx_update_handler(sample_htmx_event):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_htmx_refresh_event():
     """Test HTMX refresh event handling."""
     from acb.events import create_event
@@ -326,6 +337,7 @@ async def test_htmx_refresh_event():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_htmx_redirect_event():
     """Test HTMX redirect event handling."""
     from acb.events import create_event
@@ -351,6 +363,7 @@ async def test_htmx_redirect_event():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_admin_action_handler(sample_admin_event):
     """Test admin action handler."""
     from acb.events import EventHandlerResult
@@ -371,6 +384,7 @@ async def test_admin_action_handler(sample_admin_event):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_admin_action_handler_limit():
     """Test admin action handler audit log limit."""
     from acb.events import create_event
@@ -402,6 +416,7 @@ async def test_admin_action_handler_limit():
 # Publisher tests
 
 
+@pytest.mark.integration
 def test_event_publisher_singleton():
     """Test that FastBlocksEventPublisher is a singleton."""
     publisher1 = get_event_publisher()
@@ -416,6 +431,7 @@ def test_event_publisher_singleton():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_publisher_cache_invalidation():
     """Test publishing cache invalidation event."""
     publisher = FastBlocksEventPublisher()
@@ -434,6 +450,7 @@ async def test_publisher_cache_invalidation():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_publisher_template_render():
     """Test publishing template render event."""
     publisher = FastBlocksEventPublisher()
@@ -452,6 +469,7 @@ async def test_publisher_template_render():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_publisher_htmx_update():
     """Test publishing HTMX update event."""
     publisher = FastBlocksEventPublisher()
@@ -469,6 +487,7 @@ async def test_publisher_htmx_update():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_publisher_admin_action():
     """Test publishing admin action event."""
     publisher = FastBlocksEventPublisher()
@@ -489,6 +508,7 @@ async def test_publisher_admin_action():
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_register_event_handlers_without_acb():
     """Test event handler registration when ACB not available."""
     if not ACB_EVENTS_AVAILABLE:
@@ -498,6 +518,7 @@ async def test_register_event_handlers_without_acb():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.integration
 async def test_register_event_handlers_with_acb():
     """Test event handler registration when ACB available."""
     # Should return True or False depending on publisher initialization
@@ -508,6 +529,7 @@ async def test_register_event_handlers_with_acb():
 # Graceful degradation tests
 
 
+@pytest.mark.integration
 def test_handlers_without_acb():
     """Test that handlers handle missing ACB gracefully."""
     if not ACB_EVENTS_AVAILABLE:
@@ -524,6 +546,7 @@ def test_handlers_without_acb():
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_handler_handle_without_acb():
     """Test handler.handle() returns None when ACB unavailable."""
     if not ACB_EVENTS_AVAILABLE:
@@ -532,6 +555,7 @@ async def test_handler_handle_without_acb():
         assert result is None
 
 
+@pytest.mark.integration
 def test_get_event_publisher_without_acb():
     """Test get_event_publisher() returns None when ACB unavailable."""
     if not ACB_EVENTS_AVAILABLE:

@@ -12,6 +12,7 @@ from fastblocks.adapters.images.cloudinary import (
 from fastblocks.adapters.images.imagekit import ImageKitImages, ImageKitImagesSettings
 
 
+@pytest.mark.unit
 class TestImagesBase:
     """Test ImagesBase adapter functionality."""
 
@@ -41,6 +42,7 @@ class TestImagesBase:
             adapter.get_image_url("test.jpg")
 
 
+@pytest.mark.unit
 class TestCloudinaryAdapter:
     """Test Cloudinary adapter functionality."""
 
@@ -163,6 +165,7 @@ class TestCloudinaryAdapter:
         assert adapter._normalize_image_id("no_extension") == "no_extension"
 
 
+@pytest.mark.unit
 class TestImageKitAdapter:
     """Test ImageKit adapter functionality."""
 
@@ -259,6 +262,7 @@ class TestImageKitAdapter:
         assert "f-webp" in url
 
 
+@pytest.mark.unit
 class TestImageAdapterIntegration:
     """Test image adapter integration patterns."""
 

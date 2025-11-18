@@ -159,6 +159,7 @@ class UserCard:
             return "invalid python syntax ((("
 
         return """
+@pytest.mark.unit
 class TestComponent:
     def htmy(self, context):
         return "<div>Test</div>"
@@ -218,6 +219,7 @@ def validator():
     return ComponentValidator()
 
 
+@pytest.mark.unit
 class TestComponentMetadata:
     """Test ComponentMetadata functionality."""
 
@@ -246,6 +248,7 @@ class TestComponentMetadata:
         assert metadata.cache_key == "component_user_card_user_card"
 
 
+@pytest.mark.unit
 class TestComponentBase:
     """Test ComponentBase functionality."""
 
@@ -313,6 +316,7 @@ class TestComponentBase:
         assert result == "<div>async test</div>"
 
 
+@pytest.mark.unit
 class TestDataclassComponentBase:
     """Test DataclassComponentBase functionality."""
 
@@ -338,6 +342,7 @@ class TestDataclassComponentBase:
         # Note: Basic type validation is limited in the current implementation
 
 
+@pytest.mark.unit
 class TestHTMXComponentMixin:
     """Test HTMXComponentMixin functionality."""
 
@@ -366,6 +371,7 @@ class TestHTMXComponentMixin:
         assert component.is_htmx_request(mock_request) is False
 
 
+@pytest.mark.unit
 class TestComponentScaffolder:
     """Test ComponentScaffolder functionality."""
 
@@ -403,6 +409,7 @@ class TestComponentScaffolder:
             assert f'render_component("{child}"' in content
 
 
+@pytest.mark.unit
 class TestComponentValidator:
     """Test ComponentValidator functionality."""
 
@@ -445,6 +452,7 @@ class TestComponentValidator:
         # Components with DataclassComponentBase but no HTMXComponentMixin should be DATACLASS type
 
 
+@pytest.mark.unit
 class TestComponentLifecycleManager:
     """Test ComponentLifecycleManager functionality."""
 
@@ -496,6 +504,7 @@ class TestComponentLifecycleManager:
         assert empty_state == {}
 
 
+@pytest.mark.unit
 class TestAdvancedHTMYComponentRegistry:
     """Test AdvancedHTMYComponentRegistry functionality."""
 
@@ -593,6 +602,7 @@ class TestAdvancedHTMYComponentRegistry:
         assert isinstance(lifecycle_manager, ComponentLifecycleManager)
 
 
+@pytest.mark.unit
 class TestComponentErrors:
     """Test component error handling."""
 
@@ -618,6 +628,7 @@ class TestComponentErrors:
         assert "Test render error" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestComponentIntegration:
     """Integration tests for component system."""
 

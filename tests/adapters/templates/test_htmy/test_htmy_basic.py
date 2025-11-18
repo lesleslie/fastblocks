@@ -14,6 +14,7 @@ sys.path.insert(0, "/Users/les/Projects/acb")
 os.environ["ACB_LIBRARY_MODE"] = "false"
 
 
+@pytest.mark.unit
 async def test_htmy_component() -> None:
     print("=== HTMY Component Test ===")
 

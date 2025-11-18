@@ -208,7 +208,7 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 31
+fail_under = 42
 exclude_also = [
     "pragma: no cover",
     "def __repr__",
@@ -219,6 +219,9 @@ exclude_also = [
     "except ImportError",
     "def __str__",
     "@abstractmethod",
+    "@overload",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
 ]
 ignore_errors = false
 

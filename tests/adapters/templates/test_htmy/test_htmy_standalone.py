@@ -134,6 +134,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
+@pytest.mark.unit
 async def test_component_discovery() -> None:
     """Test component discovery without full ACB setup."""
     print("=== Standalone HTMY Component Test ===")

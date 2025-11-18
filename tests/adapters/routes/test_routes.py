@@ -300,6 +300,7 @@ async def app(initialized_routes: Any) -> Starlette:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_index_get(
     app: Starlette,
     config: Config,
@@ -310,6 +311,7 @@ async def test_index_get(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_index_get_htmx(app: Starlette, config: Config, tmp_path: Path) -> None:
     client: TestClient = TestClient(app)
     headers: dict[str, str] = {"HX-Request": "true"}
@@ -330,6 +332,7 @@ async def test_index_get_htmx(app: Starlette, config: Config, tmp_path: Path) ->
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_block_get(
     app: Starlette,
     config: Config,
@@ -340,6 +343,7 @@ async def test_block_get(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_favicon(app: Starlette, config: Config, tmp_path: Path) -> None:
     response = TestClient(app).get("/favicon.ico")
     assert response.status_code == 200
@@ -347,6 +351,7 @@ async def test_favicon(app: Starlette, config: Config, tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_robots(app: Starlette, config: Config, tmp_path: Path) -> None:
     response = TestClient(app).get("/robots.txt")
     assert response.status_code == 200
@@ -356,6 +361,7 @@ async def test_robots(app: Starlette, config: Config, tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_gather_routes(
     config: Config,
     tmp_path: Path,
@@ -415,6 +421,7 @@ async def test_gather_routes(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_static_files(
     initialized_routes: Any,
     config: Config,
@@ -467,6 +474,7 @@ async def test_static_files(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_init(
     config: Config,
     tmp_path: Path,
@@ -543,6 +551,7 @@ async def test_init(
         assert len(routes.routes) >= 3
 
 
+@pytest.mark.unit
 def test_routes_initialization(routes: Any) -> None:
     assert isinstance(routes.routes, list)
     # Just checking that middleware attribute exists is sufficient

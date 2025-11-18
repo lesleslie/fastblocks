@@ -19,6 +19,7 @@ def mock_fastblocks() -> Mock:
     return mock_app
 
 
+@pytest.mark.unit
 class TestApplication:
     def test_app_inheritance(self, mock_fastblocks: Mock) -> None:
         assert isinstance(mock_fastblocks, Starlette)

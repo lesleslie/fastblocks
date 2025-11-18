@@ -6,6 +6,7 @@ import pytest
 from fastblocks.actions.gather import gather
 
 
+@pytest.mark.unit
 class TestGatherRoutes:
     """Test gather.routes() functionality."""
 
@@ -40,6 +41,7 @@ class TestGatherRoutes:
     # Removed test_gather_routes_error_handling - non-essential mocking test
 
 
+@pytest.mark.unit
 class TestGatherTemplates:
     """Test gather.templates() functionality."""
 
@@ -85,6 +87,7 @@ class TestGatherTemplates:
     # Removed test_gather_templates_error_handling - non-essential mocking test
 
 
+@pytest.mark.unit
 class TestGatherMiddleware:
     """Test gather.middleware() functionality."""
 
@@ -124,6 +127,7 @@ class TestGatherMiddleware:
     # Removed test_gather_middleware_error_handling - non-essential mocking test
 
 
+@pytest.mark.unit
 class TestGatherModels:
     """Test gather.models() functionality."""
 
@@ -159,6 +163,7 @@ class TestGatherModels:
     # Removed test_gather_models_error_handling - non-essential mocking test
 
 
+@pytest.mark.unit
 class TestGatherApplication:
     """Test gather.application() functionality."""
 
@@ -200,6 +205,7 @@ class TestGatherApplication:
             assert hasattr(app_info, "errors")
 
 
+@pytest.mark.integration
 class TestGatherIntegration:
     """Test integration scenarios across gather methods."""
 
@@ -269,6 +275,7 @@ class TestGatherIntegration:
         assert hasattr(templates, "total_components")
 
 
+@pytest.mark.unit
 class TestGatherConfiguration:
     """Test gather action configuration and customization."""
 
@@ -319,6 +326,7 @@ class TestGatherConfiguration:
 # Removed TestGatherMocking class - tests were targeting non-existent implementation details
 
 
+@pytest.mark.unit
 class TestGatherAdditionalCoverage:
     """Additional test cases to boost coverage."""
 

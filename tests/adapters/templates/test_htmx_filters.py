@@ -19,6 +19,7 @@ from fastblocks.adapters.templates._filters import (
 )
 
 
+@pytest.mark.unit
 class TestEnhancedHtmxAttrs:
     """Test enhanced htmx_attrs filter."""
 
@@ -47,6 +48,7 @@ class TestEnhancedHtmxAttrs:
         assert 'hx-custom-attr="value"' in result
 
 
+@pytest.mark.unit
 class TestHtmxComponent:
     """Test htmx_component filter."""
 
@@ -75,6 +77,7 @@ class TestHtmxComponent:
         assert 'hx-post="/api/action"' in result
 
 
+@pytest.mark.unit
 class TestHtmxForm:
     """Test htmx_form filter."""
 
@@ -102,6 +105,7 @@ class TestHtmxForm:
         )
 
 
+@pytest.mark.unit
 class TestHtmxLazyLoad:
     """Test htmx_lazy_load filter."""
 
@@ -129,6 +133,7 @@ class TestHtmxLazyLoad:
         assert 'data-placeholder="Loading heavy content..."' in result
 
 
+@pytest.mark.unit
 class TestHtmxInfiniteScroll:
     """Test htmx_infinite_scroll filter."""
 
@@ -152,6 +157,7 @@ class TestHtmxInfiniteScroll:
         assert 'hx-swap="beforeend"' in result
 
 
+@pytest.mark.unit
 class TestHtmxSearch:
     """Test htmx_search filter."""
 
@@ -179,6 +185,7 @@ class TestHtmxSearch:
         assert 'hx-include="closest form"' in result
 
 
+@pytest.mark.unit
 class TestHtmxModal:
     """Test htmx_modal filter."""
 
@@ -205,6 +212,7 @@ class TestHtmxModal:
         assert 'hx-confirm="Are you sure?"' in result
 
 
+@pytest.mark.unit
 class TestHtmxImgSwap:
     """Test htmx_img_swap filter."""
 
@@ -235,6 +243,7 @@ class TestHtmxImgSwap:
         assert 'hx-trigger="click"' in result
 
 
+@pytest.mark.unit
 class TestHtmxIconToggle:
     """Test htmx_icon_toggle filter."""
 
@@ -265,6 +274,7 @@ class TestHtmxIconToggle:
         assert 'hx-confirm="Toggle rating?"' in result
 
 
+@pytest.mark.unit
 class TestHtmxWsConnect:
     """Test htmx_ws_connect filter."""
 
@@ -287,6 +297,7 @@ class TestHtmxWsConnect:
         assert 'sse-listen="message-received"' in result
 
 
+@pytest.mark.unit
 class TestHtmxValidationFeedback:
     """Test htmx_validation_feedback filter."""
 
@@ -313,6 +324,7 @@ class TestHtmxValidationFeedback:
         assert 'hx-target="#username-status"' in result
 
 
+@pytest.mark.unit
 class TestHtmxErrorContainer:
     """Test htmx_error_container filter."""
 
@@ -333,6 +345,7 @@ class TestHtmxErrorContainer:
         assert 'role="alert"' in result
 
 
+@pytest.mark.unit
 class TestHtmxRetryTrigger:
     """Test htmx_retry_trigger filter."""
 
@@ -351,6 +364,7 @@ class TestHtmxRetryTrigger:
         assert 'data-backoff="linear"' in result
 
 
+@pytest.mark.unit
 class TestHtmxFiltersIntegration:
     """Test HTMX filters integration patterns."""
 

@@ -14,6 +14,7 @@ from tests.conftest import (
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_redis_loader_get_source_async_cache_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -46,6 +47,7 @@ async def test_redis_loader_get_source_async_cache_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_redis_loader_get_source_async_cache_not_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -68,6 +70,7 @@ async def test_redis_loader_get_source_async_cache_not_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_redis_loader_get_source_async_storage_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -100,6 +103,7 @@ async def test_redis_loader_get_source_async_storage_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_redis_loader_list_templates_async(
     config: Config,
     mock_cache: AsyncMock,
@@ -126,6 +130,7 @@ async def test_redis_loader_list_templates_async(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_package_loader_get_source_async_file_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -173,6 +178,7 @@ async def test_package_loader_get_source_async_file_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_package_loader_get_source_async_file_not_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -205,6 +211,7 @@ async def test_package_loader_get_source_async_file_not_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_package_loader_list_templates_async(
     config: Config,
     mock_cache: AsyncMock,

@@ -1,6 +1,7 @@
 """Additional tests for coverage boost."""
 
 
+@pytest.mark.unit
 def test_basic_python_functionality() -> None:
     """Test basic Python functionality without fastblocks imports."""
     # Test basic data structures
@@ -27,6 +28,7 @@ def test_basic_python_functionality() -> None:
     assert "World" in test_string
 
 
+@pytest.mark.unit
 def test_python_functions() -> None:
     """Test Python functions and classes."""
 
@@ -51,6 +53,7 @@ def test_python_functions() -> None:
     assert not all([True, False, True])
 
 
+@pytest.mark.unit
 def test_exception_handling() -> None:
     """Test basic exception handling."""
     # Test try/except
@@ -74,6 +77,7 @@ def test_exception_handling() -> None:
         assert executed
 
 
+@pytest.mark.unit
 def test_class_creation() -> None:
     """Test basic class creation and methods."""
 
@@ -96,6 +100,7 @@ def test_class_creation() -> None:
     assert obj.get_value() == "updated"
 
 
+@pytest.mark.unit
 def test_file_operations() -> None:
     """Test basic file operations without external dependencies."""
     import tempfile

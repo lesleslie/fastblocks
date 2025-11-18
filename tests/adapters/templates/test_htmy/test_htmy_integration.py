@@ -11,6 +11,7 @@ from fastblocks.adapters.templates.htmy import HTMYComponentRegistry
 from fastblocks.adapters.templates.jinja2 import Templates
 
 
+@pytest.mark.integration
 class TestHTMYIntegration:
     """Test suite for HTMY component integration."""
 
@@ -232,6 +233,7 @@ class AsyncTestComponent:
         assert "Async HTMY Success" in str(result)
 
 
+@pytest.mark.integration
 class TestHTMYJinja2Interoperability:
     """Test suite for HTMY-Jinja2 bidirectional interoperability."""
 

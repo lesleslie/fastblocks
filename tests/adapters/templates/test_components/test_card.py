@@ -16,6 +16,7 @@ HTMY_AVAILABLE = False
 
 
 @dataclass
+@pytest.mark.unit
 class TestCard:
     """Simple test card component for FastBlocks HTMY integration."""
 

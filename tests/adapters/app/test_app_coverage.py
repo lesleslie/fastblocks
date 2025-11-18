@@ -133,6 +133,7 @@ def completed_future():
     return future
 
 
+@pytest.mark.unit
 class TestAppCoverage:
     """Test app adapter coverage."""
 
@@ -238,6 +239,7 @@ class TestAppCoverage:
         assert mock_hooks == ["hook1", "hook2"]
 
 
+@pytest.mark.unit
 class TestAppBaseModule:
     """Tests for the app base module."""
 
@@ -287,6 +289,7 @@ class TestAppBaseModule:
         app.shutdown()
 
 
+@pytest.mark.unit
 class TestAppDefaultModule:
     """Tests for the app default module."""
 

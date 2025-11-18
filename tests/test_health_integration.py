@@ -68,6 +68,7 @@ def mock_sql_adapter():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_templates_health_check_healthy(mock_templates_adapter):
     """Test templates health check when system is healthy."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -90,6 +91,7 @@ async def test_templates_health_check_healthy(mock_templates_adapter):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_templates_health_check_degraded():
     """Test templates health check when adapter not initialized."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -106,6 +108,7 @@ async def test_templates_health_check_degraded():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_cache_health_check_healthy(mock_cache_adapter):
     """Test cache health check when system is healthy."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -131,6 +134,7 @@ async def test_cache_health_check_healthy(mock_cache_adapter):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_cache_health_check_degraded():
     """Test cache health check when cache not available."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -148,6 +152,7 @@ async def test_cache_health_check_degraded():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_routes_health_check_healthy(mock_routes_adapter):
     """Test routes health check when system is healthy."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -167,6 +172,7 @@ async def test_routes_health_check_healthy(mock_routes_adapter):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_routes_health_check_degraded_no_routes():
     """Test routes health check when no routes registered."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -187,6 +193,7 @@ async def test_routes_health_check_degraded_no_routes():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_database_health_check_healthy(mock_sql_adapter):
     """Test database health check when system is healthy."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -209,6 +216,7 @@ async def test_database_health_check_healthy(mock_sql_adapter):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_database_health_check_degraded():
     """Test database health check when adapter not configured."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -226,6 +234,7 @@ async def test_database_health_check_degraded():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_register_fastblocks_health_checks(mock_health_service):
     """Test registration of all FastBlocks health checks."""
     with patch("fastblocks._health_integration.depends.get") as mock_depends:
@@ -249,6 +258,7 @@ async def test_register_fastblocks_health_checks(mock_health_service):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_register_health_checks_service_unavailable():
     """Test graceful degradation when HealthService unavailable."""
     with patch("fastblocks._health_integration.depends.get") as mock_depends:
@@ -261,6 +271,7 @@ async def test_register_health_checks_service_unavailable():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_get_health_summary_all_healthy(mock_health_service):
     """Test health summary when all components are healthy."""
     # Mock health check results
@@ -286,6 +297,7 @@ async def test_get_health_summary_all_healthy(mock_health_service):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_get_health_summary_degraded(mock_health_service):
     """Test health summary when some components are degraded."""
 
@@ -315,6 +327,7 @@ async def test_get_health_summary_degraded(mock_health_service):
 
 
 @pytest.mark.asyncio
+@pytest.mark.integration
 async def test_health_checks_without_acb():
     """Test graceful degradation when ACB HealthService not available."""
     if ACB_HEALTH_AVAILABLE:
@@ -333,6 +346,7 @@ async def test_health_checks_without_acb():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_base_health_check():
     """Test FastBlocksHealthCheck base class."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -352,6 +366,7 @@ async def test_base_health_check():
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_cache_health_check_with_stats(mock_cache_adapter):
     """Test cache health check includes stats when available."""
     from acb.services.health import HealthCheckType
@@ -371,6 +386,7 @@ async def test_cache_health_check_with_stats(mock_cache_adapter):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_cache_health_check_operation_failure(mock_cache_adapter):
     """Test cache health check when operations fail."""
     from acb.services.health import HealthCheckType, HealthStatus
@@ -391,6 +407,7 @@ async def test_cache_health_check_operation_failure(mock_cache_adapter):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
+@pytest.mark.integration
 async def test_database_health_check_query_failure(mock_sql_adapter):
     """Test database health check when query fails."""
     from acb.services.health import HealthCheckType, HealthStatus

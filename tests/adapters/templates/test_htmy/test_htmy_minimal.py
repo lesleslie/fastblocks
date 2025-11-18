@@ -41,6 +41,7 @@ class MockAsyncPath:
         return self.path.read_text()
 
 
+@pytest.mark.unit
 async def test_component_discovery() -> None:
     """Test component discovery without full ACB setup."""
     print("=== Minimal HTMY Component Test ===")

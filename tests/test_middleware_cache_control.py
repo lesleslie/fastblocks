@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_cache_control_middleware_initialization() -> None:
     """Test CacheControlMiddleware initialization with default parameters."""
     # Create mock app
@@ -45,6 +46,7 @@ async def test_cache_control_middleware_initialization() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_cache_control_middleware_initialization_with_custom_parameters() -> None:
     """Test CacheControlMiddleware initialization with custom parameters."""
     # Create mock app
@@ -80,6 +82,7 @@ async def test_cache_control_middleware_initialization_with_custom_parameters() 
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_cache_control_middleware_non_http_request() -> None:
     """Test CacheControlMiddleware with a non-HTTP request."""
     # Create mock app, receive, and send functions
@@ -101,6 +104,7 @@ async def test_cache_control_middleware_non_http_request() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_cache_control_middleware_process_response() -> None:
     """Test CacheControlMiddleware.process_response method."""
     # Create mock app
@@ -136,6 +140,7 @@ async def test_cache_control_middleware_process_response() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_cache_control_middleware_process_response_private() -> None:
     """Test CacheControlMiddleware.process_response method with private directive."""
     # Create mock app
