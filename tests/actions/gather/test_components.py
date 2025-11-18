@@ -220,7 +220,7 @@ class TestGatherComponents:
 
             result = await gather_components()
 
-            assert result.success is False
+            assert result.is_success is False
             assert "HTMY adapter not available" in result.error_message
 
     @pytest.mark.asyncio
