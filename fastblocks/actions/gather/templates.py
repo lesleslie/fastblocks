@@ -253,7 +253,7 @@ async def _load_config_extensions(extensions: list[t.Any]) -> None:
     with suppress(Exception):
         from acb.depends import depends
 
-        config = depends.get("config")
+        config = await depends.get("config")
         if _has_template_extensions_config(config):
             _process_extension_paths(config.templates.extensions, extensions)
 
@@ -312,7 +312,7 @@ async def _gather_default_context_processors() -> list[t.Callable[..., t.Any]]:
     with suppress(Exception):
         from acb.depends import depends
 
-        config = depends.get("config")
+        config = await depends.get("config")
         if hasattr(config, "templates") and hasattr(
             config.templates,
             "context_processors",
@@ -402,10 +402,10 @@ async def _gather_template_globals() -> list[dict[str, t.Any]]:
     try:
         from acb.depends import depends
 
-        config = depends.get("config")
+        config = await depends.get("config")
         globals_dict["config"] = config
         try:
-            models = depends.get("models")
+            models = await depends.get("models")
             globals_dict["models"] = models
         except Exception:
             globals_dict["models"] = None

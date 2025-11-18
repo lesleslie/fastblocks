@@ -131,7 +131,7 @@ async def _gather_custom_middleware() -> list[Middleware]:
     with suppress(Exception):
         from acb.depends import depends
 
-        config = depends.get("config")
+        config = await depends.get("config")
         if hasattr(config, "middleware") and hasattr(config.middleware, "custom"):
             for middleware_path in config.middleware.custom:
                 try:
