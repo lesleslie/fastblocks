@@ -247,6 +247,7 @@ reportInvalidTypeForm = false
 reportUnknownLambdaType = false
 reportUnknownParameterType = "warning"
 reportPrivateUsage = false
+reportUnusedFunction = false  # Template filters registered via decorators
 pythonVersion = "3.13"
 
 [tool.complexipy]
