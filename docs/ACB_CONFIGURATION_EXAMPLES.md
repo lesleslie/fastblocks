@@ -579,5 +579,5 @@ query = depends.get("query")  # Gets universal query interface
 - [ACB Documentation](https://github.com/lesleslie/acb)
 - [ACB Actions README](/Users/les/Projects/acb/acb/actions/README.md)
 - [ACB Adapters README](/Users/les/Projects/acb/acb/adapters/README.md)
-- [FastBlocks ACB Integration Guide](<./ACB_INTEGRATION.md>)
-- [FastBlocks ACB Refactoring Guide](<./ACB_REFACTORING.md>)
+- [FastBlocks ACB Integration Guide](./ACB_INTEGRATION.md)
+- [FastBlocks ACB Refactoring Guide](./ACB_REFACTORING.md)

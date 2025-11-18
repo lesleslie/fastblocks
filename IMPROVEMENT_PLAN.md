@@ -5,11 +5,12 @@
 **Current Health Score**: 58/100
 **Target Health Score**: 85/100
 
----
+______________________________________________________________________
 
 ## Progress Overview
 
 ### Phase Completion
+
 - [ ] **Phase 1**: Immediate Actions (Week 1-2) - 5/6 tasks ✅🟡
 - [x] **Phase 2**: Type System Recovery (Week 3-4) - 4/4 tasks ✅ **COMPLETED (2025-11-18)**
 - [ ] **Phase 3**: Coverage & Quality (Week 5-8) - 2/6 tasks ✅ (IN PROGRESS)
@@ -19,14 +20,14 @@
 
 | Metric | Baseline | Current | Target | Status |
 |--------|----------|---------|--------|--------|
-| Pyright Errors | 501 | 257 | <50 | 🟢 49% reduction! |
+| Pyright Errors | 501 | 257 | \<50 | 🟢 49% reduction! |
 | Test Coverage | 15.52% | 11.47% | 40% | 🔴 Regression (investigation needed) |
 | Test Pass Rate | 72% (611/835) | **75.2% (628/835)** | 95% | 🟡 **+3.2% improvement!** |
-| Test Failures | 224 | **207** | <50 | 🟡 **-17 failures** |
-| Type Ignores | 222 | 222 | <111 | 🔴 |
+| Test Failures | 224 | **207** | \<50 | 🟡 **-17 failures** |
+| Type Ignores | 222 | 222 | \<111 | 🔴 |
 | Overall Health | 58/100 | 70/100 | 85/100 | 🟡 |
 
----
+______________________________________________________________________
 
 ## Phase 1: Immediate Actions (Week 1-2)
 
@@ -35,6 +36,7 @@
 **Estimated Time**: 2 weeks
 
 ### Task 1.1: Remove Unreachable Dead Code
+
 **Priority**: HIGH | **Effort**: 2 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
 - [x] Fix `fastblocks/applications.py:189-190` - Remove unreachable code after early return
@@ -47,9 +49,10 @@
 
 **Success Criteria**: ✅ Vulture reports 0 unreachable code instances
 
----
+______________________________________________________________________
 
 ### Task 1.2: Remove Unused Imports and Variables
+
 **Priority**: MEDIUM | **Effort**: 1 hour | **Status**: ✅ COMPLETED (2025-11-18)
 
 - [x] Remove `fastblocks/_events_integration.py:22` - Unused import `event_handler`
@@ -62,9 +65,10 @@
 
 **Note**: `htmy.py:593` and `cli.py:601` kept with `# noqa` for API compatibility
 
----
+______________________________________________________________________
 
 ### Task 1.3: Fix 4 Legacy ACB Injection Patterns
+
 **Priority**: CRITICAL | **Effort**: 3 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
 - [x] Fix `fastblocks/_health_integration.py:42` - Change `config: Inject[t.Any] = depends()` to `config: Inject[t.Any]`
@@ -76,9 +80,10 @@
 
 **Success Criteria**: ✅ All 4 files use modern ACB 0.25.1+ pattern, 100% ACB compliance achieved
 
----
+______________________________________________________________________
 
 ### Task 1.4: Fix Async Sleep Loop in CLI
+
 **Priority**: MEDIUM | **Effort**: 1 hour | **Status**: ✅ COMPLETED (2025-11-18)
 
 - [x] Review `fastblocks/cli.py:907-908` - Current inefficient sleep loop
@@ -90,9 +95,10 @@
 
 **Success Criteria**: ✅ CLI uses event-based shutdown, no busy-wait loop, resource efficient
 
----
+______________________________________________________________________
 
 ### Task 1.5: Fix Fire-and-Forget Task Registration
+
 **Priority**: CRITICAL | **Effort**: 2 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
 - [x] Review `fastblocks/initializers.py:163-167` - Current race condition
@@ -103,6 +109,7 @@
 - [x] Verify all integrations register before app starts
 
 **Code Change**:
+
 ```python
 # Replace:
 loop.create_task(register_fastblocks_event_handlers())
@@ -127,9 +134,10 @@ except Exception as e:
 
 **Success Criteria**: ✅ No race conditions, proper error handling, graceful degradation, integrations complete before startup
 
----
+______________________________________________________________________
 
 ### Task 1.6: Fix Critical Test Failures
+
 **Priority**: CRITICAL | **Effort**: 8 hours | **Status**: 🟡 IN PROGRESS
 
 - [x] Run tests and capture all failures: `uv run pytest --tb=short --maxfail=5 > test_failures.txt`
@@ -142,19 +150,20 @@ except Exception as e:
   - [ ] `test_performance_monitoring_accuracy`
   - [ ] `test_optimization_recommendations`
 - [ ] Fix highest-impact test failures (focus on core functionality)
-- [x] Target: Reduce failures from 226 to <50 (80%+ pass rate) - **Current: 223 failures**
+- [x] Target: Reduce failures from 226 to \<50 (80%+ pass rate) - **Current: 223 failures**
 - [x] Run full suite: `uv run pytest -v`
 
 **Progress**: 226 → 223 failures (3 fixed)
 
 **Success Criteria**:
+
 - Test pass rate >80% (680+ passing) - **Current: 72% (612 passing)**
 - 0 critical functionality test failures
 - Performance tests either fixed or skipped with issue tickets
 
-**Remaining Work**: 173 failures to fix to reach <50 target
+**Remaining Work**: 173 failures to fix to reach \<50 target
 
----
+______________________________________________________________________
 
 ## Phase 2: Type System Recovery (Week 3-4) ✅ **COMPLETED (2025-11-18)**
 
@@ -164,6 +173,7 @@ except Exception as e:
 **Impact**: 501 → 257 Pyright errors (-244, -49%)
 
 ### Task 2.1: Audit and Document depends.get() Behavior
+
 **Priority**: CRITICAL | **Effort**: 4 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
 - [x] Create test file to determine when `depends.get()` returns coroutine vs instance
@@ -178,9 +188,10 @@ except Exception as e:
 
 **Findings**: ALL `depends.get()` calls return coroutines and MUST be awaited. Created comprehensive 328-line guide in `docs/ACB_DEPENDS_PATTERNS.md`.
 
----
+______________________________________________________________________
 
 ### Task 2.2: Fix Coroutine Access Pattern Issues (Priority: Integration Files)
+
 **Priority**: CRITICAL | **Effort**: 12 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
 **Files Fixed** (25 errors fixed):
@@ -206,9 +217,10 @@ except Exception as e:
 
 **Impact**: 501 → 476 errors (-25 errors, -5%)
 
----
+______________________________________________________________________
 
 ### Task 2.3: Fix Coroutine Access Pattern Issues (Priority: Actions)
+
 **Priority**: HIGH | **Effort**: 10 hours | **Status**: 🟡 IN PROGRESS (2025-11-18)
 
 **Files Fixed** (9 errors fixed in gather module):
@@ -235,17 +247,20 @@ except Exception as e:
 
 **Impact**: 476 → 467 errors (-9 errors)
 
----
+______________________________________________________________________
 
 ### Task 2.4: Fix ALL Coroutine Access Pattern Issues
+
 **Priority**: HIGH | **Effort**: 12 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
 **Files Fixed** (ALL coroutine errors resolved - 244 total fixed!):
 
 **CLI Module** (7 fixes):
+
 - [x] `fastblocks/cli.py` - Fixed htmy_adapter, syntax_support, language_server
 
 **Template Filters** (45 fixes):
+
 - [x] `_enhanced_filters.py` - 14 fixes (sync + 1 async)
 - [x] `_async_filters.py` - 8 fixes (all async)
 - [x] `_filters.py` - 11 fixes (all sync)
@@ -255,6 +270,7 @@ except Exception as e:
 - [x] `_block_renderer.py` - 1 fix (async)
 
 **Style & Icon Adapters** (32 fixes):
+
 - [x] `webawesome.py` - 5 fixes (sync)
 - [x] `kelpui.py` - 3 fixes (sync)
 - [x] `materialicons.py` - 6 fixes (sync)
@@ -262,17 +278,19 @@ except Exception as e:
 - [x] `phosphor.py` - 6 fixes (sync)
 
 **MCP Modules** (7 fixes):
+
 - [x] `mcp/tools.py` - 5 fixes (all async)
 - [x] `mcp/resources.py` - 2 fixes (all async)
 
 **Core Modules** (2 fixes):
+
 - [x] `middleware.py` - 2 fixes (sync)
 
 **Success Criteria**: ✅ ALL coroutine errors fixed (0 remaining!)
 
 **Impact**: 501 → 257 errors (-244 errors, -49% reduction)
 
----
+______________________________________________________________________
 
 ## Phase 3: Coverage & Quality (Week 5-8)
 
@@ -281,9 +299,11 @@ except Exception as e:
 **Estimated Time**: 4 weeks
 
 ### Task 3.0: Fix Systematic Test Bugs (Quick Wins)
+
 **Priority**: HIGH | **Effort**: 4 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
 **Completed Fixes**:
+
 - [x] Fixed ComponentGatherResult API mismatch (8 instances)
   - Changed incorrect `result.success is True/False` to `result.is_success`
   - Fixed in `tests/actions/gather/test_components.py`
@@ -297,9 +317,10 @@ except Exception as e:
   - Fixed incorrect assertion: `depends.set(Admin)` → `depends.set(Admin, "sqladmin")`
 - [x] Added ACB depends registry cleanup fixture
   - Prevents test interdependencies via shared state
-  - Clears _registry, _instances, _singletons between tests
+  - Clears \_registry, \_instances, \_singletons between tests
 
 **Impact**:
+
 - Test pass rate: 72% → 75.2% (+3.2% improvement)
 - Test failures: 224 → 207 (-17 failures)
 - Caching tests: 12 failures → 3 failures (75% reduction)
@@ -307,9 +328,10 @@ except Exception as e:
 
 **Success Criteria**: ✅ Quick wins delivered, foundation for continued improvement
 
----
+______________________________________________________________________
 
 ### Task 3.1: Increase CLI Test Coverage (0% → 30%)
+
 **Priority**: HIGH | **Effort**: 12 hours | **Status**: 🟡 PARTIAL (skeleton created)
 
 - [ ] Create `tests/test_cli.py` if not exists
@@ -326,9 +348,10 @@ except Exception as e:
 
 **Success Criteria**: CLI module has >30% coverage, critical paths tested
 
----
+______________________________________________________________________
 
 ### Task 3.2: Increase MCP Test Coverage (0-22% → 30%)
+
 **Priority**: MEDIUM | **Effort**: 16 hours | **Status**: ⬜ Not Started
 
 **Files to Test**:
@@ -349,9 +372,10 @@ except Exception as e:
 
 **Success Criteria**: MCP module average coverage >30%
 
----
+______________________________________________________________________
 
 ### Task 3.3: Increase Actions Test Coverage (20-50% → 40%)
+
 **Priority**: MEDIUM | **Effort**: 12 hours | **Status**: ⬜ Not Started
 
 - [ ] `fastblocks/actions/gather/` (current ~30% → 40%)
@@ -368,9 +392,10 @@ except Exception as e:
 
 **Success Criteria**: Actions module average coverage >40%
 
----
+______________________________________________________________________
 
 ### Task 3.4: Fix Remaining Test Failures
+
 **Priority**: HIGH | **Effort**: 16 hours | **Status**: ⬜ Not Started
 
 - [ ] Run full test suite and categorize remaining failures
@@ -378,14 +403,15 @@ except Exception as e:
 - [ ] Fix integration test failures
 - [ ] Address or skip flaky tests (document why)
 - [ ] Fix or document expected failures
-- [ ] Target: <5% failure rate (40 or fewer failures)
+- [ ] Target: \<5% failure rate (40 or fewer failures)
 - [ ] Run: `uv run pytest -v --maxfail=100`
 
 **Success Criteria**: Test pass rate >95% (800+ passing out of 851)
 
----
+______________________________________________________________________
 
 ### Task 3.5: Overall Coverage to 31%+ (Minimum Required)
+
 **Priority**: CRITICAL | **Effort**: 20 hours | **Status**: ⬜ Not Started
 
 **Current**: 15.52% | **Target**: 31%+ | **Stretch**: 40%
@@ -393,14 +419,15 @@ except Exception as e:
 **Priority Modules** (by criticality):
 
 1. [ ] `fastblocks/middleware.py` (37% → 50%)
-2. [ ] `fastblocks/caching.py` (27% → 40%)
-3. [ ] `fastblocks/htmx.py` (32% → 50%)
-4. [ ] `fastblocks/exceptions.py` (57% → 70%)
-5. [ ] `fastblocks/initializers.py` (20% → 40%)
-6. [ ] `fastblocks/applications.py` (31% → 50%)
-7. [ ] Adapter modules (19-40% → 35%+)
+1. [ ] `fastblocks/caching.py` (27% → 40%)
+1. [ ] `fastblocks/htmx.py` (32% → 50%)
+1. [ ] `fastblocks/exceptions.py` (57% → 70%)
+1. [ ] `fastblocks/initializers.py` (20% → 40%)
+1. [ ] `fastblocks/applications.py` (31% → 50%)
+1. [ ] Adapter modules (19-40% → 35%+)
 
 **Strategy**:
+
 - [ ] Focus on critical paths first
 - [ ] Test error conditions
 - [ ] Test async flows
@@ -410,7 +437,7 @@ except Exception as e:
 
 **Success Criteria**: Overall coverage >31%, stretch goal 40%
 
----
+______________________________________________________________________
 
 ## Phase 4: Polish & Optimization (Week 9-12)
 
@@ -418,7 +445,8 @@ except Exception as e:
 **Priority**: LOW-MEDIUM
 **Estimated Time**: 4 weeks
 
-### Task 4.1: Type System Cleanup - Target <50 Errors
+### Task 4.1: Type System Cleanup - Target \<50 Errors
+
 **Priority**: MEDIUM | **Effort**: 20 hours | **Status**: ⬜ Not Started
 
 - [ ] Review all remaining pyright errors: `uv run pyright fastblocks > pyright_errors.txt`
@@ -428,17 +456,18 @@ except Exception as e:
 - [ ] Fix undefined variable errors
 - [ ] Address constant redefinition warnings
 - [ ] Fix unnecessary isinstance/comparison errors
-- [ ] Target: <50 total errors
+- [ ] Target: \<50 total errors
 - [ ] Track: Run `uv run pyright fastblocks --stats` regularly
 
-**Success Criteria**: Pyright reports <50 errors, strict mode enabled successfully
+**Success Criteria**: Pyright reports \<50 errors, strict mode enabled successfully
 
----
+______________________________________________________________________
 
 ### Task 4.2: Reduce Type Ignores by 50%
+
 **Priority**: MEDIUM | **Effort**: 16 hours | **Status**: ⬜ Not Started
 
-**Current**: 222 type ignores in 60 files | **Target**: <111 type ignores
+**Current**: 222 type ignores in 60 files | **Target**: \<111 type ignores
 
 - [ ] Audit all `# type: ignore` comments
 - [ ] Categorize by reason:
@@ -449,11 +478,12 @@ except Exception as e:
 - [ ] Add explanatory comments to remaining ignores
 - [ ] Track progress: `grep -r "# type: ignore" fastblocks --include="*.py" | wc -l`
 
-**Success Criteria**: <111 type ignore comments, all have justification comments
+**Success Criteria**: \<111 type ignore comments, all have justification comments
 
----
+______________________________________________________________________
 
 ### Task 4.3: Documentation Updates
+
 **Priority**: LOW | **Effort**: 8 hours | **Status**: ⬜ Not Started
 
 - [ ] Add `docs/ACB_DEPENDS_PATTERNS.md` with coroutine behavior documentation
@@ -466,9 +496,10 @@ except Exception as e:
 
 **Success Criteria**: All new patterns documented, migration guides complete
 
----
+______________________________________________________________________
 
 ### Task 4.4: Security Hardening
+
 **Priority**: MEDIUM | **Effort**: 12 hours | **Status**: ⬜ Not Started
 
 - [ ] Run full Bandit scan without skips: `uv run bandit -r fastblocks -ll`
@@ -484,15 +515,17 @@ except Exception as e:
 - [ ] Document security architecture
 
 **Success Criteria**:
+
 - No high-severity Bandit findings
 - Secrets detection in CI
 - Security modules >80% coverage
 
----
+______________________________________________________________________
 
 ## Verification & Validation
 
 ### Pre-Commit Checklist
+
 Run before each commit:
 
 ```bash
@@ -528,13 +561,14 @@ Before marking a phase complete:
 - [ ] Changes committed and pushed
 - [ ] Metrics table updated in this document
 
----
+______________________________________________________________________
 
 ## Success Metrics
 
 ### Completion Criteria
 
 **Phase 1 Complete When**:
+
 - [ ] 0 unreachable code warnings
 - [ ] 4 ACB legacy patterns fixed
 - [ ] Test pass rate >80%
@@ -542,69 +576,80 @@ Before marking a phase complete:
 - [ ] Async issues fixed
 
 **Phase 2 Complete When**:
+
 - [ ] Integration files have 0 coroutine errors
 - [ ] Actions module has 0 coroutine errors
-- [ ] Adapters have <20 coroutine errors
+- [ ] Adapters have \<20 coroutine errors
 - [ ] depends.get() behavior documented
 
 **Phase 3 Complete When**:
+
 - [ ] Overall coverage >31% (required), >40% (stretch)
 - [ ] CLI coverage >30%
 - [ ] MCP coverage >30%
 - [ ] Test pass rate >95%
 
 **Phase 4 Complete When**:
-- [ ] Pyright errors <50
-- [ ] Type ignores <111
+
+- [ ] Pyright errors \<50
+- [ ] Type ignores \<111
 - [ ] Security hardening complete
 - [ ] Documentation updated
 
 **Project Complete When**:
+
 - [ ] Overall health score >85/100
 - [ ] Test pass rate >95%
 - [ ] Coverage >40%
-- [ ] Pyright errors <50
+- [ ] Pyright errors \<50
 - [ ] All critical issues resolved
 - [ ] Documentation complete
 
----
+______________________________________________________________________
 
 ## Risk Management
 
 ### Known Risks
 
 1. **Type System Complexity**
+
    - Risk: Coroutine access issues more widespread than identified
    - Mitigation: Start with integration files, learn patterns, apply broadly
    - Contingency: Consider async helper wrapper if too complex
 
-2. **Test Failures Root Causes**
+1. **Test Failures Root Causes**
+
    - Risk: Failures indicate deeper architectural issues
    - Mitigation: Investigate thoroughly before fixing
    - Contingency: May need to refactor core components
 
-3. **Coverage Target Achievability**
+1. **Coverage Target Achievability**
+
    - Risk: 40% may be difficult given async nature
    - Mitigation: Focus on critical paths, mock aggressively
    - Contingency: Adjust target to 35% if needed
 
-4. **Time Estimates**
+1. **Time Estimates**
+
    - Risk: Tasks may take longer than estimated
    - Mitigation: Track actuals, adjust plan weekly
    - Contingency: Extend timeline or reduce scope
 
----
+______________________________________________________________________
 
 ## Notes & Updates
 
 ### 2025-11-18 - Plan Created
+
 - Initial comprehensive audit completed
 - Baseline metrics established
 - 12-week improvement plan created
 - 501 pyright errors, 15.52% coverage, 72% test pass rate
 
 ### 2025-11-18 - Phase 1 Progress (Tasks 1.1-1.5 Complete)
+
 **Completed:**
+
 - ✅ Task 1.1: Removed all unreachable dead code (5 instances)
 - ✅ Task 1.2: Removed unused imports/variables (4 instances, 2 kept with noqa)
 - ✅ Task 1.3: Fixed 4 legacy ACB injection patterns → 100% ACB compliance
@@ -613,42 +658,50 @@ Before marking a phase complete:
 - 🟡 Task 1.6: IN PROGRESS - Test failures 226 → 223 (3 fixed so far)
 
 **Commits:**
+
 1. `fix: Phase 1 improvements - dead code, unused vars, ACB patterns`
-2. `fix: async/await improvements - event-based wait and proper task gathering`
-3. `fix(tests): use is_success property instead of success boolean check`
+1. `fix: async/await improvements - event-based wait and proper task gathering`
+1. `fix(tests): use is_success property instead of success boolean check`
 
 **Metrics Progress:**
+
 - Unreachable code: 5 → 0 ✅
 - Legacy ACB patterns: 4 → 0 ✅
 - Async issues: 2 → 0 ✅
 - Test failures: 226 → 223 🟡
 - Overall health: 58/100 → 60/100 🟡
 
-**Next Steps:** Continue Task 1.6 - Fix remaining 173 test failures to reach <50 target
+**Next Steps:** Continue Task 1.6 - Fix remaining 173 test failures to reach \<50 target
 
 ### 2025-11-18 - Phase 2 Progress (Tasks 2.1-2.3 Completed)
+
 **Completed:**
+
 - ✅ Task 2.1: Audited depends.get() behavior → Created docs/ACB_DEPENDS_PATTERNS.md (328 lines)
 - ✅ Task 2.2: Fixed integration files → 25 coroutine errors resolved (501 → 476)
 - ✅ Task 2.3: Fixed actions/gather module → 9 coroutine errors resolved (476 → 467)
 - 🟡 Task 2.4: IN PROGRESS - Remaining coroutine errors in query, sync, adapters
 
 **Commits:**
+
 1. `fix(phase2): add await to depends.get() in integration files`
-2. `fix(phase2): add await to depends.get() in actions/gather module`
-3. `docs: ACB_DEPENDS_PATTERNS.md` (included in commit 1)
+1. `fix(phase2): add await to depends.get() in actions/gather module`
+1. `docs: ACB_DEPENDS_PATTERNS.md` (included in commit 1)
 
 **Key Discovery:**
+
 - Root cause identified: `depends.get()` ALWAYS returns coroutines in ACB 0.25.1+
 - Pattern: Must use `await` before accessing any attributes
 - Impact: Affects ~150+ of 501 original errors
 
 **Files Fixed:**
+
 - Integration: `_health_integration.py`, `_validation_integration.py`, `_workflows_integration.py`
 - Actions/Gather: `middleware.py`, `routes.py`, `templates.py`
 - Documentation: Created comprehensive usage guide
 
 **Metrics Progress:**
+
 - Pyright errors: 501 → 467 (-34 errors, -7%)
 - Integration files: ~53 → ~28 errors ✅
 - Actions/gather: ~10 → ~3 errors ✅
@@ -656,7 +709,7 @@ Before marking a phase complete:
 
 **Next Steps:** Complete Task 2.4 - Fix remaining coroutine errors in actions/query, actions/sync, adapters, middleware
 
----
+______________________________________________________________________
 
 ## Quick Reference Commands
 

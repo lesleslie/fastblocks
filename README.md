@@ -2,7 +2,7 @@
 <img src="./images/fastblocks-logo.png" alt="FastBlocks Logo">
 </p>
 
-> **FastBlocks Documentation**: [Main](<#fastblocks>) | [Core Features](./fastblocks/README.md) | [Actions](<./fastblocks/actions/README.md>) | [Adapters](<./fastblocks/adapters/README.md>)
+> **FastBlocks Documentation**: [Main](#fastblocks) | [Core Features](./fastblocks/README.md) | [Actions](./fastblocks/actions/README.md) | [Adapters](./fastblocks/adapters/README.md)
 
 # FastBlocks
 
@@ -212,30 +212,30 @@ FastBlocks combines the development speed of modern frameworks with the infrastr
 
 ## Table of Contents
 
-- [Why Choose FastBlocks?](<#why-choose-fastblocks>)
-- [Key Concepts](<#key-concepts>)
-- [Installation](<#installation>)
-- [Quick Start](<#quick-start>)
-- [Common Patterns](<#common-patterns>)
-- [Architecture Overview](<#architecture-overview>)
-- [Core Components](<#core-components>)
-  - [Templates](<#templates>)
-  - [Routing](<#routing>)
-  - [Middleware](<#middleware>)
-  - [HTMX Integration](<#htmx-integration>)
-- [Database Models and Queries](<#database-models-and-queries>)
-- [Adapters](<#adapters>)
-- [Actions](<#actions>)
-- [Configuration](<#configuration>)
-- [Command-Line Interface (CLI)](<#command-line-interface-cli>)
-  - [Creating a New Project](<#creating-a-new-project>)
-  - [Running Your Application](<#running-your-application>)
-  - [CLI Options](<#cli-options>)
-- [Migration Guide](<#migration-guide>)
-- [Examples](<#examples>)
-- [Documentation](<#documentation>)
-- [License](<#license>)
-- [Acknowledgements](<#acknowledgements>)
+- [Why Choose FastBlocks?](#why-choose-fastblocks)
+- [Key Concepts](#key-concepts)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Common Patterns](#common-patterns)
+- [Architecture Overview](#architecture-overview)
+- [Core Components](#core-components)
+  - [Templates](#templates)
+  - [Routing](#routing)
+  - [Middleware](#middleware)
+  - [HTMX Integration](#htmx-integration)
+- [Database Models and Queries](#database-models-and-queries)
+- [Adapters](#adapters)
+- [Actions](#actions)
+- [Configuration](#configuration)
+- [Command-Line Interface (CLI)](#command-line-interface-cli)
+  - [Creating a New Project](#creating-a-new-project)
+  - [Running Your Application](#running-your-application)
+  - [CLI Options](#cli-options)
+- [Migration Guide](#migration-guide)
+- [Examples](#examples)
+- [Documentation](#documentation)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 ## Installation
 
@@ -261,7 +261,7 @@ FastBlocks uses **PEP 735 dependency groups** for optional features. Install the
 | Multiple Groups | Install multiple features at once | `uv add --group admin --group monitoring --group sitemap` |
 | Development | Development tools | `uv add --group dev` |
 
-**Note**: Version 0.17.0+ uses dependency groups instead of extras. See [MIGRATION-0.17.0.md](<./docs/migrations/MIGRATION-0.17.0.md>) for details.
+**Note**: Version 0.17.0+ uses dependency groups instead of extras. See [MIGRATION-0.17.0.md](./docs/migrations/MIGRATION-0.17.0.md) for details.
 
 You can also install FastBlocks using pip:
 
@@ -1331,7 +1331,7 @@ For comprehensive adapter documentation including:
 - Best practices and troubleshooting
 - Integration patterns
 
-See the [**Adapters Documentation**](<./fastblocks/adapters/README.md>).
+See the [**Adapters Documentation**](./fastblocks/adapters/README.md).
 
 ## Database Models and Queries
 
@@ -1398,7 +1398,7 @@ Actions are utility functions that perform specific tasks:
 - **Sync**: Bidirectional synchronization of templates, settings, and cache across environments
 - **Minify**: HTML, CSS, and JavaScript minification
 
-For more information about actions, see the [Actions Documentation](<./fastblocks/actions/README.md>).
+For more information about actions, see the [Actions Documentation](./fastblocks/actions/README.md).
 
 ## Configuration
 
@@ -1683,15 +1683,15 @@ app = depends.get(App)
 For more detailed documentation about FastBlocks components:
 
 - [**Core Features**](./fastblocks/README.md): Applications, middleware, and core functionality
-- [**Actions**](<./fastblocks/actions/README.md>): Utility functions like minification
-- [**Adapters**](<./fastblocks/adapters/README.md>): Pluggable components for various features
-  - [**App Adapter**](<./fastblocks/adapters/app/README.md>): Application configuration
-  - [**Auth Adapter**](<./fastblocks/adapters/auth/README.md>): Authentication providers
-  - [**Admin Adapter**](<./fastblocks/adapters/admin/README.md>): Admin interface
-  - [**Routes Adapter**](<./fastblocks/adapters/routes/README.md>): Routing system
-  - [**Templates Adapter**](<./fastblocks/adapters/templates/README.md>): Template engine
-  - [**Sitemap Adapter**](<./fastblocks/adapters/sitemap/README.md>): Sitemap generation
-- [**Running Tests**](<./tests/TESTING.md>): Comprehensive guide to testing FastBlocks components
+- [**Actions**](./fastblocks/actions/README.md): Utility functions like minification
+- [**Adapters**](./fastblocks/adapters/README.md): Pluggable components for various features
+  - [**App Adapter**](./fastblocks/adapters/app/README.md): Application configuration
+  - [**Auth Adapter**](./fastblocks/adapters/auth/README.md): Authentication providers
+  - [**Admin Adapter**](./fastblocks/adapters/admin/README.md): Admin interface
+  - [**Routes Adapter**](./fastblocks/adapters/routes/README.md): Routing system
+  - [**Templates Adapter**](./fastblocks/adapters/templates/README.md): Template engine
+  - [**Sitemap Adapter**](./fastblocks/adapters/sitemap/README.md): Sitemap generation
+- [**Running Tests**](./tests/TESTING.md): Comprehensive guide to testing FastBlocks components
 
 ## License
 

@@ -47,7 +47,7 @@ from acb.adapters import (
 )
 from acb.config import Config
 from acb.debug import debug
-from acb.depends import Inject, depends
+from acb.depends import depends
 from anyio import Path as AsyncPath
 from jinja2.exceptions import TemplateNotFound
 from starlette.endpoints import HTTPEndpoint
@@ -98,7 +98,9 @@ class Index(FastBlocksEndpoint):
             template = f"{page.lstrip('/')}.html"
             headers["hx-push-url"] = "/" if page == "home" else page
         debug(page, template)
-        context = await create_query_context(request, base_context={"page": page.lstrip("/")})
+        context = await create_query_context(
+            request, base_context={"page": page.lstrip("/")}
+        )
         query_params = getattr(request, "query_params", {})
         if "model" in query_params:
             model_name = query_params["model"]

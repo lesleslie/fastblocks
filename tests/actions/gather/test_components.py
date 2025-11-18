@@ -239,9 +239,11 @@ class TestGatherComponents:
     @pytest.mark.asyncio
     async def test_gather_components_fallback_registry(self):
         """Test gathering with fallback to basic registry."""
-        mock_adapter = MagicMock()
-        mock_adapter.discover_components = None  # No advanced discovery
-        mock_adapter.htmy_registry = MagicMock()
+        mock_adapter = AsyncMock()
+        # Don't set discover_components - let it fall back to htmy_registry
+        if hasattr(mock_adapter, 'discover_components'):
+            del mock_adapter.discover_components
+        mock_adapter.htmy_registry = AsyncMock()
         mock_adapter.htmy_registry.discover_components = AsyncMock(
             return_value={"basic_component": MockAsyncPath("/test/basic_component.py")}
         )
@@ -518,7 +520,7 @@ class TestIntegrationScenarios:
     async def test_performance_with_large_component_set(self):
         """Test performance with large component set."""
         # Create mock adapter with many components
-        mock_adapter = MagicMock()
+        mock_adapter = AsyncMock()
 
         # Generate large component set
         large_component_set = {}

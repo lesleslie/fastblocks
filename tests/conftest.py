@@ -3254,15 +3254,15 @@ def cleanup_acb_depends():
         from acb import depends
 
         # Clear the internal registry if it exists
-        if hasattr(depends, '_registry'):
+        if hasattr(depends, "_registry"):
             depends._registry.clear()
-        if hasattr(depends, '_instances'):
+        if hasattr(depends, "_instances"):
             depends._instances.clear()
-        if hasattr(depends, '_singletons'):
+        if hasattr(depends, "_singletons"):
             depends._singletons.clear()
 
         # Also clear any module-level caches
-        if hasattr(depends, 'reset'):
+        if hasattr(depends, "reset"):
             depends.reset()
     except (ImportError, AttributeError):
         # ACB might be mocked or not available, that's okay

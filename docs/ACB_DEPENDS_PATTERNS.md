@@ -4,7 +4,7 @@
 **Author**: FastBlocks Audit
 **Purpose**: Document correct usage of `depends.get()` to prevent coroutine access errors
 
----
+______________________________________________________________________
 
 ## Critical Understanding: depends.get() is Async
 
@@ -35,7 +35,7 @@ depends.get('query')      → <coroutine object>  (must await)
 
 **All `depends.get()` calls return coroutines and MUST be awaited.**
 
----
+______________________________________________________________________
 
 ## Correct Usage Patterns
 
@@ -57,6 +57,7 @@ async def my_handler(request):
 ```python
 from acb.depends import Inject, depends
 
+
 # ✅ BEST - Modern ACB 0.25.1+ pattern
 @depends.inject
 async def my_handler(request, config: Inject[Config], templates: Inject[Templates]):
@@ -66,6 +67,7 @@ async def my_handler(request, config: Inject[Config], templates: Inject[Template
 ```
 
 **Benefits:**
+
 - No manual `await depends.get()` needed
 - Type hints work correctly
 - IDE autocomplete works
@@ -75,6 +77,7 @@ async def my_handler(request, config: Inject[Config], templates: Inject[Template
 
 ```python
 from acb.depends import Inject, depends
+
 
 class MyService:
     @depends.inject
@@ -96,7 +99,7 @@ async def get_templates_safely():
         return None
 ```
 
----
+______________________________________________________________________
 
 ## Common Anti-Patterns (Causing 501 Errors)
 
@@ -107,6 +110,7 @@ async def get_templates_safely():
 def get_config():
     config = depends.get("config")  # Returns coroutine!
     return config.deployed  # Error: coroutine has no 'deployed'
+
 
 # ✅ CORRECT
 async def get_config():
@@ -119,7 +123,7 @@ async def get_config():
 ```python
 # ❌ WRONG - Found in middleware.py, initializers.py, etc.
 templates = depends.get("templates")  # Coroutine
-templates.app.render_template(...)    # Error!
+templates.app.render_template(...)  # Error!
 
 # ✅ CORRECT
 templates = await depends.get("templates")
@@ -148,10 +152,12 @@ def sync_function():
     config = depends.get("config")  # Can't await here!
     return config.deployed
 
+
 # ✅ CORRECT - Make function async
 async def async_function():
     config = await depends.get("config")
     return config.deployed
+
 
 # OR use injection (preferred)
 @depends.inject
@@ -159,7 +165,7 @@ def sync_with_injection(config: Inject[Config]):
     return config.deployed  # Works in sync function!
 ```
 
----
+______________________________________________________________________
 
 ## Migration Guide
 
@@ -168,9 +174,10 @@ def sync_with_injection(config: Inject[Config]):
 Search for: `depends.get\(["\']`
 
 Check if the result is:
+
 1. Awaited immediately
-2. Passed to an async function
-3. **Accessed without await** ← FIX THIS
+1. Passed to an async function
+1. **Accessed without await** ← FIX THIS
 
 ### Step 2: Add Await
 
@@ -191,6 +198,7 @@ Function must be `async def`:
 def my_function():
     config = depends.get("config")  # Can't await!
 
+
 # After
 async def my_function():
     config = await depends.get("config")  # Can await!
@@ -208,36 +216,36 @@ result = my_function()
 result = await my_function()
 ```
 
----
+______________________________________________________________________
 
 ## Locations Requiring Fixes
 
 ### High Priority (Integration Files - ~60 errors)
 
 1. **`fastblocks/_health_integration.py`** - 30+ coroutine access errors
-2. **`fastblocks/_events_integration.py`** - 15+ errors
-3. **`fastblocks/_validation_integration.py`** - 10+ errors
-4. **`fastblocks/_workflows_integration.py`** - 15+ errors
+1. **`fastblocks/_events_integration.py`** - 15+ errors
+1. **`fastblocks/_validation_integration.py`** - 10+ errors
+1. **`fastblocks/_workflows_integration.py`** - 15+ errors
 
 Pattern: All missing `await` on `depends.get()` calls
 
 ### Medium Priority (Actions - ~30 errors)
 
 1. **`fastblocks/actions/gather/middleware.py`** - 2 errors
-2. **`fastblocks/actions/gather/routes.py`** - 2 errors
-3. **`fastblocks/actions/gather/templates.py`** - 5 errors
-4. **`fastblocks/actions/query/parser.py`** - 6 errors
-5. **`fastblocks/actions/sync/*.py`** - 15+ errors
+1. **`fastblocks/actions/gather/routes.py`** - 2 errors
+1. **`fastblocks/actions/gather/templates.py`** - 5 errors
+1. **`fastblocks/actions/query/parser.py`** - 6 errors
+1. **`fastblocks/actions/sync/*.py`** - 15+ errors
 
 ### Lower Priority (Adapters - ~60 errors)
 
 1. **`fastblocks/middleware.py`** - 15 errors
-2. **`fastblocks/adapters/app/default.py`** - 10 errors
-3. **`fastblocks/adapters/admin/sqladmin.py`** - 1 error
-4. **`fastblocks/adapters/auth/*.py`** - 6 errors
-5. **`fastblocks/adapters/icons/*.py`** - 50+ errors (type stub issues)
+1. **`fastblocks/adapters/app/default.py`** - 10 errors
+1. **`fastblocks/adapters/admin/sqladmin.py`** - 1 error
+1. **`fastblocks/adapters/auth/*.py`** - 6 errors
+1. **`fastblocks/adapters/icons/*.py`** - 50+ errors (type stub issues)
 
----
+______________________________________________________________________
 
 ## Type Checking
 
@@ -267,7 +275,7 @@ error: Condition will always evaluate to False since the types
 0 errors, 0 warnings, 0 informations
 ```
 
----
+______________________________________________________________________
 
 ## Performance Considerations
 
@@ -293,6 +301,7 @@ config, templates, cache = await asyncio.gather(
 # Cache at module level for repeated access
 _config_cache = None
 
+
 async def get_config():
     global _config_cache
     if _config_cache is None:
@@ -300,17 +309,17 @@ async def get_config():
     return _config_cache
 ```
 
----
+______________________________________________________________________
 
 ## Summary
 
 **Key Takeaways:**
 
 1. ✅ **`depends.get()` ALWAYS returns a coroutine**
-2. ✅ **MUST use `await` to get the actual object**
-3. ✅ **Prefer `@depends.inject` with `Inject[Type]` parameters**
-4. ✅ **Functions using `depends.get()` must be `async def`**
-5. ✅ **Update all callers to `await` the function**
+1. ✅ **MUST use `await` to get the actual object**
+1. ✅ **Prefer `@depends.inject` with `Inject[Type]` parameters**
+1. ✅ **Functions using `depends.get()` must be `async def`**
+1. ✅ **Update all callers to `await` the function**
 
 **Impact:**
 
@@ -322,7 +331,7 @@ async def get_config():
 **Next Steps:**
 
 1. Fix integration files (highest error density)
-2. Fix actions module
-3. Fix adapters
-4. Verify with `uv run pyright fastblocks`
-5. Run tests to ensure no breakage
+1. Fix actions module
+1. Fix adapters
+1. Verify with `uv run pyright fastblocks`
+1. Run tests to ensure no breakage

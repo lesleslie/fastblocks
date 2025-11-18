@@ -1,9 +1,9 @@
 """Tests for Universal Query Parser."""
 
-import pytest
-from unittest.mock import MagicMock, AsyncMock
-from starlette.datastructures import QueryParams
+from unittest.mock import MagicMock
 
+import pytest
+from starlette.datastructures import QueryParams
 from fastblocks.actions.query.parser import UniversalQueryParser
 
 
@@ -36,9 +36,7 @@ class TestUniversalQueryParser:
 
     def test_parser_initialization(self, mock_request, mock_query, mock_model_class):
         """Test parser initializes with correct defaults."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser.request == mock_request
         assert parser.model_class == mock_model_class
@@ -49,9 +47,7 @@ class TestUniversalQueryParser:
 
     def test_parse_pagination_default(self, mock_request, mock_query, mock_model_class):
         """Test pagination with default values."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         page, limit, offset = parser._parse_pagination({})
 
@@ -61,13 +57,9 @@ class TestUniversalQueryParser:
 
     def test_parse_pagination_custom(self, mock_request, mock_query, mock_model_class):
         """Test pagination with custom values."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
-        page, limit, offset = parser._parse_pagination(
-            {"page": "3", "limit": "25"}
-        )
+        page, limit, offset = parser._parse_pagination({"page": "3", "limit": "25"})
 
         assert page == 3
         assert limit == 25
@@ -89,13 +81,9 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test pagination handles invalid values."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
-        page, limit, offset = parser._parse_pagination(
-            {"page": "0", "limit": "-5"}
-        )
+        page, limit, offset = parser._parse_pagination({"page": "0", "limit": "-5"})
 
         assert page == 1  # Minimum is 1
         assert limit == 1  # Minimum is 1
@@ -103,9 +91,7 @@ class TestUniversalQueryParser:
 
     def test_parse_sorting_default(self, mock_request, mock_query, mock_model_class):
         """Test sorting with default values."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         order_by, order_dir = parser._parse_sorting({})
 
@@ -114,9 +100,7 @@ class TestUniversalQueryParser:
 
     def test_parse_sorting_custom(self, mock_request, mock_query, mock_model_class):
         """Test sorting with custom values."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         order_by, order_dir = parser._parse_sorting(
             {"order_by": "created_at", "order_dir": "desc"}
@@ -129,9 +113,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test sorting with invalid direction falls back to asc."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         _, order_dir = parser._parse_sorting(
             {"order_by": "name", "order_dir": "invalid"}
@@ -141,9 +123,7 @@ class TestUniversalQueryParser:
 
     def test_parse_filters_simple(self, mock_request, mock_query, mock_model_class):
         """Test parsing simple filters."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         filters = parser._parse_filters({"name": "John", "status": "active"})
 
@@ -155,9 +135,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test parsing filters with operators."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         filters = parser._parse_filters(
             {
@@ -176,9 +154,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test processing null operator."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser._process_operator_value("null", "true") is True
         assert parser._process_operator_value("null", "false") is False
@@ -188,9 +164,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test processing in operator."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         result = parser._process_operator_value("in", "a,b,c")
 
@@ -200,9 +174,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test processing comparison operators."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser._process_operator_value("gt", "10") == 10
         assert parser._process_operator_value("gte", "5.5") == 5.5
@@ -212,9 +184,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test processing boolean values."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser._process_simple_value("true") is True
         assert parser._process_simple_value("false") is False
@@ -225,9 +195,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test processing null values."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser._process_simple_value("null") is None
         assert parser._process_simple_value("none") is None
@@ -237,9 +205,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test processing numeric values."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser._process_simple_value("42") == 42
         assert parser._process_simple_value("3.14") == 3.14
@@ -248,18 +214,14 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test converting to integer."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser._convert_to_number("42") == 42
         assert isinstance(parser._convert_to_number("42"), int)
 
     def test_convert_to_number_float(self, mock_request, mock_query, mock_model_class):
         """Test converting to float."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser._convert_to_number("3.14") == 3.14
         assert isinstance(parser._convert_to_number("3.14"), float)
@@ -268,9 +230,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test converting invalid number returns original."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser._convert_to_number("not_a_number") == "not_a_number"
 
@@ -279,9 +239,7 @@ class TestUniversalQueryParser:
     ):
         """Test getting pagination info with defaults."""
         mock_request.query_params = QueryParams({})
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         info = parser.get_pagination_info()
 
@@ -297,9 +255,7 @@ class TestUniversalQueryParser:
     ):
         """Test getting pagination info with custom values."""
         mock_request.query_params = QueryParams({"page": "3", "limit": "20"})
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         info = parser.get_pagination_info()
 
@@ -310,17 +266,13 @@ class TestUniversalQueryParser:
         assert info["prev_page"] == 2
         assert info["next_page"] == 4
 
-    def test_validate_query_requirements_no_model(
-        self, mock_request, mock_query
-    ):
+    def test_validate_query_requirements_no_model(self, mock_request, mock_query):
         """Test validation fails without model class."""
         parser = UniversalQueryParser(mock_request, mock_query, None)
 
         assert parser._validate_query_requirements() is False
 
-    def test_validate_query_requirements_no_query(
-        self, mock_request, mock_model_class
-    ):
+    def test_validate_query_requirements_no_query(self, mock_request, mock_model_class):
         """Test validation fails without query interface."""
         parser = UniversalQueryParser(mock_request, None, mock_model_class)
 
@@ -330,9 +282,7 @@ class TestUniversalQueryParser:
         self, mock_request, mock_query, mock_model_class
     ):
         """Test validation succeeds with both model and query."""
-        parser = UniversalQueryParser(
-            mock_request, mock_query, mock_model_class
-        )
+        parser = UniversalQueryParser(mock_request, mock_query, mock_model_class)
 
         assert parser._validate_query_requirements() is True
 
