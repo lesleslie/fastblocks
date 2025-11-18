@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import StyleBase, StyleBaseSettings
 
 
-class KelpUIStyleSettings(StyleBaseSettings):  # type: ignore[misc]
+class KelpUIStyleSettings(StyleBaseSettings):
     """Settings for KelpUI styles adapter."""
 
     # Required ACB 0.19.0+ metadata

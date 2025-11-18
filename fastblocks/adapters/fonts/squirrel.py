@@ -10,7 +10,7 @@ from acb.depends import depends
 from ._base import FontsBase, FontsBaseSettings
 
 
-class FontSquirrelFontsSettings(FontsBaseSettings):  # type: ignore[misc]
+class FontSquirrelFontsSettings(FontsBaseSettings):
     """Font Squirrel-specific settings."""
 
     fonts_dir: str = "/static/fonts"

@@ -17,7 +17,7 @@ from ._utils import (
 )
 
 
-class RemixIconSettings(IconsBaseSettings):  # type: ignore[misc]
+class RemixIconSettings(IconsBaseSettings):
     """Settings for Remix Icon adapter."""
 
     # Required ACB 0.19.0+ metadata

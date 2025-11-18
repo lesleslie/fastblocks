@@ -17,7 +17,7 @@ from ._utils import (
 )
 
 
-class HeroiconsIconsSettings(IconsBaseSettings):  # type: ignore[misc]
+class HeroiconsIconsSettings(IconsBaseSettings):
     """Settings for Heroicons adapter."""
 
     # Required ACB 0.19.0+ metadata

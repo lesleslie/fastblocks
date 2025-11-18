@@ -1,7 +1,7 @@
 from acb.config import AdapterBase, Settings
 
 
-class AdminBaseSettings(Settings):  # type: ignore[misc]
+class AdminBaseSettings(Settings):
     style: str = "bootstrap"
     title: str = "FastBlocks Dashboard"
 

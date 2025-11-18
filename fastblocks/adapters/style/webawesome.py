@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import StyleBase, StyleBaseSettings
 
 
-class WebAwesomeStyleSettings(StyleBaseSettings):  # type: ignore[misc]
+class WebAwesomeStyleSettings(StyleBaseSettings):
     """Settings for WebAwesome styles adapter."""
 
     # Required ACB 0.19.0+ metadata

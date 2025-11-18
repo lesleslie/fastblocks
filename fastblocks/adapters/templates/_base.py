@@ -53,10 +53,10 @@ class TemplateLoader(t.Protocol):
     async def list_templates(self) -> list[TemplatePath]: ...
 
 
-class TemplatesBaseSettings(Config, ABC):  # type: ignore[misc]
+class TemplatesBaseSettings(Config, ABC):
     cache_timeout: int = 300
 
-    @depends.inject  # type: ignore[misc]
+    @depends.inject
     def __init__(self, config: Inject[Config], **values: t.Any) -> None:
         super().__init__(**values)
         self.cache_timeout = self.cache_timeout if config.deployed else 1
@@ -74,7 +74,7 @@ class TemplatesProtocol(t.Protocol):
     def get_cache_key(path: AsyncPath) -> str: ...
 
 
-class TemplatesBase(AdapterBase):  # type: ignore[misc]
+class TemplatesBase(AdapterBase):
     app: t.Any | None = None
     admin: t.Any | None = None
     app_searchpaths: list[AsyncPath] | None = None

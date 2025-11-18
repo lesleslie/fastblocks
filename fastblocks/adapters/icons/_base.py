@@ -8,7 +8,7 @@ from acb.config import AdapterBase, Settings
 from acb.depends import depends
 
 
-class IconsBaseSettings(Settings):  # type: ignore[misc]
+class IconsBaseSettings(Settings):
     """Base settings for icon adapters."""
 
     cdn_url: str | None = None
@@ -24,7 +24,7 @@ class IconsProtocol(Protocol):
     def get_icon_tag(self, icon_name: str, **attributes: Any) -> str: ...
 
 
-class IconsBase(AdapterBase):  # type: ignore[misc]
+class IconsBase(AdapterBase):
     """Base class for icon adapters."""
 
     # Required ACB 0.19.0+ metadata

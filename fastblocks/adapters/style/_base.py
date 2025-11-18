@@ -8,7 +8,7 @@ from acb.config import AdapterBase, Settings
 from acb.depends import depends
 
 
-class StyleBaseSettings(Settings):  # type: ignore[misc]
+class StyleBaseSettings(Settings):
     """Base settings for style adapters."""
 
     cdn_url: str | None = None
@@ -23,7 +23,7 @@ class StyleProtocol(Protocol):
     def get_component_class(self, component: str) -> str: ...
 
 
-class StyleBase(AdapterBase):  # type: ignore[misc]
+class StyleBase(AdapterBase):
     """Base class for style adapters."""
 
     # Required ACB 0.19.0+ metadata

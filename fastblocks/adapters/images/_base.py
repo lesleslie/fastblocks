@@ -8,7 +8,7 @@ from acb.config import AdapterBase, Settings
 from acb.depends import depends
 
 
-class ImagesBaseSettings(Settings):  # type: ignore[misc]
+class ImagesBaseSettings(Settings):
     """Base settings for image adapters."""
 
     cdn_url: str | None = None
@@ -27,7 +27,7 @@ class ImagesProtocol(Protocol):
     def get_img_tag(self, image_id: str, alt: str, **attributes: Any) -> str: ...
 
 
-class ImagesBase(AdapterBase):  # type: ignore[misc]
+class ImagesBase(AdapterBase):
     """Base class for image adapters."""
 
     # Required ACB 0.19.0+ metadata

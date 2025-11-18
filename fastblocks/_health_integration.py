@@ -35,7 +35,7 @@ except ImportError:
 class FastBlocksHealthCheck(HealthCheckMixin):  # type: ignore[misc]
     """Base health check implementation for FastBlocks components."""
 
-    @depends.inject  # type: ignore[misc]
+    @depends.inject
     def __init__(
         self,
         config: Inject[t.Any],

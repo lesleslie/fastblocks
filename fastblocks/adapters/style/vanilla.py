@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import StyleBase, StyleBaseSettings
 
 
-class VanillaStyleSettings(StyleBaseSettings):  # type: ignore[misc]
+class VanillaStyleSettings(StyleBaseSettings):
     """Vanilla CSS-specific settings."""
 
     css_paths: list[str] = ["/static/css/base.css"]

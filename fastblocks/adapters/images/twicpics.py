@@ -13,7 +13,7 @@ from pydantic import SecretStr
 from ._base import ImagesBase, ImagesBaseSettings
 
 
-class TwicPicsImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
+class TwicPicsImagesSettings(ImagesBaseSettings):
     """Settings for TwicPics adapter."""
 
     # Required ACB 0.19.0+ metadata

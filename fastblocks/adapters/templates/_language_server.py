@@ -12,7 +12,7 @@ from acb.depends import depends
 from ._syntax_support import FastBlocksSyntaxSupport
 
 
-class LanguageServerSettings(Settings):  # type: ignore[misc]
+class LanguageServerSettings(Settings):
     """Settings for FastBlocks Language Server."""
 
     # Required ACB 0.19.0+ metadata

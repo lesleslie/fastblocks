@@ -37,7 +37,7 @@ class SyntaxError:
     fix_suggestion: str = ""
 
 
-class FastBlocksSyntaxSettings(Settings):  # type: ignore[misc]
+class FastBlocksSyntaxSettings(Settings):
     """Settings for FastBlocks syntax support."""
 
     # Required ACB 0.19.0+ metadata

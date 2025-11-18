@@ -12,7 +12,7 @@ from pydantic import SecretStr
 from ._base import ImagesBase, ImagesBaseSettings
 
 
-class CloudflareImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
+class CloudflareImagesSettings(ImagesBaseSettings):
     """Settings for Cloudflare Images adapter."""
 
     # Required ACB 0.19.0+ metadata

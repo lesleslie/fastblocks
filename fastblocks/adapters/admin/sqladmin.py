@@ -29,7 +29,7 @@ class AdminSettings(AdminBaseSettings): ...
 
 
 class Admin(AdminBase):
-    @depends.inject  # type: ignore[misc]
+    @depends.inject
     def __init__(
         self,
         templates: Inject[t.Any],

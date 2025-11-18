@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import IconsBase, IconsBaseSettings
 
 
-class PhosphorIconsSettings(IconsBaseSettings):  # type: ignore[misc]
+class PhosphorIconsSettings(IconsBaseSettings):
     """Settings for Phosphor icons adapter."""
 
     # Required ACB 0.19.0+ metadata

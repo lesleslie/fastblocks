@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import ImagesBase, ImagesBaseSettings
 
 
-class ImageKitImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
+class ImageKitImagesSettings(ImagesBaseSettings):
     """ImageKit-specific settings."""
 
     public_key: str

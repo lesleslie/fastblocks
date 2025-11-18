@@ -17,7 +17,7 @@ from ._utils import (
 )
 
 
-class MaterialIconsSettings(IconsBaseSettings):  # type: ignore[misc]
+class MaterialIconsSettings(IconsBaseSettings):
     """Settings for Material Icons adapter."""
 
     # Required ACB 0.19.0+ metadata
