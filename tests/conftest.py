@@ -1424,6 +1424,7 @@ def mock_acb():  # noqa: C901
         "acb.config": types.ModuleType("acb.config"),
         "acb.depends": types.ModuleType("acb.depends"),
         "acb.adapters": types.ModuleType("acb.adapters"),
+        "acb.console": types.ModuleType("acb.console"),
         "anyio": types.ModuleType("anyio")
         if "anyio" not in sys.modules
         else sys.modules["anyio"],
@@ -1596,6 +1597,11 @@ def mock_acb():  # noqa: C901
             MagicMock(),
         ),
     )
+
+    # Mock console for CLI support
+    mock_console = MagicMock()
+    mock_console.print = MagicMock()
+    module_structure["acb.console"].console = mock_console
 
     # Register mock modules
     with patch.dict("sys.modules", module_structure):
