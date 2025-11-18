@@ -22,7 +22,7 @@ class SitemapSettings(SitemapBaseSettings):
     pass
 
 
-class AsgiSitemap(NativeSitemap[str], SitemapBase):  # type: ignore[override,name-defined]
+class AsgiSitemap(NativeSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
 
     def items(self) -> t.Any:

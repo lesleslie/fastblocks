@@ -21,7 +21,7 @@ class CachedSitemapSettings(SitemapBaseSettings):
     pass
 
 
-class CachedSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
+class CachedSitemap(BaseSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
     _background_task: asyncio.Task[t.Any] | None = None
 

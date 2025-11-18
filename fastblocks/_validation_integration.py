@@ -30,7 +30,6 @@ Usage:
     async def create_user(request):
         ...
 """
-# type: ignore  # ACB validation service API stub - graceful degradation
 
 import functools
 import typing as t

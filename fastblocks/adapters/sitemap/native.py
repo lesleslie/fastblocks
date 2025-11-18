@@ -21,7 +21,7 @@ class NativeSitemapSettings(SitemapBaseSettings):
     pass
 
 
-class NativeSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
+class NativeSitemap(BaseSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
 
     def items(self) -> t.Any:

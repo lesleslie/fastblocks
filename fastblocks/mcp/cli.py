@@ -33,7 +33,7 @@ _HEALTH_STATUS_COLORS = {
 }
 
 
-def _display_health_result_summary(name: str, result) -> None:  # type: ignore[no-untyped-def]
+def _display_health_result_summary(name: str, result: t.Any) -> None:
     """Display a single health check result in summary format."""
     status_color = _HEALTH_STATUS_COLORS.get(result.status, "white")
     click.echo(f"{name:<20} ", nl=False)
@@ -41,7 +41,7 @@ def _display_health_result_summary(name: str, result) -> None:  # type: ignore[n
     click.echo(f" {result.message}")
 
 
-def _display_health_result_detail(adapter_name: str, result) -> None:  # type: ignore[no-untyped-def]
+def _display_health_result_detail(adapter_name: str, result: t.Any) -> None:
     """Display a single health check result with full details."""
     status_color = _HEALTH_STATUS_COLORS.get(result.status, "white")
 
@@ -91,7 +91,7 @@ def _display_migration_incompatibility(compatibility: dict[str, t.Any]) -> None:
         click.echo(f"  - {warning}", err=True)
 
 
-def _display_migration_success(result) -> None:  # type: ignore[no-untyped-def]
+def _display_migration_success(result: t.Any) -> None:
     """Display successful migration results."""
     click.secho("✓ Migration completed successfully", fg="green")
     click.echo(f"Steps applied: {', '.join(result.steps_applied)}")
@@ -101,7 +101,7 @@ def _display_migration_success(result) -> None:  # type: ignore[no-untyped-def]
             click.secho(f"  - {warning}", fg="yellow")
 
 
-def _display_migration_failure(result) -> None:  # type: ignore[no-untyped-def]
+def _display_migration_failure(result: t.Any) -> None:
     """Display migration failure errors."""
     click.secho("✗ Migration failed", fg="red")
     for error in result.errors:
@@ -121,7 +121,7 @@ def _format_finding_for_json(finding: t.Any) -> dict[str, t.Any]:
     }
 
 
-def _write_json_audit_report(report, output_path: str | None) -> None:  # type: ignore[no-untyped-def]
+def _write_json_audit_report(report: t.Any, output_path: str | None) -> None:
     """Write audit report in JSON format."""
     import json
 
@@ -140,7 +140,7 @@ def _write_json_audit_report(report, output_path: str | None) -> None:  # type: 
         click.echo(json.dumps(output_data, indent=2))
 
 
-def _display_audit_finding(finding) -> None:  # type: ignore[no-untyped-def]
+def _display_audit_finding(finding: t.Any) -> None:
     """Display a single audit finding to console."""
     severity_color = _SEVERITY_COLORS.get(finding.severity.value, "white")
 
@@ -154,7 +154,7 @@ def _display_audit_finding(finding) -> None:  # type: ignore[no-untyped-def]
         click.echo(f"  Affected: {', '.join(finding.affected_items)}")
 
 
-def _display_text_audit_report(report) -> None:  # type: ignore[no-untyped-def]
+def _display_text_audit_report(report: t.Any) -> None:
     """Display audit report in text format to console."""
     click.echo(f"Configuration Audit Report: {report.configuration_name}")
     click.echo(f"Profile: {report.profile}")
@@ -172,7 +172,7 @@ def _display_text_audit_report(report) -> None:  # type: ignore[no-untyped-def]
             click.echo(f"  • {rec}")
 
 
-def _write_text_audit_report(report, output_path: str) -> None:  # type: ignore[no-untyped-def]
+def _write_text_audit_report(report: t.Any, output_path: str) -> None:
     """Write audit report in text format to file."""
     with open(output_path, "w") as f:
         f.write("Configuration Audit Report\n")

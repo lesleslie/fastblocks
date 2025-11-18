@@ -26,7 +26,6 @@ Usage:
     from fastblocks._workflows_integration import execute_performance_optimization
     result = await execute_performance_optimization()
 """
-# type: ignore  # ACB workflows API stub - graceful degradation
 
 import typing as t
 from contextlib import suppress
