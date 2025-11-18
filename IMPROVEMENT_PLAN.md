@@ -20,12 +20,12 @@ ______________________________________________________________________
 
 | Metric | Baseline | Current | Target | Status |
 |--------|----------|---------|--------|--------|
-| Pyright Errors | 501 | 257 | \<50 | 🟢 49% reduction! |
+| Pyright Errors | 501 | **211** | \<50 | 🟢 **58% reduction! (-43 in Phase 4)** |
 | Test Coverage | 15.52% | **33.00%** | 40% | 🟢 **+21.18% (+204 tests)** |
 | Test Pass Rate | 72% (611/835) | **83% (~170/204 new)** | 95% | 🟢 **Phase 3 tests passing!** |
 | Test Failures | 224 | **207** | \<50 | 🟡 **-17 failures** |
 | Type Ignores | 222 | 222 | \<111 | 🔴 |
-| Overall Health | 58/100 | **78/100** | 85/100 | 🟢 **+20 points!** |
+| Overall Health | 58/100 | **80/100** | 85/100 | 🟢 **+22 points!** |
 
 ______________________________________________________________________
 
@@ -471,17 +471,38 @@ ______________________________________________________________________
 
 ### Task 4.1: Type System Cleanup - Target \<50 Errors
 
-**Priority**: MEDIUM | **Effort**: 20 hours | **Status**: ⬜ Not Started
+**Priority**: MEDIUM | **Effort**: 20 hours | **Status**: 🔄 IN PROGRESS
 
-- [ ] Review all remaining pyright errors: `uv run pyright fastblocks > pyright_errors.txt`
-- [ ] Categorize errors by type
-- [ ] Fix parameter mismatch errors (highest priority)
-- [ ] Add proper type stubs for icon adapters
-- [ ] Fix undefined variable errors
-- [ ] Address constant redefinition warnings
-- [ ] Fix unnecessary isinstance/comparison errors
-- [ ] Target: \<50 total errors
-- [ ] Track: Run `uv run pyright fastblocks --stats` regularly
+- [x] Review all remaining pyright errors: `uv run pyright fastblocks > pyright_errors.txt`
+- [x] Categorize errors by type
+- [x] Fix icon/image adapter `depends.get()` sync issues (254→231, -23 errors)
+- [x] Fix coroutine comparison errors (231→221, -10 errors)
+- [x] Fix deprecated Pydantic V1 APIs (3 errors)
+- [x] Fix constant redefinition warnings (4 errors)
+- [x] Fix unused variable errors (3 errors)
+- [ ] Fix remaining undefined variable errors (17 remaining)
+- [ ] Handle false positive reportUnusedFunction (40 template filters)
+- [ ] Fix parameter mismatch errors (38 reportCallIssue)
+- [ ] Fix attribute access issues (62 reportAttributeAccessIssue)
+- [ ] Target: \<50 total errors (currently 211, need -161 more)
+- [x] Track: Run `uv run pyright fastblocks --stats` regularly
+
+**Progress** (2025-11-18):
+- **Starting**: 254 errors (from Phase 2 completion)
+- **Current**: 211 errors
+- **Reduction**: -43 errors (-17%)
+- **Commits**: 3 commits pushed
+  1. Icon/image adapter sync fixes (254→231)
+  2. MCP and template coroutine fixes (231→221)
+  3. Deprecated/unused/constant fixes (221→211)
+
+**Remaining Error Categories**:
+- reportAttributeAccessIssue: 62 (Inject[Any] type inference)
+- reportUnusedFunction: 40 (template filters - likely false positives)
+- reportCallIssue: 38 (API parameter mismatches)
+- reportUndefinedVariable: 17
+- reportUnnecessaryIsInstance: 10
+- Others: ~44
 
 **Success Criteria**: Pyright reports \<50 errors, strict mode enabled successfully
 

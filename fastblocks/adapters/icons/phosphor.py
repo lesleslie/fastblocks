@@ -80,7 +80,7 @@ class PhosphorIcons(IconsBase):
     def __init__(self) -> None:
         """Initialize Phosphor adapter."""
         super().__init__()
-        self.settings: PhosphorSettings | None = None
+        self.settings: PhosphorIconsSettings | None = None
 
         # Register with ACB dependency system
         with suppress(Exception):
@@ -89,7 +89,7 @@ class PhosphorIcons(IconsBase):
     def get_stylesheet_links(self) -> list[str]:
         """Get Phosphor icons stylesheet links."""
         if not self.settings:
-            self.settings = PhosphorSettings()
+            self.settings = PhosphorIconsSettings()
 
         links = []
 
@@ -109,7 +109,7 @@ class PhosphorIcons(IconsBase):
     def _generate_phosphor_css(self) -> str:
         """Generate Phosphor-specific CSS."""
         if not self.settings:
-            self.settings = PhosphorSettings()
+            self.settings = PhosphorIconsSettings()
 
         return f"""
 /* Phosphor Icons Base Styles */
@@ -191,7 +191,7 @@ class PhosphorIcons(IconsBase):
     def get_icon_class(self, icon_name: str, variant: str | None = None) -> str:
         """Get Phosphor icon class with variant support."""
         if not self.settings:
-            self.settings = PhosphorSettings()
+            self.settings = PhosphorIconsSettings()
 
         # Resolve icon aliases
         if icon_name in self.settings.icon_aliases:
@@ -349,7 +349,7 @@ class PhosphorIcons(IconsBase):
     ) -> str:
         """Generate SVG sprite-based icon tag (alternative approach)."""
         if not self.settings:
-            self.settings = PhosphorSettings()
+            self.settings = PhosphorIconsSettings()
 
         if not variant:
             variant = self.settings.default_variant

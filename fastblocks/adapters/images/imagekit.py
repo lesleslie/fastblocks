@@ -28,7 +28,7 @@ class ImageKitImages(ImagesBase):
     def __init__(self) -> None:
         """Initialize ImageKit adapter."""
         super().__init__()
-        self.settings = ImageKitSettings()
+        self.settings = ImageKitImagesSettings()
 
         # Register with ACB dependency system
         with suppress(Exception):

@@ -632,7 +632,7 @@ class AdvancedHTMYComponentRegistry:
             metadata.status = ComponentStatus.ERROR
             metadata.error_message = str(e)
             raise ComponentCompilationError(
-                f"Failed to compile component '{component_name}': {e}"
+                f"Failed to compile component '{metadata.path.stem}': {e}"
             ) from e
 
     async def render_component_with_lifecycle(
