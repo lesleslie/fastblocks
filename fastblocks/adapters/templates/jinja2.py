@@ -494,7 +494,7 @@ class RedisLoader(BaseTemplateLoader):
                 await self.cache.scan(f"*.{ext}") if self.cache is not None else []
             )
             if hasattr(scan_result, "__aiter__"):
-                async for k in scan_result:  # type: ignore
+                async for k in scan_result:
                     found.append(k)
             else:
                 found.extend(scan_result)
