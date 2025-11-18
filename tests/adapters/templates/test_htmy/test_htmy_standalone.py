@@ -7,22 +7,22 @@ from pathlib import Path
 
 
 # Standalone AsyncPath-like implementation
-class TestAsyncPath:
+class MockAsyncPath:
     def __init__(self, path_str: str) -> None:
         self.path = Path(path_str)
 
     def __str__(self) -> str:
         return str(self.path)
 
-    def __truediv__(self, other: str) -> "TestAsyncPath":
-        return TestAsyncPath(str(self.path / other))
+    def __truediv__(self, other: str) -> "MockAsyncPath":
+        return MockAsyncPath(str(self.path / other))
 
     async def exists(self):
         return self.path.exists()
 
     async def rglob(self, pattern: str):
         for p in self.path.rglob(pattern):
-            yield TestAsyncPath(str(p))
+            yield MockAsyncPath(str(p))
 
     @property
     def stem(self):
@@ -52,12 +52,12 @@ class ComponentCompilationError(Exception):
 class HTMYComponentRegistry:
     """Registry for discovering and caching HTMY components."""
 
-    def __init__(self, searchpaths: list[TestAsyncPath] | None = None) -> None:
+    def __init__(self, searchpaths: list[MockAsyncPath] | None = None) -> None:
         self.searchpaths = searchpaths or []
         self._component_cache: dict[str, t.Any] = {}
         self._source_cache: dict[str, str] = {}
 
-    async def discover_components(self) -> dict[str, TestAsyncPath]:
+    async def discover_components(self) -> dict[str, MockAsyncPath]:
         """Discover all .py files in component search paths."""
         components = {}
 
@@ -66,7 +66,7 @@ class HTMYComponentRegistry:
                 continue
 
             async for component_file in search_path.rglob("*.py"):
-                if component_file.name == "__init__.py":
+                if component_file.name == "__init__.py__":
                     continue
 
                 # Component name is filename without .py extension
@@ -77,7 +77,7 @@ class HTMYComponentRegistry:
 
     async def get_component_source(
         self, component_name: str
-    ) -> tuple[str, TestAsyncPath]:
+    ) -> tuple[str, MockAsyncPath]:
         """Get component source code and path."""
         components = await self.discover_components()
 
@@ -158,9 +158,9 @@ async def test_component_discovery() -> None:
         traceback.print_exc()
 
 
-def _setup_standalone_registry() -> tuple[HTMYComponentRegistry, TestAsyncPath]:
+def _setup_standalone_registry() -> tuple[HTMYComponentRegistry, MockAsyncPath]:
     """Set up the standalone component registry."""
-    component_path = TestAsyncPath(
+    component_path = MockAsyncPath(
         "/Users/les/Projects/sites/fastest/templates/app/bulma/components"
     )
     registry = HTMYComponentRegistry([component_path])
@@ -171,7 +171,7 @@ def _setup_standalone_registry() -> tuple[HTMYComponentRegistry, TestAsyncPath]:
     return registry, component_path
 
 
-async def _validate_component_path(component_path: TestAsyncPath) -> bool:
+async def _validate_component_path(component_path: MockAsyncPath) -> bool:
     """Validate that the component path exists."""
     exists = await component_path.exists()
     print(f"✓ Component path exists: {exists}")
@@ -180,7 +180,7 @@ async def _validate_component_path(component_path: TestAsyncPath) -> bool:
 
 async def _discover_and_list_components(
     registry: HTMYComponentRegistry,
-) -> dict[str, TestAsyncPath]:
+) -> dict[str, MockAsyncPath]:
     """Discover and list all components."""
     components = await registry.discover_components()
     print(f"✓ Found components: {list(components.keys())}")

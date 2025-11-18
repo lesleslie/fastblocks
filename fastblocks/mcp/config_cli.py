@@ -9,10 +9,11 @@ from pathlib import Path
 from typing import Any
 
 import click
-from rich.console import Console
+from acb.console import Console
+from acb.depends import depends
+from mcp_common.ui import ServerPanels
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
-from rich.table import Table
 
 from .configuration import (
     ConfigurationManager,
@@ -25,7 +26,7 @@ from .configuration import (
 from .health import HealthCheckSystem
 from .registry import AdapterRegistry
 
-console = Console()
+console = depends.get_sync(Console)
 
 
 class InteractiveConfigurationCLI:
@@ -622,23 +623,7 @@ def list_backups() -> None:
             console.print("[yellow]No backups found[/yellow]")
             return
 
-        table = Table(title="Configuration Backups")
-        table.add_column("ID", width=8)
-        table.add_column("Name")
-        table.add_column("Profile")
-        table.add_column("Created")
-        table.add_column("Description")
-
-        for backup in backups:
-            table.add_row(
-                backup.id[:8],
-                backup.name,
-                backup.profile.value,
-                backup.created_at.strftime("%Y-%m-%d %H:%M"),
-                backup.description,
-            )
-
-        console.print(table)
+        ServerPanels.backups_table(backups)
 
     asyncio.run(_list_backups())
 

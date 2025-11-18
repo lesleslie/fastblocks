@@ -84,7 +84,11 @@ class TestTemplateContextValidation:
             "user_id": 123,
         }
 
-        is_valid, sanitized, errors = await validation_service.validate_template_context(
+        (
+            is_valid,
+            sanitized,
+            errors,
+        ) = await validation_service.validate_template_context(
             context=context,
             template_name="test.html",
             strict=False,
@@ -102,7 +106,11 @@ class TestTemplateContextValidation:
             "content": "<script>alert('XSS')</script>",
         }
 
-        is_valid, sanitized, errors = await validation_service.validate_template_context(
+        (
+            is_valid,
+            sanitized,
+            errors,
+        ) = await validation_service.validate_template_context(
             context=context,
             template_name="test.html",
             strict=False,
@@ -119,21 +127,32 @@ class TestTemplateContextValidation:
             "search": "'; DROP TABLE users; --",
         }
 
-        is_valid, sanitized, errors = await validation_service.validate_template_context(
+        (
+            is_valid,
+            sanitized,
+            errors,
+        ) = await validation_service.validate_template_context(
             context=context,
             template_name="test.html",
             strict=False,
         )
 
         # Should detect SQL injection pattern
-        if validation_service.available and validation_service._config.prevent_sql_injection:
+        if (
+            validation_service.available
+            and validation_service._config.prevent_sql_injection
+        ):
             assert len(errors) > 0
             assert any("SQL injection" in error for error in errors)
 
     @pytest.mark.asyncio
     async def test_empty_context_validation(self, validation_service):
         """Test validation of empty context."""
-        is_valid, sanitized, errors = await validation_service.validate_template_context(
+        (
+            is_valid,
+            sanitized,
+            errors,
+        ) = await validation_service.validate_template_context(
             context={},
             template_name="test.html",
             strict=False,
@@ -197,7 +216,10 @@ class TestFormInputValidation:
         )
 
         # Should detect SQL injection pattern
-        if validation_service.available and validation_service._config.prevent_sql_injection:
+        if (
+            validation_service.available
+            and validation_service._config.prevent_sql_injection
+        ):
             assert any("SQL injection" in error for error in errors)
 
     @pytest.mark.asyncio
@@ -214,7 +236,10 @@ class TestFormInputValidation:
         )
 
         # Should detect path traversal
-        if validation_service.available and validation_service._config.prevent_path_traversal:
+        if (
+            validation_service.available
+            and validation_service._config.prevent_path_traversal
+        ):
             assert any("path traversal" in error for error in errors)
 
     @pytest.mark.asyncio
@@ -238,7 +263,9 @@ class TestFormInputValidation:
         # Should fail validation
         assert is_valid is False
         assert len(errors) > 0
-        assert any("Required field" in error or "too short" in error for error in errors)
+        assert any(
+            "Required field" in error or "too short" in error for error in errors
+        )
 
     @pytest.mark.asyncio
     async def test_schema_type_validation(self, validation_service):
@@ -391,7 +418,10 @@ class TestValidationDecorators:
         @validate_template_context(strict=False)
         async def render_template(request, template, context):
             # Context should be sanitized
-            assert "<script>" not in str(context.get("content", "")) or not validation_service.available
+            assert (
+                "<script>" not in str(context.get("content", ""))
+                or not validation_service.available
+            )
             return f"Rendered {template}"
 
         # Call with XSS attempt
@@ -426,7 +456,10 @@ class TestValidationDecorators:
         @validate_form_input(schema=None, strict=False)
         async def handle_form(request, form_data):
             # Form data should be sanitized
-            assert "<script>" not in str(form_data.get("comment", "")) or not validation_service.available
+            assert (
+                "<script>" not in str(form_data.get("comment", ""))
+                or not validation_service.available
+            )
             return "Processed"
 
         # Call with XSS attempt
@@ -471,7 +504,9 @@ class TestSecurityFeatures:
         ]
 
         for pattern in patterns:
-            assert validation_service._contains_sql_injection(pattern), f"Failed to detect: {pattern}"
+            assert validation_service._contains_sql_injection(pattern), (
+                f"Failed to detect: {pattern}"
+            )
 
     def test_path_traversal_patterns(self, validation_service):
         """Test detection of various path traversal patterns."""
@@ -483,7 +518,9 @@ class TestSecurityFeatures:
         ]
 
         for pattern in patterns:
-            assert validation_service._contains_path_traversal(pattern), f"Failed to detect: {pattern}"
+            assert validation_service._contains_path_traversal(pattern), (
+                f"Failed to detect: {pattern}"
+            )
 
     def test_safe_inputs(self, validation_service):
         """Test that safe inputs are not flagged."""
@@ -495,12 +532,12 @@ class TestSecurityFeatures:
         ]
 
         for safe_input in safe_inputs:
-            assert not validation_service._contains_sql_injection(
-                safe_input
-            ), f"False positive for SQL injection: {safe_input}"
-            assert not validation_service._contains_path_traversal(
-                safe_input
-            ), f"False positive for path traversal: {safe_input}"
+            assert not validation_service._contains_sql_injection(safe_input), (
+                f"False positive for SQL injection: {safe_input}"
+            )
+            assert not validation_service._contains_path_traversal(safe_input), (
+                f"False positive for path traversal: {safe_input}"
+            )
 
 
 class TestGracefulDegradation:
@@ -512,7 +549,11 @@ class TestGracefulDegradation:
         # Should still work, just without ACB features
         context = {"title": "Test"}
 
-        is_valid, sanitized, errors = await validation_service.validate_template_context(
+        (
+            is_valid,
+            sanitized,
+            errors,
+        ) = await validation_service.validate_template_context(
             context=context,
             template_name="test.html",
             strict=False,

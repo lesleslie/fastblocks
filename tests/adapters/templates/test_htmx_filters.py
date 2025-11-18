@@ -1,21 +1,21 @@
 """Tests for FastBlocks HTMX template filters."""
 
-import pytest
 from unittest.mock import Mock, patch
+
 from fastblocks.adapters.templates._filters import (
     htmx_attrs,
     htmx_component,
-    htmx_form,
-    htmx_lazy_load,
-    htmx_infinite_scroll,
-    htmx_search,
-    htmx_modal,
-    htmx_img_swap,
-    htmx_icon_toggle,
-    htmx_ws_connect,
-    htmx_validation_feedback,
     htmx_error_container,
+    htmx_form,
+    htmx_icon_toggle,
+    htmx_img_swap,
+    htmx_infinite_scroll,
+    htmx_lazy_load,
+    htmx_modal,
     htmx_retry_trigger,
+    htmx_search,
+    htmx_validation_feedback,
+    htmx_ws_connect,
 )
 
 
@@ -34,7 +34,7 @@ class TestEnhancedHtmxAttrs:
             get="/api/data",
             select=".content",
             sync="closest form:abort",
-            disabled_elt="button"
+            disabled_elt="button",
         )
         assert 'hx-get="/api/data"' in result
         assert 'hx-select=".content"' in result
@@ -57,10 +57,7 @@ class TestHtmxComponent:
         mock_style_class.return_value = "card shadow-md"
 
         result = htmx_component(
-            "card",
-            get="/api/details/123",
-            target="#details",
-            variant="primary"
+            "card", get="/api/details/123", target="#details", variant="primary"
         )
 
         assert 'class="card shadow-md"' in result
@@ -92,14 +89,17 @@ class TestHtmxForm:
     def test_htmx_form_with_validation(self):
         """Test HTMX form with validation target."""
         result = htmx_form(
-            "/users/create",
-            validation_target="#form-errors",
-            target="#form-container"
+            "/users/create", validation_target="#form-errors", target="#form-container"
         )
 
         assert 'hx-post="/users/create"' in result
         assert 'hx-target="#form-container"' in result
-        assert 'hx-headers="{&quot;HX-Error-Target&quot;: &quot;#form-errors&quot;}"' in result or 'hx-headers=\'{"HX-Error-Target": "#form-errors"}\'' in result or '"HX-Error-Target": "#form-errors"' in result
+        assert (
+            'hx-headers="{&quot;HX-Error-Target&quot;: &quot;#form-errors&quot;}"'
+            in result
+            or 'hx-headers=\'{"HX-Error-Target": "#form-errors"}\'' in result
+            or '"HX-Error-Target": "#form-errors"' in result
+        )
 
 
 class TestHtmxLazyLoad:
@@ -120,7 +120,7 @@ class TestHtmxLazyLoad:
             "/api/heavy-content",
             placeholder="Loading heavy content...",
             trigger="intersect once",
-            target="#content-area"
+            target="#content-area",
         )
 
         assert 'hx-get="/api/heavy-content"' in result
@@ -144,9 +144,7 @@ class TestHtmxInfiniteScroll:
     def test_htmx_infinite_scroll_custom(self):
         """Test infinite scroll with custom container."""
         result = htmx_infinite_scroll(
-            "/api/articles?page=3",
-            container="#articles-list",
-            swap="beforeend"
+            "/api/articles?page=3", container="#articles-list", swap="beforeend"
         )
 
         assert 'hx-get="/api/articles?page=3"' in result
@@ -172,7 +170,7 @@ class TestHtmxSearch:
             "/api/search",
             debounce=500,
             target="#custom-results",
-            include="closest form"
+            include="closest form",
         )
 
         assert 'hx-get="/api/search"' in result
@@ -198,7 +196,7 @@ class TestHtmxModal:
             "/modal/confirmation",
             target="#custom-modal",
             swap="outerHTML",
-            confirm="Are you sure?"
+            confirm="Are you sure?",
         )
 
         assert 'hx-get="/modal/confirmation"' in result
@@ -219,7 +217,7 @@ class TestHtmxImgSwap:
         result = htmx_img_swap(
             "product.jpg",
             transformations={"width": 300, "quality": 80},
-            trigger="mouseenter once"
+            trigger="mouseenter once",
         )
 
         assert 'hx-get="/api/images/product.jpg/transform"' in result
@@ -243,9 +241,7 @@ class TestHtmxIconToggle:
     def test_htmx_icon_toggle_basic(self):
         """Test basic icon toggle."""
         result = htmx_icon_toggle(
-            "heart-filled",
-            "heart-outline",
-            post="/favorites/toggle/123"
+            "heart-filled", "heart-outline", post="/favorites/toggle/123"
         )
 
         assert 'hx-post="/favorites/toggle/123"' in result
@@ -261,7 +257,7 @@ class TestHtmxIconToggle:
             "star-outline",
             patch="/ratings/toggle/456",
             target="closest .rating-container",
-            confirm="Toggle rating?"
+            confirm="Toggle rating?",
         )
 
         assert 'hx-patch="/ratings/toggle/456"' in result
@@ -282,9 +278,7 @@ class TestHtmxWsConnect:
     def test_htmx_ws_connect_with_listen(self):
         """Test WebSocket with event listening."""
         result = htmx_ws_connect(
-            "/ws/chat/room123",
-            listen="message-received",
-            target="#messages"
+            "/ws/chat/room123", listen="message-received", target="#messages"
         )
 
         assert 'hx-ext="ws"' in result
@@ -311,7 +305,7 @@ class TestHtmxValidationFeedback:
             "username",
             validate_url="/api/validate/username",
             trigger="blur",
-            target="#username-status"
+            target="#username-status",
         )
 
         assert 'hx-get="/api/validate/username"' in result
@@ -362,18 +356,14 @@ class TestHtmxFiltersIntegration:
 
     def test_complete_form_pattern(self):
         """Test complete form with validation and error handling."""
-
         # Test form attributes
         form_attrs = htmx_form(
-            "/users/create",
-            target="#form-container",
-            validation_target="#form-errors"
+            "/users/create", target="#form-container", validation_target="#form-errors"
         )
 
         # Test validation field
         email_validation = htmx_validation_feedback(
-            "email",
-            validate_url="/validate/email"
+            "email", validate_url="/validate/email"
         )
 
         # Test error container
@@ -381,7 +371,7 @@ class TestHtmxFiltersIntegration:
 
         assert 'hx-post="/users/create"' in form_attrs
         assert 'hx-target="#form-container"' in form_attrs
-        assert 'HX-Error-Target' in form_attrs and '#form-errors' in form_attrs
+        assert "HX-Error-Target" in form_attrs and "#form-errors" in form_attrs
 
         assert 'hx-get="/validate/email"' in email_validation
         assert 'hx-target="#email-feedback"' in email_validation
@@ -392,14 +382,11 @@ class TestHtmxFiltersIntegration:
     def test_infinite_scroll_with_search(self):
         """Test infinite scroll combined with search."""
         search_attrs = htmx_search(
-            "/api/search",
-            target="#search-results",
-            debounce=250
+            "/api/search", target="#search-results", debounce=250
         )
 
         scroll_attrs = htmx_infinite_scroll(
-            "/api/posts?page=2",
-            container="#search-results"
+            "/api/posts?page=2", container="#search-results"
         )
 
         assert 'hx-trigger="keyup changed delay:250ms"' in search_attrs

@@ -6,7 +6,7 @@ from uuid import UUID
 
 from acb.depends import depends
 
-from ._base import StyleBaseSettings
+from ._base import StyleBase, StyleBaseSettings
 
 
 class BulmaStyleSettings(StyleBaseSettings):  # type: ignore[misc]
@@ -17,7 +17,7 @@ class BulmaStyleSettings(StyleBaseSettings):  # type: ignore[misc]
     custom_variables: dict[str, str] = {}
 
 
-class BulmaStyle(StylesBase):
+class BulmaStyle(StyleBase):
     """Bulma CSS framework adapter implementation."""
 
     # Required ACB 0.19.0+ metadata
@@ -72,7 +72,7 @@ class BulmaStyle(StylesBase):
     def __init__(self) -> None:
         """Initialize Bulma adapter."""
         super().__init__()
-        self.settings = BulmaSettings()
+        self.settings = BulmaStyleSettings()
 
         # Register with ACB dependency system
         with suppress(Exception):

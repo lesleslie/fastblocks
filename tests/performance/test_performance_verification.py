@@ -19,7 +19,6 @@ Created: 2025-01-12
 
 import asyncio
 import time
-from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -27,17 +26,20 @@ import pytest
 # NOTE: Performance optimizers have been migrated to ACB Services Layer
 # These imports will need to be updated once ACB services are fully available
 try:
-    from fastblocks.adapters.templates._performance_optimizer import (
-        PerformanceOptimizer,
-        PerformanceMetrics,
-    )
     from fastblocks.adapters.templates._enhanced_cache import (
-        EnhancedCacheManager,
         CacheTier,
+        EnhancedCacheManager,
+    )
+    from fastblocks.adapters.templates._performance_optimizer import (
+        PerformanceMetrics,
+        PerformanceOptimizer,
     )
 except ImportError:
     # Performance modules will be migrated to ACB services
-    pytest.skip("Performance optimization modules require ACB services layer", allow_module_level=True)
+    pytest.skip(
+        "Performance optimization modules require ACB services layer",
+        allow_module_level=True,
+    )
 
 
 class TestTemplatePerformanceOptimization:
@@ -62,7 +64,9 @@ class TestTemplatePerformanceOptimization:
         )
 
     @pytest.mark.benchmark(group="template-optimization")
-    def test_performance_metrics_tracking(self, benchmark, performance_optimizer, sample_metrics):
+    def test_performance_metrics_tracking(
+        self, benchmark, performance_optimizer, sample_metrics
+    ):
         """Benchmark performance metrics tracking overhead."""
         template_name = "test_template.html"
 
@@ -75,11 +79,15 @@ class TestTemplatePerformanceOptimization:
         assert template_name in performance_optimizer.template_stats
 
     @pytest.mark.benchmark(group="template-optimization")
-    async def test_context_optimization_performance(self, benchmark, performance_optimizer):
+    async def test_context_optimization_performance(
+        self, benchmark, performance_optimizer
+    ):
         """Benchmark context optimization performance."""
         template_name = "large_template.html"
         large_context = {
-            "items": [{"id": i, "name": f"item_{i}", "data": f"data_{i}"} for i in range(200)],
+            "items": [
+                {"id": i, "name": f"item_{i}", "data": f"data_{i}"} for i in range(200)
+            ],
             "metadata": {"total": 200, "page": 1, "per_page": 50},
             "user": {"id": 1, "name": "test_user", "permissions": ["read", "write"]},
         }
@@ -90,12 +98,14 @@ class TestTemplatePerformanceOptimization:
             cache_hit=False,
             template_size=1000,
             context_size=len(str(large_context)),
-            fragment_count=5
+            fragment_count=5,
         )
         performance_optimizer.record_render(template_name, slow_metrics)
 
         async def optimize_context():
-            return await performance_optimizer.optimize_render_context(template_name, large_context)
+            return await performance_optimizer.optimize_render_context(
+                template_name, large_context
+            )
 
         result = await benchmark.pedantic(optimize_context, iterations=10, rounds=5)
 
@@ -142,7 +152,8 @@ class TestTemplatePerformanceOptimization:
         performance_optimizer.record_render(template_name, slow_metrics)
 
         should_stream_historical = performance_optimizer.should_enable_streaming(
-            template_name, 30000  # Smaller context but historical slowness
+            template_name,
+            30000,  # Smaller context but historical slowness
         )
         assert should_stream_historical is True
 
@@ -158,7 +169,9 @@ class TestTemplatePerformanceOptimization:
 
         # Record many cache misses
         for _ in range(20):
-            performance_optimizer.record_render("poor_cache_template.html", poor_cache_metrics)
+            performance_optimizer.record_render(
+                "poor_cache_template.html", poor_cache_metrics
+            )
 
         recommendations = performance_optimizer.get_optimization_recommendations()
         assert len(recommendations) > 0
@@ -174,7 +187,7 @@ class TestEnhancedCachePerformance:
         manager = EnhancedCacheManager(
             max_memory_entries=100,
             promotion_threshold=3,  # Lower threshold for testing
-            demotion_idle_time=1,   # 1 second for testing
+            demotion_idle_time=1,  # 1 second for testing
         )
         await manager.initialize()
         yield manager
@@ -196,6 +209,7 @@ class TestEnhancedCachePerformance:
     @pytest.mark.benchmark(group="cache-optimization")
     async def test_cache_set_with_metadata(self, benchmark, cache_manager):
         """Benchmark cache set operations with full metadata."""
+
         async def set_operation():
             await cache_manager.set(
                 key="benchmark_key",
@@ -231,7 +245,10 @@ class TestEnhancedCachePerformance:
         # Run tier optimization
         optimization_results = await cache_manager.optimize_tiers()
 
-        assert optimization_results["promotions"] > 0 or optimization_results["demotions"] > 0
+        assert (
+            optimization_results["promotions"] > 0
+            or optimization_results["demotions"] > 0
+        )
 
     async def test_dependency_invalidation_performance(self, cache_manager):
         """Test dependency-based cache invalidation."""
@@ -240,7 +257,7 @@ class TestEnhancedCachePerformance:
             await cache_manager.set(
                 f"dependent_key_{i}",
                 f"value_{i}",
-                dependencies={f"dependency_{i % 5}"}  # 5 different dependencies
+                dependencies={f"dependency_{i % 5}"},  # 5 different dependencies
             )
 
         # Measure invalidation performance
@@ -309,6 +326,7 @@ class TestQueryPerformanceOptimization:
 
     async def test_query_execution_with_optimization(self, query_optimizer):
         """Test query execution with optimization monitoring."""
+
         async def mock_query_func():
             await asyncio.sleep(0.05)  # Simulate query execution
             return [{"id": 1, "name": "test"}]
@@ -340,6 +358,7 @@ class TestQueryPerformanceOptimization:
 
     async def test_slow_query_detection(self, query_optimizer):
         """Test slow query detection and handling."""
+
         async def slow_query_func():
             await asyncio.sleep(0.15)  # Slow query (>100ms threshold)
             return []
@@ -396,6 +415,7 @@ class TestAsyncPerformanceOptimization:
     @pytest.mark.benchmark(group="async-optimization")
     async def test_task_execution_overhead(self, benchmark, async_optimizer):
         """Benchmark task execution overhead."""
+
         async def simple_task():
             await asyncio.sleep(0.001)
             return "completed"
@@ -412,6 +432,7 @@ class TestAsyncPerformanceOptimization:
 
     async def test_batch_execution_performance(self, async_optimizer):
         """Test batch execution performance and concurrency."""
+
         async def task_func(task_id):
             await asyncio.sleep(0.01)
             return f"task_{task_id}_completed"
@@ -427,7 +448,9 @@ class TestAsyncPerformanceOptimization:
         execution_time = time.time() - start_time
 
         assert len(results) == 20
-        assert all("completed" in str(r) for r in results if not isinstance(r, Exception))
+        assert all(
+            "completed" in str(r) for r in results if not isinstance(r, Exception)
+        )
         # Should be faster than sequential execution due to concurrency
         assert execution_time < 0.5  # Should complete in less than 500ms
 
@@ -441,16 +464,21 @@ class TestAsyncPerformanceOptimization:
             return f"connection_{connection_count}"
 
         # Test resource pool usage
-        async with async_optimizer.resource_pool("test_pool", create_connection, max_size=5) as conn1:
+        async with async_optimizer.resource_pool(
+            "test_pool", create_connection, max_size=5
+        ) as conn1:
             assert "connection_" in conn1
 
-        async with async_optimizer.resource_pool("test_pool", create_connection, max_size=5) as conn2:
+        async with async_optimizer.resource_pool(
+            "test_pool", create_connection, max_size=5
+        ) as conn2:
             # Should reuse connection from pool
             assert conn2 == conn1
 
     @pytest.mark.benchmark(group="async-optimization")
     async def test_stream_processing_performance(self, benchmark, async_optimizer):
         """Benchmark async stream processing."""
+
         async def data_generator():
             for i in range(100):
                 yield f"data_{i}"
@@ -477,6 +505,7 @@ class TestAsyncPerformanceOptimization:
 
     async def test_performance_monitoring_accuracy(self, async_optimizer):
         """Test async performance monitoring accuracy."""
+
         # Execute various tasks
         async def fast_task():
             return "fast"
@@ -506,6 +535,7 @@ class TestAsyncPerformanceOptimization:
 
     async def test_optimization_recommendations(self, async_optimizer):
         """Test async optimization recommendations."""
+
         # Create conditions that trigger recommendations
         # Simulate high queue congestion
         async def queue_filler():
@@ -513,15 +543,20 @@ class TestAsyncPerformanceOptimization:
 
         # Add many tasks to create queue congestion
         tasks = [queue_filler() for _ in range(10)]
-        await asyncio.gather(*[
-            async_optimizer.execute_task(task, priority=TaskPriority.LOW)
-            for task in tasks[:3]  # Only execute a few to create backlog
-        ], return_exceptions=True)
+        await asyncio.gather(
+            *[
+                async_optimizer.execute_task(task, priority=TaskPriority.LOW)
+                for task in tasks[:3]  # Only execute a few to create backlog
+            ],
+            return_exceptions=True,
+        )
 
         recommendations = await async_optimizer.get_optimization_recommendations()
 
         # Should have some recommendations
-        assert len(recommendations) >= 0  # May or may not have recommendations based on timing
+        assert (
+            len(recommendations) >= 0
+        )  # May or may not have recommendations based on timing
 
 
 class TestIntegratedPerformanceVerification:
@@ -547,7 +582,10 @@ class TestIntegratedPerformanceVerification:
                 await asyncio.sleep(0.01)
                 return [{"id": 1, "name": "test_user", "data": "sample_data"}]
 
-            query_result, query_metrics = await query_optimizer.execute_with_optimization(
+            (
+                query_result,
+                query_metrics,
+            ) = await query_optimizer.execute_with_optimization(
                 mock_db_query,
                 "SELECT id, name, data FROM users WHERE active = true",
                 cache_key="active_users",
@@ -589,7 +627,7 @@ class TestIntegratedPerformanceVerification:
                     "query_time": query_metrics.execution_time,
                     "cache_hit": query_metrics.cache_hit,
                     "template_stats": template_optimizer.get_performance_stats(),
-                }
+                },
             }
 
         result = await benchmark.pedantic(integrated_operation, iterations=5, rounds=3)
@@ -606,8 +644,9 @@ class TestIntegratedPerformanceVerification:
 
     async def test_memory_usage_optimization(self):
         """Test memory usage optimization across all components."""
-        import psutil
         import os
+
+        import psutil
 
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss
@@ -700,10 +739,12 @@ def configure_benchmarks():
 
 if __name__ == "__main__":
     # Run verification tests
-    pytest.main([
-        __file__,
-        "-v",
-        "--benchmark-group-by=group",
-        "--benchmark-columns=min,max,mean,stddev",
-        "--benchmark-sort=mean",
-    ])
+    pytest.main(
+        [
+            __file__,
+            "-v",
+            "--benchmark-group-by=group",
+            "--benchmark-columns=min,max,mean,stddev",
+            "--benchmark-sort=mean",
+        ]
+    )

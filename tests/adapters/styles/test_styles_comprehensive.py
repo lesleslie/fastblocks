@@ -1,35 +1,34 @@
 """Comprehensive tests for FastBlocks style adapters."""
 
-import pytest
-from unittest.mock import MagicMock, patch
 from uuid import UUID
 
-from fastblocks.adapters.styles._base import StylesBase, StylesProtocol
-from fastblocks.adapters.styles.bulma import BulmaAdapter, BulmaSettings
-from fastblocks.adapters.styles.vanilla import VanillaAdapter, VanillaSettings
+import pytest
+from fastblocks.adapters.style._base import StyleBase
+from fastblocks.adapters.style.bulma import BulmaStyle, BulmaStyleSettings
+from fastblocks.adapters.style.vanilla import VanillaStyle, VanillaStyleSettings
 
 
-class TestStylesBase:
-    """Test StylesBase adapter functionality."""
+class TestStyleBase:
+    """Test StyleBase adapter functionality."""
 
     def test_styles_base_inheritance(self):
-        """Test StylesBase inherits from correct base classes."""
-        adapter = StylesBase()
-        assert hasattr(adapter, 'MODULE_ID')
-        assert hasattr(adapter, 'MODULE_STATUS')
+        """Test StyleBase inherits from correct base classes."""
+        adapter = StyleBase()
+        assert hasattr(adapter, "MODULE_ID")
+        assert hasattr(adapter, "MODULE_STATUS")
         assert adapter.MODULE_STATUS == "stable"
         assert isinstance(adapter.MODULE_ID, UUID)
 
     def test_styles_base_protocol_compliance(self):
-        """Test StylesBase implements StylesProtocol."""
+        """Test StyleBase implements StylesProtocol."""
         # Check that required methods exist
-        required_methods = ['get_component_class', 'get_stylesheet_links']
+        required_methods = ["get_component_class", "get_stylesheet_links"]
         for method in required_methods:
-            assert hasattr(StylesBase, method)
+            assert hasattr(StyleBase, method)
 
     def test_styles_base_abstract_methods(self):
         """Test abstract methods raise NotImplementedError."""
-        adapter = StylesBase()
+        adapter = StyleBase()
 
         with pytest.raises(NotImplementedError):
             adapter.get_component_class("button")
@@ -38,19 +37,19 @@ class TestStylesBase:
             adapter.get_stylesheet_links()
 
 
-class TestBulmaAdapter:
+class TestBulmaStyle:
     """Test Bulma CSS framework adapter functionality."""
 
     def test_bulma_adapter_initialization(self):
         """Test Bulma adapter initializes correctly."""
-        adapter = BulmaAdapter()
-        assert isinstance(adapter.settings, BulmaSettings)
+        adapter = BulmaStyle()
+        assert isinstance(adapter.settings, BulmaStyleSettings)
         assert adapter.MODULE_STATUS == "stable"
         assert isinstance(adapter.MODULE_ID, UUID)
 
     def test_bulma_settings_defaults(self):
         """Test Bulma settings have correct defaults."""
-        settings = BulmaSettings()
+        settings = BulmaStyleSettings()
         assert settings.version == "0.9.4"
         assert settings.cdn is True
         assert "button" in settings.components
@@ -58,7 +57,7 @@ class TestBulmaAdapter:
 
     def test_bulma_get_component_class_basic(self):
         """Test basic component class retrieval."""
-        adapter = BulmaAdapter()
+        adapter = BulmaStyle()
 
         button_class = adapter.get_component_class("button")
         assert button_class == "button"
@@ -68,14 +67,14 @@ class TestBulmaAdapter:
 
     def test_bulma_get_component_class_unknown(self):
         """Test unknown component class handling."""
-        adapter = BulmaAdapter()
+        adapter = BulmaStyle()
 
         unknown_class = adapter.get_component_class("unknown-component")
         assert unknown_class == "unknown-component"  # Fallback to original name
 
     def test_bulma_get_stylesheet_links_cdn(self):
         """Test CDN stylesheet links generation."""
-        adapter = BulmaAdapter()
+        adapter = BulmaStyle()
         adapter.settings.cdn = True
         adapter.settings.version = "0.9.4"
 
@@ -88,7 +87,7 @@ class TestBulmaAdapter:
 
     def test_bulma_get_stylesheet_links_local(self):
         """Test local stylesheet links generation."""
-        adapter = BulmaAdapter()
+        adapter = BulmaStyle()
         adapter.settings.cdn = False
         adapter.settings.local_path = "/static/css/bulma.min.css"
 
@@ -99,7 +98,7 @@ class TestBulmaAdapter:
 
     def test_bulma_get_utility_classes(self):
         """Test utility classes retrieval."""
-        adapter = BulmaAdapter()
+        adapter = BulmaStyle()
 
         utilities = adapter.get_utility_classes()
 
@@ -111,17 +110,17 @@ class TestBulmaAdapter:
 
     def test_bulma_build_component_html(self):
         """Test component HTML building."""
-        adapter = BulmaAdapter()
+        adapter = BulmaStyle()
 
         html = adapter.build_component_html("button", "Click Me", variant="primary")
 
-        assert '<button' in html
+        assert "<button" in html
         assert 'class="button is-primary"' in html
-        assert 'Click Me' in html
+        assert "Click Me" in html
 
     def test_bulma_responsive_utilities(self):
         """Test responsive utility classes."""
-        adapter = BulmaAdapter()
+        adapter = BulmaStyle()
 
         utilities = adapter.get_utility_classes()
 
@@ -132,37 +131,44 @@ class TestBulmaAdapter:
 
     def test_bulma_color_utilities(self):
         """Test color utility classes."""
-        adapter = BulmaAdapter()
+        adapter = BulmaStyle()
 
         utilities = adapter.get_utility_classes()
 
         # Check for color classes
-        color_variants = ["primary", "secondary", "success", "danger", "warning", "info"]
+        color_variants = [
+            "primary",
+            "secondary",
+            "success",
+            "danger",
+            "warning",
+            "info",
+        ]
         for variant in color_variants:
             assert variant in utilities
             assert utilities[variant].startswith("is-")
 
 
-class TestVanillaAdapter:
+class TestVanillaStyle:
     """Test Vanilla CSS adapter functionality."""
 
     def test_vanilla_adapter_initialization(self):
         """Test Vanilla CSS adapter initializes correctly."""
-        adapter = VanillaAdapter()
-        assert isinstance(adapter.settings, VanillaSettings)
+        adapter = VanillaStyle()
+        assert isinstance(adapter.settings, VanillaStyleSettings)
         assert adapter.MODULE_STATUS == "stable"
         assert isinstance(adapter.MODULE_ID, UUID)
 
     def test_vanilla_settings_defaults(self):
         """Test Vanilla CSS settings have correct defaults."""
-        settings = VanillaSettings()
+        settings = VanillaStyleSettings()
         assert settings.css_paths == ["/static/css/base.css"]
         assert settings.custom_properties == {}
         assert settings.css_variables == {}
 
     def test_vanilla_get_component_class_basic(self):
         """Test basic component class retrieval."""
-        adapter = VanillaAdapter()
+        adapter = VanillaStyle()
 
         button_class = adapter.get_component_class("button")
         assert button_class == "btn"  # Semantic mapping
@@ -172,7 +178,7 @@ class TestVanillaAdapter:
 
     def test_vanilla_get_component_class_with_css_variables(self):
         """Test component class with CSS variables."""
-        adapter = VanillaAdapter()
+        adapter = VanillaStyle()
         adapter.settings.css_variables = {"primary-color": "#007bff"}
 
         css_vars = adapter.get_css_variables()
@@ -180,14 +186,14 @@ class TestVanillaAdapter:
 
     def test_vanilla_get_component_class_unknown(self):
         """Test unknown component class handling."""
-        adapter = VanillaAdapter()
+        adapter = VanillaStyle()
 
         unknown_class = adapter.get_component_class("unknown-component")
         assert unknown_class == "unknown-component"
 
     def test_vanilla_get_stylesheet_links_empty(self):
         """Test stylesheet links for vanilla CSS (should be empty by default)."""
-        adapter = VanillaAdapter()
+        adapter = VanillaStyle()
 
         links = adapter.get_stylesheet_links()
 
@@ -196,8 +202,11 @@ class TestVanillaAdapter:
 
     def test_vanilla_get_stylesheet_links_with_custom(self):
         """Test stylesheet links with custom stylesheets."""
-        adapter = VanillaAdapter()
-        adapter.settings.css_paths = ["/static/css/custom.css", "/static/css/components.css"]
+        adapter = VanillaStyle()
+        adapter.settings.css_paths = [
+            "/static/css/custom.css",
+            "/static/css/components.css",
+        ]
 
         links = adapter.get_stylesheet_links()
 
@@ -207,7 +216,7 @@ class TestVanillaAdapter:
 
     def test_vanilla_get_utility_classes(self):
         """Test utility classes retrieval."""
-        adapter = VanillaAdapter()
+        adapter = VanillaStyle()
 
         utilities = adapter.get_utility_classes()
 
@@ -218,17 +227,17 @@ class TestVanillaAdapter:
 
     def test_vanilla_build_component_html(self):
         """Test component HTML building."""
-        adapter = VanillaAdapter()
+        adapter = VanillaStyle()
 
         html = adapter.build_component_html("button", "Click Me", variant="primary")
 
-        assert '<button' in html
+        assert "<button" in html
         assert 'class="btn btn-primary"' in html
-        assert 'Click Me' in html
+        assert "Click Me" in html
 
     def test_vanilla_semantic_mappings(self):
         """Test semantic class mappings."""
-        adapter = VanillaAdapter()
+        adapter = VanillaStyle()
 
         # Test common semantic mappings
         assert adapter.get_component_class("button") == "btn"
@@ -237,39 +246,35 @@ class TestVanillaAdapter:
 
     def test_vanilla_modifier_application(self):
         """Test modifier application in HTML building."""
-        adapter = VanillaAdapter()
+        adapter = VanillaStyle()
 
         html = adapter.build_component_html(
-            "button",
-            "Submit",
-            variant="primary",
-            size="large",
-            class_="custom-btn"
+            "button", "Submit", variant="primary", size="large", class_="custom-btn"
         )
 
         assert 'class="btn btn-primary btn-large custom-btn"' in html
 
 
-class TestStyleAdapterIntegration:
+class TestStyleIntegration:
     """Test style adapter integration patterns."""
 
     def test_multiple_adapters_coexistence(self):
         """Test multiple style adapters can coexist."""
-        bulma = BulmaAdapter()
-        vanilla = VanillaAdapter()
+        bulma = BulmaStyle()
+        vanilla = VanillaStyle()
 
         # Both should have different MODULE_IDs
         assert bulma.MODULE_ID != vanilla.MODULE_ID
 
         # Both should implement the same protocol
         for adapter in [bulma, vanilla]:
-            assert hasattr(adapter, 'get_component_class')
-            assert hasattr(adapter, 'get_stylesheet_links')
-            assert hasattr(adapter, 'get_utility_classes')
+            assert hasattr(adapter, "get_component_class")
+            assert hasattr(adapter, "get_stylesheet_links")
+            assert hasattr(adapter, "get_utility_classes")
 
     def test_adapter_consistency(self):
         """Test adapter method consistency."""
-        adapters = [BulmaAdapter(), VanillaAdapter()]
+        adapters = [BulmaStyle(), VanillaStyle()]
 
         for adapter in adapters:
             # Test required methods return correct types
@@ -285,8 +290,8 @@ class TestStyleAdapterIntegration:
     def test_framework_switching(self):
         """Test framework switching capabilities."""
         # Test that adapters can be swapped easily
-        bulma = BulmaAdapter()
-        vanilla = VanillaAdapter()
+        bulma = BulmaStyle()
+        vanilla = VanillaStyle()
 
         # Same method calls should work with different frameworks
         bulma_button = bulma.get_component_class("button")
@@ -300,7 +305,7 @@ class TestStyleAdapterIntegration:
 
     def test_protocol_compliance(self):
         """Test all adapters comply with StylesProtocol."""
-        adapters = [BulmaAdapter(), VanillaAdapter()]
+        adapters = [BulmaStyle(), VanillaStyle()]
 
         for adapter in adapters:
             # Test required methods exist and work
@@ -313,7 +318,7 @@ class TestStyleAdapterIntegration:
     def test_settings_customization(self):
         """Test settings customization."""
         # Test Bulma customization
-        bulma = BulmaAdapter()
+        bulma = BulmaStyle()
         bulma.settings.version = "0.9.3"
         bulma.settings.cdn = False
         bulma.settings.local_path = "/custom/bulma.css"
@@ -322,7 +327,7 @@ class TestStyleAdapterIntegration:
         assert bulma.settings.cdn is False
 
         # Test Vanilla CSS customization
-        vanilla = VanillaAdapter()
+        vanilla = VanillaStyle()
         vanilla.settings.css_paths = ["/my/styles.css"]
         vanilla.settings.css_variables = {"brand-color": "#FF0000"}
 
@@ -331,21 +336,21 @@ class TestStyleAdapterIntegration:
 
     def test_html_building_patterns(self):
         """Test HTML building patterns across adapters."""
-        adapters = [BulmaAdapter(), VanillaAdapter()]
+        adapters = [BulmaStyle(), VanillaStyle()]
 
         for adapter in adapters:
-            if hasattr(adapter, 'build_component_html'):
+            if hasattr(adapter, "build_component_html"):
                 html = adapter.build_component_html("button", "Test", variant="primary")
 
                 # All should produce valid HTML
-                assert '<button' in html
-                assert 'class=' in html
-                assert 'Test' in html
-                assert '>' in html
+                assert "<button" in html
+                assert "class=" in html
+                assert "Test" in html
+                assert ">" in html
 
     def test_error_handling(self):
         """Test error handling in adapters."""
-        adapters = [BulmaAdapter(), VanillaAdapter()]
+        adapters = [BulmaStyle(), VanillaStyle()]
 
         for adapter in adapters:
             # Test with invalid/empty inputs

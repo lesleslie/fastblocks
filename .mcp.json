@@ -1,130 +1,112 @@
 {
   "mcpServers": {
-    "session-mgmt": {
-      "url": "http://localhost:8678/mcp",
-      "type": "http"
+    "cloud-run": {
+      "args": [
+        "-y",
+        "https://github.com/GoogleCloudPlatform/cloud-run-mcp"
+      ],
+      "command": "npx",
+      "type": "stdio"
+    },
+    "context7": {
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@1.0.20"
+      ],
+      "command": "npx",
+      "type": "stdio"
     },
     "crackerjack": {
-      "url": "http://localhost:8676/mcp",
-      "type": "http"
+      "type": "http",
+      "url": "http://localhost:8676/mcp"
+    },
+    "excalidraw": {
+      "type": "http",
+      "url": "http://localhost:3032/mcp"
+    },
+    "gitlab": {
+      "args": [
+        "-y",
+        "@zereight/mcp-gitlab@2.0.6"
+      ],
+      "command": "npx",
+      "type": "stdio"
+    },
+    "logfire": {
+      "args": [
+        "logfire-mcp@latest"
+      ],
+      "command": "uvx",
+      "type": "stdio"
     },
     "macos_automator": {
-      "command": "npx",
       "args": [
         "-y",
         "@steipete/macos-automator-mcp@0.4.1"
       ],
+      "command": "npx",
       "type": "stdio"
     },
-    "penpot": {
-      "command": "uvx",
-      "args": ["penpot-mcp"],
+    "memory": {
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory@2025.9.25"
+      ],
+      "command": "npx",
       "type": "stdio"
+    },
+    "mermaid": {
+      "type": "http",
+      "url": "http://localhost:3033/mcp"
     },
     "peekaboo": {
-      "command": "npx",
       "args": [
         "-y",
         "@steipete/peekaboo-mcp@2.0.3"
       ],
+      "command": "npx",
       "env": {
         "PEEKABOO_AI_PROVIDERS": "anthropic/claude-opus-4,anthropic/claude-sonnet-4"
       },
       "type": "stdio"
     },
+    "penpot": {
+      "args": [
+        "penpot-mcp"
+      ],
+      "command": "uvx",
+      "type": "stdio"
+    },
     "playwright": {
-      "command": "npx",
       "args": [
         "@playwright/mcp@latest"
       ],
+      "command": "npx",
       "type": "stdio"
     },
-    "github": {
-      "url": "http://localhost:3038/mcp",
-      "type": "http"
+    "sentry": {
+      "type": "http",
+      "url": "https://mcp.sentry.dev/mcp"
     },
-    "gitlab": {
-      "command": "npx",
+    "session-mgmt": {
+      "type": "http",
+      "url": "http://localhost:8678/mcp"
+    },
+    "turso-cloud": {
       "args": [
         "-y",
-        "@zereight/mcp-gitlab@2.0.5"
+        "mcp-turso-cloud"
       ],
-      "type": "stdio"
-    },
-    "memory": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-memory@2025.9.25"
-      ],
       "type": "stdio"
-    },
-    "sequential-thinking": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking@2025.7.1"
-      ],
-      "type": "stdio"
-    },
-    "rust-filesystem": {
-      "command": "rust-mcp-filesystem",
-      "args": [
-        "-w",
-        "/Users/les"
-      ],
-      "type": "stdio"
-    },
-    "mermaid": {
-      "url": "http://localhost:3033/mcp",
-      "type": "http"
-    },
-    "context7": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp@1.0.18"
-      ],
-      "type": "stdio"
-    },
-    "excalidraw": {
-      "url": "http://localhost:3032/mcp",
-      "type": "http"
     },
     "upstash": {
-      "command": "npx",
       "args": [
         "-y",
         "@upstash/mcp-server",
         "run"
       ],
-      "type": "stdio"
-    },
-    "cloud-run": {
       "command": "npx",
-      "args": [
-        "-y",
-        "https://github.com/GoogleCloudPlatform/cloud-run-mcp"
-      ],
-      "type": "stdio"
-    },
-    "sentry": {
-      "url": "https://mcp.sentry.dev/mcp",
-      "type": "http"
-    },
-    "logfire": {
-      "command": "uvx",
-      "args": [
-        "logfire-mcp@latest"
-      ],
-      "type": "stdio"
-    },
-    "turso-cloud": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-turso-cloud"
-      ],
       "type": "stdio"
     }
   }

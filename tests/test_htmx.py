@@ -3,7 +3,6 @@
 import json
 from unittest.mock import patch
 
-import pytest
 from starlette.responses import HTMLResponse
 
 # Mock the debug module to avoid AttributeError
@@ -11,14 +10,13 @@ with patch("fastblocks.htmx.debug") as mock_debug:
     mock_debug.enabled = False
     from fastblocks.htmx import (
         HtmxDetails,
-        HtmxRequest,
         HtmxResponse,
         _get_header,
-        htmx_trigger,
+        htmx_push_url,
         htmx_redirect,
         htmx_refresh,
-        htmx_push_url,
         htmx_retarget,
+        htmx_trigger,
         is_htmx,
     )
 
@@ -465,6 +463,7 @@ class TestIsHtmx:
 
     def test_is_htmx_with_request_object(self) -> None:
         """Test is_htmx with request-like object."""
+
         class MockRequest:
             def __init__(self, is_htmx: bool) -> None:
                 self.headers = {"HX-Request": "true" if is_htmx else "false"}

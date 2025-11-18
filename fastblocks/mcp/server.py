@@ -44,12 +44,8 @@ class FastBlocksMCPServer:
             from acb import create_mcp_server
 
             # Create server using ACB infrastructure
-            # Note: ACB MCP API may differ - this is a stub implementation
-            self._server = create_mcp_server(  # type: ignore[call-arg]
-                name=self.name,
-                version=self.version,
-                description="FastBlocks MCP Server for IDE Integration",
-            )
+            # ACB provides the FastMCP instance with rate limiting already configured
+            self._server = create_mcp_server()
 
             # Register FastBlocks tools and resources
             await self._register_tools()
@@ -57,7 +53,8 @@ class FastBlocksMCPServer:
 
             self._initialized = True
             logger.info(
-                f"FastBlocks MCP server initialized: {self.name} v{self.version}"
+                f"FastBlocks MCP server initialized: {self.name} v{self.version} "
+                f"(using ACB infrastructure with rate limiting: 15 req/sec, burst 40)"
             )
 
         except ImportError:

@@ -39,22 +39,22 @@ class MockStorage:
 
 
 # Standalone AsyncPath-like implementation
-class TestAsyncPath:
+class MockAsyncPath:
     def __init__(self, path_str: str) -> None:
         self.path = Path(path_str)
 
     def __str__(self) -> str:
         return str(self.path)
 
-    def __truediv__(self, other: str) -> "TestAsyncPath":
-        return TestAsyncPath(str(self.path / other))
+    def __truediv__(self, other: str) -> "MockAsyncPath":
+        return MockAsyncPath(str(self.path / other))
 
     async def exists(self):
         return self.path.exists()
 
     async def rglob(self, pattern: str):
         for p in self.path.rglob(pattern):
-            yield TestAsyncPath(str(p))
+            yield MockAsyncPath(str(p))
 
     @property
     def stem(self):
@@ -101,7 +101,7 @@ class HTMYComponentRegistry:
 
     def __init__(
         self,
-        searchpaths: list[TestAsyncPath] | None = None,
+        searchpaths: list[MockAsyncPath] | None = None,
         cache: t.Any = None,
         storage: t.Any = None,
     ) -> None:
@@ -112,16 +112,16 @@ class HTMYComponentRegistry:
         self._source_cache: dict[str, str] = {}
 
     @staticmethod
-    def get_cache_key(component_path: TestAsyncPath, cache_type: str = "source") -> str:
+    def get_cache_key(component_path: MockAsyncPath, cache_type: str = "source") -> str:
         """Generate cache key for component."""
         return f"htmy_component_{cache_type}:{component_path}"
 
     @staticmethod
-    def get_storage_path(component_path: TestAsyncPath) -> TestAsyncPath:
+    def get_storage_path(component_path: MockAsyncPath) -> MockAsyncPath:
         """Convert local component path to storage path."""
         return component_path
 
-    async def discover_components(self) -> dict[str, TestAsyncPath]:
+    async def discover_components(self) -> dict[str, MockAsyncPath]:
         """Discover all .py files in component search paths."""
         components = {}
 
@@ -139,7 +139,7 @@ class HTMYComponentRegistry:
         return components
 
     async def _cache_component_source(
-        self, component_path: TestAsyncPath, source: str
+        self, component_path: MockAsyncPath, source: str
     ) -> None:
         """Cache component source in Redis."""
         if self.cache is not None:
@@ -147,14 +147,14 @@ class HTMYComponentRegistry:
             await self.cache.set(cache_key, source.encode())
 
     async def _cache_component_bytecode(
-        self, component_path: TestAsyncPath, bytecode: bytes
+        self, component_path: MockAsyncPath, bytecode: bytes
     ) -> None:
         """Cache compiled component bytecode in Redis."""
         if self.cache is not None:
             cache_key = self.get_cache_key(component_path, "bytecode")
             await self.cache.set(cache_key, bytecode)
 
-    async def _get_cached_source(self, component_path: TestAsyncPath) -> str | None:
+    async def _get_cached_source(self, component_path: MockAsyncPath) -> str | None:
         """Get cached component source from Redis."""
         if self.cache is not None:
             cache_key = self.get_cache_key(component_path)
@@ -163,7 +163,7 @@ class HTMYComponentRegistry:
                 return cached.decode()
         return None
 
-    async def _get_cached_bytecode(self, component_path: TestAsyncPath) -> bytes | None:
+    async def _get_cached_bytecode(self, component_path: MockAsyncPath) -> bytes | None:
         """Get cached component bytecode from Redis."""
         if self.cache is not None:
             cache_key = self.get_cache_key(component_path, "bytecode")
@@ -172,8 +172,8 @@ class HTMYComponentRegistry:
 
     async def _sync_from_storage_fallback(
         self,
-        path: TestAsyncPath,
-        storage_path: TestAsyncPath,
+        path: MockAsyncPath,
+        storage_path: MockAsyncPath,
     ) -> tuple[str, int]:
         """Fallback sync method for components."""
         local_stat = await path.stat()
@@ -200,7 +200,7 @@ class HTMYComponentRegistry:
 
     async def get_component_source(
         self, component_name: str
-    ) -> tuple[str, TestAsyncPath]:
+    ) -> tuple[str, MockAsyncPath]:
         """Get component source code and path with caching and storage sync."""
         components = await self.discover_components()
 
@@ -308,7 +308,7 @@ async def test_caching() -> None:
         storage = MockStorage()
 
         # Test with our component path
-        component_path = TestAsyncPath(
+        component_path = MockAsyncPath(
             "/Users/les/Projects/sites/fastest/templates/app/bulma/components"
         )
         registry = HTMYComponentRegistry([component_path], cache=cache, storage=storage)

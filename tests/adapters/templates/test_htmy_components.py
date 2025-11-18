@@ -12,25 +12,24 @@ Created: 2025-01-13
 """
 
 import asyncio
-import inspect
-import pytest
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any
+from unittest.mock import MagicMock, patch
 
+import pytest
 from fastblocks.adapters.templates._htmy_components import (
     AdvancedHTMYComponentRegistry,
     ComponentBase,
+    ComponentCompilationError,
     ComponentLifecycleManager,
     ComponentMetadata,
+    ComponentRenderError,
     ComponentScaffolder,
     ComponentStatus,
     ComponentType,
-    ComponentValidator,
     ComponentValidationError,
-    ComponentCompilationError,
-    ComponentRenderError,
+    ComponentValidator,
     DataclassComponentBase,
     HTMXComponentMixin,
 )
@@ -40,9 +39,11 @@ from fastblocks.adapters.templates._htmy_components import (
 
 def create_mock_user_card():
     """Create a mock user card component for testing."""
+
     # Define class without inheritance first to avoid validation
     class _MockUserCard:
         """Mock user card component for testing."""
+
         name: str = "Test User"
         email: str = "test@example.com"
         avatar_url: str = "/static/default-avatar.png"
@@ -52,7 +53,7 @@ def create_mock_user_card():
             return {
                 "hx-get": "/api/user/profile",
                 "hx-trigger": "click",
-                "hx-target": "#user-details"
+                "hx-target": "#user-details",
             }
 
         def htmy(self, context: dict[str, Any]) -> str:
@@ -76,6 +77,7 @@ def create_mock_user_card():
 
 def create_mock_async_component():
     """Create a mock async component for testing."""
+
     class MockAsyncComponent(ComponentBase):
         """Mock async component for testing."""
 
@@ -89,9 +91,11 @@ def create_mock_async_component():
 
 def create_mock_composite_component():
     """Create a mock composite component for testing."""
+
     @dataclass
     class MockCompositeComponent(DataclassComponentBase):
         """Mock composite component for testing."""
+
         title: str = "Composite"
         children: list[str] = field(default_factory=lambda: ["user_card", "button"])
 
@@ -103,12 +107,12 @@ def create_mock_composite_component():
                 for child in self.children:
                     children_html += f"<!-- Child: {child} -->"
 
-            return f'''
+            return f"""
             <div class="composite-component">
                 <h2>{self.title}</h2>
                 <div class="children">{children_html}</div>
             </div>
-            '''
+            """
 
     return MockCompositeComponent
 
@@ -139,7 +143,7 @@ class MockAsyncPath:
     async def read_text(self) -> str:
         # Return mock component source based on stem
         if self.stem == "user_card":
-            return '''
+            return """
 from dataclasses import dataclass
 from typing import Any
 
@@ -150,15 +154,15 @@ class UserCard:
 
     def htmy(self, context: dict[str, Any]) -> str:
         return f"<div>{self.name}: {self.email}</div>"
-'''
+"""
         elif self.stem == "broken_component":
             return "invalid python syntax ((("
 
-        return '''
+        return """
 class TestComponent:
     def htmy(self, context):
         return "<div>Test</div>"
-'''
+"""
 
     async def write_text(self, content: str) -> None:
         pass
@@ -192,9 +196,7 @@ def mock_searchpaths():
 def component_registry(mock_searchpaths):
     """Component registry fixture."""
     return AdvancedHTMYComponentRegistry(
-        searchpaths=mock_searchpaths,
-        cache=None,
-        storage=None
+        searchpaths=mock_searchpaths, cache=None, storage=None
     )
 
 
@@ -226,7 +228,7 @@ class TestComponentMetadata:
             name="user_card",
             path=path,
             type=ComponentType.DATACLASS,
-            status=ComponentStatus.VALIDATED
+            status=ComponentStatus.VALIDATED,
         )
 
         assert metadata.name == "user_card"
@@ -238,9 +240,7 @@ class TestComponentMetadata:
         """Test component metadata post init."""
         path = MockAsyncPath("/test/user_card.py")
         metadata = ComponentMetadata(
-            name="user_card",
-            path=path,
-            type=ComponentType.DATACLASS
+            name="user_card", path=path, type=ComponentType.DATACLASS
         )
 
         assert metadata.cache_key == "component_user_card_user_card"
@@ -251,6 +251,7 @@ class TestComponentBase:
 
     def test_component_base_initialization(self):
         """Test component base initialization."""
+
         # Create concrete implementation for testing
         class TestComponent(ComponentBase):
             def htmy(self, context: dict[str, Any]) -> str:
@@ -265,6 +266,7 @@ class TestComponentBase:
 
     def test_component_hierarchy(self):
         """Test component parent-child relationships."""
+
         # Create concrete implementation for testing
         class TestComponent(ComponentBase):
             def htmy(self, context: dict[str, Any]) -> str:
@@ -288,6 +290,7 @@ class TestComponentBase:
     @pytest.mark.asyncio
     async def test_async_htmy_sync_method(self):
         """Test async_htmy with sync htmy method."""
+
         class TestComponent(ComponentBase):
             def htmy(self, context: dict[str, Any]) -> str:
                 return "<div>test</div>"
@@ -299,6 +302,7 @@ class TestComponentBase:
     @pytest.mark.asyncio
     async def test_async_htmy_async_method(self):
         """Test async_htmy with async htmy method."""
+
         class TestComponent(ComponentBase):
             async def htmy(self, context: dict[str, Any]) -> str:
                 await asyncio.sleep(0.01)
@@ -315,6 +319,7 @@ class TestDataclassComponentBase:
     def test_dataclass_component_validation(self):
         """Test dataclass component must be a dataclass."""
         with pytest.raises(ComponentValidationError):
+
             class NonDataclassComponent(DataclassComponentBase):
                 def htmy(self, context: dict[str, Any]) -> str:
                     return "<div>test</div>"
@@ -368,9 +373,7 @@ class TestComponentScaffolder:
         """Test basic component scaffolding."""
         props = {"title": str, "count": int}
         content = scaffolder.create_basic_component(
-            "TestCard",
-            props=props,
-            htmx_enabled=False
+            "TestCard", props=props, htmx_enabled=False
         )
 
         assert "class TestCard" in content
@@ -381,10 +384,7 @@ class TestComponentScaffolder:
     def test_create_htmx_component(self, scaffolder):
         """Test HTMX component scaffolding."""
         content = scaffolder.create_htmx_component(
-            "ClickButton",
-            endpoint="/api/action",
-            trigger="click",
-            target="#result"
+            "ClickButton", endpoint="/api/action", trigger="click", target="#result"
         )
 
         assert "class ClickButton" in content
@@ -395,10 +395,7 @@ class TestComponentScaffolder:
     def test_create_composite_component(self, scaffolder):
         """Test composite component scaffolding."""
         children = ["header", "content", "footer"]
-        content = scaffolder.create_composite_component(
-            "PageLayout",
-            children=children
-        )
+        content = scaffolder.create_composite_component("PageLayout", children=children)
 
         assert "class PageLayout" in content
         assert "render_component" in content
@@ -437,9 +434,12 @@ class TestComponentValidator:
 
         # Test basic component
         class BasicComponent:
-            def htmy(self, context): return "<div></div>"
+            def htmy(self, context):
+                return "<div></div>"
 
-        assert validator._determine_component_type(BasicComponent) == ComponentType.BASIC
+        assert (
+            validator._determine_component_type(BasicComponent) == ComponentType.BASIC
+        )
 
         # The test for pure dataclass component type is covered in the logic:
         # Components with DataclassComponentBase but no HTMXComponentMixin should be DATACLASS type
@@ -474,9 +474,7 @@ class TestComponentLifecycleManager:
         lifecycle_manager.register_hook("before_render", sync_callback)
 
         await lifecycle_manager.execute_hooks(
-            "before_render",
-            component_name="test",
-            test_data="value"
+            "before_render", component_name="test", test_data="value"
         )
 
         assert callback_data["component_name"] == "test"
@@ -535,15 +533,13 @@ class TestAdvancedHTMYComponentRegistry:
         mock_request = MagicMock()
 
         # Mock component class
-        with patch.object(component_registry, 'get_component_class') as mock_get_class:
+        with patch.object(component_registry, "get_component_class") as mock_get_class:
             mock_component = MagicMock()
             mock_component.htmy.return_value = "<div>test content</div>"
             mock_get_class.return_value = mock_component
 
             result = await component_registry.render_component_with_lifecycle(
-                "test_component",
-                {"data": "value"},
-                mock_request
+                "test_component", {"data": "value"}, mock_request
             )
 
             assert result == "<div>test content</div>"
@@ -555,13 +551,13 @@ class TestAdvancedHTMYComponentRegistry:
         # Mock the write operation
         mock_path = MockAsyncPath("/test/components/new_component.py")
 
-        with patch.object(component_registry._scaffolder, 'create_basic_component') as mock_create:
+        with patch.object(
+            component_registry._scaffolder, "create_basic_component"
+        ) as mock_create:
             mock_create.return_value = "# Generated component code"
 
             result_path = await component_registry.scaffold_component(
-                "NewComponent",
-                ComponentType.BASIC,
-                mock_path
+                "NewComponent", ComponentType.BASIC, mock_path
             )
 
             assert result_path == mock_path
@@ -644,9 +640,7 @@ class TestComponentIntegration:
         # Render component
         mock_request = MagicMock()
         result = await registry.render_component_with_lifecycle(
-            "user_card",
-            {"name": "Integration Test"},
-            mock_request
+            "user_card", {"name": "Integration Test"}, mock_request
         )
 
         assert isinstance(result, str)
@@ -668,15 +662,13 @@ class TestComponentIntegration:
         # Test composite component rendering
         mock_request = MagicMock()
 
-        with patch.object(registry, 'get_component_class') as mock_get_class:
+        with patch.object(registry, "get_component_class") as mock_get_class:
             MockCompositeComponent = create_mock_composite_component()
-            mock_component = MockCompositeComponent()
+            MockCompositeComponent()
             mock_get_class.return_value = MockCompositeComponent
 
             result = await registry.render_component_with_lifecycle(
-                "composite",
-                {"title": "Test Composite"},
-                mock_request
+                "composite", {"title": "Test Composite"}, mock_request
             )
 
             assert "Test Composite" in result
@@ -694,17 +686,15 @@ class TestComponentIntegration:
         mock_request.headers = {
             "HX-Request": "true",
             "HX-Trigger": "click",
-            "HX-Target": "#content"
+            "HX-Target": "#content",
         }
 
-        with patch.object(registry, 'get_component_class') as mock_get_class:
+        with patch.object(registry, "get_component_class") as mock_get_class:
             MockUserCard = create_mock_user_card()
             mock_get_class.return_value = MockUserCard
 
             result = await registry.render_component_with_lifecycle(
-                "user_card",
-                {"name": "HTMX User"},
-                mock_request
+                "user_card", {"name": "HTMX User"}, mock_request
             )
 
             assert "HTMX User" in result

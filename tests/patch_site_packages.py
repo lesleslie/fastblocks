@@ -61,8 +61,12 @@ def patch_acb_init(file_path: Path) -> bool:
         "def register_pkg() -> None:\n    # Patched by FastBlocks tests\n    return"
     )
 
-    if re.search(register_pkg_pattern, content):  # REGEX OK: Test file patching for ACB registration
-        patched_content = re.sub(register_pkg_pattern, replacement, content)  # REGEX OK: Test file patching for ACB registration
+    if re.search(
+        register_pkg_pattern, content
+    ):  # REGEX OK: Test file patching for ACB registration
+        patched_content = re.sub(
+            register_pkg_pattern, replacement, content
+        )  # REGEX OK: Test file patching for ACB registration
         file_path.write_text(patched_content)
         return True
     return False
@@ -78,8 +82,12 @@ def patch_acb_actions(file_path: Path) -> bool:
     # Create a simplified version that returns an empty list
     replacement = "async def register_actions(path: AsyncPath) -> list[Action]:\n    # Patched by FastBlocks tests\n    return []"
 
-    if re.search(register_actions_pattern, content):  # REGEX OK: Test file patching for ACB actions
-        patched_content = re.sub(register_actions_pattern, replacement, content)  # REGEX OK: Test file patching for ACB actions
+    if re.search(
+        register_actions_pattern, content
+    ):  # REGEX OK: Test file patching for ACB actions
+        patched_content = re.sub(
+            register_actions_pattern, replacement, content
+        )  # REGEX OK: Test file patching for ACB actions
         file_path.write_text(patched_content)
         return True
     return False

@@ -1,12 +1,14 @@
 """Comprehensive tests for FastBlocks font adapters."""
 
-import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
 from uuid import UUID
 
-from fastblocks.adapters.fonts._base import FontsBase, FontsProtocol
-from fastblocks.adapters.fonts.google import GoogleFontsAdapter, GoogleFontsSettings
-from fastblocks.adapters.fonts.squirrel import FontSquirrelAdapter, FontSquirrelSettings
+import pytest
+from fastblocks.adapters.fonts._base import FontsBase
+from fastblocks.adapters.fonts.google import GoogleFonts, GoogleFontsSettings
+from fastblocks.adapters.fonts.squirrel import (
+    FontSquirrelFonts,
+    FontSquirrelFontsSettings,
+)
 
 
 class TestFontsBase:
@@ -15,15 +17,15 @@ class TestFontsBase:
     def test_fonts_base_inheritance(self):
         """Test FontsBase inherits from correct base classes."""
         adapter = FontsBase()
-        assert hasattr(adapter, 'MODULE_ID')
-        assert hasattr(adapter, 'MODULE_STATUS')
+        assert hasattr(adapter, "MODULE_ID")
+        assert hasattr(adapter, "MODULE_STATUS")
         assert adapter.MODULE_STATUS == "stable"
         assert isinstance(adapter.MODULE_ID, UUID)
 
     def test_fonts_base_protocol_compliance(self):
         """Test FontsBase implements FontsProtocol."""
         # Check that required methods exist
-        required_methods = ['get_font_import', 'get_font_family']
+        required_methods = ["get_font_import", "get_font_family"]
         for method in required_methods:
             assert hasattr(FontsBase, method)
 
@@ -35,12 +37,12 @@ class TestFontsBase:
             adapter.get_font_family("primary")
 
 
-class TestGoogleFontsAdapter:
+class TestGoogleFonts:
     """Test Google Fonts adapter functionality."""
 
-    def test_google_fonts_adapter_initialization(self):
+    def test_google_fonts_initialization(self):
         """Test Google Fonts adapter initializes correctly."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         assert isinstance(adapter.settings, GoogleFontsSettings)
         assert adapter.MODULE_STATUS == "stable"
         assert isinstance(adapter.MODULE_ID, UUID)
@@ -57,45 +59,45 @@ class TestGoogleFontsAdapter:
     @pytest.mark.asyncio
     async def test_google_fonts_get_font_import_basic(self):
         """Test basic font import generation."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         adapter.settings.families = ["Roboto"]
         adapter.settings.weights = ["400", "700"]
 
         import_html = await adapter.get_font_import()
 
         assert '<link rel="preconnect"' in import_html
-        assert 'fonts.googleapis.com' in import_html
-        assert 'fonts.gstatic.com' in import_html
-        assert 'Roboto' in import_html
-        assert 'display=swap' in import_html
+        assert "fonts.googleapis.com" in import_html
+        assert "fonts.gstatic.com" in import_html
+        assert "Roboto" in import_html
+        assert "display=swap" in import_html
 
     @pytest.mark.asyncio
     async def test_google_fonts_get_font_import_multiple_families(self):
         """Test font import with multiple families."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         adapter.settings.families = ["Roboto", "Open Sans", "Lato"]
         adapter.settings.weights = ["300", "400", "700"]
 
         import_html = await adapter.get_font_import()
 
-        assert 'Roboto' in import_html
-        assert 'Open+Sans' in import_html  # URL encoded
-        assert 'Lato' in import_html
+        assert "Roboto" in import_html
+        assert "Open+Sans" in import_html  # URL encoded
+        assert "Lato" in import_html
 
     @pytest.mark.asyncio
     async def test_google_fonts_get_font_import_with_subsets(self):
         """Test font import with subsets."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         adapter.settings.families = ["Roboto"]
         adapter.settings.subsets = ["latin", "latin-ext", "cyrillic"]
 
         import_html = await adapter.get_font_import()
 
-        assert 'subset=latin' in import_html or 'latin' in import_html
+        assert "subset=latin" in import_html or "latin" in import_html
 
     def test_google_fonts_get_font_family_primary(self):
         """Test primary font family retrieval."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         adapter.settings.families = ["Inter", "Roboto"]
 
         family = adapter.get_font_family("primary")
@@ -106,7 +108,7 @@ class TestGoogleFontsAdapter:
 
     def test_google_fonts_get_font_family_secondary(self):
         """Test secondary font family retrieval."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         adapter.settings.families = ["Inter", "Playfair Display"]
 
         family = adapter.get_font_family("secondary")
@@ -116,7 +118,7 @@ class TestGoogleFontsAdapter:
 
     def test_google_fonts_get_font_family_fallback(self):
         """Test font family fallback handling."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         adapter.settings.families = []
 
         family = adapter.get_font_family("primary")
@@ -126,7 +128,7 @@ class TestGoogleFontsAdapter:
 
     def test_google_fonts_build_families_param(self):
         """Test families parameter building."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         adapter.settings.families = ["Roboto", "Open Sans"]
         adapter.settings.weights = ["400", "700"]
 
@@ -139,7 +141,7 @@ class TestGoogleFontsAdapter:
 
     def test_google_fonts_get_css_variables(self):
         """Test CSS variables generation."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         adapter.settings.families = ["Inter", "Playfair Display"]
         adapter.settings.weights = ["400", "600", "700"]
 
@@ -153,18 +155,18 @@ class TestGoogleFontsAdapter:
 
     def test_google_fonts_get_font_preload(self):
         """Test font preload link generation."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
 
         preload_link = adapter.get_font_preload("Roboto", "400")
 
         assert '<link rel="preload"' in preload_link
         assert 'as="font"' in preload_link
-        assert 'crossorigin' in preload_link
-        assert 'Roboto' in preload_link.lower()
+        assert "crossorigin" in preload_link
+        assert "Roboto" in preload_link.lower()
 
     def test_google_fonts_validate_font_availability(self):
         """Test font availability validation."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
 
         # Test common fonts
         assert adapter.validate_font_availability("Roboto") is True
@@ -178,7 +180,7 @@ class TestGoogleFontsAdapter:
     @pytest.mark.asyncio
     async def test_google_fonts_get_optimized_import(self):
         """Test optimized import with critical fonts."""
-        adapter = GoogleFontsAdapter()
+        adapter = GoogleFonts()
         adapter.settings.families = ["Roboto", "Open Sans", "Lato"]
 
         critical_fonts = ["Roboto"]
@@ -193,14 +195,14 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_adapter_initialization(self):
         """Test Font Squirrel adapter initializes correctly."""
-        adapter = FontSquirrelAdapter()
-        assert isinstance(adapter.settings, FontSquirrelSettings)
+        adapter = FontSquirrelFonts()
+        assert isinstance(adapter.settings, FontSquirrelFontsSettings)
         assert adapter.MODULE_STATUS == "stable"
         assert isinstance(adapter.MODULE_ID, UUID)
 
     def test_font_squirrel_settings_defaults(self):
         """Test Font Squirrel settings have correct defaults."""
-        settings = FontSquirrelSettings()
+        settings = FontSquirrelFontsSettings()
         assert settings.fonts_dir == "/static/fonts"
         assert settings.fonts == []
         assert settings.preload_critical is True
@@ -209,7 +211,7 @@ class TestFontSquirrelAdapter:
     @pytest.mark.asyncio
     async def test_font_squirrel_get_font_import_empty(self):
         """Test font import with no fonts configured."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
         adapter.settings.fonts = []
 
         import_html = await adapter.get_font_import()
@@ -219,18 +221,20 @@ class TestFontSquirrelAdapter:
     @pytest.mark.asyncio
     async def test_font_squirrel_get_font_import_single_font(self):
         """Test font import with single font."""
-        adapter = FontSquirrelAdapter()
-        adapter.settings.fonts = [{
-            "family": "Custom Font",
-            "path": "/fonts/custom-font.woff2",
-            "weight": "400",
-            "style": "normal"
-        }]
+        adapter = FontSquirrelFonts()
+        adapter.settings.fonts = [
+            {
+                "family": "Custom Font",
+                "path": "/fonts/custom-font.woff2",
+                "weight": "400",
+                "style": "normal",
+            }
+        ]
 
         import_html = await adapter.get_font_import()
 
-        assert '<style>' in import_html
-        assert '@font-face' in import_html
+        assert "<style>" in import_html
+        assert "@font-face" in import_html
         assert "Custom Font" in import_html
         assert "custom-font.woff2" in import_html
         assert "font-weight: 400" in import_html
@@ -239,17 +243,19 @@ class TestFontSquirrelAdapter:
     @pytest.mark.asyncio
     async def test_font_squirrel_get_font_import_multiple_formats(self):
         """Test font import with multiple formats."""
-        adapter = FontSquirrelAdapter()
-        adapter.settings.fonts = [{
-            "family": "Multi Format Font",
-            "files": [
-                {"path": "/fonts/font.woff2", "format": "woff2"},
-                {"path": "/fonts/font.woff", "format": "woff"},
-                {"path": "/fonts/font.ttf", "format": "ttf"}
-            ],
-            "weight": "400",
-            "style": "normal"
-        }]
+        adapter = FontSquirrelFonts()
+        adapter.settings.fonts = [
+            {
+                "family": "Multi Format Font",
+                "files": [
+                    {"path": "/fonts/font.woff2", "format": "woff2"},
+                    {"path": "/fonts/font.woff", "format": "woff"},
+                    {"path": "/fonts/font.ttf", "format": "ttf"},
+                ],
+                "weight": "400",
+                "style": "normal",
+            }
+        ]
 
         import_html = await adapter.get_font_import()
 
@@ -262,12 +268,14 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_get_font_family_configured(self):
         """Test font family retrieval for configured fonts."""
-        adapter = FontSquirrelAdapter()
-        adapter.settings.fonts = [{
-            "type": "primary",
-            "family": "Custom Primary",
-            "fallback": "Arial, sans-serif"
-        }]
+        adapter = FontSquirrelFonts()
+        adapter.settings.fonts = [
+            {
+                "type": "primary",
+                "family": "Custom Primary",
+                "fallback": "Arial, sans-serif",
+            }
+        ]
 
         family = adapter.get_font_family("primary")
 
@@ -276,7 +284,7 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_get_font_family_fallback(self):
         """Test font family fallback for unconfigured types."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
         adapter.settings.fonts = []
 
         family = adapter.get_font_family("primary")
@@ -286,14 +294,14 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_generate_font_face(self):
         """Test font-face declaration generation."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
 
         font_config = {
             "family": "Test Font",
             "path": "/fonts/test.woff2",
             "weight": "600",
             "style": "italic",
-            "unicode_range": "U+0000-00FF"
+            "unicode_range": "U+0000-00FF",
         }
 
         font_face = adapter._generate_font_face(font_config)
@@ -307,7 +315,7 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_build_src_declaration_single_file(self):
         """Test src declaration for single file."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
 
         font_config = {"path": "/fonts/test.woff2"}
         src = adapter._build_src_declaration(font_config)
@@ -317,12 +325,12 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_build_src_declaration_multiple_files(self):
         """Test src declaration for multiple files."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
 
         font_config = {
             "files": [
                 {"path": "/fonts/test.woff2", "format": "woff2"},
-                {"path": "/fonts/test.woff", "format": "woff"}
+                {"path": "/fonts/test.woff", "format": "woff"},
             ]
         }
 
@@ -335,7 +343,7 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_get_format_from_path(self):
         """Test format detection from file path."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
 
         assert adapter._get_format_from_path("/fonts/test.woff2") == "woff2"
         assert adapter._get_format_from_path("/fonts/test.woff") == "woff"
@@ -345,36 +353,44 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_normalize_font_url(self):
         """Test font URL normalization."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
 
         # Test relative path
         assert adapter._normalize_font_url("test.woff2") == "/static/fonts/test.woff2"
 
         # Test absolute path
-        assert adapter._normalize_font_url("/custom/path/test.woff2") == "/custom/path/test.woff2"
+        assert (
+            adapter._normalize_font_url("/custom/path/test.woff2")
+            == "/custom/path/test.woff2"
+        )
 
         # Test full URL
-        assert adapter._normalize_font_url("https://cdn.example.com/font.woff2") == "https://cdn.example.com/font.woff2"
+        assert (
+            adapter._normalize_font_url("https://cdn.example.com/font.woff2")
+            == "https://cdn.example.com/font.woff2"
+        )
 
     def test_font_squirrel_get_preload_links(self):
         """Test preload links generation."""
-        adapter = FontSquirrelAdapter()
-        adapter.settings.fonts = [{
-            "family": "Primary Font",
-            "type": "primary",
-            "path": "/fonts/primary.woff2"
-        }]
+        adapter = FontSquirrelFonts()
+        adapter.settings.fonts = [
+            {
+                "family": "Primary Font",
+                "type": "primary",
+                "path": "/fonts/primary.woff2",
+            }
+        ]
 
         preload_links = adapter.get_preload_links()
 
         assert '<link rel="preload"' in preload_links
         assert 'as="font"' in preload_links
-        assert 'crossorigin' in preload_links
-        assert 'primary.woff2' in preload_links
+        assert "crossorigin" in preload_links
+        assert "primary.woff2" in preload_links
 
     def test_font_squirrel_get_preload_links_disabled(self):
         """Test preload links when disabled."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
         adapter.settings.preload_critical = False
 
         preload_links = adapter.get_preload_links()
@@ -383,23 +399,20 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_validate_font_files(self):
         """Test font file validation."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
         adapter.settings.fonts = [
-            {
-                "family": "Valid Font",
-                "path": "/fonts/valid.woff2"
-            },
+            {"family": "Valid Font", "path": "/fonts/valid.woff2"},
             {
                 "family": "Multi File Font",
                 "files": [
                     {"path": "/fonts/multi1.woff2"},
-                    {"path": "/fonts/multi2.woff"}
-                ]
+                    {"path": "/fonts/multi2.woff"},
+                ],
             },
             {
                 "family": "No Files Font"
                 # No path or files specified
-            }
+            },
         ]
 
         validation = adapter.validate_font_files()
@@ -412,9 +425,11 @@ class TestFontSquirrelAdapter:
 
     def test_font_squirrel_discover_font_files(self):
         """Test font file discovery."""
-        adapter = FontSquirrelAdapter()
+        adapter = FontSquirrelFonts()
 
-        discovered = adapter._discover_font_files("/fonts", "Custom Font", "400", "normal")
+        discovered = adapter._discover_font_files(
+            "/fonts", "Custom Font", "400", "normal"
+        )
 
         # Should return list of tuples (path, format)
         assert isinstance(discovered, list)
@@ -431,34 +446,34 @@ class TestFontAdapterIntegration:
 
     def test_multiple_adapters_coexistence(self):
         """Test multiple font adapters can coexist."""
-        google = GoogleFontsAdapter()
-        squirrel = FontSquirrelAdapter()
+        google = GoogleFonts()
+        squirrel = FontSquirrelFonts()
 
         # Both should have different MODULE_IDs
         assert google.MODULE_ID != squirrel.MODULE_ID
 
         # Both should implement the same protocol
         for adapter in [google, squirrel]:
-            assert hasattr(adapter, 'get_font_family')
+            assert hasattr(adapter, "get_font_family")
 
     @pytest.mark.asyncio
     async def test_adapter_consistency(self):
         """Test adapter method consistency."""
-        adapters = [GoogleFontsAdapter(), FontSquirrelAdapter()]
+        adapters = [GoogleFonts(), FontSquirrelFonts()]
 
         for adapter in adapters:
             # Test required methods return correct types
             family = adapter.get_font_family("primary")
             assert isinstance(family, str)
 
-            if hasattr(adapter, 'get_font_import'):
+            if hasattr(adapter, "get_font_import"):
                 import_html = await adapter.get_font_import()
                 assert isinstance(import_html, str)
 
     def test_font_provider_switching(self):
         """Test font provider switching capabilities."""
-        google = GoogleFontsAdapter()
-        squirrel = FontSquirrelAdapter()
+        google = GoogleFonts()
+        squirrel = FontSquirrelFonts()
 
         # Same method calls should work with different providers
         google_primary = google.get_font_family("primary")
@@ -470,7 +485,7 @@ class TestFontAdapterIntegration:
     @pytest.mark.asyncio
     async def test_protocol_compliance(self):
         """Test all adapters comply with FontsProtocol."""
-        adapters = [GoogleFontsAdapter(), FontSquirrelAdapter()]
+        adapters = [GoogleFonts(), FontSquirrelFonts()]
 
         for adapter in adapters:
             # Test required methods exist and work
@@ -480,7 +495,7 @@ class TestFontAdapterIntegration:
     def test_settings_customization(self):
         """Test settings customization."""
         # Test Google Fonts customization
-        google = GoogleFontsAdapter()
+        google = GoogleFonts()
         google.settings.families = ["Inter", "Roboto Slab"]
         google.settings.weights = ["300", "400", "600"]
         google.settings.display = "block"
@@ -490,7 +505,7 @@ class TestFontAdapterIntegration:
         assert google.settings.display == "block"
 
         # Test Font Squirrel customization
-        squirrel = FontSquirrelAdapter()
+        squirrel = FontSquirrelFonts()
         squirrel.settings.fonts_dir = "/custom/fonts"
         squirrel.settings.display = "fallback"
 
@@ -500,7 +515,7 @@ class TestFontAdapterIntegration:
     @pytest.mark.asyncio
     async def test_performance_optimization(self):
         """Test performance optimization features."""
-        google = GoogleFontsAdapter()
+        google = GoogleFonts()
         google.settings.families = ["Inter", "Roboto"]
 
         # Test optimized import
@@ -512,19 +527,17 @@ class TestFontAdapterIntegration:
         assert "--font-" in css_vars
 
         # Test preload for Font Squirrel
-        squirrel = FontSquirrelAdapter()
-        squirrel.settings.fonts = [{
-            "family": "Custom",
-            "type": "primary",
-            "path": "/fonts/custom.woff2"
-        }]
+        squirrel = FontSquirrelFonts()
+        squirrel.settings.fonts = [
+            {"family": "Custom", "type": "primary", "path": "/fonts/custom.woff2"}
+        ]
 
         preload = squirrel.get_preload_links()
         assert isinstance(preload, str)
 
     def test_error_handling(self):
         """Test error handling in adapters."""
-        adapters = [GoogleFontsAdapter(), FontSquirrelAdapter()]
+        adapters = [GoogleFonts(), FontSquirrelFonts()]
 
         for adapter in adapters:
             # Test with invalid/empty inputs
@@ -538,7 +551,7 @@ class TestFontAdapterIntegration:
     @pytest.mark.asyncio
     async def test_font_loading_strategies(self):
         """Test different font loading strategies."""
-        google = GoogleFontsAdapter()
+        google = GoogleFonts()
         google.settings.display = "swap"
         google.settings.preconnect = True
 
@@ -548,7 +561,7 @@ class TestFontAdapterIntegration:
         assert "preconnect" in import_html
         assert "display=swap" in import_html
 
-        squirrel = FontSquirrelAdapter()
+        squirrel = FontSquirrelFonts()
         squirrel.settings.display = "block"
         squirrel.settings.preload_critical = True
 

@@ -7,22 +7,22 @@ from pathlib import Path
 
 
 # Test utilities (same as before)
-class TestAsyncPath:
+class MockAsyncPath:
     def __init__(self, path_str: str) -> None:
         self.path = Path(path_str)
 
     def __str__(self) -> str:
         return str(self.path)
 
-    def __truediv__(self, other: str) -> "TestAsyncPath":
-        return TestAsyncPath(str(self.path / other))
+    def __truediv__(self, other: str) -> "MockAsyncPath":
+        return MockAsyncPath(str(self.path / other))
 
     async def exists(self):
         return self.path.exists()
 
     async def rglob(self, pattern: str):
         for p in self.path.rglob(pattern):
-            yield TestAsyncPath(str(p))
+            yield MockAsyncPath(str(p))
 
     @property
     def stem(self):
@@ -39,12 +39,12 @@ class TestAsyncPath:
 class HTMYComponentRegistry:
     """Simplified registry for testing."""
 
-    def __init__(self, searchpaths: list[TestAsyncPath] | None = None) -> None:
+    def __init__(self, searchpaths: list[MockAsyncPath] | None = None) -> None:
         self.searchpaths = searchpaths or []
         self._component_cache: dict[str, t.Any] = {}
         self._source_cache: dict[str, str] = {}
 
-    async def discover_components(self) -> dict[str, TestAsyncPath]:
+    async def discover_components(self) -> dict[str, MockAsyncPath]:
         components = {}
         for search_path in self.searchpaths:
             if not await search_path.exists():
@@ -58,7 +58,7 @@ class HTMYComponentRegistry:
 
     async def get_component_source(
         self, component_name: str
-    ) -> tuple[str, TestAsyncPath]:
+    ) -> tuple[str, MockAsyncPath]:
         components = await self.discover_components()
         if component_name not in components:
             raise Exception(f"Component '{component_name}' not found")
@@ -118,10 +118,10 @@ async def test_context_sharing() -> None:
 
 
 async def _setup_context_test_environment() -> (
-    tuple[HTMYComponentRegistry, TestAsyncPath] | None
+    tuple[HTMYComponentRegistry, MockAsyncPath] | None
 ):
     """Set up the test environment for context sharing tests."""
-    component_path = TestAsyncPath(
+    component_path = MockAsyncPath(
         "/Users/les/Projects/sites/fastest/templates/app/bulma/components"
     )
     registry = HTMYComponentRegistry([component_path])
@@ -138,8 +138,8 @@ async def _setup_context_test_environment() -> (
 
 
 async def _discover_test_components(
-    registry: HTMYComponentRegistry, component_path: TestAsyncPath
-) -> dict[str, TestAsyncPath]:
+    registry: HTMYComponentRegistry, component_path: MockAsyncPath
+) -> dict[str, MockAsyncPath]:
     """Discover components for testing."""
     components = await registry.discover_components()
     print(f"✓ Found components: {list(components.keys())}")

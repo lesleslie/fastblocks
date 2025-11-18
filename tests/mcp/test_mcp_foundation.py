@@ -1,11 +1,11 @@
 """Tests for FastBlocks MCP foundation functionality."""
 
-import pytest
 from uuid import UUID
 
+import pytest
 from fastblocks.mcp.discovery import AdapterDiscoveryServer, AdapterInfo
-from fastblocks.mcp.registry import AdapterRegistry
 from fastblocks.mcp.health import HealthCheckSystem
+from fastblocks.mcp.registry import AdapterRegistry
 
 
 class TestAdapterDiscovery:
@@ -29,7 +29,7 @@ class TestAdapterDiscovery:
             category="test",
             description="Test adapter for unit tests",
             protocols=["TestProtocol"],
-            settings_class="TestSettings"
+            settings_class="TestSettings",
         )
 
         assert info.name == "test_adapter"
@@ -86,7 +86,7 @@ class TestAdapterRegistry:
         """Test registry initialization."""
         # Should complete without errors
         assert registry is not None
-        assert hasattr(registry, 'discovery')
+        assert hasattr(registry, "discovery")
 
     @pytest.mark.asyncio
     async def test_list_available_adapters(self, registry):
@@ -158,7 +158,7 @@ class TestHealthCheckSystem:
     async def test_health_system_creation(self, health_system):
         """Test health check system creation."""
         assert health_system is not None
-        assert hasattr(health_system, 'registry')
+        assert hasattr(health_system, "registry")
 
     @pytest.mark.asyncio
     async def test_check_adapter_health(self, health_system):
@@ -170,13 +170,13 @@ class TestHealthCheckSystem:
             adapter_name = list(adapters.keys())[0]
             result = await health_system.check_adapter_health(adapter_name)
 
-            assert hasattr(result, 'adapter_name')
-            assert hasattr(result, 'status')
-            assert hasattr(result, 'message')
-            assert hasattr(result, 'duration_ms')
+            assert hasattr(result, "adapter_name")
+            assert hasattr(result, "status")
+            assert hasattr(result, "message")
+            assert hasattr(result, "duration_ms")
 
             assert result.adapter_name == adapter_name
-            assert result.status in ['healthy', 'warning', 'error', 'unknown']
+            assert result.status in ["healthy", "warning", "error", "unknown"]
             assert isinstance(result.duration_ms, float)
 
             # Test serialization
@@ -192,8 +192,12 @@ class TestHealthCheckSystem:
 
         assert isinstance(summary, dict)
         expected_keys = [
-            "healthy_adapters", "warning_adapters", "error_adapters",
-            "unknown_adapters", "total_adapters", "adapter_status"
+            "healthy_adapters",
+            "warning_adapters",
+            "error_adapters",
+            "unknown_adapters",
+            "total_adapters",
+            "adapter_status",
         ]
 
         for key in expected_keys:
@@ -217,8 +221,8 @@ class TestHealthCheckSystem:
         # Each result should be a HealthCheckResult
         for adapter_name, result in results.items():
             assert isinstance(adapter_name, str)
-            assert hasattr(result, 'adapter_name')
-            assert hasattr(result, 'status')
+            assert hasattr(result, "adapter_name")
+            assert hasattr(result, "status")
             assert result.adapter_name == adapter_name
 
 
@@ -254,7 +258,7 @@ class TestMCPIntegration:
 
             # Check health
             health_result = await health.check_adapter_health(adapter_name)
-            assert hasattr(health_result, 'status')
+            assert hasattr(health_result, "status")
 
     @pytest.mark.asyncio
     async def test_adapter_lifecycle(self):
@@ -271,7 +275,7 @@ class TestMCPIntegration:
             adapter_name = list(available.keys())[0]
 
             # Try to get adapter instance
-            adapter = await registry.get_adapter(adapter_name)
+            await registry.get_adapter(adapter_name)
             # adapter may be None if instantiation fails, which is acceptable
 
             # Validation should still work

@@ -1,12 +1,14 @@
 """Comprehensive tests for FastBlocks icon adapters."""
 
-import pytest
-from unittest.mock import MagicMock, patch
 from uuid import UUID
 
-from fastblocks.adapters.icons._base import IconsBase, IconsProtocol
-from fastblocks.adapters.icons.fontawesome import FontAwesomeAdapter, FontAwesomeSettings
-from fastblocks.adapters.icons.lucide import LucideAdapter, LucideSettings
+import pytest
+from fastblocks.adapters.icons._base import IconsBase
+from fastblocks.adapters.icons.fontawesome import (
+    FontAwesomeIcons,
+    FontAwesomeIconsSettings,
+)
+from fastblocks.adapters.icons.lucide import LucideIcons, LucideIconsSettings
 
 
 class TestIconsBase:
@@ -15,15 +17,15 @@ class TestIconsBase:
     def test_icons_base_inheritance(self):
         """Test IconsBase inherits from correct base classes."""
         adapter = IconsBase()
-        assert hasattr(adapter, 'MODULE_ID')
-        assert hasattr(adapter, 'MODULE_STATUS')
+        assert hasattr(adapter, "MODULE_ID")
+        assert hasattr(adapter, "MODULE_STATUS")
         assert adapter.MODULE_STATUS == "stable"
         assert isinstance(adapter.MODULE_ID, UUID)
 
     def test_icons_base_protocol_compliance(self):
         """Test IconsBase implements IconsProtocol."""
         # Check that required methods exist
-        required_methods = ['get_icon_tag', 'get_stylesheet_links']
+        required_methods = ["get_icon_tag", "get_stylesheet_links"]
         for method in required_methods:
             assert hasattr(IconsBase, method)
 
@@ -43,14 +45,14 @@ class TestFontAwesomeAdapter:
 
     def test_fontawesome_adapter_initialization(self):
         """Test FontAwesome adapter initializes correctly."""
-        adapter = FontAwesomeAdapter()
-        assert isinstance(adapter.settings, FontAwesomeSettings)
+        adapter = FontAwesomeIcons()
+        assert isinstance(adapter.settings, FontAwesomeIconsSettings)
         assert adapter.MODULE_STATUS == "stable"
         assert isinstance(adapter.MODULE_ID, UUID)
 
     def test_fontawesome_settings_defaults(self):
         """Test FontAwesome settings have correct defaults."""
-        settings = FontAwesomeSettings()
+        settings = FontAwesomeIconsSettings()
         assert settings.version == "6.4.0"
         assert settings.style == "solid"
         assert settings.prefix == "fas"
@@ -58,23 +60,20 @@ class TestFontAwesomeAdapter:
 
     def test_fontawesome_get_icon_tag_basic(self):
         """Test basic icon tag generation."""
-        adapter = FontAwesomeAdapter()
+        adapter = FontAwesomeIcons()
 
         icon_tag = adapter.get_icon_tag("home")
 
-        assert '<i' in icon_tag
+        assert "<i" in icon_tag
         assert 'class="fas fa-home"' in icon_tag
-        assert '</i>' in icon_tag
+        assert "</i>" in icon_tag
 
     def test_fontawesome_get_icon_tag_with_attributes(self):
         """Test icon tag with additional attributes."""
-        adapter = FontAwesomeAdapter()
+        adapter = FontAwesomeIcons()
 
         icon_tag = adapter.get_icon_tag(
-            "user",
-            class_="nav-icon",
-            id="user-icon",
-            size="2x"
+            "user", class_="nav-icon", id="user-icon", size="2x"
         )
 
         assert 'class="fas fa-user nav-icon"' in icon_tag
@@ -83,27 +82,27 @@ class TestFontAwesomeAdapter:
 
     def test_fontawesome_get_icon_tag_different_styles(self):
         """Test icon tag with different FontAwesome styles."""
-        adapter = FontAwesomeAdapter()
+        adapter = FontAwesomeIcons()
 
         # Test solid style (default)
         solid_icon = adapter.get_icon_tag("heart")
-        assert 'fas fa-heart' in solid_icon
+        assert "fas fa-heart" in solid_icon
 
         # Test regular style
         adapter.settings.style = "regular"
         adapter.settings.prefix = "far"
         regular_icon = adapter.get_icon_tag("heart")
-        assert 'far fa-heart' in regular_icon
+        assert "far fa-heart" in regular_icon
 
         # Test brands style
         adapter.settings.style = "brands"
         adapter.settings.prefix = "fab"
         brand_icon = adapter.get_icon_tag("github")
-        assert 'fab fa-github' in brand_icon
+        assert "fab fa-github" in brand_icon
 
     def test_fontawesome_get_stylesheet_links_cdn(self):
         """Test CDN stylesheet links generation."""
-        adapter = FontAwesomeAdapter()
+        adapter = FontAwesomeIcons()
         adapter.settings.cdn = True
         adapter.settings.version = "6.4.0"
 
@@ -116,7 +115,7 @@ class TestFontAwesomeAdapter:
 
     def test_fontawesome_get_stylesheet_links_local(self):
         """Test local stylesheet links generation."""
-        adapter = FontAwesomeAdapter()
+        adapter = FontAwesomeIcons()
         adapter.settings.cdn = False
         adapter.settings.local_path = "/static/css/fontawesome.min.css"
 
@@ -127,7 +126,7 @@ class TestFontAwesomeAdapter:
 
     def test_fontawesome_icon_mapping(self):
         """Test icon name mapping."""
-        adapter = FontAwesomeAdapter()
+        adapter = FontAwesomeIcons()
 
         # Test common icon mappings
         common_icons = ["home", "user", "search", "menu", "close", "check"]
@@ -137,17 +136,19 @@ class TestFontAwesomeAdapter:
 
     def test_fontawesome_get_icon_with_text(self):
         """Test icon with text generation."""
-        adapter = FontAwesomeAdapter()
+        adapter = FontAwesomeIcons()
 
-        icon_with_text = adapter.get_icon_with_text("save", "Save Document", position="left")
+        icon_with_text = adapter.get_icon_with_text(
+            "save", "Save Document", position="left"
+        )
 
         assert '<i class="fas fa-save"' in icon_with_text
-        assert 'Save Document' in icon_with_text
+        assert "Save Document" in icon_with_text
         # Icon should come before text for left position
 
     def test_fontawesome_normalize_icon_name(self):
         """Test icon name normalization."""
-        adapter = FontAwesomeAdapter()
+        adapter = FontAwesomeIcons()
 
         # Test various icon name formats
         assert adapter._normalize_icon_name("home") == "home"
@@ -161,14 +162,14 @@ class TestLucideAdapter:
 
     def test_lucide_adapter_initialization(self):
         """Test Lucide adapter initializes correctly."""
-        adapter = LucideAdapter()
-        assert isinstance(adapter.settings, LucideSettings)
+        adapter = LucideIcons()
+        assert isinstance(adapter.settings, LucideIconsSettings)
         assert adapter.MODULE_STATUS == "stable"
         assert isinstance(adapter.MODULE_ID, UUID)
 
     def test_lucide_settings_defaults(self):
         """Test Lucide settings have correct defaults."""
-        settings = LucideSettings()
+        settings = LucideIconsSettings()
         assert settings.version == "latest"
         assert settings.mode == "svg"
         assert settings.size == 24
@@ -176,31 +177,31 @@ class TestLucideAdapter:
 
     def test_lucide_get_icon_tag_svg_mode(self):
         """Test SVG icon tag generation."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
         adapter.settings.mode = "svg"
 
         icon_tag = adapter.get_icon_tag("home")
 
-        assert '<svg' in icon_tag
+        assert "<svg" in icon_tag
         assert 'width="24"' in icon_tag
         assert 'height="24"' in icon_tag
         assert 'stroke-width="2"' in icon_tag
-        assert '</svg>' in icon_tag
+        assert "</svg>" in icon_tag
 
     def test_lucide_get_icon_tag_font_mode(self):
         """Test font icon tag generation."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
         adapter.settings.mode = "font"
 
         icon_tag = adapter.get_icon_tag("home")
 
-        assert '<i' in icon_tag
+        assert "<i" in icon_tag
         assert 'class="lucide lucide-home"' in icon_tag
-        assert '</i>' in icon_tag
+        assert "</i>" in icon_tag
 
     def test_lucide_get_icon_tag_with_custom_size(self):
         """Test icon tag with custom size."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
         adapter.settings.mode = "svg"
 
         icon_tag = adapter.get_icon_tag("user", size=32)
@@ -210,14 +211,11 @@ class TestLucideAdapter:
 
     def test_lucide_get_icon_tag_with_attributes(self):
         """Test icon tag with additional attributes."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
         adapter.settings.mode = "svg"
 
         icon_tag = adapter.get_icon_tag(
-            "search",
-            class_="search-icon",
-            id="main-search",
-            stroke_width=1.5
+            "search", class_="search-icon", id="main-search", stroke_width=1.5
         )
 
         assert 'class="search-icon"' in icon_tag
@@ -226,7 +224,7 @@ class TestLucideAdapter:
 
     def test_lucide_get_stylesheet_links_font_mode(self):
         """Test stylesheet links for font mode."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
         adapter.settings.mode = "font"
         adapter.settings.cdn = True
 
@@ -238,7 +236,7 @@ class TestLucideAdapter:
 
     def test_lucide_get_stylesheet_links_svg_mode(self):
         """Test stylesheet links for SVG mode (should be empty)."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
         adapter.settings.mode = "svg"
 
         links = adapter.get_stylesheet_links()
@@ -248,18 +246,18 @@ class TestLucideAdapter:
 
     def test_lucide_get_icon_svg(self):
         """Test direct SVG icon generation."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
 
         svg = adapter.get_icon_svg("heart", size=20, stroke_width=1.5)
 
-        assert '<svg' in svg
+        assert "<svg" in svg
         assert 'width="20"' in svg
         assert 'height="20"' in svg
         assert 'stroke-width="1.5"' in svg
 
     def test_lucide_icon_mapping(self):
         """Test icon name mapping and validation."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
 
         # Test common Lucide icons
         common_icons = ["home", "user", "search", "menu", "x", "check"]
@@ -269,7 +267,7 @@ class TestLucideAdapter:
 
     def test_lucide_normalize_icon_name(self):
         """Test icon name normalization."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
 
         # Test various icon name formats
         assert adapter._normalize_icon_name("home") == "home"
@@ -278,15 +276,17 @@ class TestLucideAdapter:
 
     def test_lucide_get_icon_with_text(self):
         """Test icon with text generation."""
-        adapter = LucideAdapter()
+        adapter = LucideIcons()
 
-        icon_with_text = adapter.get_icon_with_text("download", "Download File", position="left")
+        icon_with_text = adapter.get_icon_with_text(
+            "download", "Download File", position="left"
+        )
 
         if adapter.settings.mode == "svg":
-            assert '<svg' in icon_with_text
+            assert "<svg" in icon_with_text
         else:
             assert '<i class="lucide lucide-download"' in icon_with_text
-        assert 'Download File' in icon_with_text
+        assert "Download File" in icon_with_text
 
 
 class TestIconAdapterIntegration:
@@ -294,20 +294,20 @@ class TestIconAdapterIntegration:
 
     def test_multiple_adapters_coexistence(self):
         """Test multiple icon adapters can coexist."""
-        fontawesome = FontAwesomeAdapter()
-        lucide = LucideAdapter()
+        fontawesome = FontAwesomeIcons()
+        lucide = LucideIcons()
 
         # Both should have different MODULE_IDs
         assert fontawesome.MODULE_ID != lucide.MODULE_ID
 
         # Both should implement the same protocol
         for adapter in [fontawesome, lucide]:
-            assert hasattr(adapter, 'get_icon_tag')
-            assert hasattr(adapter, 'get_stylesheet_links')
+            assert hasattr(adapter, "get_icon_tag")
+            assert hasattr(adapter, "get_stylesheet_links")
 
     def test_adapter_consistency(self):
         """Test adapter method consistency."""
-        adapters = [FontAwesomeAdapter(), LucideAdapter()]
+        adapters = [FontAwesomeIcons(), LucideIcons()]
 
         for adapter in adapters:
             # Test required methods return correct types
@@ -320,8 +320,8 @@ class TestIconAdapterIntegration:
 
     def test_icon_library_switching(self):
         """Test icon library switching capabilities."""
-        fontawesome = FontAwesomeAdapter()
-        lucide = LucideAdapter()
+        fontawesome = FontAwesomeIcons()
+        lucide = LucideIcons()
 
         # Same method calls should work with different libraries
         fa_home = fontawesome.get_icon_tag("home")
@@ -335,7 +335,7 @@ class TestIconAdapterIntegration:
 
     def test_protocol_compliance(self):
         """Test all adapters comply with IconsProtocol."""
-        adapters = [FontAwesomeAdapter(), LucideAdapter()]
+        adapters = [FontAwesomeIcons(), LucideIcons()]
 
         for adapter in adapters:
             # Test required methods exist and work
@@ -348,7 +348,7 @@ class TestIconAdapterIntegration:
     def test_settings_customization(self):
         """Test settings customization."""
         # Test FontAwesome customization
-        fa = FontAwesomeAdapter()
+        fa = FontAwesomeIcons()
         fa.settings.version = "6.0.0"
         fa.settings.style = "regular"
         fa.settings.prefix = "far"
@@ -358,7 +358,7 @@ class TestIconAdapterIntegration:
         assert fa.settings.prefix == "far"
 
         # Test Lucide customization
-        lucide = LucideAdapter()
+        lucide = LucideIcons()
         lucide.settings.mode = "font"
         lucide.settings.size = 32
         lucide.settings.stroke_width = 1.5
@@ -369,25 +369,29 @@ class TestIconAdapterIntegration:
 
     def test_icon_with_text_patterns(self):
         """Test icon with text patterns across adapters."""
-        adapters = [FontAwesomeAdapter(), LucideAdapter()]
+        adapters = [FontAwesomeIcons(), LucideIcons()]
 
         for adapter in adapters:
-            if hasattr(adapter, 'get_icon_with_text'):
+            if hasattr(adapter, "get_icon_with_text"):
                 # Test left position
-                left_result = adapter.get_icon_with_text("save", "Save", position="left")
+                left_result = adapter.get_icon_with_text(
+                    "save", "Save", position="left"
+                )
                 assert isinstance(left_result, str)
                 assert "save" in left_result.lower()
                 assert "Save" in left_result
 
                 # Test right position
-                right_result = adapter.get_icon_with_text("save", "Save", position="right")
+                right_result = adapter.get_icon_with_text(
+                    "save", "Save", position="right"
+                )
                 assert isinstance(right_result, str)
                 assert "save" in right_result.lower()
                 assert "Save" in right_result
 
     def test_error_handling(self):
         """Test error handling in adapters."""
-        adapters = [FontAwesomeAdapter(), LucideAdapter()]
+        adapters = [FontAwesomeIcons(), LucideIcons()]
 
         for adapter in adapters:
             # Test with invalid/empty inputs
@@ -400,7 +404,7 @@ class TestIconAdapterIntegration:
 
     def test_performance_considerations(self):
         """Test performance-related aspects."""
-        adapters = [FontAwesomeAdapter(), LucideAdapter()]
+        adapters = [FontAwesomeIcons(), LucideIcons()]
 
         for adapter in adapters:
             # Test that repeated calls work consistently
@@ -411,7 +415,7 @@ class TestIconAdapterIntegration:
 
     def test_accessibility_features(self):
         """Test accessibility features in icon generation."""
-        adapters = [FontAwesomeAdapter(), LucideAdapter()]
+        adapters = [FontAwesomeIcons(), LucideIcons()]
 
         for adapter in adapters:
             # Test with aria-label

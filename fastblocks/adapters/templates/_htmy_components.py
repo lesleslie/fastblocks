@@ -18,6 +18,8 @@ Created: 2025-01-13
 
 import asyncio
 import inspect
+import os
+import tempfile
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields, is_dataclass
@@ -341,47 +343,18 @@ class ComponentValidator:
             except SyntaxError as e:
                 raise ComponentValidationError(f"Syntax error in {component_path}: {e}")
 
-            # Execute and analyze component
-            namespace: dict[str, Any] = {}
-            exec(source, namespace)  # nosec B102 - trusted component files
-
-            component_class = None
-            for obj in namespace.values():
-                if (
-                    inspect.isclass(obj)
-                    and hasattr(obj, "htmy")
-                    and callable(getattr(obj, "htmy"))
-                ):
-                    component_class = obj
-                    break
+            component_class = await ComponentValidator._load_component_class_from_file(
+                source, component_path
+            )
 
             if component_class is None:
                 raise ComponentValidationError(
                     f"No valid component class found in {component_path}"
                 )
 
-            # Determine component type
-            component_type = ComponentValidator._determine_component_type(
-                component_class
+            return await ComponentValidator._create_component_metadata(
+                component_class, component_path
             )
-
-            # Extract metadata
-            metadata = ComponentMetadata(
-                name=component_path.stem,
-                path=component_path,
-                type=component_type,
-                status=ComponentStatus.VALIDATED,
-                docstring=inspect.getdoc(component_class),
-                last_modified=datetime.fromtimestamp(
-                    (await component_path.stat()).st_mtime
-                ),
-            )
-
-            # Extract dependencies and HTMX attributes
-            if hasattr(component_class, "htmx_attrs"):
-                metadata.htmx_attributes = getattr(component_class, "htmx_attrs", {})
-
-            return metadata
 
         except Exception as e:
             return ComponentMetadata(
@@ -391,6 +364,70 @@ class ComponentValidator:
                 status=ComponentStatus.ERROR,
                 error_message=str(e),
             )
+
+    @staticmethod
+    async def _load_component_class_from_file(source: str, component_path: AsyncPath):
+        """Load component class from source file."""
+        # Import and analyze component safely
+        import importlib.util
+
+        # Create a temporary module to safely load the component
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+            f.write(source)
+            temp_module_path = f.name
+
+        try:
+            spec = importlib.util.spec_from_file_location(
+                component_path.stem, temp_module_path
+            )
+            if spec is None or spec.loader is None:
+                raise ComponentValidationError(
+                    f"Could not load module from {component_path}"
+                )
+
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            component_class = None
+            for obj in vars(module).values():
+                if (
+                    inspect.isclass(obj)
+                    and hasattr(obj, "htmy")
+                    and callable(getattr(obj, "htmy"))
+                ):
+                    component_class = obj
+                    break
+        finally:
+            # Clean up the temporary file
+            os.unlink(temp_module_path)
+
+        return component_class
+
+    @staticmethod
+    async def _create_component_metadata(
+        component_class: type, component_path: AsyncPath
+    ) -> ComponentMetadata:
+        """Create ComponentMetadata from component class and path."""
+        # Determine component type
+        component_type = ComponentValidator._determine_component_type(component_class)
+
+        # Extract metadata
+        metadata = ComponentMetadata(
+            name=component_path.stem,
+            path=component_path,
+            type=component_type,
+            status=ComponentStatus.VALIDATED,
+            docstring=inspect.getdoc(component_class),
+            last_modified=datetime.fromtimestamp(
+                (await component_path.stat()).st_mtime
+            ),
+        )
+
+        # Extract dependencies and HTMX attributes
+        if hasattr(component_class, "htmx_attrs"):
+            metadata.htmx_attributes = getattr(component_class, "htmx_attrs", {})
+
+        return metadata
 
     @staticmethod
     def _determine_component_type(component_class: type) -> ComponentType:
@@ -521,6 +558,25 @@ class AdvancedHTMYComponentRegistry:
         if component_name in self._component_cache:
             return self._component_cache[component_name]
 
+        metadata = await self._validate_component_exists(component_name)
+
+        source = await metadata.path.read_text()
+        component_class = await self._load_component_from_source(source, metadata)
+
+        if component_class is None:
+            raise ComponentCompilationError(
+                f"No valid component class found in '{component_name}'"
+            )
+
+        self._component_cache[component_name] = component_class
+        metadata.status = ComponentStatus.READY
+
+        return component_class
+
+    async def _validate_component_exists(
+        self, component_name: str
+    ) -> ComponentMetadata:
+        """Validate that a component exists and return its metadata."""
         components = await self.discover_components()
         if component_name not in components:
             raise ComponentValidationError(f"Component '{component_name}' not found")
@@ -531,33 +587,47 @@ class AdvancedHTMYComponentRegistry:
             raise ComponentCompilationError(
                 f"Component '{component_name}' has errors: {metadata.error_message}"
             )
+        return metadata
 
+    async def _load_component_from_source(
+        self, source: str, metadata: ComponentMetadata
+    ) -> t.Any:
+        """Load a component class from source code."""
         try:
-            source = await metadata.path.read_text()
-            namespace: dict[str, Any] = {}
-            compiled_code = compile(source, str(metadata.path), "exec")
-            exec(compiled_code, namespace)  # nosec B102 - trusted component files
+            # Import and analyze component safely
+            import importlib.util
 
-            component_class = None
-            for obj in namespace.values():
-                if (
-                    inspect.isclass(obj)
-                    and hasattr(obj, "htmy")
-                    and callable(getattr(obj, "htmy"))
-                ):
-                    component_class = obj
-                    break
+            # Create a temporary module to safely load the component
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+                f.write(source)
+                temp_module_path = f.name
 
-            if component_class is None:
-                raise ComponentCompilationError(
-                    f"No valid component class found in '{component_name}'"
+            try:
+                spec = importlib.util.spec_from_file_location(
+                    metadata.path.stem, temp_module_path
                 )
+                if spec is None or spec.loader is None:
+                    raise ComponentCompilationError(
+                        f"Could not load module from {metadata.path}"
+                    )
 
-            self._component_cache[component_name] = component_class
-            metadata.status = ComponentStatus.READY
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+                component_class = None
+                for obj in vars(module).values():
+                    if (
+                        inspect.isclass(obj)
+                        and hasattr(obj, "htmy")
+                        and callable(getattr(obj, "htmy"))
+                    ):
+                        component_class = obj
+                        break
+            finally:
+                # Clean up the temporary file
+                os.unlink(temp_module_path)
 
             return component_class
-
         except Exception as e:
             metadata.status = ComponentStatus.ERROR
             metadata.error_message = str(e)

@@ -6,17 +6,16 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-13
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime
-from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastblocks.actions.gather.components import (
     ComponentGatherResult,
     ComponentGatherStrategy,
-    gather_components,
-    gather_component_dependencies,
     analyze_component_usage,
+    gather_component_dependencies,
+    gather_components,
 )
 from fastblocks.adapters.templates._htmy_components import (
     ComponentMetadata,
@@ -27,17 +26,37 @@ from fastblocks.adapters.templates._htmy_components import (
 
 class MockAsyncPath:
     """Mock AsyncPath for testing."""
+
     def __init__(self, path: str) -> None:
         self.path = path
 
     def __str__(self) -> str:
         return self.path
 
+    @property
+    def stem(self) -> str:
+        # Extract stem from path string (remove directory and extension)
+        import os
+
+        basename = os.path.basename(self.path)
+        return os.path.splitext(basename)[0]
+
+    @property
+    def name(self) -> str:
+        # Return just the filename
+        import os
+
+        return os.path.basename(self.path)
+
 
 @pytest.fixture
 def mock_htmy_adapter():
     """Mock HTMY adapter fixture."""
-    adapter = MagicMock()
+    from unittest.mock import AsyncMock
+
+    adapter = (
+        AsyncMock()
+    )  # Use AsyncMock instead of MagicMock as the base to ensure awaitability
     adapter.component_searchpaths = [MockAsyncPath("/test/components")]
 
     # Mock component metadata
@@ -48,7 +67,7 @@ def mock_htmy_adapter():
         status=ComponentStatus.VALIDATED,
         dependencies=["dependency1", "dependency2"],
         htmx_attributes={"hx-get": "/api/test"},
-        docstring="Test component description"
+        docstring="Test component description",
     )
 
     htmx_metadata = ComponentMetadata(
@@ -57,7 +76,7 @@ def mock_htmy_adapter():
         type=ComponentType.HTMX,
         status=ComponentStatus.READY,
         htmx_attributes={"hx-post": "/api/submit"},
-        docstring="HTMX component"
+        docstring="HTMX component",
     )
 
     broken_metadata = ComponentMetadata(
@@ -65,14 +84,24 @@ def mock_htmy_adapter():
         path=MockAsyncPath("/test/components/broken_component.py"),
         type=ComponentType.BASIC,
         status=ComponentStatus.ERROR,
-        error_message="Syntax error in component"
+        error_message="Syntax error in component",
     )
 
-    adapter.discover_components = AsyncMock(return_value={
+    # Set return values for async methods
+    adapter.discover_components.return_value = {
         "test_component": test_metadata,
         "htmx_component": htmx_metadata,
         "broken_component": broken_metadata,
-    })
+    }
+
+    # Set other return values
+    adapter.validate_component.return_value = test_metadata
+    adapter.render_component.return_value = "<div>Component</div>"
+    adapter.get_component_class.return_value = MagicMock()
+    adapter.get_component_source.return_value = (
+        "<div>source</div>",
+        MockAsyncPath("/path"),
+    )
 
     return adapter
 
@@ -88,7 +117,7 @@ class TestComponentGatherResult:
             validation_errors=["error1"],
             htmx_components=["htmx_comp"],
             dataclass_components=["dc_comp"],
-            composite_components=["comp_comp"]
+            composite_components=["comp_comp"],
         )
 
         assert result.is_success is True  # Use is_success property instead
@@ -113,7 +142,7 @@ class TestComponentGatherStrategy:
             include_metadata=True,
             validate_components=True,
             filter_types=["htmx", "dataclass"],
-            max_parallel=5
+            max_parallel=5,
         )
 
         assert strategy.include_metadata is True
@@ -170,26 +199,23 @@ class TestGatherComponents:
     @pytest.mark.asyncio
     async def test_gather_components_success(self, mock_htmy_adapter):
         """Test successful component gathering."""
-        with patch('fastblocks.actions.gather.components.depends') as mock_depends:
-            mock_depends.get.return_value = mock_htmy_adapter
+        result = await gather_components(htmy_adapter=mock_htmy_adapter)
 
-            result = await gather_components(htmy_adapter=mock_htmy_adapter)
+        assert result.is_success is True
+        assert result.component_count == 3
+        assert "test_component" in result.components
+        assert "htmx_component" in result.components
+        assert "broken_component" in result.components
 
-            assert result.success is True
-            assert result.component_count == 3
-            assert "test_component" in result.components
-            assert "htmx_component" in result.components
-            assert "broken_component" in result.components
-
-            # Check categorization
-            assert "htmx_component" in result.htmx_components
-            assert "test_component" in result.dataclass_components
-            assert len(result.validation_errors) == 1
+        # Check categorization
+        assert "htmx_component" in result.htmx_components
+        assert "test_component" in result.dataclass_components
+        assert len(result.validation_errors) == 1
 
     @pytest.mark.asyncio
     async def test_gather_components_no_adapter(self):
         """Test gathering without HTMY adapter."""
-        with patch('fastblocks.actions.gather.components.depends') as mock_depends:
+        with patch("fastblocks.actions.gather.components.depends") as mock_depends:
             mock_depends.get.side_effect = Exception("No adapter")
 
             result = await gather_components()
@@ -203,8 +229,7 @@ class TestGatherComponents:
         strategy = ComponentGatherStrategy(filter_types=["htmx"])
 
         result = await gather_components(
-            htmy_adapter=mock_htmy_adapter,
-            strategy=strategy
+            htmy_adapter=mock_htmy_adapter, strategy=strategy
         )
 
         assert result.success is True
@@ -217,9 +242,9 @@ class TestGatherComponents:
         mock_adapter = MagicMock()
         mock_adapter.discover_components = None  # No advanced discovery
         mock_adapter.htmy_registry = MagicMock()
-        mock_adapter.htmy_registry.discover_components = AsyncMock(return_value={
-            "basic_component": MockAsyncPath("/test/basic_component.py")
-        })
+        mock_adapter.htmy_registry.discover_components = AsyncMock(
+            return_value={"basic_component": MockAsyncPath("/test/basic_component.py")}
+        )
         mock_adapter.component_searchpaths = [MockAsyncPath("/test")]
 
         result = await gather_components(htmy_adapter=mock_adapter)
@@ -230,7 +255,9 @@ class TestGatherComponents:
     @pytest.mark.asyncio
     async def test_gather_components_exception_handling(self, mock_htmy_adapter):
         """Test exception handling during gathering."""
-        mock_htmy_adapter.discover_components.side_effect = Exception("Discovery failed")
+        mock_htmy_adapter.discover_components.side_effect = Exception(
+            "Discovery failed"
+        )
 
         result = await gather_components(htmy_adapter=mock_htmy_adapter)
 
@@ -243,8 +270,7 @@ class TestGatherComponents:
         custom_paths = [MockAsyncPath("/custom/components")]
 
         result = await gather_components(
-            htmy_adapter=mock_htmy_adapter,
-            searchpaths=custom_paths
+            htmy_adapter=mock_htmy_adapter, searchpaths=custom_paths
         )
 
         assert result.success is True
@@ -263,15 +289,13 @@ class TestGatherComponentDependencies:
             path=MockAsyncPath("/test/test_component.py"),
             type=ComponentType.DATACLASS,
             status=ComponentStatus.VALIDATED,
-            dependencies=["dep1", "dep2"]
+            dependencies=["dep1", "dep2"],
         )
 
         mock_htmy_adapter.validate_component = AsyncMock(return_value=test_metadata)
 
         result = await gather_component_dependencies(
-            "test_component",
-            htmy_adapter=mock_htmy_adapter,
-            recursive=False
+            "test_component", htmy_adapter=mock_htmy_adapter, recursive=False
         )
 
         assert result["name"] == "test_component"
@@ -287,7 +311,7 @@ class TestGatherComponentDependencies:
             path=MockAsyncPath("/test/parent_component.py"),
             type=ComponentType.COMPOSITE,
             status=ComponentStatus.VALIDATED,
-            dependencies=["child_component"]
+            dependencies=["child_component"],
         )
 
         child_metadata = ComponentMetadata(
@@ -295,7 +319,7 @@ class TestGatherComponentDependencies:
             path=MockAsyncPath("/test/child_component.py"),
             type=ComponentType.DATACLASS,
             status=ComponentStatus.VALIDATED,
-            dependencies=[]
+            dependencies=[],
         )
 
         async def mock_validate(component_name):
@@ -312,7 +336,7 @@ class TestGatherComponentDependencies:
             "parent_component",
             htmy_adapter=mock_htmy_adapter,
             recursive=True,
-            max_depth=2
+            max_depth=2,
         )
 
         assert result["name"] == "parent_component"
@@ -321,7 +345,7 @@ class TestGatherComponentDependencies:
     @pytest.mark.asyncio
     async def test_gather_dependencies_no_adapter(self):
         """Test dependency gathering without adapter."""
-        with patch('fastblocks.actions.gather.components.depends') as mock_depends:
+        with patch("fastblocks.actions.gather.components.depends") as mock_depends:
             mock_depends.get.return_value = None
 
             result = await gather_component_dependencies("test_component")
@@ -338,7 +362,7 @@ class TestGatherComponentDependencies:
             path=MockAsyncPath("/test/recursive_component.py"),
             type=ComponentType.COMPOSITE,
             status=ComponentStatus.VALIDATED,
-            dependencies=["recursive_component"]  # Self-reference
+            dependencies=["recursive_component"],  # Self-reference
         )
 
         mock_htmy_adapter.validate_component = AsyncMock(return_value=metadata)
@@ -347,7 +371,7 @@ class TestGatherComponentDependencies:
             "recursive_component",
             htmy_adapter=mock_htmy_adapter,
             recursive=True,
-            max_depth=1
+            max_depth=1,
         )
 
         assert result["name"] == "recursive_component"
@@ -360,7 +384,9 @@ class TestAnalyzeComponentUsage:
     @pytest.mark.asyncio
     async def test_analyze_usage_success(self, mock_htmy_adapter):
         """Test successful usage analysis."""
-        with patch('fastblocks.actions.gather.components.gather_components') as mock_gather:
+        with patch(
+            "fastblocks.actions.gather.components.gather_components"
+        ) as mock_gather:
             mock_result = ComponentGatherResult(
                 success=True,
                 components={
@@ -370,7 +396,7 @@ class TestAnalyzeComponentUsage:
                         "htmx_attributes": {"hx-get": "/api/test"},
                         "dependencies": ["dep1"],
                         "docstring": "Test component",
-                        "last_modified": "2025-01-13T10:00:00"
+                        "last_modified": "2025-01-13T10:00:00",
                     },
                     "htmx_component": {
                         "type": "htmx",
@@ -378,15 +404,15 @@ class TestAnalyzeComponentUsage:
                         "htmx_attributes": {"hx-post": "/api/submit"},
                         "dependencies": [],
                         "docstring": "HTMX component",
-                        "last_modified": "2025-01-13T11:00:00"
-                    }
+                        "last_modified": "2025-01-13T11:00:00",
+                    },
                 },
                 component_count=2,
                 validation_errors=["error1"],
                 htmx_components=["htmx_component"],
                 dataclass_components=["test_component"],
                 composite_components=[],
-                searchpaths=[MockAsyncPath("/test/components")]
+                searchpaths=[MockAsyncPath("/test/components")],
             )
             mock_gather.return_value = mock_result
 
@@ -409,10 +435,11 @@ class TestAnalyzeComponentUsage:
     @pytest.mark.asyncio
     async def test_analyze_usage_gather_failure(self, mock_htmy_adapter):
         """Test usage analysis when gathering fails."""
-        with patch('fastblocks.actions.gather.components.gather_components') as mock_gather:
+        with patch(
+            "fastblocks.actions.gather.components.gather_components"
+        ) as mock_gather:
             mock_result = ComponentGatherResult(
-                success=False,
-                error_message="Gathering failed"
+                success=False, error_message="Gathering failed"
             )
             mock_gather.return_value = mock_result
 
@@ -424,7 +451,7 @@ class TestAnalyzeComponentUsage:
     @pytest.mark.asyncio
     async def test_analyze_usage_no_adapter(self):
         """Test usage analysis without adapter."""
-        with patch('fastblocks.actions.gather.components.depends') as mock_depends:
+        with patch("fastblocks.actions.gather.components.depends") as mock_depends:
             mock_depends.get.return_value = None
 
             result = await analyze_component_usage()
@@ -435,7 +462,9 @@ class TestAnalyzeComponentUsage:
     @pytest.mark.asyncio
     async def test_analyze_usage_exception_handling(self, mock_htmy_adapter):
         """Test usage analysis exception handling."""
-        with patch('fastblocks.actions.gather.components.gather_components') as mock_gather:
+        with patch(
+            "fastblocks.actions.gather.components.gather_components"
+        ) as mock_gather:
             mock_gather.side_effect = Exception("Analysis failed")
 
             result = await analyze_component_usage(htmy_adapter=mock_htmy_adapter)
@@ -458,8 +487,7 @@ class TestIntegrationScenarios:
 
         # Step 2: Analyze specific component dependencies
         deps_result = await gather_component_dependencies(
-            "test_component",
-            htmy_adapter=mock_htmy_adapter
+            "test_component", htmy_adapter=mock_htmy_adapter
         )
         assert deps_result["name"] == "test_component"
 
@@ -475,13 +503,11 @@ class TestIntegrationScenarios:
         dataclass_strategy = ComponentGatherStrategy(filter_types=["dataclass"])
 
         htmx_result = await gather_components(
-            htmy_adapter=mock_htmy_adapter,
-            strategy=htmx_strategy
+            htmy_adapter=mock_htmy_adapter, strategy=htmx_strategy
         )
 
         dataclass_result = await gather_components(
-            htmy_adapter=mock_htmy_adapter,
-            strategy=dataclass_strategy
+            htmy_adapter=mock_htmy_adapter, strategy=dataclass_strategy
         )
 
         # Both should succeed
@@ -501,7 +527,7 @@ class TestIntegrationScenarios:
                 name=f"component_{i}",
                 path=MockAsyncPath(f"/test/component_{i}.py"),
                 type=ComponentType.DATACLASS,
-                status=ComponentStatus.VALIDATED
+                status=ComponentStatus.VALIDATED,
             )
             large_component_set[f"component_{i}"] = metadata
 
@@ -512,10 +538,7 @@ class TestIntegrationScenarios:
         strategy = ComponentGatherStrategy(max_parallel=10)
 
         start_time = datetime.now()
-        result = await gather_components(
-            htmy_adapter=mock_adapter,
-            strategy=strategy
-        )
+        result = await gather_components(htmy_adapter=mock_adapter, strategy=strategy)
         end_time = datetime.now()
 
         assert result.success is True

@@ -602,13 +602,15 @@ async def _generate_vary_hash(headers: Headers, varying_headers: list[str]) -> s
         return ""
 
     # ACB's CRC32C is 50x faster than MD5 for cache keys (non-cryptographic)
-    return await hash.crc32c("|".join(vary_values))
+    result = await hash.crc32c("|".join(vary_values))
+    return str(result)  # Ensure return type is str
 
 
 async def _generate_url_hash(url: URL) -> str:
     """Generate hash for URL using ACB's fast CRC32C."""
     # ACB's CRC32C is 50x faster than MD5 for cache keys (non-cryptographic)
-    return await hash.crc32c(str(url))
+    result = await hash.crc32c(str(url))
+    return str(result)  # Ensure return type is str
 
 
 async def generate_varying_headers_cache_key(url: URL) -> str:

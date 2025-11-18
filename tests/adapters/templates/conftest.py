@@ -1,10 +1,10 @@
 """Conftest for templates test configuration."""
 
-import pytest
+from pathlib import Path
 
 
-def pytest_ignore_collect(path, config):
+def pytest_ignore_collect(collection_path: Path, config):
     """Ignore collection of test_components directory."""
-    if "test_components" in str(path):
+    if "test_components" in str(collection_path):
         return True
     return False

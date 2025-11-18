@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from fastblocks.adapters.templates.htmy import HTMYComponentRegistry
 
 
-class TestAsyncPath:
+class MockAsyncPath:
     """Simple AsyncPath implementation for testing."""
 
     def __init__(self, path_str: str) -> None:
@@ -22,15 +22,15 @@ class TestAsyncPath:
     def __str__(self) -> str:
         return str(self.path)
 
-    def __truediv__(self, other: str) -> "TestAsyncPath":
-        return TestAsyncPath(str(self.path / other))
+    def __truediv__(self, other: str) -> "MockAsyncPath":
+        return MockAsyncPath(str(self.path / other))
 
     async def exists(self):
         return self.path.exists()
 
     async def rglob(self, pattern: str):
         for p in self.path.rglob(pattern):
-            yield TestAsyncPath(str(p))
+            yield MockAsyncPath(str(p))
 
     @property
     def stem(self):
@@ -81,7 +81,7 @@ async def _setup_htmy_test_registry() -> (
         print(f"❌ Test components directory does not exist: {test_dir}")
         return None, {}
 
-    async_test_dir = TestAsyncPath(str(test_dir))
+    async_test_dir = MockAsyncPath(str(test_dir))
     registry = HTMYComponentRegistry([async_test_dir])  # type: ignore[arg-type]
     print("✓ Created HTMY registry")
 
@@ -153,12 +153,11 @@ def _test_cache_key_generation(components: dict[str, t.Any]) -> None:
     if components:
         first_component_path = list(components.values())[0]
         from anyio import Path as AsyncPath
+
         # Convert TestAsyncPath to AsyncPath for cache key generation
         async_path = AsyncPath(str(first_component_path))
         source_key = HTMYComponentRegistry.get_cache_key(async_path)
-        bytecode_key = HTMYComponentRegistry.get_cache_key(
-            async_path, "bytecode"
-        )
+        bytecode_key = HTMYComponentRegistry.get_cache_key(async_path, "bytecode")
 
         print("✓ Cache key generation:")
         print(f"  Source key: {source_key[:50]}...")

@@ -64,7 +64,7 @@ class WebAwesomeStyle(StyleBase):
     def get_stylesheet_links(self) -> list[str]:
         """Get WebAwesome stylesheet links."""
         if not self.settings:
-            self.settings = WebAwesomeSettings()
+            self.settings = WebAwesomeStyleSettings()
 
         links = []
 
@@ -102,7 +102,7 @@ class WebAwesomeStyle(StyleBase):
     def _generate_webawesome_css(self) -> str:
         """Generate WebAwesome CSS framework."""
         if not self.settings:
-            self.settings = WebAwesomeSettings()
+            self.settings = WebAwesomeStyleSettings()
 
         css = f"""
 /* WebAwesome CSS Framework for FastBlocks */
@@ -419,7 +419,7 @@ body {{
     def _generate_grid_css(self) -> str:
         """Generate responsive grid CSS."""
         if not self.settings:
-            self.settings = WebAwesomeSettings()
+            self.settings = WebAwesomeStyleSettings()
 
         css = ""
         breakpoints = {

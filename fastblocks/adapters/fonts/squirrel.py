@@ -32,7 +32,7 @@ class FontSquirrelFonts(FontsBase):
     def __init__(self) -> None:
         """Initialize Font Squirrel adapter."""
         super().__init__()
-        self.settings = FontSquirrelSettings()
+        self.settings = FontSquirrelFontsSettings()
 
         # Register with ACB dependency system
         with suppress(Exception):

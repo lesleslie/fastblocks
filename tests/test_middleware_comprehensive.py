@@ -1,27 +1,17 @@
 """Tests for the FastBlocks middleware module."""
 
-import sys
-import types
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-from starlette.datastructures import Headers, MutableHeaders
-from starlette.requests import Request
-from starlette.responses import Response
 from starlette.types import Message, Receive, Scope, Send
-
 from fastblocks.middleware import (
     CacheControlMiddleware,
-    CacheControlResponder,
     CurrentRequestMiddleware,
-    HtmxMiddleware,
-    HtmxResponseMiddleware,
     MiddlewarePosition,
     MiddlewareStackManager,
     MiddlewareUtils,
     SecureHeadersMiddleware,
     get_middleware_positions,
-    middlewares,
     secure_headers,
 )
 
@@ -131,7 +121,9 @@ class TestSecureHeadersMiddleware:
                     # Verify headers are added
                     headers = list(message.get("headers", []))
                     # We expect the secure header to be added
-                    assert any(b"x-content-type-options" in header for header, _ in headers)
+                    assert any(
+                        b"x-content-type-options" in header for header, _ in headers
+                    )
 
             await middleware(scope, receive, mock_send)
 

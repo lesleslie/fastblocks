@@ -10,7 +10,7 @@ sys.path.insert(0, "/Users/les/Projects/sites/fastest")
 sys.path.insert(0, "/Users/les/Projects/fastblocks")
 
 
-class TestAsyncPath:
+class MockAsyncPath:
     """Minimal AsyncPath-like object for testing."""
 
     def __init__(self, path_str: str) -> None:
@@ -19,15 +19,15 @@ class TestAsyncPath:
     def __str__(self) -> str:
         return str(self.path)
 
-    def __truediv__(self, other: str) -> "TestAsyncPath":
-        return TestAsyncPath(str(self.path / other))
+    def __truediv__(self, other: str) -> "MockAsyncPath":
+        return MockAsyncPath(str(self.path / other))
 
     async def exists(self):
         return self.path.exists()
 
     async def rglob(self, pattern: str):
         for p in self.path.rglob(pattern):
-            yield TestAsyncPath(str(p))
+            yield MockAsyncPath(str(p))
 
     @property
     def stem(self):
@@ -65,11 +65,11 @@ async def test_component_discovery() -> None:
         traceback.print_exc()
 
 
-async def _setup_minimal_test_environment() -> tuple[t.Any, TestAsyncPath]:
+async def _setup_minimal_test_environment() -> tuple[t.Any, MockAsyncPath]:
     """Set up the test environment with minimal configuration."""
     from fastblocks.adapters.templates.htmy import HTMYComponentRegistry
 
-    component_path = TestAsyncPath(
+    component_path = MockAsyncPath(
         "/Users/les/Projects/sites/fastest/templates/app/bulma/components"
     )
     registry = HTMYComponentRegistry([component_path])  # type: ignore[arg-type]
@@ -80,14 +80,14 @@ async def _setup_minimal_test_environment() -> tuple[t.Any, TestAsyncPath]:
     return registry, component_path
 
 
-async def _validate_component_path(component_path: TestAsyncPath) -> bool:
+async def _validate_component_path(component_path: MockAsyncPath) -> bool:
     """Validate that the component path exists."""
     exists = await component_path.exists()
     print(f"✓ Component path exists: {exists}")
     return exists
 
 
-async def _discover_and_list_components(registry: t.Any) -> dict[str, TestAsyncPath]:
+async def _discover_and_list_components(registry: t.Any) -> dict[str, MockAsyncPath]:
     """Discover components and list them."""
     components = await registry.discover_components()
     print(f"✓ Found components: {list(components.keys())}")

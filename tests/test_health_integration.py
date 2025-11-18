@@ -4,11 +4,9 @@ This module tests the bridge between FastBlocks components and ACB's comprehensi
 health monitoring system.
 """
 
-import typing as t
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from fastblocks._health_integration import (
     ACB_HEALTH_AVAILABLE,
     CacheHealthCheck,
@@ -265,8 +263,6 @@ async def test_register_health_checks_service_unavailable():
 @pytest.mark.skipif(not ACB_HEALTH_AVAILABLE, reason="ACB HealthService not available")
 async def test_get_health_summary_all_healthy(mock_health_service):
     """Test health summary when all components are healthy."""
-    from acb.services.health import HealthStatus
-
     # Mock health check results
     mock_result = MagicMock()
     mock_result.to_dict.return_value = {
