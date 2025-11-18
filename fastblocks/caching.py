@@ -92,17 +92,6 @@ class CacheRules:
         )
         return _check_rule_match(match, request.url.path)
 
-
-def _check_rule_match(match: list[str | re.Pattern[str]], path: str) -> bool:
-    """Check if any rule matches the request path."""
-    for item in match:
-        if isinstance(item, re.Pattern):
-            if item.match(path):
-                return True
-        elif item in ("*", path):
-            return True
-    return False
-
     @staticmethod
     def response_matches_rule(
         rule: Rule,
@@ -115,15 +104,6 @@ def _check_rule_match(match: list[str | re.Pattern[str]], path: str) -> bool:
             return False
         # Then check if response status matches
         return _check_response_status_match(rule, response)
-
-
-def _check_response_status_match(rule: Rule, response: Response) -> bool:
-    """Check if response status code matches the rule."""
-    if rule.status is not None:
-        statuses = [rule.status] if isinstance(rule.status, int) else rule.status
-        if response.status_code not in statuses:
-            return False
-    return True
 
     @staticmethod
     def get_rule_matching_request(

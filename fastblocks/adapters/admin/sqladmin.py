@@ -29,14 +29,18 @@ class AdminSettings(AdminBaseSettings): ...
 
 
 class Admin(AdminBase):
+    @depends.inject  # type: ignore[misc]
     def __init__(
         self,
-        app: Starlette = FastBlocks(),
-        templates: t.Any = depends(),
+        templates: Inject[t.Any],
+        app: Starlette | None = None,
         **kwargs: t.Any,
     ) -> None:
         super().__init__()
         from sqladmin import Admin as SqlAdminBase
+
+        if app is None:
+            app = FastBlocks()
 
         self._sqladmin = SqlAdminBase(app=app, **kwargs)
         self.templates = templates.admin

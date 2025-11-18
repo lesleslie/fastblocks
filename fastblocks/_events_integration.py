@@ -27,7 +27,6 @@ try:
         EventPublisher,
         EventSubscription,
         create_event,
-        event_handler,
     )
 
     ACB_EVENTS_AVAILABLE = True
@@ -120,7 +119,7 @@ class CacheInvalidationHandler(EventHandler):  # type: ignore[misc]
     """Handler for cache invalidation events."""
 
     @depends.inject  # type: ignore[misc]
-    def __init__(self, cache: Inject[t.Any] = depends()) -> None:
+    def __init__(self, cache: Inject[t.Any]) -> None:
         super().__init__()
         self.cache = cache
 
@@ -339,7 +338,7 @@ class FastBlocksEventPublisher:
         return cls._instance
 
     @depends.inject  # type: ignore[misc]
-    def __init__(self, config: Inject[t.Any] = depends()) -> None:
+    def __init__(self, config: Inject[t.Any]) -> None:
         if not ACB_EVENTS_AVAILABLE:
             return
 

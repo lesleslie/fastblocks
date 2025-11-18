@@ -510,7 +510,6 @@ class BlockRenderer:
         name: str,
         template_name: str,
         endpoint: str,
-        placeholder_content: str = "Loading...",
         **kwargs: t.Any,
     ) -> BlockDefinition:
         """Create a lazy-loading block that loads when visible."""

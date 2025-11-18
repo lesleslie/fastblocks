@@ -20,7 +20,6 @@ try:
     from acb.services.health import (
         HealthCheckMixin,
         HealthCheckResult,
-        HealthCheckType,
         HealthStatus,
     )
 
@@ -39,7 +38,7 @@ class FastBlocksHealthCheck(HealthCheckMixin):  # type: ignore[misc]
     @depends.inject  # type: ignore[misc]
     def __init__(
         self,
-        config: Inject[t.Any] = depends(),
+        config: Inject[t.Any],
         component_id: str | None = None,
         component_name: str | None = None,
     ) -> None:

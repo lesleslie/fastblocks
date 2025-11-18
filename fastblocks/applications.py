@@ -184,8 +184,8 @@ class FastBlocks(Starlette):
                 cls = middleware.cls
             elif isinstance(middleware, tuple) and len(middleware) > 0:
                 cls = middleware[0]
-
-            return None
+            else:
+                return None
             cls_name = str(getattr(cls, "__name__", cls))
             return cls_name, cls
         except (AttributeError, IndexError, TypeError):
