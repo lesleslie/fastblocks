@@ -311,7 +311,7 @@ def scaffold(
             from acb.depends import depends
 
             # Get HTMY adapter
-            htmy_adapter = depends.get("htmy")
+            htmy_adapter = await depends.get("htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -394,7 +394,7 @@ def list_components() -> None:
         try:
             from acb.depends import depends
 
-            htmy_adapter = depends.get("htmy")
+            htmy_adapter = await depends.get("htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -472,7 +472,7 @@ def validate(
         try:
             from acb.depends import depends
 
-            htmy_adapter = depends.get("htmy")
+            htmy_adapter = await depends.get("htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -532,7 +532,7 @@ def info(
         try:
             from acb.depends import depends
 
-            htmy_adapter = depends.get("htmy")
+            htmy_adapter = await depends.get("htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -611,7 +611,7 @@ def syntax_check(
 
             from acb.depends import depends
 
-            syntax_support = depends.get("syntax_support")
+            syntax_support = await depends.get("syntax_support")
             if syntax_support is None:
                 console.print(
                     "[red]Syntax support not available. Make sure you're in a FastBlocks project.[/red]"
@@ -656,7 +656,7 @@ def format_template(
 
             from acb.depends import depends
 
-            syntax_support = depends.get("syntax_support")
+            syntax_support = await depends.get("syntax_support")
             if syntax_support is None:
                 console.print(
                     "[red]Syntax support not available. Make sure you're in a FastBlocks project.[/red]"
@@ -880,7 +880,7 @@ def start_language_server(
         try:
             from acb.depends import depends
 
-            language_server = depends.get("language_server")
+            language_server = await depends.get("language_server")
             if language_server is None:
                 console.print(
                     "[red]Language server not available. Make sure you're in a FastBlocks project.[/red]"

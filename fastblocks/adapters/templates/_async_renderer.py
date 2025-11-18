@@ -115,14 +115,14 @@ class AsyncTemplateRenderer:
         """Initialize the async renderer."""
         if not self.base_templates:
             try:
-                self.base_templates = depends.get("templates")
+                self.base_templates = await depends.get("templates")
             except Exception:
                 self.base_templates = Templates()
                 await self.base_templates.init()
 
         if not self.hybrid_manager:
             try:
-                self.hybrid_manager = depends.get("hybrid_template_manager")
+                self.hybrid_manager = await depends.get("hybrid_template_manager")
             except Exception:
                 self.hybrid_manager = HybridTemplatesManager()
                 await self.hybrid_manager.initialize()
@@ -313,7 +313,7 @@ class AsyncTemplateRenderer:
     ) -> RenderResult | None:
         """Check Redis cache for cached result."""
         with suppress(Exception):
-            cache = depends.get("cache")
+            cache = await depends.get("cache")
             if cache:
                 cached_content = await cache.get(render_context.cache_key)
                 if cached_content:
@@ -427,7 +427,7 @@ class AsyncTemplateRenderer:
 
         if self.cache_strategy in (CacheStrategy.REDIS, CacheStrategy.HYBRID):
             with suppress(Exception):
-                cache = depends.get("cache")
+                cache = await depends.get("cache")
                 if cache:
                     await cache.set(
                         render_context.cache_key,
