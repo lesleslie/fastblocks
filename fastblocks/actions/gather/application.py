@@ -334,7 +334,7 @@ async def _gather_config() -> t.Any:
     try:
         from acb.depends import depends
 
-        config = depends.get("config")
+        config = await depends.get("config")
         if config:
             debug("Gathered application config from depends")
             return config
