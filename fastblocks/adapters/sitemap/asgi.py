@@ -11,7 +11,7 @@ from contextlib import suppress
 from uuid import UUID
 
 from acb.adapters import AdapterStatus
-from acb.depends import depends
+from acb.depends import Inject, depends
 
 from ._base import SitemapBase, SitemapBaseSettings
 from .core import BaseSitemap as NativeSitemap
@@ -25,11 +25,15 @@ class SitemapSettings(SitemapBaseSettings):
 class AsgiSitemap(NativeSitemap[str], SitemapBase):  # type: ignore[override,name-defined]
     sitemap: SitemapApp | None = None
 
+    @depends.inject
+    def __init__(self, routes: Inject[t.Any] | None = None, **kwargs: t.Any) -> None:
+        super().__init__(**kwargs)
+        self._routes_adapter = routes
+
     def items(self) -> t.Any:
         try:
-            routes_adapter = depends.get("routes")
-            if hasattr(routes_adapter, "routes"):
-                return [r.path for r in routes_adapter.routes]
+            if self._routes_adapter and hasattr(self._routes_adapter, "routes"):
+                return [r.path for r in self._routes_adapter.routes]
             return []
         except Exception:
             return []

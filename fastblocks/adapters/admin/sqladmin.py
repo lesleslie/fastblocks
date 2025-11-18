@@ -50,7 +50,7 @@ class Admin(AdminBase):
 
     async def init(self) -> None:
         with suppress(Exception):
-            models = depends.get("models")
+            models = await depends.get("models")
             if hasattr(models, "get_admin_models"):
                 admin_models = models.get_admin_models()
                 for model in admin_models:

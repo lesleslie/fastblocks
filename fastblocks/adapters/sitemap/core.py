@@ -268,7 +268,7 @@ def _escape_xml(value: str) -> str:
 
 async def _get_cached_sitemap(cache_key: str) -> bytes | None:
     try:
-        cache = depends.get("cache")
+        cache = await depends.get("cache")
         if cache and hasattr(cache, "get"):
             cached_data = await cache.get(cache_key)
             if cached_data:
@@ -286,7 +286,7 @@ async def _get_cached_sitemap(cache_key: str) -> bytes | None:
 
 async def _cache_sitemap(cache_key: str, content: bytes) -> None:
     try:
-        cache = depends.get("cache")
+        cache = await depends.get("cache")
         if cache and hasattr(cache, "set"):
             await cache.set(cache_key, content, ttl=3600)
             debug(f"_cache_sitemap: Cached sitemap ({len(content)} bytes)")
