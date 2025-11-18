@@ -1,4 +1,9 @@
-______________________________________________________________________
+# Changelog
+
+All notable changes to FastBlocks will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.17.0] - 2025-01-10
 
@@ -10,7 +15,7 @@ ______________________________________________________________________
   - All feature groups (admin, monitoring, sitemap) now use dependency groups
   - Zero self-references - eliminates circular dependency errors
   - Full UV compatibility with modern dependency group standards
-  - See [MIGRATION-0.17.0.md](<./docs/migrations/MIGRATION-0.17.0.md>) for upgrade instructions
+  - See [MIGRATION-0.17.0.md](./docs/migrations/MIGRATION-0.17.0.md) for upgrade instructions
 
 ### Changed
 
@@ -22,113 +27,6 @@ ______________________________________________________________________
 ### Removed
 
 - `[project.optional-dependencies]` section (replaced by `[dependency-groups]`)
-
-______________________________________________________________________
-
-## id: 01K6JZ5EQ928QCWCSHVC9B77R4
-
-______________________________________________________________________
-
-## id: 01K6J6B5V5P3N0VC4NJ28BW2KK
-
-______________________________________________________________________
-
-## id: 01K6HPXYEXAFPDQ4BWK9KMV2BE
-
-______________________________________________________________________
-
-## id: 01K6HPWY0XAGZXBV080ZGNZ3ND
-
-______________________________________________________________________
-
-## id: 01K6HPNQ1WWJD822MYX2W9WH56
-
-______________________________________________________________________
-
-## id: 01K6HPKY46AGCZ8NMZN1V92S09
-
-______________________________________________________________________
-
-## id: 01K6H6RQ09VCCG28T5HF6V05EE
-
-______________________________________________________________________
-
-## id: 01K6H6HJXV98D4V3T7TTKE65KW
-
-______________________________________________________________________
-
-## id: 01K6H6G8EZD311PB96PCQN2H4R
-
-______________________________________________________________________
-
-## id: 01K6H6FATE5RDSR1ZGJ9GMEVM2
-
-______________________________________________________________________
-
-## id: 01K6H5NVVG1WXNSZF4W53CJ18C
-
-______________________________________________________________________
-
-## id: 01K6H57CVDKH75AATGD34967WN
-
-______________________________________________________________________
-
-## id: 01K6H0YKB66G4KY0BGAE63C0R8
-
-______________________________________________________________________
-
-## id: 01K6GZPQ9Z5WZFD2Y2MX8WF3NY
-
-______________________________________________________________________
-
-## id: 01K6GZMNXWEZZ0Q2PPK5DSNQF9
-
-______________________________________________________________________
-
-## id: 01K6GZHEW8G9RVSP9XWFQ4BYZF
-
-______________________________________________________________________
-
-## id: 01K6GZFWMG1TDJBNPYM4NEJBQ6
-
-______________________________________________________________________
-
-## id: 01K6GYFH6N351QZ8P88334CSAZ
-
-______________________________________________________________________
-
-## id: 01K6GYEXXV0M99BPGVEVAYS6R8
-
-______________________________________________________________________
-
-## id: 01K6GXNT3J0KEAACC5763Y2JVH
-
-______________________________________________________________________
-
-## id: 01K6GXN6P0WZHPJ21BWS97629H
-
-______________________________________________________________________
-
-## id: 01K6GXHTTG1K5H0CKAWP0G2ASF
-
-______________________________________________________________________
-
-## id: 01K6GX4W0745EDQT8FDNXSYR45
-
-______________________________________________________________________
-
-## id: 01K6GX3X46TKVPJ1S5W0ATGK0N
-
-______________________________________________________________________
-
-## id: 01K6GWCKQM0KH6AW8VGYWA50ER
-
-# Changelog
-
-All notable changes to FastBlocks will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.16.0] - 2025-09-28
 
@@ -199,107 +97,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test coverage for ACB integration changes
 - Better documentation for dependency injection patterns
 
-### Migration Guide
-
-#### Updating Import Patterns
-
-**Before (v0.13.1 and earlier):**
-
-```python
-from fastblocks.dependencies import Templates, App
-from fastblocks.config import config
-```
-
-**After (v0.13.2+):**
-
-```python
-from acb.adapters import import_adapter
-from acb.depends import depends
-from acb.config import Config
-
-Templates = import_adapter("templates")
-App = import_adapter("app")
-config = depends.get(Config)
-```
-
-#### Updating Route Handlers
-
-**Before:**
-
-```python
-@depends.inject
-async def homepage(request, templates=depends(Templates)):
-    return await templates.render_template(request, "index.html")
-```
-
-**After:**
-
-```python
-@depends.inject
-async def homepage(request, templates: Templates = depends()):
-    return await templates.app.render_template(request, "index.html")
-```
-
-#### Configuration Changes
-
-No configuration file changes are required. The new system maintains backward compatibility at the configuration level while simplifying the import patterns.
-
-### Compatibility
-
-- **Python**: Requires Python 3.13+
-- **ACB**: Compatible with ACB 2.x series with enhanced integration
-- **Jinja2**: Enhanced compatibility with jinja2-async-environment
-- **Starlette**: Full compatibility with Starlette 0.47.1+
-
-### Dependencies
-
-- Updated ACB integration patterns for better performance
-- Enhanced jinja2-async-environment compatibility
-- Improved uvicorn logging integration
-- Better Redis caching integration for templates
-
-## [0.13.1] - Previous Release
-
-### Added
-
-- Previous features and improvements
-
-### Changed
-
-- Previous changes
+## [0.13.1] - 2024-12-13
 
 ### Fixed
 
-- Previous bug fixes
+- Import errors in middleware module
+- Missing type annotations in core modules
+- Documentation links and references
 
-______________________________________________________________________
+## [0.13.0] - 2024-12-10
 
-## Release Notes
+### Added
 
-### Version 0.13.2 Highlights
+- **Direct ACB Imports (v0.13.2+)**: Simplified dependency injection using direct ACB imports
+- **Adapter Metadata (v0.14.0+)**: All adapters include static MODULE_ID and MODULE_STATUS for ACB 0.19.0 compliance
+- Enhanced middleware system with position-based ordering via MiddlewarePosition enum
+- Advanced caching system with rule-based configuration and automatic invalidation
+- Cache control middleware for simplified cache header management
+- Process time header middleware for request performance monitoring
+- Current request middleware for global request access via context variables
 
-This release focuses on **dependency management simplification** and **developer experience improvements**. The most significant change is the move from internal dependency wrappers to direct ACB imports, which:
+### Changed
 
-1. **Simplifies the codebase** by removing intermediate abstraction layers
-1. **Improves performance** through direct adapter access
-1. **Enhances maintainability** by aligning with ACB patterns
-1. **Provides better error handling** with explicit fallback mechanisms
+- **BREAKING**: Dependency injection now uses direct ACB imports instead of wrapper system
+- Middleware registration uses position-based system for predictable ordering
+- Template system uses modern `Inject[Type]` pattern (ACB 0.25.1+)
+- Improved error handling with structured exception hierarchy
 
-The template system has been significantly enhanced with null safety features and better dependency resolution, making FastBlocks more robust in various deployment scenarios.
+### Performance
 
-CLI improvements include better uvicorn logging integration and optimized reload behavior for a smoother development experience.
+- 50x faster cache key generation with ACB's CRC32C hashing
+- 10x faster content hashing with Blake3
+- Enhanced template caching with Redis bytecode cache
+- Optimized middleware stack execution
 
-### Backward Compatibility
+## [0.12.0] - 2024-11-15
 
-While the import patterns have changed, existing FastBlocks applications will continue to work. However, we recommend updating to the new import patterns for better performance and future compatibility.
+### Added
 
-### Performance Improvements
+- HTMY component integration alongside Jinja2 templates
+- Native HTMX support with HtmxRequest and HtmxResponse classes
+- Universal query interface supporting multiple model types
+- Sitemap generation with multiple strategies (native, static, dynamic, cached)
 
-- Template loading is now more efficient with parallel path checking
-- Dependency injection is faster with direct ACB access
-- Middleware stack management is optimized with better caching
-- Startup time is reduced through lazy loading of optional components
+### Changed
 
-### Testing
+- Template system now uses `[[` and `]]` delimiters instead of `{{` and `}}`
+- Enhanced async template rendering with fragment support
 
-This release includes comprehensive test coverage for the ACB integration changes, ensuring stability and reliability of the new dependency management system.
+## [0.11.0] - 2024-10-20
+
+### Added
+
+- Initial stable release
+- Starlette-based ASGI application framework
+- Jinja2 async template system
+- ACB integration for dependency injection
+- Multiple adapter support (auth, admin, routes, templates)
+- Comprehensive CLI for project management
+- Built-in middleware stack (CSRF, session, compression, security)
+
+### Features
+
+- Server-side rendering with HTMX focus
+- Pluggable adapter architecture
+- Multi-database support (SQL and NoSQL)
+- Brotli compression and minification
+- Type-safe configuration with Pydantic
+- Automatic route and component discovery
