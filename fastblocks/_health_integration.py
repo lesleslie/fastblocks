@@ -98,7 +98,7 @@ class TemplatesHealthCheck(FastBlocksHealthCheck):
 
         try:
             # Try to get templates adapter
-            templates = depends.get("templates")
+            templates = await depends.get("templates")
 
             if templates is None:
                 status = HealthStatus.DEGRADED
@@ -120,7 +120,7 @@ class TemplatesHealthCheck(FastBlocksHealthCheck):
 
             # Check cache availability
             try:
-                cache = depends.get("cache")
+                cache = await depends.get("cache")
                 details["cache_available"] = cache is not None
             except Exception:
                 details["cache_available"] = False
@@ -199,7 +199,7 @@ class CacheHealthCheck(FastBlocksHealthCheck):
 
         try:
             # Try to get cache adapter
-            cache = depends.get("cache")
+            cache = await depends.get("cache")
 
             if cache is None:
                 status = HealthStatus.DEGRADED
@@ -265,7 +265,7 @@ class RoutesHealthCheck(FastBlocksHealthCheck):
 
         try:
             # Try to get routes adapter
-            routes = depends.get("routes")
+            routes = await depends.get("routes")
 
             if routes is None:
                 status = HealthStatus.DEGRADED
@@ -311,7 +311,7 @@ class DatabaseHealthCheck(FastBlocksHealthCheck):
 
         try:
             # Try to get sql adapter
-            sql = depends.get("sql")
+            sql = await depends.get("sql")
 
             if sql is None:
                 status = HealthStatus.DEGRADED
@@ -362,7 +362,7 @@ async def register_fastblocks_health_checks() -> bool:
 
     try:
         # Get ACB HealthService from the service registry
-        health_service = depends.get("health_service")
+        health_service = await depends.get("health_service")
 
         if health_service is None:
             return False
@@ -394,7 +394,7 @@ async def get_fastblocks_health_summary() -> dict[str, t.Any]:
         }
 
     try:
-        health_service = depends.get("health_service")
+        health_service = await depends.get("health_service")
 
         if health_service is None:
             return {

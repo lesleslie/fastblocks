@@ -420,7 +420,7 @@ async def _warm_template_cache(
         if templates_result and hasattr(templates_result, "templates"):
             cached_count = 0
             # Pre-cache template metadata (not full rendering)
-            cache = depends.get("cache")
+            cache = await depends.get("cache")
             if cache:
                 for template_name in list(templates_result.templates.keys())[
                     :50
@@ -471,7 +471,7 @@ async def _cleanup_template_cache(
 ) -> dict[str, t.Any]:
     """Clean up unused template cache entries."""
     with suppress(Exception):
-        cache = depends.get("cache")
+        cache = await depends.get("cache")
         if cache and hasattr(cache, "clear_pattern"):
             # Clear stale template cache entries
             await cache.clear_pattern("template:*")

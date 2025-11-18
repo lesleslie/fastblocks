@@ -720,7 +720,7 @@ async def _log_template_validation_errors(
         return
 
     with suppress(Exception):
-        logger = depends.get("logger")
+        logger = await depends.get("logger")
         if logger:
             logger.warning(
                 f"Template context validation warnings for {template}: {errors}"
@@ -832,7 +832,7 @@ async def _handle_form_validation_errors(
 
     if errors and service._config.log_validation_failures:
         with suppress(Exception):
-            logger = depends.get("logger")
+            logger = await depends.get("logger")
             if logger:
                 logger.warning(f"Form validation errors: {errors}")
 
@@ -944,7 +944,7 @@ async def _validate_response(
 
     if not is_valid:
         with suppress(Exception):
-            logger = depends.get("logger")
+            logger = await depends.get("logger")
             if logger:
                 logger.error(f"Response validation failed: {errors}")
 
