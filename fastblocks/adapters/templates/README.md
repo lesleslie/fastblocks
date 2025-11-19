@@ -1,6 +1,6 @@
 # Templates Adapter
 
-> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
+> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>)
 
 The Templates adapter provides template rendering capabilities for FastBlocks applications.
 

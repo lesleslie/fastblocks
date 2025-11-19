@@ -1,19 +1,19 @@
 # FastBlocks: Actions
 
-> **FastBlocks Documentation**: [Main](../../README.md) | [Core Features](../README.md) | [Adapters](../adapters/README.md)
+> **FastBlocks Documentation**: [Main](<../../README.md>) | [Core Features](../README.md) | [Adapters](<../adapters/README.md>)
 
 Actions are modular, self-contained utility functions that perform specific tasks in the FastBlocks framework. They follow semantic patterns and are designed to streamline common operations in web application development.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Available Actions](#available-actions)
-  - [Gather](#gather)
-  - [Sync](#sync)
-  - [Minify](#minify)
-- [Action Philosophy](#action-philosophy)
-- [Best Practices](#best-practices)
-- [Creating Custom Actions](#creating-custom-actions)
+- [Overview](<#overview>)
+- [Available Actions](<#available-actions>)
+  - [Gather](<#gather>)
+  - [Sync](<#sync>)
+  - [Minify](<#minify>)
+- [Action Philosophy](<#action-philosophy>)
+- [Best Practices](<#best-practices>)
+- [Creating Custom Actions](<#creating-custom-actions>)
 
 ## Overview
 
@@ -73,7 +73,7 @@ app_result = await gather.application()
 print(f"Loaded {app_result.total_components} application components")
 ```
 
-**[→ Read the full Gather documentation](./gather/README.md)**
+**[→ Read the full Gather documentation](<./gather/README.md>)**
 
 ### Sync
 
@@ -104,7 +104,7 @@ cache_result = await sync.cache(operation="refresh")
 print(f"Refreshed {len(cache_result.invalidated_keys)} cache entries")
 ```
 
-**[→ Read the full Sync documentation](./sync/README.md)**
+**[→ Read the full Sync documentation](<./sync/README.md>)**
 
 ### Minify
 
@@ -135,7 +135,7 @@ js_content = "function hello() { console.log('Hello, World!'); }"
 minified_js = minify.js(js_content)
 ```
 
-**[→ Read the full Minify documentation](./minify/README.md)**
+**[→ Read the full Minify documentation](<./minify/README.md>)**
 
 ### Query
 
@@ -170,7 +170,7 @@ context = create_query_context(request, "user", {"page": "users"})
 - Equals, greater/less than, contains, in, not, null checks
 - All operators support type coercion and validation
 
-**[→ Read the full Query documentation](./query/README.md)**
+**[→ Read the full Query documentation](<./query/README.md>)**
 
 ## Action Philosophy
 
@@ -331,5 +331,5 @@ Create a `README.md` following the pattern of existing actions with:
 ## Related Resources
 
 - [ACB Actions Documentation](https://github.com/lesleslie/acb/tree/main/acb/actions)
-- [FastBlocks Adapters Documentation](../adapters/README.md)
+- [FastBlocks Adapters Documentation](<../adapters/README.md>)
 - [FastBlocks Core Documentation](../README.md)

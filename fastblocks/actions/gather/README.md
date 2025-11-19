@@ -1,24 +1,24 @@
 # Gather Action
 
-> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
+> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../README.md>) | [Adapters](<../../adapters/README.md>)
 
 The Gather action provides unified component discovery and collection for FastBlocks applications. It consolidates scattered gathering patterns throughout the framework, providing parallel processing, standardized error handling, and consistent caching strategies.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Usage](#usage)
-  - [Routes](#routes)
-  - [Templates](#templates)
-  - [Middleware](#middleware)
-  - [Models](#models)
-  - [Application](#application)
-- [API Reference](#api-reference)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Performance Considerations](#performance-considerations)
-- [Related Actions](#related-actions)
+- [Overview](<#overview>)
+- [Features](<#features>)
+- [Usage](<#usage>)
+  - [Routes](<#routes>)
+  - [Templates](<#templates>)
+  - [Middleware](<#middleware>)
+  - [Models](<#models>)
+  - [Application](<#application>)
+- [API Reference](<#api-reference>)
+- [Configuration](<#configuration>)
+- [Examples](<#examples>)
+- [Performance Considerations](<#performance-considerations>)
+- [Related Actions](<#related-actions>)
 
 ## Overview
 
@@ -486,6 +486,6 @@ async def robust_gathering():
 
 ## Related Actions
 
-- [Sync Action](../sync/README.md): Synchronize gathered components with storage
-- [Minify Action](../minify/README.md): Optimize gathered assets
+- [Sync Action](<../sync/README.md>): Synchronize gathered components with storage
+- [Minify Action](<../minify/README.md>): Optimize gathered assets
 - [ACB Actions](https://github.com/lesleslie/acb/tree/main/acb/actions): Core utility actions

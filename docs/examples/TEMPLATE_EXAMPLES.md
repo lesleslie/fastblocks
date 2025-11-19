@@ -363,5 +363,5 @@ This guide provides comprehensive examples of using FastBlocks adapter filters i
 
 ## See Also
 
-- [Adapter Documentation](../../fastblocks/adapters/README.md)
-- [Syntax Demo Script](./syntax_demo.py) - Interactive demonstration of FastBlocks syntax support
+- [Adapter Documentation](<../../fastblocks/adapters/README.md>)
+- [Syntax Demo Script](<./syntax_demo.py>) - Interactive demonstration of FastBlocks syntax support

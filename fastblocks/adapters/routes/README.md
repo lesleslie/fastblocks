@@ -1,6 +1,6 @@
 # Routes Adapter
 
-> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
+> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>)
 
 The Routes adapter manages route discovery and registration in FastBlocks applications.
 

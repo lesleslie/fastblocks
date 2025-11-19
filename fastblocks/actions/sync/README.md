@@ -1,24 +1,24 @@
 # Sync Action
 
-> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
+> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../README.md>) | [Adapters](<../../adapters/README.md>)
 
 The Sync action provides bidirectional synchronization between filesystem and cloud storage with intelligent conflict resolution, cache consistency management, and atomic operations. It ensures data consistency across development, staging, and production environments.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Usage](#usage)
-  - [Templates](#templates)
-  - [Settings](#settings)
-  - [Static Files](#static-files)
-  - [Cache](#cache)
-- [API Reference](#api-reference)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Conflict Resolution](#conflict-resolution)
-- [Performance Considerations](#performance-considerations)
-- [Related Actions](#related-actions)
+- [Overview](<#overview>)
+- [Features](<#features>)
+- [Usage](<#usage>)
+  - [Templates](<#templates>)
+  - [Settings](<#settings>)
+  - [Static Files](<#static-files>)
+  - [Cache](<#cache>)
+- [API Reference](<#api-reference>)
+- [Configuration](<#configuration>)
+- [Examples](<#examples>)
+- [Conflict Resolution](<#conflict-resolution>)
+- [Performance Considerations](<#performance-considerations>)
+- [Related Actions](<#related-actions>)
 
 ## Overview
 
@@ -639,6 +639,6 @@ except ValueError as e:
 
 ## Related Actions
 
-- [Gather Action](../gather/README.md): Discover components before syncing
-- [Minify Action](../minify/README.md): Optimize assets before syncing
+- [Gather Action](<../gather/README.md>): Discover components before syncing
+- [Minify Action](<../minify/README.md>): Optimize assets before syncing
 - [ACB Actions](https://github.com/lesleslie/acb/tree/main/acb/actions): Core utility actions

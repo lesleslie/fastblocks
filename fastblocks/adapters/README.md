@@ -1,20 +1,20 @@
 # FastBlocks Adapters
 
-> **FastBlocks Documentation**: [Main](../../README.md) | [Core Features](../README.md) | [Actions](../actions/README.md)
+> **FastBlocks Documentation**: [Main](<../../README.md>) | [Core Features](../README.md) | [Actions](<../actions/README.md>)
 
 This directory contains the adapter system for FastBlocks, providing modular integration with external services and frameworks using protocol-based design and ACB 0.19.0+ compliance.
 
 ## Table of Contents
 
-1. [Adapter Categories](#adapter-categories)
-1. [Architecture](#architecture)
-1. [Adapter Structure](#adapter-structure)
-1. [Creating Custom Adapters](#creating-custom-adapters)
-1. [MCP Server Foundation](#mcp-server-foundation)
-1. [Health Monitoring](#health-monitoring)
-1. [Best Practices](#best-practices)
-1. [Integration Patterns](#integration-patterns)
-1. [Troubleshooting](#troubleshooting)
+1. [Adapter Categories](<#adapter-categories>)
+1. [Architecture](<#architecture>)
+1. [Adapter Structure](<#adapter-structure>)
+1. [Creating Custom Adapters](<#creating-custom-adapters>)
+1. [MCP Server Foundation](<#mcp-server-foundation>)
+1. [Health Monitoring](<#health-monitoring>)
+1. [Best Practices](<#best-practices>)
+1. [Integration Patterns](<#integration-patterns>)
+1. [Troubleshooting](<#troubleshooting>)
 
 ## Adapter Categories
 
@@ -247,7 +247,7 @@ The MCP discovery system will automatically detect and register your adapter.
 
 ## MCP Server Foundation
 
-FastBlocks includes a Model Context Protocol (MCP) server foundation for adapter discovery and management. See [MCP Server Documentation](../mcp/README.md) for complete details.
+FastBlocks includes a Model Context Protocol (MCP) server foundation for adapter discovery and management. See [MCP Server Documentation](<../mcp/README.md>) for complete details.
 
 ### Key Components
 
