@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import StyleBase, StyleBaseSettings
 
 
-class BulmaStyleSettings(StyleBaseSettings):  # type: ignore[misc]
+class BulmaStyleSettings(StyleBaseSettings):
     """Bulma-specific settings."""
 
     version: str = "0.9.4"

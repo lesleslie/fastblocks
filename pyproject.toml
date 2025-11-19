@@ -68,7 +68,9 @@ text = "BSD-3-Clause"
 
 [dependency-groups]
 dev = [
+    "bandit>=1.9.1",
     "crackerjack>=0.44.28",
+    "detect-secrets>=1.5.0",
     "excalidraw-mcp>=0.34.0",
     "penpot-mcp>=0.1.2",
     "pytest>=9.0.1",
@@ -247,6 +249,7 @@ reportInvalidTypeForm = false
 reportUnknownLambdaType = false
 reportUnknownParameterType = "warning"
 reportPrivateUsage = false
+reportUnusedFunction = false  # Template filters registered via decorators
 pythonVersion = "3.13"
 
 [tool.complexipy]

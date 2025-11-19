@@ -78,7 +78,6 @@ def htmy_settings():
     """HTMY settings fixture."""
     from unittest.mock import MagicMock
 
-
     # Create a mock config to satisfy the dependency injection
     mock_config = MagicMock()
     mock_config.deployed = False

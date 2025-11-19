@@ -13,7 +13,7 @@ from pydantic import SecretStr
 from ._base import ImagesBase, ImagesBaseSettings
 
 
-class TwicPicsImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
+class TwicPicsImagesSettings(ImagesBaseSettings):
     """Settings for TwicPics adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -295,7 +295,7 @@ def register_twicpics_filters(env: Any) -> None:
     @env.filter("twic_url")  # type: ignore[misc]
     async def twic_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for TwicPics URLs."""
-        images = depends.get("images")
+        images = await depends.get("images")
         if isinstance(images, TwicPicsImages):
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"
@@ -303,7 +303,7 @@ def register_twicpics_filters(env: Any) -> None:
     @env.filter("twic_img")  # type: ignore[misc]
     def twic_img_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for TwicPics img tags."""
-        images = depends.get("images")
+        images = depends.get_sync("images")
         if isinstance(images, TwicPicsImages):
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'
@@ -316,7 +316,7 @@ def register_twicpics_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate responsive image with TwicPics optimization."""
-        images = depends.get("images")
+        images = depends.get_sync("images")
         if isinstance(images, TwicPicsImages):
             return images.get_responsive_img_tag(
                 image_id, alt, breakpoints, **attributes
@@ -328,7 +328,7 @@ def register_twicpics_filters(env: Any) -> None:
         image_id: str, width: int = 20, quality: int = 10
     ) -> str:
         """Generate ultra-low quality placeholder URL."""
-        images = depends.get("images")
+        images = await depends.get("images")
         if isinstance(images, TwicPicsImages):
             return await images.get_image_url(
                 image_id, {"width": width, "quality": quality}

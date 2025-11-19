@@ -115,7 +115,7 @@ class DefaultErrorHandler(ErrorHandler):
                     status_code=status_code,
                     context={"page": str(status_code)},
                 )
-                return result  # type: ignore[no-any-return]
+                return t.cast(Response, result)
 
         return PlainTextResponse(content=message, status_code=status_code)
 

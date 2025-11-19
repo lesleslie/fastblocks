@@ -8,10 +8,10 @@ from starlette.authentication import UnauthenticatedUser
 from fastblocks.htmx import HtmxRequest
 
 
-class AuthBaseSettings(Settings):  # type: ignore[misc]
+class AuthBaseSettings(Settings):
     token_id: str | None = None
 
-    @depends.inject  # type: ignore[misc]
+    @depends.inject
     def __init__(self, config: Inject[Config], **data: t.Any) -> None:
         super().__init__(**data)
         self.token_id = self.token_id or getattr(config.app, "token_id", "_fb_")
@@ -51,7 +51,7 @@ class AuthProtocol(t.Protocol):
     async def logout(self, request: HtmxRequest) -> bool: ...
 
 
-class AuthBase(AdapterBase):  # type: ignore[misc]
+class AuthBase(AdapterBase):
     _current_user: ContextVar[t.Any] = ContextVar(
         "current_user",
         default=UnauthenticatedUser(),

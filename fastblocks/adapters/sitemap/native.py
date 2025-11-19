@@ -21,13 +21,13 @@ class NativeSitemapSettings(SitemapBaseSettings):
     pass
 
 
-class NativeSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
+class NativeSitemap(BaseSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
 
     def items(self) -> t.Any:
         try:
-            routes_adapter = depends.get("routes")
-            if not hasattr(routes_adapter, "routes"):
+            routes_adapter = depends.get_sync("routes")
+            if not routes_adapter or not hasattr(routes_adapter, "routes"):
                 debug("NativeSitemap: No routes adapter found")
                 return []
             route_paths = [r.path for r in routes_adapter.routes]

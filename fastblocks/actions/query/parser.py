@@ -11,15 +11,17 @@ import typing as t
 from contextlib import suppress
 
 from acb.debug import debug
-from acb.depends import depends
+from acb.depends import Inject, depends
 from starlette.requests import Request
 from fastblocks.htmx import HtmxRequest
 
 
 class UniversalQueryParser:
+    @depends.inject
     def __init__(
         self,
         request: HtmxRequest | Request,
+        query: Inject[t.Any],
         model_class: t.Any = None,
         pattern: str = "advanced",
         default_limit: int = 10,
@@ -30,7 +32,7 @@ class UniversalQueryParser:
         self.pattern = pattern
         self.default_limit = default_limit
         self.max_limit = max_limit
-        self.query = depends.get("query")
+        self.query = query
 
     def _parse_pagination(self, params: dict[str, str]) -> tuple[int, int, int]:
         page = max(1, int(params.pop("page", 1)))
@@ -251,9 +253,9 @@ class UniversalQueryParser:
         }
 
 
-def get_model_for_query(model_name: str) -> t.Any | None:
+async def get_model_for_query(model_name: str) -> t.Any | None:
     try:
-        models = depends.get("models")
+        models = await depends.get("models")
         if models and hasattr(models, model_name):
             return getattr(models, model_name)
     except Exception as e:
@@ -262,7 +264,7 @@ def get_model_for_query(model_name: str) -> t.Any | None:
     return None
 
 
-def create_query_context(
+async def create_query_context(
     request: HtmxRequest | Request,
     model_name: str | None = None,
     base_context: dict[str, t.Any] | None = None,
@@ -279,7 +281,7 @@ def create_query_context(
     if not model_name:
         return context
 
-    model_class = get_model_for_query(model_name)
+    model_class = await get_model_for_query(model_name)
     if not model_class:
         debug(f"Model '{model_name}' not found")
         return context

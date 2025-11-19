@@ -47,7 +47,7 @@ from acb.adapters import (
 )
 from acb.config import Config
 from acb.debug import debug
-from acb.depends import Inject, depends
+from acb.depends import depends
 from anyio import Path as AsyncPath
 from jinja2.exceptions import TemplateNotFound
 from starlette.endpoints import HTTPEndpoint
@@ -73,17 +73,16 @@ class RoutesSettings(RoutesBaseSettings): ...
 
 
 class FastBlocksEndpoint(HTTPEndpoint):
-    @depends.inject  # type: ignore[misc]
     def __init__(
         self,
         scope: Scope,
         receive: Receive,
         send: Send,
-        config: Inject[Config] | None = None,
+        config: Config | None = None,
     ) -> None:
         super().__init__(scope, receive, send)
-        self.config = config or depends.get(Config)
-        self.templates = depends.get("templates")
+        self.config = config or depends.get_sync(Config)
+        self.templates = depends.get_sync("templates")
 
 
 class Index(FastBlocksEndpoint):
@@ -99,7 +98,9 @@ class Index(FastBlocksEndpoint):
             template = f"{page.lstrip('/')}.html"
             headers["hx-push-url"] = "/" if page == "home" else page
         debug(page, template)
-        context = create_query_context(request, base_context={"page": page.lstrip("/")})
+        context = await create_query_context(
+            request, base_context={"page": page.lstrip("/")}
+        )
         query_params = getattr(request, "query_params", {})
         if "model" in query_params:
             model_name = query_params["model"]
@@ -114,7 +115,7 @@ class Index(FastBlocksEndpoint):
                 headers=headers,
                 context=context,
             )
-            return result  # type: ignore[no-any-return]
+            return t.cast(Response, result)
         except TemplateNotFound:
             raise HTTPException(status_code=404)
 
@@ -124,7 +125,7 @@ class Block(FastBlocksEndpoint):
         debug(request)
         path_params = getattr(request, "path_params", {})
         block = f"blocks/{path_params.get('block', 'default')}.html"
-        context = create_query_context(request)
+        context = await create_query_context(request)
         query_params = getattr(request, "query_params", {})
         if "model" in query_params:
             model_name = query_params["model"]
@@ -136,7 +137,7 @@ class Block(FastBlocksEndpoint):
             result = await self.templates.render_template(
                 request, block, context=context
             )
-            return result  # type: ignore[no-any-return]
+            return t.cast(Response, result)
         except TemplateNotFound:
             raise HTTPException(status_code=404)
 
@@ -146,7 +147,7 @@ class Component(FastBlocksEndpoint):
         debug(request)
         component_name = getattr(request, "path_params", {}).get("component", "default")
         query_params = getattr(request, "query_params", {})
-        context = create_query_context(request, base_context=dict(query_params))
+        context = await create_query_context(request, base_context=dict(query_params))
         if "model" in query_params:
             model_name = query_params["model"]
             if f"{model_name}_parser" in context:
@@ -154,7 +155,7 @@ class Component(FastBlocksEndpoint):
                 context[f"{model_name}_list"] = await parser.parse_and_execute()
                 context[f"{model_name}_count"] = await parser.get_count()
         try:
-            htmy = depends.get("htmy")
+            htmy = await depends.get("htmy")
             if htmy is None:
                 raise HTTPException(
                     status_code=500, detail="HTMY adapter not available"
@@ -162,7 +163,7 @@ class Component(FastBlocksEndpoint):
             result = await htmy.render_component(
                 request, component_name, context=context
             )
-            return result  # type: ignore[no-any-return]
+            return t.cast(Response, result)
         except Exception as e:
             debug(f"Component '{component_name}' not found: {e}")
             raise HTTPException(status_code=404)

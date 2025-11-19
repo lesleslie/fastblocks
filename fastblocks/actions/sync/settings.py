@@ -98,7 +98,7 @@ async def _initialize_storage_only(result: SettingsSyncResult) -> t.Any | None:
     try:
         from acb.depends import depends
 
-        storage = depends.get("storage")
+        storage = await depends.get("storage")
         if not storage:
             result.errors.append(Exception("Storage adapter not available"))
             return None

@@ -175,7 +175,7 @@ class BlockRenderer:
 
         if not self.hybrid_manager:
             try:
-                self.hybrid_manager = depends.get("hybrid_template_manager")
+                self.hybrid_manager = await depends.get("hybrid_template_manager")
             except Exception:
                 self.hybrid_manager = HybridTemplatesManager()
                 await self.hybrid_manager.initialize()
@@ -219,7 +219,7 @@ class BlockRenderer:
 
                 # Extract variables used in this block
                 # find_undeclared_variables accepts Block nodes at runtime
-                block_def.variables = meta.find_undeclared_variables(node)  # type: ignore[arg-type]
+                block_def.variables = meta.find_undeclared_variables(t.cast(t.Any, node))
 
                 # Check for HTMX attributes in block content
                 block_def.htmx_attrs = self._extract_htmx_attrs(source, node.name)
@@ -227,7 +227,7 @@ class BlockRenderer:
                 self.registry.register_block(block_def)
 
             # Find extends and includes for hierarchy
-            for node in parsed.find_all((Extends, Include)):  # type: ignore[assignment]
+            for node in t.cast(t.Any, parsed.find_all((Extends, Include))):
                 # Template attribute value extraction at runtime
                 if hasattr(node, "template") and hasattr(node.template, "value"):
                     parent_template = node.template.value  # type: ignore[attr-defined]
@@ -510,7 +510,6 @@ class BlockRenderer:
         name: str,
         template_name: str,
         endpoint: str,
-        placeholder_content: str = "Loading...",
         **kwargs: t.Any,
     ) -> BlockDefinition:
         """Create a lazy-loading block that loads when visible."""

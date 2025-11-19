@@ -184,8 +184,8 @@ class FastBlocks(Starlette):
                 cls = middleware.cls
             elif isinstance(middleware, tuple) and len(middleware) > 0:
                 cls = middleware[0]
-
-            return None
+            else:
+                return None
             cls_name = str(getattr(cls, "__name__", cls))
             return cls_name, cls
         except (AttributeError, IndexError, TypeError):
@@ -300,7 +300,7 @@ class FastBlocks(Starlette):
         logger: t.Any | None = None,
     ) -> ASGIApp:
         if self._middleware_stack_cache is not None:
-            return t.cast(t.Any, self._middleware_stack_cache)  # type: ignore[no-any-return]
+            return self._middleware_stack_cache
 
         config, logger = self._get_dependencies(config, logger)
         error_handler, exception_handlers = self._separate_exception_handlers()

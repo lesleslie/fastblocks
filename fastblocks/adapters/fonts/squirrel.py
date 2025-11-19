@@ -10,7 +10,7 @@ from acb.depends import depends
 from ._base import FontsBase, FontsBaseSettings
 
 
-class FontSquirrelFontsSettings(FontsBaseSettings):  # type: ignore[misc]
+class FontSquirrelFontsSettings(FontsBaseSettings):
     """Font Squirrel-specific settings."""
 
     fonts_dir: str = "/static/fonts"
@@ -90,10 +90,10 @@ class FontSquirrelFonts(FontsBase):
 
         # Build src declaration
         src_parts = self._build_src_declaration(font_config)
-        if src_parts:
-            properties.append(f"  src: {src_parts};")
+        if not src_parts:
+            return ""  # No valid sources found
 
-        return ""  # No valid sources found
+        properties.append(f"  src: {src_parts};")
 
         # Add unicode-range if specified
         if "unicode_range" in font_config:

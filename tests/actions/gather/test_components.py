@@ -220,7 +220,7 @@ class TestGatherComponents:
 
             result = await gather_components()
 
-            assert result.success is False
+            assert result.is_success is False
             assert "HTMY adapter not available" in result.error_message
 
     @pytest.mark.asyncio
@@ -232,16 +232,18 @@ class TestGatherComponents:
             htmy_adapter=mock_htmy_adapter, strategy=strategy
         )
 
-        assert result.success is True
+        assert result.is_success is True
         # Should only include HTMX components due to filter
         # Note: Implementation details may vary
 
     @pytest.mark.asyncio
     async def test_gather_components_fallback_registry(self):
         """Test gathering with fallback to basic registry."""
-        mock_adapter = MagicMock()
-        mock_adapter.discover_components = None  # No advanced discovery
-        mock_adapter.htmy_registry = MagicMock()
+        mock_adapter = AsyncMock()
+        # Don't set discover_components - let it fall back to htmy_registry
+        if hasattr(mock_adapter, "discover_components"):
+            del mock_adapter.discover_components
+        mock_adapter.htmy_registry = AsyncMock()
         mock_adapter.htmy_registry.discover_components = AsyncMock(
             return_value={"basic_component": MockAsyncPath("/test/basic_component.py")}
         )
@@ -249,7 +251,7 @@ class TestGatherComponents:
 
         result = await gather_components(htmy_adapter=mock_adapter)
 
-        assert result.success is True
+        assert result.is_success is True
         assert "basic_component" in result.components
 
     @pytest.mark.asyncio
@@ -261,7 +263,7 @@ class TestGatherComponents:
 
         result = await gather_components(htmy_adapter=mock_htmy_adapter)
 
-        assert result.success is False
+        assert result.is_success is False
         assert "Discovery failed" in result.error_message
 
     @pytest.mark.asyncio
@@ -273,7 +275,7 @@ class TestGatherComponents:
             htmy_adapter=mock_htmy_adapter, searchpaths=custom_paths
         )
 
-        assert result.success is True
+        assert result.is_success is True
         assert result.searchpaths == custom_paths
 
 
@@ -483,7 +485,7 @@ class TestIntegrationScenarios:
 
         # Step 1: Gather components
         gather_result = await gather_components(htmy_adapter=mock_htmy_adapter)
-        assert gather_result.success is True
+        assert gather_result.is_success is True
 
         # Step 2: Analyze specific component dependencies
         deps_result = await gather_component_dependencies(
@@ -511,14 +513,14 @@ class TestIntegrationScenarios:
         )
 
         # Both should succeed
-        assert htmx_result.success is True
-        assert dataclass_result.success is True
+        assert htmx_result.is_success is True
+        assert dataclass_result.is_success is True
 
     @pytest.mark.asyncio
     async def test_performance_with_large_component_set(self):
         """Test performance with large component set."""
         # Create mock adapter with many components
-        mock_adapter = MagicMock()
+        mock_adapter = AsyncMock()
 
         # Generate large component set
         large_component_set = {}
@@ -541,7 +543,7 @@ class TestIntegrationScenarios:
         result = await gather_components(htmy_adapter=mock_adapter, strategy=strategy)
         end_time = datetime.now()
 
-        assert result.success is True
+        assert result.is_success is True
         assert result.component_count == 100
 
         # Should complete in reasonable time (less than 5 seconds for mock operations)

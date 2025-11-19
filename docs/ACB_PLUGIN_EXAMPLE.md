@@ -4,7 +4,7 @@
 **ACB Version**: 1.0.0+
 **Last Updated**: 2025-01-27
 
----
+______________________________________________________________________
 
 ## Overview
 
@@ -12,7 +12,7 @@ FastBlocks is the **reference implementation** of an ACB MCP plugin. This docume
 
 Use this as a template when building your own ACB plugins.
 
----
+______________________________________________________________________
 
 ## Minimal Working Example
 
@@ -96,12 +96,13 @@ if __name__ == "__main__":
 ```
 
 **That's it!** This complete plugin:
+
 - ✅ Inherits rate limiting (15 req/sec, burst 40)
 - ✅ Provides 2 MCP tools
 - ✅ Provides API documentation
 - ✅ Works with Claude Desktop
 
----
+______________________________________________________________________
 
 ## FastBlocks Implementation
 
@@ -195,12 +196,13 @@ class FastBlocksMCPServer:
 ```
 
 **Key Patterns**:
-1. Store ACB server in `self._server`
-2. Separate tool and resource registration
-3. Use plugin-specific logger
-4. Pass transport options through to ACB server
 
----
+1. Store ACB server in `self._server`
+1. Separate tool and resource registration
+1. Use plugin-specific logger
+1. Pass transport options through to ACB server
+
+______________________________________________________________________
 
 ### Tool Registration
 
@@ -316,12 +318,13 @@ async def register_fastblocks_tools(server: Any) -> None:
 ```
 
 **Key Patterns**:
-1. **Comprehensive error handling** (ValueError, Exception)
-2. **Structured returns** (dict with success/error keys)
-3. **Logging** at appropriate levels
-4. **Bulk registration** (single register_tools call)
 
----
+1. **Comprehensive error handling** (ValueError, Exception)
+1. **Structured returns** (dict with success/error keys)
+1. **Logging** at appropriate levels
+1. **Bulk registration** (single register_tools call)
+
+______________________________________________________________________
 
 ### Resource Registration
 
@@ -421,12 +424,13 @@ async def register_fastblocks_resources(server: Any) -> None:
 ```
 
 **Key Patterns**:
-1. **Markdown format** for human-readable documentation
-2. **JSON format** for structured data
-3. **Idempotent** (safe to call multiple times)
-4. **Error handling** with logging
 
----
+1. **Markdown format** for human-readable documentation
+1. **JSON format** for structured data
+1. **Idempotent** (safe to call multiple times)
+1. **Error handling** with logging
+
+______________________________________________________________________
 
 ## Testing Your Plugin
 
@@ -477,7 +481,7 @@ async def test_plugin_inherits_rate_limiting():
     # Rate limiting is applied at middleware level
 ```
 
----
+______________________________________________________________________
 
 ## Common Patterns
 
@@ -546,7 +550,7 @@ async def create_resource(name: str, **props) -> dict[str, Any]:
         raise
 ```
 
----
+______________________________________________________________________
 
 ## See Also
 
@@ -554,7 +558,7 @@ async def create_resource(name: str, **props) -> dict[str, Any]:
 - **[ACB MCP API Reference](../../acb/docs/MCP_API.md)**: Full API documentation
 - **FastBlocks Source**: `/Users/les/Projects/fastblocks/fastblocks/mcp/`
 
----
+______________________________________________________________________
 
 **Status**: Production Reference
 **Maintained By**: FastBlocks + ACB Teams

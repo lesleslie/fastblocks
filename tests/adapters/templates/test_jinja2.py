@@ -379,3 +379,440 @@ async def test_template_caching_behavior(
             mock_settings.update_from_config.side_effect = mock_update_from_config
             templates.settings.update_from_config(config)
             assert templates.settings.cache_timeout == 1
+
+
+# Additional comprehensive tests for improved coverage
+
+
+class TestHelperFunctions:
+    """Test template replacement helper functions."""
+
+    def test_get_attr_pattern_caching(self):
+        """Test that attribute patterns are cached."""
+        from fastblocks.adapters.templates.jinja2 import _get_attr_pattern
+
+        pattern1 = _get_attr_pattern("id")
+        pattern2 = _get_attr_pattern("id")
+
+        # Should return same cached pattern object
+        assert pattern1 is pattern2
+
+    def test_get_attr_pattern_different_attrs(self):
+        """Test patterns for different attributes."""
+        from fastblocks.adapters.templates.jinja2 import _get_attr_pattern
+
+        id_pattern = _get_attr_pattern("id")
+        class_pattern = _get_attr_pattern("class")
+
+        # Should be different pattern objects
+        assert id_pattern is not class_pattern
+
+    def test_apply_template_replacements_basic(self):
+        """Test basic template delimiter replacements."""
+        from fastblocks.adapters.templates.jinja2 import _apply_template_replacements
+
+        source = b"{{ variable }} {% if condition %} content {% endif %}"
+        result = _apply_template_replacements(source)
+
+        assert b"[[" in result
+        assert b"]]" in result
+        assert b"[%" in result
+        assert b"%]" in result
+        assert b"{{" not in result
+        assert b"}}" not in result
+
+    def test_apply_template_replacements_deployed(self):
+        """Test http to https conversion when deployed."""
+        from fastblocks.adapters.templates.jinja2 import _apply_template_replacements
+
+        source = b"<link href='http://example.com/style.css'>"
+        result = _apply_template_replacements(source, deployed=True)
+
+        assert b"https://" in result
+        assert b"http://" not in result
+
+    def test_apply_template_replacements_not_deployed(self):
+        """Test http remains when not deployed."""
+        from fastblocks.adapters.templates.jinja2 import _apply_template_replacements
+
+        source = b"<link href='http://example.com/style.css'>"
+        result = _apply_template_replacements(source, deployed=False)
+
+        assert b"http://" in result
+
+
+class TestBaseTemplateLoader:
+    """Test BaseTemplateLoader functionality."""
+
+    def test_initialization_with_searchpath(self):
+        """Test BaseTemplateLoader initialization with searchpath."""
+        from fastblocks.adapters.templates.jinja2 import BaseTemplateLoader
+
+        searchpath = AsyncPath("templates")
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = BaseTemplateLoader(searchpath)
+
+                assert searchpath in loader.searchpath
+
+    def test_get_supported_extensions(self):
+        """Test get_supported_extensions returns correct tuple."""
+        from fastblocks.adapters.templates.jinja2 import BaseTemplateLoader
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = BaseTemplateLoader()
+                extensions = loader.get_supported_extensions()
+
+                assert extensions == ("html", "css", "js")
+                assert isinstance(extensions, tuple)
+
+    def test_normalize_template_with_template_arg(self):
+        """Test _normalize_template with template argument."""
+        from fastblocks.adapters.templates.jinja2 import BaseTemplateLoader
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = BaseTemplateLoader()
+                result = loader._normalize_template("env", "template.html")
+
+                assert result == "template.html"
+
+    @pytest.mark.asyncio
+    async def test_list_templates_for_extensions(self, tmp_path):
+        """Test _list_templates_for_extensions discovers templates."""
+        from fastblocks.adapters.templates.jinja2 import BaseTemplateLoader
+
+        # Create test templates
+        test_dir = tmp_path / "templates"
+        test_dir.mkdir()
+        (test_dir / "index.html").write_text("content")
+        (test_dir / "style.css").write_text("content")
+        (test_dir / "script.js").write_text("content")
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = BaseTemplateLoader(AsyncPath(test_dir))
+                templates = await loader._list_templates_for_extensions(
+                    ("html", "css", "js")
+                )
+
+                assert len(templates) == 3
+
+    @pytest.mark.asyncio
+    async def test_find_template_path_parallel_found(self, tmp_path):
+        """Test _find_template_path_parallel finds existing file."""
+        from fastblocks.adapters.templates.jinja2 import BaseTemplateLoader
+
+        test_dir = tmp_path / "templates"
+        test_dir.mkdir()
+        template_file = test_dir / "test.html"
+        template_file.write_text("content")
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = BaseTemplateLoader(AsyncPath(test_dir))
+                result = await loader._find_template_path_parallel("test.html")
+
+                assert result is not None
+                assert "test.html" in str(result)
+
+    @pytest.mark.asyncio
+    async def test_find_template_path_parallel_not_found(self, tmp_path):
+        """Test _find_template_path_parallel returns None for missing file."""
+        from fastblocks.adapters.templates.jinja2 import BaseTemplateLoader
+
+        test_dir = tmp_path / "templates"
+        test_dir.mkdir()
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = BaseTemplateLoader(AsyncPath(test_dir))
+                result = await loader._find_template_path_parallel("nonexistent.html")
+
+                assert result is None
+
+
+class TestFileSystemLoader:
+    """Test FileSystemLoader functionality."""
+
+    @pytest.mark.asyncio
+    async def test_check_storage_exists_no_storage(self):
+        """Test _check_storage_exists when storage is None."""
+        from fastblocks.adapters.templates.jinja2 import FileSystemLoader
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = FileSystemLoader()
+                loader.storage = None
+
+                result = await loader._check_storage_exists(AsyncPath("test.html"))
+
+                assert result is False
+
+    @pytest.mark.asyncio
+    async def test_check_storage_exists_with_storage(self):
+        """Test _check_storage_exists when storage available."""
+        from fastblocks.adapters.templates.jinja2 import FileSystemLoader
+
+        mock_storage = AsyncMock()
+        mock_storage.templates.exists = AsyncMock(return_value=True)
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = FileSystemLoader()
+                loader.storage = mock_storage
+
+                result = await loader._check_storage_exists(AsyncPath("test.html"))
+
+                assert result is True
+
+    @pytest.mark.asyncio
+    async def test_cache_template_with_cache(self):
+        """Test _cache_template caches content."""
+        from fastblocks.adapters.templates.jinja2 import FileSystemLoader
+
+        mock_cache = AsyncMock()
+        mock_cache.set = AsyncMock()
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                with patch(
+                    "fastblocks.adapters.templates.jinja2.Templates.get_cache_key",
+                    return_value="cache:key",
+                ):
+                    loader = FileSystemLoader()
+                    loader.cache = mock_cache
+
+                    await loader._cache_template(AsyncPath("test.html"), b"content")
+
+                    mock_cache.set.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_cache_template_no_cache(self):
+        """Test _cache_template when cache is None."""
+        from fastblocks.adapters.templates.jinja2 import FileSystemLoader
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = FileSystemLoader()
+                loader.cache = None
+
+                # Should not raise exception
+                await loader._cache_template(AsyncPath("test.html"), b"content")
+
+    @pytest.mark.asyncio
+    async def test_list_templates_async(self, tmp_path):
+        """Test list_templates_async returns discovered templates."""
+        from fastblocks.adapters.templates.jinja2 import FileSystemLoader
+
+        test_dir = tmp_path / "templates"
+        test_dir.mkdir()
+        (test_dir / "page1.html").write_text("content")
+        (test_dir / "page2.html").write_text("content")
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = FileSystemLoader(AsyncPath(test_dir))
+                templates = await loader.list_templates_async()
+
+                assert len(templates) >= 2
+
+
+class TestStorageLoader:
+    """Test StorageLoader functionality."""
+
+    @pytest.mark.asyncio
+    async def test_check_filesystem_sync_opportunity_deployed(self):
+        """Test _check_filesystem_sync_opportunity when deployed."""
+        from fastblocks.adapters.templates.jinja2 import StorageLoader
+
+        mock_config = MagicMock()
+        mock_config.deployed = True
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = StorageLoader()
+                loader.config = mock_config
+
+                result = await loader._check_filesystem_sync_opportunity(
+                    "test.html", AsyncPath("storage/test.html")
+                )
+
+                assert result is None
+
+    @pytest.mark.asyncio
+    async def test_list_templates_async_no_storage(self):
+        """Test list_templates_async with no storage."""
+        from fastblocks.adapters.templates.jinja2 import StorageLoader
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.depends.get",
+            side_effect=Exception("Not available"),
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+            ):
+                loader = StorageLoader()
+                loader.storage = None
+
+                templates = await loader.list_templates_async()
+
+                assert templates == []
+
+
+class TestTemplatesEnhanced:
+    """Additional comprehensive tests for Templates adapter."""
+
+    def test_get_loader_development_mode(self):
+        """Test get_loader in development mode."""
+        mock_config = MagicMock()
+        mock_config.deployed = False
+        mock_config.debug.production = False
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.depends.get_sync",
+                return_value=None,
+            ):
+                templates = Templates()
+                templates.config = mock_config
+
+                loader = templates.get_loader([AsyncPath("templates")])
+
+                # Should be ChoiceLoader
+                assert isinstance(loader, ChoiceLoader)
+                assert len(loader.loaders) > 0
+
+    def test_filter_decorator(self):
+        """Test filter decorator registration."""
+        mock_env = MagicMock()
+        mock_env.filters = {}
+        mock_templates_env = MagicMock()
+        mock_templates_env.env = mock_env
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.depends.get_sync",
+                return_value=None,
+            ):
+                templates = Templates()
+                templates.app = mock_templates_env
+
+                @templates.filter("custom_filter")
+                def my_filter(value):
+                    return value.upper()
+
+                assert "custom_filter" in mock_env.filters
+
+    @pytest.mark.asyncio
+    async def test_render_template_no_app_env(self):
+        """Test render_template without app environment."""
+        mock_request = MagicMock()
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.depends.get_sync",
+                return_value=None,
+            ):
+                templates = Templates()
+                templates.app = None
+
+                result = await templates.render_template(mock_request, "index.html")
+
+                # Should return 404 response
+                assert result.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_render_component_no_htmy_adapter(self):
+        """Test render_component when HTMY adapter not available."""
+        mock_request = MagicMock()
+
+        async def mock_get_no_htmy(name):
+            return None
+
+        with patch(
+            "fastblocks.adapters.templates.jinja2.get_adapter", return_value=None
+        ):
+            with patch(
+                "fastblocks.adapters.templates.jinja2.depends.get_sync",
+                return_value=None,
+            ):
+                with patch(
+                    "fastblocks.adapters.templates.jinja2.depends.get",
+                    new=mock_get_no_htmy,
+                ):
+                    templates = Templates()
+
+                    result = await templates.render_component(mock_request, "UserCard")
+
+                    # Should return 500 error response
+                    assert result.status_code == 500
+                    assert b"HTMY adapter not available" in result.body

@@ -12,7 +12,7 @@ from acb.depends import depends
 from ._syntax_support import FastBlocksSyntaxSupport
 
 
-class LanguageServerSettings(Settings):  # type: ignore[misc]
+class LanguageServerSettings(Settings):
     """Settings for FastBlocks Language Server."""
 
     # Required ACB 0.19.0+ metadata
@@ -230,7 +230,9 @@ class FastBlocksLanguageServer:
             }
 
             if error.fix_suggestion:
-                diagnostic["data"] = {"fix": error.fix_suggestion}  # type: ignore[typeddict-item]
+                t.cast(dict[str, t.Any], diagnostic)["data"] = {
+                    "fix": error.fix_suggestion
+                }
 
             diagnostics.append(diagnostic)
 

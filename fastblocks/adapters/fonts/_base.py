@@ -8,7 +8,7 @@ from acb.config import AdapterBase, Settings
 from acb.depends import depends
 
 
-class FontsBaseSettings(Settings):  # type: ignore[misc]
+class FontsBaseSettings(Settings):
     """Base settings for font adapters."""
 
     primary_font: str = "Arial, sans-serif"
@@ -24,7 +24,7 @@ class FontsProtocol(Protocol):
     def get_font_family(self, font_type: str) -> str: ...
 
 
-class FontsBase(AdapterBase):  # type: ignore[misc]
+class FontsBase(AdapterBase):
     """Base class for font adapters."""
 
     # Required ACB 0.19.0+ metadata

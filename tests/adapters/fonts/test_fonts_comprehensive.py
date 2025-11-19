@@ -162,7 +162,7 @@ class TestGoogleFonts:
         assert '<link rel="preload"' in preload_link
         assert 'as="font"' in preload_link
         assert "crossorigin" in preload_link
-        assert "Roboto" in preload_link.lower()
+        assert "roboto" in preload_link.lower()
 
     def test_google_fonts_validate_font_availability(self):
         """Test font availability validation."""

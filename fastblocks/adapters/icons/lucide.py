@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import IconsBase, IconsBaseSettings
 
 
-class LucideIconsSettings(IconsBaseSettings):  # type: ignore[misc]
+class LucideIconsSettings(IconsBaseSettings):
     """Lucide-specific settings."""
 
     version: str = "0.263.1"

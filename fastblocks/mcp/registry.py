@@ -56,7 +56,7 @@ class AdapterRegistry:
 
         # Try ACB registry
         with suppress(Exception):  # Try to instantiate from discovery
-            adapter = depends.get(adapter_name)
+            adapter = await depends.get(adapter_name)
             if adapter:
                 self._active_adapters[adapter_name] = adapter
                 return adapter

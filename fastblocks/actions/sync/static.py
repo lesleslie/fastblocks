@@ -163,8 +163,8 @@ async def _initialize_adapters(result: StaticSyncResult) -> dict[str, t.Any] | N
     try:
         from acb.depends import depends
 
-        storage = depends.get("storage")
-        cache = depends.get("cache")
+        storage = await depends.get("storage")
+        cache = await depends.get("cache")
         if not storage:
             result.errors.append(Exception("Storage adapter not available"))
             return None
@@ -736,8 +736,8 @@ async def _validate_cache_dependencies() -> tuple[t.Any, t.Any, dict[str, t.Any]
     """Validate and return cache and storage dependencies."""
     from acb.depends import depends
 
-    cache = depends.get("cache")
-    storage = depends.get("storage")
+    cache = await depends.get("cache")
+    storage = await depends.get("storage")
     result: dict[str, t.Any] = {
         "warmed": [],
         "errors": [],

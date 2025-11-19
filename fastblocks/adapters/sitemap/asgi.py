@@ -22,13 +22,13 @@ class SitemapSettings(SitemapBaseSettings):
     pass
 
 
-class AsgiSitemap(NativeSitemap[str], SitemapBase):  # type: ignore[override,name-defined]
+class AsgiSitemap(NativeSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
 
     def items(self) -> t.Any:
         try:
-            routes_adapter = depends.get("routes")
-            if hasattr(routes_adapter, "routes"):
+            routes_adapter = depends.get_sync("routes")
+            if routes_adapter and hasattr(routes_adapter, "routes"):
                 return [r.path for r in routes_adapter.routes]
             return []
         except Exception:

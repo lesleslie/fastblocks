@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import StyleBase, StyleBaseSettings
 
 
-class WebAwesomeStyleSettings(StyleBaseSettings):  # type: ignore[misc]
+class WebAwesomeStyleSettings(StyleBaseSettings):
     """Settings for WebAwesome styles adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -55,7 +55,7 @@ class WebAwesomeStyle(StyleBase):
     def __init__(self) -> None:
         """Initialize WebAwesome adapter."""
         super().__init__()
-        self.settings: WebAwesomeSettings | None = None
+        self.settings: WebAwesomeStyleSettings | None = None
 
         # Register with ACB dependency system
         with suppress(Exception):
@@ -523,24 +523,24 @@ def _register_wa_basic_filters(env: Any) -> None:
     @env.global_("wa_stylesheet_links")  # type: ignore[misc]
     def wa_stylesheet_links() -> str:
         """Global function for WebAwesome stylesheet links."""
-        styles = depends.get("styles")
-        if isinstance(styles, WebAwesomeAdapter):
+        styles = depends.get_sync("styles")
+        if isinstance(styles, WebAwesomeStyle):
             return "\n".join(styles.get_stylesheet_links())
         return ""
 
     @env.filter("wa_class")  # type: ignore[misc]
     def wa_class_filter(component: str) -> str:
         """Filter for getting WebAwesome component classes."""
-        styles = depends.get("styles")
-        if isinstance(styles, WebAwesomeAdapter):
+        styles = depends.get_sync("styles")
+        if isinstance(styles, WebAwesomeStyle):
             return styles.get_component_class(component)
         return component
 
     @env.filter("wa_icon")  # type: ignore[misc]
     def wa_icon_filter(icon_name: str, style: str = "solid") -> str:
         """Filter for WebAwesome icon classes."""
-        styles = depends.get("styles")
-        if isinstance(styles, WebAwesomeAdapter):
+        styles = depends.get_sync("styles")
+        if isinstance(styles, WebAwesomeStyle):
             return styles.get_icon_class(icon_name, style)
         return f"fa-{icon_name}"
 
@@ -553,8 +553,8 @@ def _register_wa_button_functions(env: Any) -> None:
         text: str, variant: str = "primary", icon: str | None = None, **attributes: Any
     ) -> str:
         """Generate WebAwesome button with optional icon."""
-        styles = depends.get("styles")
-        if not isinstance(styles, WebAwesomeAdapter):
+        styles = depends.get_sync("styles")
+        if not isinstance(styles, WebAwesomeStyle):
             return f'<button class="btn">{text}</button>'
 
         btn_class = styles.get_component_class(f"btn-{variant}")
@@ -581,8 +581,8 @@ def _register_wa_card_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate WebAwesome card component."""
-        styles = depends.get("styles")
-        if not isinstance(styles, WebAwesomeAdapter):
+        styles = depends.get_sync("styles")
+        if not isinstance(styles, WebAwesomeStyle):
             return f'<div class="card">{content}</div>'
 
         card_class = styles.get_component_class("card")

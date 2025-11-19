@@ -10,7 +10,7 @@ ______________________________________________________________________
   - All feature groups (admin, monitoring, sitemap) now use dependency groups
   - Zero self-references - eliminates circular dependency errors
   - Full UV compatibility with modern dependency group standards
-  - See [MIGRATION-0.17.0.md](<./docs/migrations/MIGRATION-0.17.0.md>) for upgrade instructions
+  - See [MIGRATION-0.17.0.md](./docs/migrations/MIGRATION-0.17.0.md) for upgrade instructions
 
 ### Changed
 

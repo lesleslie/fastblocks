@@ -131,7 +131,7 @@ async def _gather_custom_middleware() -> list[Middleware]:
     with suppress(Exception):
         from acb.depends import depends
 
-        config = depends.get("config")
+        config = await depends.get("config")
         if hasattr(config, "middleware") and hasattr(config.middleware, "custom"):
             for middleware_path in config.middleware.custom:
                 try:
@@ -358,7 +358,7 @@ async def create_middleware_manager(
 
     manager.user_middleware = gather_result.user_middleware
 
-    manager._system_middleware = gather_result.system_middleware  # type: ignore[assignment]
+    manager._system_middleware = t.cast(t.Any, gather_result.system_middleware)
 
     manager._middleware_stack_cache = gather_result.middleware_stack
 

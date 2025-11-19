@@ -1424,6 +1424,7 @@ def mock_acb():  # noqa: C901
         "acb.config": types.ModuleType("acb.config"),
         "acb.depends": types.ModuleType("acb.depends"),
         "acb.adapters": types.ModuleType("acb.adapters"),
+        "acb.console": types.ModuleType("acb.console"),
         "anyio": types.ModuleType("anyio")
         if "anyio" not in sys.modules
         else sys.modules["anyio"],
@@ -1596,6 +1597,11 @@ def mock_acb():  # noqa: C901
             MagicMock(),
         ),
     )
+
+    # Mock console for CLI support
+    mock_console = MagicMock()
+    mock_console.print = MagicMock()
+    module_structure["acb.console"].console = mock_console
 
     # Register mock modules
     with patch.dict("sys.modules", module_structure):
@@ -3236,6 +3242,31 @@ class MockPrefixLoader(MockAsyncBaseLoader):
             )
 
         return sorted(templates)
+
+
+@pytest.fixture(autouse=True)
+def cleanup_acb_depends():
+    """Clean up ACB depends registry after each test to prevent interdependencies."""
+    yield
+
+    # Clean up ACB depends registry after test
+    try:
+        from acb import depends
+
+        # Clear the internal registry if it exists
+        if hasattr(depends, "_registry"):
+            depends._registry.clear()
+        if hasattr(depends, "_instances"):
+            depends._instances.clear()
+        if hasattr(depends, "_singletons"):
+            depends._singletons.clear()
+
+        # Also clear any module-level caches
+        if hasattr(depends, "reset"):
+            depends.reset()
+    except (ImportError, AttributeError):
+        # ACB might be mocked or not available, that's okay
+        pass
 
 
 # Use the function to prevent unused warning - call at end after all classes are defined

@@ -318,10 +318,10 @@ async def gather_component_dependencies(
 
     try:
         # Get component metadata
-        if hasattr(htmy_adapter, "validate_component"):
-            metadata = await htmy_adapter.validate_component(component_name)
+        if not hasattr(htmy_adapter, "validate_component"):
+            return {"error": "Component validation not available"}
 
-        return {"error": "Component validation not available"}
+        metadata = await htmy_adapter.validate_component(component_name)
 
         dependencies = {
             "name": component_name,
@@ -345,13 +345,12 @@ async def gather_component_dependencies(
 
 
 async def analyze_component_usage(
-    htmy_adapter: Any | None = None, include_templates: bool = True
+    htmy_adapter: Any | None = None,
 ) -> dict[str, Any]:
     """Analyze component usage patterns across the application.
 
     Args:
         htmy_adapter: HTMY adapter instance
-        include_templates: Whether to scan templates for component usage
 
     Returns:
         Dictionary with usage analysis

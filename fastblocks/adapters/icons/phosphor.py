@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import IconsBase, IconsBaseSettings
 
 
-class PhosphorIconsSettings(IconsBaseSettings):  # type: ignore[misc]
+class PhosphorIconsSettings(IconsBaseSettings):
     """Settings for Phosphor icons adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -80,7 +80,7 @@ class PhosphorIcons(IconsBase):
     def __init__(self) -> None:
         """Initialize Phosphor adapter."""
         super().__init__()
-        self.settings: PhosphorSettings | None = None
+        self.settings: PhosphorIconsSettings | None = None
 
         # Register with ACB dependency system
         with suppress(Exception):
@@ -89,7 +89,7 @@ class PhosphorIcons(IconsBase):
     def get_stylesheet_links(self) -> list[str]:
         """Get Phosphor icons stylesheet links."""
         if not self.settings:
-            self.settings = PhosphorSettings()
+            self.settings = PhosphorIconsSettings()
 
         links = []
 
@@ -109,7 +109,7 @@ class PhosphorIcons(IconsBase):
     def _generate_phosphor_css(self) -> str:
         """Generate Phosphor-specific CSS."""
         if not self.settings:
-            self.settings = PhosphorSettings()
+            self.settings = PhosphorIconsSettings()
 
         return f"""
 /* Phosphor Icons Base Styles */
@@ -191,7 +191,7 @@ class PhosphorIcons(IconsBase):
     def get_icon_class(self, icon_name: str, variant: str | None = None) -> str:
         """Get Phosphor icon class with variant support."""
         if not self.settings:
-            self.settings = PhosphorSettings()
+            self.settings = PhosphorIconsSettings()
 
         # Resolve icon aliases
         if icon_name in self.settings.icon_aliases:
@@ -289,7 +289,7 @@ class PhosphorIcons(IconsBase):
 
         return icon_class
 
-    def get_icon_tag(  # type: ignore[override]
+    def get_icon_tag(
         self,
         icon_name: str,
         variant: str | None = None,
@@ -349,7 +349,7 @@ class PhosphorIcons(IconsBase):
     ) -> str:
         """Generate SVG sprite-based icon tag (alternative approach)."""
         if not self.settings:
-            self.settings = PhosphorSettings()
+            self.settings = PhosphorIconsSettings()
 
         if not variant:
             variant = self.settings.default_variant
@@ -478,24 +478,24 @@ def _register_ph_basic_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Template filter for Phosphor icons."""
-        icons = depends.get("icons")
-        if isinstance(icons, PhosphorAdapter):
+        icons = depends.get_sync("icons")
+        if isinstance(icons, PhosphorIcons):
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
 
     @env.filter("ph_class")  # type: ignore[misc]
     def ph_class_filter(icon_name: str, variant: str = "regular") -> str:
         """Template filter for Phosphor icon classes."""
-        icons = depends.get("icons")
-        if isinstance(icons, PhosphorAdapter):
+        icons = depends.get_sync("icons")
+        if isinstance(icons, PhosphorIcons):
             return icons.get_icon_class(icon_name, variant)
         return f"ph-{icon_name}"
 
     @env.global_("phosphor_stylesheet_links")  # type: ignore[misc]
     def phosphor_stylesheet_links() -> str:
         """Global function for Phosphor stylesheet links."""
-        icons = depends.get("icons")
-        if isinstance(icons, PhosphorAdapter):
+        icons = depends.get_sync("icons")
+        if isinstance(icons, PhosphorIcons):
             return "\n".join(icons.get_stylesheet_links())
         return ""
 
@@ -511,8 +511,8 @@ def _register_ph_duotone_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate duotone Phosphor icon."""
-        icons = depends.get("icons")
-        if isinstance(icons, PhosphorAdapter):
+        icons = depends.get_sync("icons")
+        if isinstance(icons, PhosphorIcons):
             return icons.get_duotone_icon_tag(
                 icon_name, primary_color, secondary_color, **attributes
             )
@@ -530,8 +530,8 @@ def _register_ph_interactive_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate interactive Phosphor icon with action."""
-        icons = depends.get("icons")
-        if not isinstance(icons, PhosphorAdapter):
+        icons = depends.get_sync("icons")
+        if not isinstance(icons, PhosphorIcons):
             return f"<!-- {icon_name} -->"
 
         attributes["interactive"] = True
@@ -550,8 +550,8 @@ def _register_ph_interactive_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate button with Phosphor icon."""
-        icons = depends.get("icons")
-        if not isinstance(icons, PhosphorAdapter):
+        icons = depends.get_sync("icons")
+        if not isinstance(icons, PhosphorIcons):
             return f"<button>{text or icon_name}</button>"
 
         icon_tag = icons.get_icon_tag(icon_name, variant, class_="ph-sm")

@@ -140,17 +140,17 @@ class CurrentRequestMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> t.Any:  # type: ignore[func-returns-value,no-any-return]
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> t.Any:
         if scope[MiddlewareUtils.TYPE] not in (
             MiddlewareUtils.HTTP,
             MiddlewareUtils.WEBSOCKET,
         ):
             await self.app(scope, receive, send)
-            return None  # type: ignore[func-returns-value]
+            return t.cast(t.Any, None)
         local_scope = _request_ctx_var.set(scope)
-        response = await self.app(scope, receive, send)  # type: ignore[func-returns-value]
+        response = await self.app(scope, receive, send)
         _request_ctx_var.reset(local_scope)
-        return response  # type: ignore[no-any-return]
+        return t.cast(t.Any, response)
 
 
 class SecureHeadersMiddleware:
@@ -237,7 +237,7 @@ class CacheMiddleware:
         self.validator.check_for_duplicate_middleware(app)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        cache = self.key_manager.get_cache_instance()  # type: ignore[no-untyped-call]
+        cache = self.key_manager.get_cache_instance()
         self.cache = cache
         if scope["type"] != "http":
             await self.app(scope, receive, send)
@@ -373,10 +373,10 @@ class MiddlewareStackManager:
     def _ensure_dependencies(self) -> None:
         if self.config is None or self.logger is None:
             if self.config is None:
-                self.config = depends.get("config")
+                self.config = depends.get_sync("config")
             if self.logger is None:
                 try:
-                    self.logger = depends.get("logger")
+                    self.logger = depends.get_sync("logger")
                 except Exception:
                     self.logger = None
 

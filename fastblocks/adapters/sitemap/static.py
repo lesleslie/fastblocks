@@ -20,7 +20,7 @@ class StaticSitemapSettings(SitemapBaseSettings):
     pass
 
 
-class StaticSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
+class StaticSitemap(BaseSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
 
     def items(self) -> list[str]:
