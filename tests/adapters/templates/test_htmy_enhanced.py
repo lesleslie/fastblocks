@@ -138,6 +138,7 @@ def mock_htmx_request():
     return request
 
 
+@pytest.mark.unit
 class TestHTMYTemplatesSettings:
     """Test HTMY Templates Settings."""
 
@@ -164,6 +165,7 @@ class TestHTMYTemplatesSettings:
         assert settings.debug_components is True
 
 
+@pytest.mark.unit
 class TestHTMYTemplatesInitialization:
     """Test HTMY Templates initialization."""
 
@@ -217,6 +219,7 @@ class TestHTMYTemplatesInitialization:
                     assert htmy_adapter.htmy_registry is not None
 
 
+@pytest.mark.unit
 class TestComponentDiscovery:
     """Test component discovery functionality."""
 
@@ -260,6 +263,7 @@ class TestComponentDiscovery:
         assert components["basic_component"].type == ComponentType.BASIC
 
 
+@pytest.mark.unit
 class TestComponentRendering:
     """Test component rendering functionality."""
 
@@ -338,6 +342,7 @@ class TestComponentRendering:
                 assert response.status_code == 200
 
 
+@pytest.mark.unit
 class TestComponentScaffolding:
     """Test component scaffolding functionality."""
 
@@ -370,6 +375,7 @@ class TestComponentScaffolding:
             await htmy_adapter.scaffold_component("NewComponent")
 
 
+@pytest.mark.unit
 class TestComponentValidation:
     """Test component validation functionality."""
 
@@ -400,6 +406,7 @@ class TestComponentValidation:
                 await htmy_adapter.validate_component("nonexistent")
 
 
+@pytest.mark.unit
 class TestLifecycleManagement:
     """Test lifecycle management functionality."""
 
@@ -437,6 +444,7 @@ class TestLifecycleManagement:
         )
 
 
+@pytest.mark.unit
 class TestHTMXIntegration:
     """Test HTMX integration functionality."""
 
@@ -469,6 +477,7 @@ class TestHTMXIntegration:
         assert component.is_htmx_request(mock_request) is True
 
 
+@pytest.mark.unit
 class TestTemplateIntegration:
     """Test template system integration."""
 
@@ -509,6 +518,7 @@ class TestTemplateIntegration:
         assert callable(renderer)
 
 
+@pytest.mark.unit
 class TestCacheManagement:
     """Test cache management functionality."""
 
@@ -536,6 +546,7 @@ class TestCacheManagement:
         # (Implementation would depend on the specific legacy behavior)
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Test error handling scenarios."""
 

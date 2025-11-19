@@ -38,6 +38,7 @@ class MockUptodate:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_file_system_loader_get_source_async_file_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -69,6 +70,7 @@ async def test_file_system_loader_get_source_async_file_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_file_system_loader_get_source_async_file_not_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -87,6 +89,7 @@ async def test_file_system_loader_get_source_async_file_not_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_file_system_loader_get_source_async_storage_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -119,6 +122,7 @@ async def test_file_system_loader_get_source_async_storage_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_file_system_loader_get_source_async_storage_exists_deployed(
     config: Config,
     mock_cache: AsyncMock,
@@ -155,6 +159,7 @@ async def test_file_system_loader_get_source_async_storage_exists_deployed(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_file_system_loader_list_templates_async(
     config: Config,
     mock_cache: AsyncMock,
@@ -181,6 +186,7 @@ async def test_file_system_loader_list_templates_async(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_single_path_loader(
     config: Config,
     mock_cache: AsyncMock,
@@ -212,6 +218,7 @@ async def test_single_path_loader(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_storage_loader_get_source_async_storage_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -243,6 +250,7 @@ async def test_storage_loader_get_source_async_storage_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_storage_loader_get_source_async_storage_not_exists(
     config: Config,
     mock_cache: AsyncMock,
@@ -262,6 +270,7 @@ async def test_storage_loader_get_source_async_storage_not_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_storage_loader_list_templates_async(
     config: Config,
     mock_cache: AsyncMock,
@@ -286,6 +295,7 @@ async def test_storage_loader_list_templates_async(
     assert set(templates) == {"test1.html", "test2.html", "subdir/test3.html"}
 
 
+@pytest.mark.unit
 def test_filesystem_loader_get_source(tmp_path: Path) -> None:
     loader = FilesystemLoader(
         searchpath=tmp_path,

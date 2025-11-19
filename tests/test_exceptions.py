@@ -51,6 +51,7 @@ def mock_depends(mock_templates: MagicMock) -> t.Generator[MagicMock]:
         yield mock_depends_obj
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_handle_exception_htmx_request(mock_depends: MagicMock) -> None:
     """Test handle_exception with an HTMX request."""
@@ -71,6 +72,7 @@ async def test_handle_exception_htmx_request(mock_depends: MagicMock) -> None:
     assert response.body == b"Content not found"
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_handle_exception_server_error(mock_depends: MagicMock) -> None:
     """Test handle_exception with a 500 error."""
@@ -91,6 +93,7 @@ async def test_handle_exception_server_error(mock_depends: MagicMock) -> None:
     assert response.body == b"Server error"
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 async def test_handle_exception_default_status_code(mock_depends: MagicMock) -> None:
     """Test handle_exception with an exception that has no status_code."""
@@ -111,6 +114,7 @@ async def test_handle_exception_default_status_code(mock_depends: MagicMock) -> 
     assert response.body == b"Server error"
 
 
+@pytest.mark.unit
 def test_starlette_caches_exception() -> None:
     """Test StarletteCachesException."""
     # Create an instance of the exception
@@ -121,6 +125,7 @@ def test_starlette_caches_exception() -> None:
     assert str(exception) == "Test message"
 
 
+@pytest.mark.unit
 def test_duplicate_caching_exception_message() -> None:
     """Test DuplicateCaching exception."""
     message = "Test exception message"
@@ -129,6 +134,7 @@ def test_duplicate_caching_exception_message() -> None:
     assert isinstance(exception, StarletteCachesException)
 
 
+@pytest.mark.unit
 def test_missing_caching() -> None:
     """Test MissingCaching exception."""
     # Create an instance of the exception
@@ -139,6 +145,7 @@ def test_missing_caching() -> None:
     assert str(exception) == "Test message"
 
 
+@pytest.mark.unit
 def test_request_not_cachable_exception() -> None:
     """Test RequestNotCachable exception."""
     request = Mock()
@@ -147,6 +154,7 @@ def test_request_not_cachable_exception() -> None:
     assert isinstance(exception, StarletteCachesException)
 
 
+@pytest.mark.unit
 def test_response_not_cachable_exception() -> None:
     """Test ResponseNotCachable exception."""
     response = Mock()
@@ -155,6 +163,7 @@ def test_response_not_cachable_exception() -> None:
     assert isinstance(exception, StarletteCachesException)
 
 
+@pytest.mark.unit
 def test_error_context_creation() -> None:
     """Test ErrorContext creation."""
     context = ErrorContext(
@@ -176,6 +185,7 @@ def test_error_context_creation() -> None:
     assert context.user_id == "user456"
 
 
+@pytest.mark.unit
 def test_fastblocks_exception() -> None:
     """Test FastBlocksException."""
     exception = FastBlocksException(
@@ -192,6 +202,7 @@ def test_fastblocks_exception() -> None:
     assert exception.details == {"config_key": "test_key"}
 
 
+@pytest.mark.unit
 def test_fastblocks_exception_to_error_context() -> None:
     """Test FastBlocksException to_error_context method."""
     context = FastBlocksException(
@@ -208,6 +219,7 @@ def test_fastblocks_exception_to_error_context() -> None:
     assert context.details == {"field": "email"}
 
 
+@pytest.mark.unit
 def test_fastblocks_exception_to_error_context_default_id() -> None:
     """Test FastBlocksException to_error_context with default ID."""
     context = FastBlocksException("Test message").to_error_context()
@@ -216,6 +228,7 @@ def test_fastblocks_exception_to_error_context_default_id() -> None:
     assert context.message == "Test message"
 
 
+@pytest.mark.unit
 def test_configuration_error() -> None:
     """Test ConfigurationError."""
     error = ConfigurationError("Invalid config", "database.url")
@@ -226,6 +239,7 @@ def test_configuration_error() -> None:
     assert error.details == {"config_key": "database.url"}
 
 
+@pytest.mark.unit
 def test_configuration_error_no_key() -> None:
     """Test ConfigurationError without config key."""
     error = ConfigurationError("Invalid config")
@@ -236,6 +250,7 @@ def test_configuration_error_no_key() -> None:
     assert not error.details
 
 
+@pytest.mark.unit
 def test_dependency_error() -> None:
     """Test DependencyError."""
     error = DependencyError("Missing dependency", "redis")
@@ -246,6 +261,7 @@ def test_dependency_error() -> None:
     assert error.details == {"dependency_key": "redis"}
 
 
+@pytest.mark.unit
 def test_dependency_error_no_key() -> None:
     """Test DependencyError without dependency key."""
     error = DependencyError("Missing dependency")
@@ -257,6 +273,7 @@ def test_dependency_error_no_key() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_error_handler_registry() -> None:
     """Test ErrorHandlerRegistry."""
     registry = ErrorHandlerRegistry()
@@ -280,6 +297,7 @@ async def test_error_handler_registry() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_error_handler_registry_no_fallback() -> None:
     """Test ErrorHandlerRegistry without fallback handler."""
     registry = ErrorHandlerRegistry()
@@ -303,6 +321,7 @@ async def test_error_handler_registry_no_fallback() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_default_error_handler_non_htmx_no_templates() -> None:
     """Test DefaultErrorHandler with non-HTMX request and no templates."""
     handler = DefaultErrorHandler()
@@ -326,6 +345,7 @@ async def test_default_error_handler_non_htmx_no_templates() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_default_error_handler_template_exception() -> None:
     """Test DefaultErrorHandler when template rendering raises an exception."""
     handler = DefaultErrorHandler()
@@ -352,6 +372,7 @@ async def test_default_error_handler_template_exception() -> None:
         assert response.body == b"Server error"
 
 
+@pytest.mark.unit
 def test_safe_depends_get_cached() -> None:
     """Test safe_depends_get with cached value."""
     cache = {"test_key": "cached_value"}
@@ -364,6 +385,7 @@ def test_safe_depends_get_cached() -> None:
         mock_get.assert_not_called()
 
 
+@pytest.mark.unit
 def test_register_error_handler() -> None:
     """Test register_error_handler function."""
     handler = DefaultErrorHandler()
@@ -373,6 +395,7 @@ def test_register_error_handler() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_handle_exception_with_detail() -> None:
     """Test handle_exception with exception that has detail attribute."""
     mock_request = Mock()
@@ -390,6 +413,7 @@ async def test_handle_exception_with_detail() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_handle_exception_no_detail() -> None:
     """Test handle_exception with exception that has no detail attribute."""
     mock_request = Mock()

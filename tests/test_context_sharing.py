@@ -93,6 +93,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
+@pytest.mark.unit
 async def test_context_sharing() -> None:
     """Test comprehensive context sharing between Jinja2 and HTMY."""
     print("=== Context Sharing Test ===")

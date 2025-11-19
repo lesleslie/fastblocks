@@ -51,6 +51,7 @@ from fastblocks.adapters.templates.jinja2 import (  # noqa: E402
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_templates_initialization(config: Config) -> None:
     """Test the initialization of the Templates class."""
     templates = Templates()
@@ -87,6 +88,7 @@ async def test_templates_initialization(config: Config) -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_redis_loader_get_source_async(
     config: Config,
     mock_cache: AsyncMock,
@@ -118,6 +120,7 @@ async def test_redis_loader_get_source_async(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_redis_loader_template_not_found(
     config: Config,
     mock_cache: AsyncMock,
@@ -141,6 +144,7 @@ async def test_redis_loader_template_not_found(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_redis_loader_list_templates_async(
     config: Config,
     mock_cache: AsyncMock,
@@ -174,6 +178,7 @@ async def test_redis_loader_list_templates_async(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_package_loader_get_source_async(
     config: Config,
     mock_cache: AsyncMock,
@@ -216,6 +221,7 @@ async def test_package_loader_get_source_async(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_choice_loader_fallback(
     config: Config,
     mock_cache: AsyncMock,
@@ -258,6 +264,7 @@ async def test_choice_loader_fallback(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_choice_loader_template_not_found(
     config: Config,
     mock_cache: AsyncMock,
@@ -296,6 +303,7 @@ async def test_choice_loader_template_not_found(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_choice_loader_list_templates(
     config: Config,
     mock_cache: AsyncMock,
@@ -334,6 +342,7 @@ async def test_choice_loader_list_templates(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_template_caching_behavior(
     config: Config,
     mock_cache: AsyncMock,

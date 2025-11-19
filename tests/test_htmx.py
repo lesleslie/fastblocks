@@ -21,6 +21,7 @@ with patch("fastblocks.htmx.debug") as mock_debug:
     )
 
 
+@pytest.mark.unit
 class TestHtmxDetails:
     """Test HtmxDetails class."""
 
@@ -336,6 +337,7 @@ class TestHtmxDetails:
             assert value is None
 
 
+@pytest.mark.unit
 class TestHtmxResponse:
     """Test HtmxResponse class."""
 
@@ -415,6 +417,7 @@ class TestHtmxResponse:
         assert response.headers["HX-Location"] == "/new-page"
 
 
+@pytest.mark.unit
 class TestHtmxHelpers:
     """Test HTMX helper functions."""
 
@@ -458,6 +461,7 @@ class TestHtmxHelpers:
         assert response.body == b"<div>New content</div>"
 
 
+@pytest.mark.unit
 class TestIsHtmx:
     """Test is_htmx function."""
 

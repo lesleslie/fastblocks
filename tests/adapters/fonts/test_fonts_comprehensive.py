@@ -11,6 +11,7 @@ from fastblocks.adapters.fonts.squirrel import (
 )
 
 
+@pytest.mark.unit
 class TestFontsBase:
     """Test FontsBase adapter functionality."""
 
@@ -37,6 +38,7 @@ class TestFontsBase:
             adapter.get_font_family("primary")
 
 
+@pytest.mark.unit
 class TestGoogleFonts:
     """Test Google Fonts adapter functionality."""
 
@@ -190,6 +192,7 @@ class TestGoogleFonts:
         assert "Roboto" in optimized_import
 
 
+@pytest.mark.unit
 class TestFontSquirrelAdapter:
     """Test Font Squirrel adapter functionality."""
 
@@ -441,6 +444,7 @@ class TestFontSquirrelAdapter:
             assert "custom" in path.lower()
 
 
+@pytest.mark.unit
 class TestFontAdapterIntegration:
     """Test font adapter integration patterns."""
 

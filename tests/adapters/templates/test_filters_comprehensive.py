@@ -33,6 +33,7 @@ from fastblocks.adapters.templates._registration import (
 )
 
 
+@pytest.mark.unit
 class TestSyncFilters:
     """Test synchronous template filters."""
 
@@ -263,6 +264,7 @@ class TestSyncFilters:
             assert callable(FASTBLOCKS_FILTERS[filter_name])
 
 
+@pytest.mark.unit
 class TestAsyncFilters:
     """Test asynchronous template filters."""
 
@@ -399,6 +401,7 @@ class TestAsyncFilters:
             assert callable(FASTBLOCKS_ASYNC_FILTERS[filter_name])
 
 
+@pytest.mark.unit
 class TestFilterRegistration:
     """Test filter registration system."""
 
@@ -509,6 +512,7 @@ class TestFilterRegistration:
         )
 
 
+@pytest.mark.unit
 class TestFilterIntegration:
     """Test filter integration patterns."""
 

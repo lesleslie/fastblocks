@@ -163,6 +163,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
+@pytest.mark.integration
 async def test_bidirectional_interop() -> None:
     """Test bidirectional HTMY-Jinja2 interoperability."""
     print("=== Bidirectional HTMY-Jinja2 Interoperability Test ===")

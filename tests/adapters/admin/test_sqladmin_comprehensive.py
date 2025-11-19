@@ -15,6 +15,7 @@ AdminSettings = fastblocks_sqladmin.AdminSettings
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_admin_initialization() -> None:
     """Test the initialization of the Admin class."""
     # Mock dependencies
@@ -37,6 +38,7 @@ async def test_admin_initialization() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_admin_getattr() -> None:
     """Test the __getattr__ method of the Admin class."""
     # Mock dependencies
@@ -64,6 +66,7 @@ async def test_admin_getattr() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_admin_init_with_admin_models() -> None:
     """Test the init method with admin models."""
     # Mock dependencies
@@ -100,6 +103,7 @@ async def test_admin_init_with_admin_models() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_admin_init_without_admin_models() -> None:
     """Test the init method without admin models."""
     # Mock dependencies
@@ -133,6 +137,7 @@ async def test_admin_init_without_admin_models() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_admin_settings() -> None:
     """Test the AdminSettings class."""
     # Create an instance of AdminSettings

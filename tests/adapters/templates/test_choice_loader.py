@@ -179,6 +179,7 @@ def mock_storage() -> AsyncMock:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_choice_loader_get_source_async_first_loader_exists(
     config: MockConfig,
     mock_cache: AsyncMock,
@@ -222,6 +223,7 @@ async def test_choice_loader_get_source_async_first_loader_exists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_choice_loader_get_source_async_second_loader_exists(
     config: MockConfig,
     mock_cache: AsyncMock,

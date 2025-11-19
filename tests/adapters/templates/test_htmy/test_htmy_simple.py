@@ -44,6 +44,7 @@ class MockAsyncPath:
         return self.path.read_text()
 
 
+@pytest.mark.unit
 async def test_htmy_registry() -> None:
     """Test HTMY component registry functionality."""
     print("=== FastBlocks HTMY Integration Test ===")

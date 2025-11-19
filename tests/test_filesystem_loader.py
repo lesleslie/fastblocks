@@ -17,6 +17,7 @@ from anyio import Path as AsyncPath
 from fastblocks.adapters.templates.jinja2 import FileSystemLoader
 
 
+@pytest.mark.unit
 async def test_filesystem_loader() -> None:
     print("=== FileSystemLoader Test ===")
 

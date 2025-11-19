@@ -82,6 +82,7 @@ def mock_config() -> MagicMock:
     return mock
 
 
+@pytest.mark.unit
 class TestSerializationFunctions:
     def test_serialize_response(self) -> None:
         """Test serializing a response to a dictionary."""
@@ -161,6 +162,7 @@ class TestSerializationFunctions:
             )
 
 
+@pytest.mark.unit
 class TestCacheKeyFunctions:
     @pytest.mark.asyncio
     async def test_learn_cache_key(
@@ -292,6 +294,7 @@ class TestCacheKeyFunctions:
         assert cache_key is None
 
 
+@pytest.mark.unit
 class TestCacheHeaderFunctions:
     def test_get_cache_response_headers(self) -> None:
         """Test getting cache response headers."""
@@ -353,6 +356,7 @@ class TestCacheHeaderFunctions:
             patch_cache_control(headers, private=True)
 
 
+@pytest.mark.unit
 class TestCacheResponderClass:
     @pytest.mark.asyncio
     async def test_cache_responder_init(self) -> None:
@@ -438,6 +442,7 @@ class TestCacheResponderClass:
         assert "no_cache=True" in result
 
 
+@pytest.mark.unit
 class TestCacheRuleFunctionality:
     """Test Rule class functionality for more coverage."""
 

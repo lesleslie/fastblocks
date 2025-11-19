@@ -211,6 +211,7 @@ def mock_coro() -> t.Callable[[], t.Coroutine[t.Any, t.Any, None]]:
 
 
 @pytest.mark.cli_coverage
+@pytest.mark.unit
 class TestCLICoverage:
     """Test CLI coverage scenarios."""
 

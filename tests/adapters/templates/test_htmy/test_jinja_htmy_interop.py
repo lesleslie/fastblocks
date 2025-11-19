@@ -16,6 +16,7 @@ sys.path.insert(0, "/Users/les/Projects/acb")
 os.environ["ACB_LIBRARY_MODE"] = "false"
 
 
+@pytest.mark.integration
 async def test_jinja_htmy_interop() -> None:
     """Test HTMY component rendering within Jinja2 templates."""
     print("=== Jinja2-HTMY Interoperability Test ===")

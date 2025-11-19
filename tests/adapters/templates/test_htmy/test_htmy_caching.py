@@ -298,6 +298,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
+@pytest.mark.unit
 async def test_caching() -> None:
     """Test HTMY component caching functionality."""
     print("=== HTMY Component Caching Test ===")
