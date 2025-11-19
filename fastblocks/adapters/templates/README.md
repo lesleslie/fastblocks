@@ -289,6 +289,10 @@ Default delimiters:
 }
 ```
 
+**PyCharm/JetBrains IDE Support**: For better template editing experience with FastBlocks' custom `[[` `]]` delimiters, install our official JetBrains plugin:
+
+<iframe width="384px" height="319px" src="https://plugins.jetbrains.com/embeddable/card/28680"></iframe>
+
 ## Implementation Details
 
 The Templates adapter is implemented in the following files:
