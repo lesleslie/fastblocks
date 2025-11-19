@@ -1,5 +1,7 @@
 # Minify Action
 
+> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
+
 The Minify action provides code and asset optimization for FastBlocks web applications. It reduces file sizes through safe transformations, whitespace removal, and redundancy elimination while preserving functionality and improving performance.
 
 ## Table of Contents

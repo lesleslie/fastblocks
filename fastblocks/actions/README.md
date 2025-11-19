@@ -1,5 +1,7 @@
 # FastBlocks: Actions
 
+> **FastBlocks Documentation**: [Main](../../README.md) | [Core Features](../README.md) | [Adapters](../adapters/README.md)
+
 Actions are modular, self-contained utility functions that perform specific tasks in the FastBlocks framework. They follow semantic patterns and are designed to streamline common operations in web application development.
 
 ## Table of Contents
