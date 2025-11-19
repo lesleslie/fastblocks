@@ -117,7 +117,7 @@ class AdminActionPayload:
 class CacheInvalidationHandler(EventHandler):  # type: ignore[misc]
     """Handler for cache invalidation events."""
 
-    @depends.inject
+    @depends.inject  # type: ignore[misc]  # ACB untyped decorator
     def __init__(self, cache: Inject[t.Any]) -> None:
         super().__init__()
         self.cache = cache
@@ -336,7 +336,7 @@ class FastBlocksEventPublisher:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    @depends.inject
+    @depends.inject  # type: ignore[misc]  # ACB untyped decorator
     def __init__(self, config: Inject[t.Any]) -> None:
         if not acb_events_available:
             return

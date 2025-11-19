@@ -1236,6 +1236,7 @@ FastBlocks includes support for [HTMY](https://github.com/lesleslie/htmy), a Pyt
 #### When to Use HTMY vs Jinja2
 
 **Choose HTMY when:**
+
 - You want type-safe component definitions with Python dataclasses or Pydantic models
 - Building reusable components with complex logic and state management
 - You prefer Python over template syntax for component creation
@@ -1243,6 +1244,7 @@ FastBlocks includes support for [HTMY](https://github.com/lesleslie/htmy), a Pyt
 - You need IDE autocomplete, type checking, and refactoring support for component properties
 
 **Choose Jinja2 when:**
+
 - Working with designers who prefer HTML/template syntax
 - Building page layouts and simple content rendering
 - You need the full Jinja2 ecosystem (filters, macros, template inheritance)
@@ -1260,6 +1262,7 @@ from typing import Any
 @dataclass
 class UserCard:
     """A reusable user card component with type safety."""
+
     name: str
     email: str
     avatar_url: str = "/static/default-avatar.png"
@@ -1291,6 +1294,7 @@ from typing import Any
 @dataclass
 class InteractiveButton:
     """Button component with HTMX attributes."""
+
     text: str
     endpoint: str
     target: str
@@ -1312,6 +1316,7 @@ class InteractiveButton:
 @dataclass
 class LoadMoreCard:
     """Card that loads more content via HTMX."""
+
     title: str
     initial_content: str
     load_endpoint: str
@@ -1351,14 +1356,11 @@ async def user_profile(request, templates: Inject[Templates]):
         name="Jane Doe",
         email="jane@example.com",
         role="Administrator",
-        avatar_url="/static/avatars/jane.jpg"
+        avatar_url="/static/avatars/jane.jpg",
     )
 
     # Render the component
-    return await templates.app.render_component(
-        request,
-        component=user_card
-    )
+    return await templates.app.render_component(request, component=user_card)
 ```
 
 #### Mixing HTMY and Jinja2
@@ -1383,7 +1385,7 @@ async def dashboard(request, templates: Inject[Templates]):
     return await templates.app.render_template(
         request,
         "dashboard.html",
-        context={"user_component": user_card.htmy({}), "stats": {...}}
+        context={"user_component": user_card.htmy({}), "stats": {...}},
     )
 ```
 
@@ -1411,6 +1413,7 @@ async def dashboard(request, templates: Inject[Templates]):
 ```
 
 **Benefits of this hybrid approach:**
+
 - **Type Safety**: HTMY components provide full type checking and IDE support
 - **Flexibility**: Use the right tool for each part of your application
 - **Reusability**: Create component libraries that work across projects

@@ -300,7 +300,7 @@ class FastBlocks(Starlette):
         logger: t.Any | None = None,
     ) -> ASGIApp:
         if self._middleware_stack_cache is not None:
-            return self._middleware_stack_cache
+            return self._middleware_stack_cache  # type: ignore[return-value]  # Cached middleware stack
 
         config, logger = self._get_dependencies(config, logger)
         error_handler, exception_handlers = self._separate_exception_handlers()

@@ -32,12 +32,12 @@ else:
     Scope = dict
 
 try:
-    from starlette.requests import Request
+    from starlette.requests import Request as StarletteRequest
 
     _starlette_available = True
 except ImportError:
     _starlette_available = False
-    Request = t.Any
+    StarletteRequest: t.Any = t.Any  # type: ignore[misc,no-redef]  # Fallback when Starlette unavailable
 
 STARLETTE_AVAILABLE = _starlette_available
 
@@ -149,9 +149,9 @@ def _get_header(scope: "Scope", key: bytes) -> str | None:
 
 HtmxScope = dict[str, t.Any]
 
-if STARLETTE_AVAILABLE and Request is not t.Any:
+if STARLETTE_AVAILABLE and StarletteRequest is not t.Any:
 
-    class HtmxRequest(Request):  # type: ignore[misc]
+    class HtmxRequest(StarletteRequest):  # type: ignore[misc]
         scope: HtmxScope
 
         @property
@@ -168,7 +168,7 @@ if STARLETTE_AVAILABLE and Request is not t.Any:
             return self.htmx.get_all_headers()
 else:
 
-    class HtmxRequest:  # type: ignore[misc]
+    class HtmxRequest:  # type: ignore[misc,no-redef]
         """Placeholder HtmxRequest when Starlette is not available."""
 
         def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:

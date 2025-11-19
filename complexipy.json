@@ -312,7 +312,13 @@
     "path": "initializers.py"
   },
   {
-    "complexity": 9,
+    "complexity": 7,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_register_integrations_async",
+    "path": "initializers.py"
+  },
+  {
+    "complexity": 8,
     "file_name": "initializers.py",
     "function_name": "ApplicationInitializer::_register_event_handlers",
     "path": "initializers.py"
@@ -321,6 +327,18 @@
     "complexity": 0,
     "file_name": "caching.py",
     "function_name": "CacheControlResponder::kvformat",
+    "path": "caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "CacheRules::get_rule_matching_request",
+    "path": "caching.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "caching.py",
+    "function_name": "CacheRules::get_rule_matching_response",
     "path": "caching.py"
   },
   {
@@ -452,6 +470,12 @@
   {
     "complexity": 2,
     "file_name": "caching.py",
+    "function_name": "CacheRules::response_matches_rule",
+    "path": "caching.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "caching.py",
     "function_name": "CacheUtils::safe_log",
     "path": "caching.py"
   },
@@ -524,6 +548,12 @@
   {
     "complexity": 6,
     "file_name": "caching.py",
+    "function_name": "_check_rule_match",
+    "path": "caching.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "caching.py",
     "function_name": "_try_get_cached_response",
     "path": "caching.py"
   },
@@ -549,12 +579,6 @@
     "complexity": 8,
     "file_name": "caching.py",
     "function_name": "_validate_serialized_response",
-    "path": "caching.py"
-  },
-  {
-    "complexity": 9,
-    "file_name": "caching.py",
-    "function_name": "_check_rule_match",
     "path": "caching.py"
   },
   {
@@ -750,6 +774,12 @@
     "path": "cli.py"
   },
   {
+    "complexity": 8,
+    "file_name": "cli.py",
+    "function_name": "start_language_server",
+    "path": "cli.py"
+  },
+  {
     "complexity": 11,
     "file_name": "cli.py",
     "function_name": "list_components",
@@ -765,12 +795,6 @@
     "complexity": 12,
     "file_name": "cli.py",
     "function_name": "syntax_check",
-    "path": "cli.py"
-  },
-  {
-    "complexity": 13,
-    "file_name": "cli.py",
-    "function_name": "start_language_server",
     "path": "cli.py"
   },
   {
@@ -4230,7 +4254,7 @@
     "path": "components.py"
   },
   {
-    "complexity": 11,
+    "complexity": 12,
     "file_name": "components.py",
     "function_name": "gather_component_dependencies",
     "path": "components.py"
@@ -4400,6 +4424,12 @@
   {
     "complexity": 1,
     "file_name": "routes.py",
+    "function_name": "create_default_routes",
+    "path": "routes.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "routes.py",
     "function_name": "validate_routes",
     "path": "routes.py"
   },
@@ -4407,12 +4437,6 @@
     "complexity": 2,
     "file_name": "routes.py",
     "function_name": "_check_route_endpoint",
-    "path": "routes.py"
-  },
-  {
-    "complexity": 2,
-    "file_name": "routes.py",
-    "function_name": "create_default_routes",
     "path": "routes.py"
   },
   {
@@ -5624,6 +5648,12 @@
   {
     "complexity": 1,
     "file_name": "default.py",
+    "function_name": "AppSettings::__init__",
+    "path": "default.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "default.py",
     "function_name": "FastBlocksApp::_clean_and_center_line",
     "path": "default.py"
   },
@@ -5679,12 +5709,6 @@
     "complexity": 3,
     "file_name": "default.py",
     "function_name": "App::lifespan",
-    "path": "default.py"
-  },
-  {
-    "complexity": 4,
-    "file_name": "default.py",
-    "function_name": "AppSettings::__init__",
     "path": "default.py"
   },
   {
@@ -6108,7 +6132,7 @@
     "path": "sqladmin.py"
   },
   {
-    "complexity": 0,
+    "complexity": 1,
     "file_name": "sqladmin.py",
     "function_name": "Admin::__init__",
     "path": "sqladmin.py"
@@ -6150,7 +6174,7 @@
     "path": "asgi.py"
   },
   {
-    "complexity": 3,
+    "complexity": 4,
     "file_name": "asgi.py",
     "function_name": "AsgiSitemap::items",
     "path": "asgi.py"
@@ -6326,13 +6350,13 @@
   {
     "complexity": 3,
     "file_name": "cached.py",
-    "function_name": "CachedSitemap::items",
+    "function_name": "CachedSitemap::priority",
     "path": "cached.py"
   },
   {
-    "complexity": 3,
+    "complexity": 4,
     "file_name": "cached.py",
-    "function_name": "CachedSitemap::priority",
+    "function_name": "CachedSitemap::items",
     "path": "cached.py"
   },
   {
@@ -6675,6 +6699,12 @@
     "complexity": 0,
     "file_name": "_base.py",
     "function_name": "IconsBase::get_icon_tag",
+    "path": "_base.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "_base.py",
+    "function_name": "IconsBase::get_stylesheet_links",
     "path": "_base.py"
   },
   {
@@ -9558,7 +9588,7 @@
     "path": "squirrel.py"
   },
   {
-    "complexity": 5,
+    "complexity": 6,
     "file_name": "squirrel.py",
     "function_name": "FontSquirrelFonts::_generate_font_face",
     "path": "squirrel.py"

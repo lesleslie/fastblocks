@@ -167,6 +167,7 @@ context = create_query_context(request, "user", {"page": "users"})
 ```
 
 **Supported Operators:**
+
 - Equals, greater/less than, contains, in, not, null checks
 - All operators support type coercion and validation
 

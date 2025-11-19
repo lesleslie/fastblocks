@@ -439,9 +439,7 @@ class TestAnalyzeComponentUsage:
         with patch(
             "fastblocks.actions.gather.components.gather_components"
         ) as mock_gather:
-            mock_result = ComponentGatherResult(
-                error_message="Gathering failed"
-            )
+            mock_result = ComponentGatherResult(error_message="Gathering failed")
             mock_gather.return_value = mock_result
 
             result = await analyze_component_usage(htmy_adapter=mock_htmy_adapter)
