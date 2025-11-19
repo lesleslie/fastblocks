@@ -33,9 +33,12 @@ Handle image processing, optimization, and delivery with cloud-based transformat
 
 Manage CSS frameworks and custom styling systems:
 
-- **Primary Modules**: Bulma (CSS framework), Vanilla (custom CSS + semantic classes)
-- **Secondary Modules**: WebAwesome, KelpUI
-- **Capabilities**: CSS framework integration, component styling, utility classes
+- **Primary Modules**:
+  - **Bulma**: Modern CSS framework based on Flexbox for responsive design
+  - **Web Awesome**: Comprehensive icon library and UI components from Font Awesome
+  - **Kelp**: Lightweight UI library for HTML-first development, powered by modern CSS and Web Components
+  - **Vanilla**: Custom CSS with minimal framework overhead + semantic classes
+- **Capabilities**: CSS framework integration, component styling, utility classes, responsive design
 
 ### Icons (`fastblocks/adapters/icons/`)
 
@@ -68,11 +71,11 @@ from fastblocks.adapters.fonts._base import FontsBase, FontsProtocol
 
 ### ACB Integration
 
-All adapters follow ACB 0.19.0+ patterns:
+All adapters follow ACB 0.25.1+ patterns:
 
 - **MODULE_ID**: Static UUID7 for adapter identification
 - **MODULE_STATUS**: Adapter stability status (stable, beta, alpha, experimental)
-- **Dependency Injection**: Automatic registration via `depends.set()`
+- **Dependency Injection**: Modern `Inject[Type]` pattern with `@depends.inject` decorator
 - **Settings Management**: YAML-based configuration with environment variable support
 
 ### Configuration
@@ -137,7 +140,7 @@ class MyAdapterSettings(Settings):
 class MyAdapter(AdapterBase):
     """My custom adapter implementation."""
 
-    # Required ACB 0.19.0+ metadata
+    # Required ACB 0.25.1+ metadata
     MODULE_ID: UUID = UUID("01937d86-4f2a-7b3c-8d9e-f3b4d3c2b1a1")  # Static UUID7
     MODULE_STATUS = "stable"  # stable, beta, alpha, experimental
 

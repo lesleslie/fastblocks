@@ -1,5 +1,7 @@
 # Gather Action
 
+> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
+
 The Gather action provides unified component discovery and collection for FastBlocks applications. It consolidates scattered gathering patterns throughout the framework, providing parallel processing, standardized error handling, and consistent caching strategies.
 
 ## Table of Contents

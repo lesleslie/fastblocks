@@ -1,5 +1,7 @@
 # Universal Query Actions
 
+> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
+
 Actions for converting HTTP request query parameters into ACB universal database queries.
 
 ## Features

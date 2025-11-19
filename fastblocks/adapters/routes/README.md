@@ -32,14 +32,17 @@ The Routes adapter allows you to:
 ### Basic Setup
 
 ```python
-from acb.depends import depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 from fastblocks.applications import FastBlocks
 from starlette.routing import Route
 
+Templates = import_adapter("templates")
 
-async def homepage(request) -> object:
-    return await request.app.templates.app.render_template(
+
+@depends.inject
+async def homepage(request, templates: Inject[Templates]) -> object:
+    return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
 
@@ -82,10 +85,15 @@ The Routes adapter can automatically discover routes from modules:
 ```python
 # myapp/routes.py
 from starlette.routing import Route
+from acb.depends import depends, Inject
+from acb.adapters import import_adapter
+
+Templates = import_adapter("templates")
 
 
-async def about(request) -> object:
-    return await request.app.templates.app.render_template(request, "about.html")
+@depends.inject
+async def about(request, templates: Inject[Templates]) -> object:
+    return await templates.app.render_template(request, "about.html")
 
 
 routes = [Route("/about", endpoint=about)]
@@ -138,10 +146,10 @@ from jinja2.exceptions import TemplateNotFound
 
 
 class Index(HTTPEndpoint):
-    config: Config = depends()
-    templates: t.Any = depends()
-
-    async def get(self, request: t.Any) -> Response:
+    @depends.inject
+    async def get(
+        self, request: t.Any, config: Inject[Config], templates: Inject[Templates]
+    ) -> Response:
         page = request.path_params.get("page") or "home"
         template = "index.html"
         headers = dict(vary="hx-request")
@@ -170,9 +178,8 @@ from jinja2.exceptions import TemplateNotFound
 
 
 class Block(HTTPEndpoint):
-    templates: t.Any = depends()
-
-    async def get(self, request: t.Any) -> Response:
+    @depends.inject
+    async def get(self, request: t.Any, templates: Inject[Templates]) -> Response:
         block = f"blocks/{request.path_params['block']}.html"
         try:
             return await self.templates.app.render_template(request, block)

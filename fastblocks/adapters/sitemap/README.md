@@ -57,27 +57,27 @@ sitemap:
 The Sitemap adapter is automatically configured when you install the `sitemap` dependency group:
 
 ```bash
-uv add --group sitemap
+uv add asgi-sitemaps --group sitemap
 ```
 
 The sitemap will be automatically available at `/sitemap.xml`.
 
 ### Adding Dynamic URLs
 
-You can add dynamic URLs to the sitemap:
+You can add dynamic URLs to the sitemap using dependency injection:
 
 ```python
 import typing as t
-from acb.depends import depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 from datetime import datetime
 
 Sitemap = import_adapter("sitemap")
-sitemap = depends.get(Sitemap)
 
 
-# Add blog posts to sitemap
-async def add_blog_posts_to_sitemap() -> None:
+@depends.inject
+async def add_blog_posts_to_sitemap(sitemap: Inject[Sitemap]) -> None:
+    """Add blog posts to sitemap during application startup."""
     posts = await get_blog_posts_from_database()
     for post in posts:
         sitemap.add_url(
@@ -94,20 +94,21 @@ app.add_event_handler("startup", add_blog_posts_to_sitemap)
 
 ### Manually Generating Sitemap
 
-You can manually generate the sitemap:
+You can manually generate the sitemap using dependency injection:
 
 ```python
 import typing as t
-from acb.depends import depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 from starlette.responses import Response
 from starlette.routing import Route
 
 Sitemap = import_adapter("sitemap")
-sitemap = depends.get(Sitemap)
 
 
-async def get_sitemap(request) -> Response:
+@depends.inject
+async def get_sitemap(request, sitemap: Inject[Sitemap]) -> Response:
+    """Generate and serve sitemap XML."""
     sitemap_xml = await sitemap.generate()
     return Response(content=sitemap_xml, media_type="application/xml")
 

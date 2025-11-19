@@ -102,11 +102,11 @@ class UserAdmin(ModelView, model=User):
     }
 
     # Control access permissions
-    def is_accessible(self):
+    def is_accessible(self, request):
         # Example: Check if user is authenticated and has admin role
-        from flask_login import current_user
-
-        return current_user.is_authenticated and current_user.has_role("admin")
+        # Using Starlette's session-based authentication
+        user = request.session.get("user")
+        return user is not None and user.get("role") == "admin"
 
     def is_visible(self):
         return True
@@ -362,18 +362,36 @@ It's crucial to protect your admin interface from unauthorized access. Here are 
 
 ```python
 from starlette.middleware.authentication import AuthenticationMiddleware
-from starlette.authentication import AuthCredentials, BaseUser
+from starlette.authentication import (
+    AuthCredentials,
+    AuthenticationBackend,
+    SimpleUser,
+)
 
 
-class AdminAuthBackend:
-    async def authenticate(self, request):
-        # Your authentication logic here
-        if not is_authorized_admin(request):
+class AdminAuthBackend(AuthenticationBackend):
+    """Starlette authentication backend for admin access."""
+
+    async def authenticate(self, conn):
+        # Check session for authenticated user
+        user_data = conn.session.get("user")
+
+        if not user_data:
             return None
-        return AuthCredentials(["admin"]), AdminUser(request)
+
+        # Verify user has admin role
+        if user_data.get("role") != "admin":
+            return None
+
+        return AuthCredentials(["authenticated", "admin"]), SimpleUser(
+            user_data["username"]
+        )
 
 
 # In your application startup
+from starlette.middleware.sessions import SessionMiddleware
+
+app.add_middleware(SessionMiddleware, secret_key="your-secret-key")
 app.add_middleware(AuthenticationMiddleware, backend=AdminAuthBackend())
 ```
 

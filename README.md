@@ -41,7 +41,7 @@ If you're new to FastBlocks, here are the key concepts to understand:
 - **Starlette Foundation**: Built on the [Starlette](https://www.starlette.io/) ASGI framework for high performance, extending its application class and middleware system
 - **Native HTMX Integration**: Built-in HTMX support (not a dependency) for creating dynamic interfaces with server-side rendering
 - **Asynchronous Architecture**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), providing dependency injection, configuration management, and pluggable components
-- **Template-Focused**: Advanced asynchronous Jinja2 template system with fragments and partials support using `[[` and `]]` delimiters
+- **Dual Template Systems**: Advanced asynchronous Jinja2 template system with fragments and partials support using `[[` and `]]` delimiters, plus HTMY for type-safe Python-based component creation
 - **Modular Design**: Pluggable adapters for authentication, admin interfaces, routing, templates, and sitemap generation
 - **Cloud Flexibility**: Easily switch between cloud providers or create hybrid deployments by swapping adapters
 - **Performance Optimized**: Built-in caching system, Brotli compression, and HTML/CSS/JS minification
@@ -134,23 +134,23 @@ FastHTMX is another HTMX integration library, while FastBlocks is a complete fra
 
 ### FastBlocks vs. Litestar
 
-Litestar is a modern FastAPI alternative with native HTMX support, while FastBlocks focuses on server-side rendering:
+Litestar is a modern high-performance framework with HTMX and templating support, while FastBlocks focuses on server-side rendering with cloud flexibility:
 
 | Aspect | FastBlocks | Litestar |
 |--------|------------|----------|
-| **Primary Focus** | Server-side rendering + HTMX | High-performance APIs |
-| **Template System** | Built-in async templates with HTMX | External template engines |
-| **HTMX Support** | Built-in HTMX integration | Native HTMX support |
+| **Primary Focus** | Server-side rendering + HTMX | High-performance APIs + SSR |
+| **Template System** | Built-in async Jinja2 with HTMX | Built-in Jinja2, Mako, Minijinja |
+| **HTMX Support** | Native built-in integration | Built-in plugin (litestar-htmx) |
 | **Component Architecture** | Adapter pattern for flexibility | Plugin system |
 | **Cloud Deployment** | Built-in multi-cloud adapters | Manual cloud integration |
-| **Performance** | Optimized for SSR and HTMX | Optimized for API throughput |
-| **Frontend Integration** | HTMX-first approach | API-first, frontend agnostic |
+| **Performance** | Optimized for SSR and HTMX | Optimized for API + SSR throughput |
+| **Frontend Integration** | HTMX-first approach | Flexible (API-first or templates) |
 | **Development Experience** | HTML-first rapid development | Type-safe API development |
-| **Infrastructure Flexibility** | Adapter-based infrastructure | Plugin-based extensions |
+| **Infrastructure Flexibility** | Adapter-based multi-cloud | Plugin-based extensions |
 
-**Choose FastBlocks when:** You're building traditional web applications, need HTMX integration, or want infrastructure flexibility through adapters.
+**Choose FastBlocks when:** You need multi-cloud deployment flexibility, want adapter-based infrastructure, or require seamless cloud provider switching.
 
-**Choose Litestar when:** You need high-performance APIs, want extensive type safety, or are building API-first applications.
+**Choose Litestar when:** You need high-performance APIs, want extensive type safety, or are building API-first applications with optional SSR.
 
 ### Key Advantages of FastBlocks
 
@@ -225,6 +225,7 @@ FastBlocks combines the development speed of modern frameworks with the infrastr
   - [Routing](#routing)
   - [Middleware](#middleware)
   - [HTMX Integration](#htmx-integration)
+  - [HTMY Components](#htmy-components)
 - [Database Models and Queries](#database-models-and-queries)
 - [Adapters](#adapters)
 - [Actions](#actions)
@@ -590,13 +591,7 @@ async def dashboard(
 routes = [Route("/dashboard", endpoint=dashboard)]
 ```
 
-**Note**: This example uses the modern ACB 0.25.1+ `Inject[Type]` pattern. Benefits include:
-
-- **Type Safety**: IDE autocomplete and type checking work properly
-- **Cleaner Code**: More Pythonic and declarative syntax
-- **Better Error Messages**: Type mismatches caught at development time
-
-The template system automatically handles dependency resolution with fallbacks, so if cache is unavailable, the function will still work correctly.
+This example demonstrates the modern ACB 0.25.1+ `Inject[Type]` pattern for type-safe dependency injection with automatic fallbacks.
 
 ## Architecture Overview
 
@@ -630,33 +625,7 @@ FastBlocks is built on top of [Asynchronous Component Base (ACB)](https://github
 
 #### Modern ACB Integration (v0.14.0+, ACB 0.25.1+)
 
-Recent improvements include simplified dependency management through direct ACB imports and modern `Inject[Type]` pattern:
-
-```python
-# Modern ACB 0.25.1+ imports for type-safe dependency injection
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
-from acb.config import Config
-
-# Get adapters directly from ACB
-Templates = import_adapter("templates")
-App = import_adapter("app")
-
-# Modern pattern: Type-safe dependency access
-config = depends.get(Config)
-templates = depends.get(Templates)
-```
-
-**Benefits of Modern Integration:**
-
-- **Performance**: Eliminates wrapper overhead for faster adapter access
-- **Type Safety**: Full IDE autocomplete and type checking support
-- **Error Handling**: Enhanced error recovery with automatic fallbacks
-- **Cleaner Code**: More Pythonic and declarative dependency injection
-- **Maintainability**: Aligned with ACB patterns for easier maintenance
-- **Future-Proof**: Direct compatibility with ACB framework evolution
-
-This separation allows FastBlocks to focus on web application concerns while leveraging ACB's robust component architecture for the underlying infrastructure.
+FastBlocks uses direct ACB imports for dependency management with the modern `Inject[Type]` pattern, providing type safety, performance, and enhanced error handling. See the [Migration Guide](#migration-guide) for details on the modern pattern.
 
 ### Server-Side Rendering with HTMX
 
@@ -710,6 +679,12 @@ FastBlocks uses an enhanced asynchronous Jinja2 template system designed specifi
 - **Built-in Filters**: Includes filters for minification, URL encoding, and more
 - **Null Safety**: Enhanced dependency resolution with automatic fallbacks for missing components
 - **Error Recovery**: Graceful handling of cache, storage, and dependency failures
+
+**PyCharm/JetBrains IDE Support**: For better template editing experience with FastBlocks' custom `[[` `]]` delimiters, install our official JetBrains plugin:
+
+[![JetBrains Plugin](https://img.shields.io/badge/JetBrains-FastBlocks%20Template%20Support-000000?style=for-the-badge&logo=jetbrains)](https://plugins.jetbrains.com/plugin/28680)
+[![Plugin Downloads](https://img.shields.io/jetbrains/plugin/d/28680?style=flat-square&label=downloads)](https://plugins.jetbrains.com/plugin/28680)
+[![Plugin Version](https://img.shields.io/jetbrains/plugin/v/28680?style=flat-square&label=version)](https://plugins.jetbrains.com/plugin/28680)
 
 #### Basic Template Usage
 
@@ -862,31 +837,8 @@ FastBlocks includes several useful filters:
 
 #### Enhanced Dependency Resolution
 
-Version 0.13.2+ introduces robust dependency resolution with automatic fallbacks and modern `Inject[Type]` pattern (ACB 0.25.1+):
+The template system includes robust dependency resolution with automatic fallbacks:
 
-```python
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
-
-Templates = import_adapter("templates")
-
-
-@depends.inject
-async def my_view(request, templates: Inject[Templates]):
-    # FastBlocks automatically handles:
-    # 1. Type-safe dependency injection with @depends.inject decorator and Inject[Type]
-    # 2. Automatic fallbacks if dependencies are unavailable
-    # 3. Null safety checks throughout the template system
-    # 4. Graceful error handling for missing dependencies
-
-    return await templates.app.render_template(
-        request, "my_template.html", context={"data": "value"}
-    )
-```
-
-The template system now includes:
-
-- **Type-Safe Injection**: Modern `Inject[Type]` pattern with full IDE support
 - **Automatic Fallbacks**: If cache or storage dependencies are unavailable, the system continues with file-based templates
 - **Null Safety**: All operations check for null dependencies and provide sensible defaults
 - **Error Recovery**: Template loading failures are handled gracefully with meaningful error messages
@@ -1277,6 +1229,194 @@ Here are some common HTMX patterns you can use with FastBlocks:
 - **Active Search**: `<input type="text" name="q" hx-get="/search" hx-trigger="keyup changed delay:500ms" hx-target="#results">`
 - **Confirmation Dialog**: `<button hx-delete="/item/1" hx-confirm="Are you sure?">Delete</button>`
 
+### HTMY Components
+
+FastBlocks includes support for [HTMY](https://github.com/lesleslie/htmy), a Python-based HTML component library that brings type safety and component reusability to your templates.
+
+#### When to Use HTMY vs Jinja2
+
+**Choose HTMY when:**
+- You want type-safe component definitions with Python dataclasses or Pydantic models
+- Building reusable components with complex logic and state management
+- You prefer Python over template syntax for component creation
+- Working with teams that are more comfortable with Python than template languages
+- You need IDE autocomplete, type checking, and refactoring support for component properties
+
+**Choose Jinja2 when:**
+- Working with designers who prefer HTML/template syntax
+- Building page layouts and simple content rendering
+- You need the full Jinja2 ecosystem (filters, macros, template inheritance)
+- Rapid prototyping with minimal boilerplate
+- Traditional template-based workflows
+
+#### Basic HTMY Component
+
+```python
+# templates/components/user_card.py
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass
+class UserCard:
+    """A reusable user card component with type safety."""
+    name: str
+    email: str
+    avatar_url: str = "/static/default-avatar.png"
+    role: str = "User"
+
+    def htmy(self, context: dict[str, Any]) -> str:
+        """Render the component as HTML."""
+        return f'''
+        <div class="user-card">
+            <img src="{self.avatar_url}" alt="{self.name}" class="avatar">
+            <div class="user-info">
+                <h3>{self.name}</h3>
+                <span class="role">{self.role}</span>
+                <p class="email">{self.email}</p>
+            </div>
+        </div>
+        '''
+```
+
+#### HTMY with HTMX Integration
+
+HTMY components work seamlessly with HTMX for dynamic interactions:
+
+```python
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass
+class InteractiveButton:
+    """Button component with HTMX attributes."""
+    text: str
+    endpoint: str
+    target: str
+    method: str = "get"
+    variant: str = "primary"
+
+    def htmy(self, context: dict[str, Any]) -> str:
+        return f'''
+        <button
+            class="btn-{self.variant}"
+            hx-{self.method}="{self.endpoint}"
+            hx-target="{self.target}"
+            hx-swap="innerHTML">
+            {self.text}
+        </button>
+        '''
+
+
+@dataclass
+class LoadMoreCard:
+    """Card that loads more content via HTMX."""
+    title: str
+    initial_content: str
+    load_endpoint: str
+
+    def htmy(self, context: dict[str, Any]) -> str:
+        return f'''
+        <div class="load-more-card">
+            <h3>{self.title}</h3>
+            <div id="content-container">
+                {self.initial_content}
+            </div>
+            <button
+                hx-get="{self.load_endpoint}"
+                hx-target="#content-container"
+                hx-swap="beforeend">
+                Load More
+            </button>
+        </div>
+        '''
+```
+
+#### Using HTMY Components in Routes
+
+```python
+from starlette.routing import Route
+from acb.adapters import import_adapter
+from acb.depends import Inject, depends
+from templates.components.user_card import UserCard
+
+Templates = import_adapter("templates")
+
+
+@depends.inject
+async def user_profile(request, templates: Inject[Templates]):
+    # Create component with type safety and IDE autocomplete
+    user_card = UserCard(
+        name="Jane Doe",
+        email="jane@example.com",
+        role="Administrator",
+        avatar_url="/static/avatars/jane.jpg"
+    )
+
+    # Render the component
+    return await templates.app.render_component(
+        request,
+        component=user_card
+    )
+```
+
+#### Mixing HTMY and Jinja2
+
+Combine both template systems for maximum flexibility:
+
+```python
+# Use HTMY component within Jinja2 template
+from acb.adapters import import_adapter
+from acb.depends import Inject, depends
+from templates.components.user_card import UserCard
+
+Templates = import_adapter("templates")
+
+
+@depends.inject
+async def dashboard(request, templates: Inject[Templates]):
+    # Create HTMY components
+    user_card = UserCard(name="John Doe", email="john@example.com")
+
+    # Render Jinja2 template with HTMY component in context
+    return await templates.app.render_template(
+        request,
+        "dashboard.html",
+        context={"user_component": user_card.htmy({}), "stats": {...}}
+    )
+```
+
+```html
+<!-- templates/dashboard.html (Jinja2) -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <div class="container">
+        <!-- HTMY component rendered inline -->
+        [[ user_component | safe ]]
+
+        <!-- Traditional Jinja2 content -->
+        <div class="stats">
+            {% for stat in stats %}
+            <div class="stat-card">[[ stat.value ]]</div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
+```
+
+**Benefits of this hybrid approach:**
+- **Type Safety**: HTMY components provide full type checking and IDE support
+- **Flexibility**: Use the right tool for each part of your application
+- **Reusability**: Create component libraries that work across projects
+- **Team Collaboration**: Designers work with Jinja2, developers build components with HTMY
+- **Progressive Enhancement**: Start with Jinja2, add HTMY components as needed
+
 ## Adapters
 
 FastBlocks uses a pluggable adapter system for modular integration with external services and frameworks. Adapters provide standardized interfaces to different implementations, enabling seamless provider switching and customization without code changes.
@@ -1284,7 +1424,11 @@ FastBlocks uses a pluggable adapter system for modular integration with external
 ### Available Adapter Categories
 
 - **Images**: Cloud-based image processing and optimization (Cloudinary, ImageKit, Cloudflare Images, TwicPics)
-- **Styles**: CSS frameworks and styling systems (Bulma, Vanilla, WebAwesome, KelpUI)
+- **Styles**: CSS frameworks and styling systems
+  - **Bulma**: Modern CSS framework based on Flexbox
+  - **Web Awesome**: Comprehensive icon library and UI components from Font Awesome
+  - **Kelp**: Lightweight UI library for HTML-first development, powered by modern CSS and Web Components
+  - **Vanilla**: Custom CSS with minimal framework overhead
 - **Icons**: Icon libraries with SVG/font support (FontAwesome, Lucide, Phosphor, Heroicons, Remix, Material)
 - **Fonts**: Web font loading and optimization (Google Fonts, Font Squirrel)
 - **App**: Application configuration and initialization
@@ -1451,7 +1595,7 @@ python -m fastblocks create
 You'll be prompted for:
 
 - **app_name**: Name of your application
-- **style**: UI framework to use (bulma, webawesome, or custom)
+- **style**: UI framework to use (bulma, webawesome, kelp, or custom)
 - **domain**: Application domain
 
 This will create a new directory with the following structure:
@@ -1613,14 +1757,7 @@ async def homepage(request, templates: Inject[Templates]):
     return await templates.app.render_template(request, "index.html")
 ```
 
-#### Benefits of the Modern Pattern (ACB 0.25.1+)
-
-1. **Type Safety**: Full IDE autocomplete and type checking support
-1. **Cleaner Code**: No `@depends.inject` decorator needed
-1. **Better Performance**: Direct ACB access eliminates wrapper overhead
-1. **Improved DX**: More Pythonic and declarative syntax
-1. **Enhanced Error Handling**: Built-in fallback mechanisms for missing dependencies
-1. **Future Compatibility**: Aligned with modern ACB framework patterns
+The modern pattern provides type safety, cleaner code, better performance, and improved developer experience with full IDE support.
 
 #### Template System Improvements
 
@@ -1716,6 +1853,7 @@ Special thanks to the following open-source projects that power FastBlocks:
 - [starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja) - Starlette integration for async Jinja2
 - [Bulma](https://bulma.io/) - Modern CSS framework based on Flexbox for beautiful responsive designs
 - [Web Awesome](https://fontawesome.com/webawesome) - Comprehensive icon library and UI components from Font Awesome
+- [Kelp](https://kelpui.com/) - Lightweight UI library for HTML-first development, powered by modern CSS and Web Components
 
 ### Data & Validation
 
