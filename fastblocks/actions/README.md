@@ -31,6 +31,7 @@ FastBlocks comes with several built-in actions for web application development:
 |--------|-------------|-------------|
 | **Gather** | Component discovery and collection | `gather.routes()`, `gather.templates()`, `gather.middleware()`, `gather.models()`, `gather.application()` |
 | **Sync** | Bidirectional synchronization | `sync.templates()`, `sync.settings()`, `sync.cache()` |
+| **Query** | URL query parameter to database query conversion | `UniversalQueryParser`, `create_query_context()` |
 | **Minify** | Code and asset optimization | `minify.html()`, `minify.css()`, `minify.js()` |
 
 ### Gather
@@ -133,6 +134,41 @@ minified_js = minify.js(js_content)
 ```
 
 **[→ Read the full Minify documentation](./minify/README.md)**
+
+### Query
+
+The Query action converts HTTP request query parameters into ACB universal database queries, enabling powerful filtering, sorting, and pagination directly from URLs.
+
+#### Key Features:
+
+- **Automatic query parameter parsing** with multiple filter operators
+- **Pagination and sorting** built-in
+- **ACB universal query integration** (works with all model types)
+- **Template context creation** for easy rendering
+
+#### Usage Example:
+
+```python
+from fastblocks.actions.query import UniversalQueryParser, create_query_context
+
+# Parse URL query parameters into database query
+parser = UniversalQueryParser(request, User)
+results = await parser.parse_and_execute()
+
+# Create template context with query results
+context = create_query_context(request, "user", {"page": "users"})
+
+# URL examples:
+# /users?active=true&age__gt=18
+# /users?page=2&limit=20&order_by=created_at&order_dir=desc
+# /users?department__in=engineering,design&salary__gte=50000
+```
+
+**Supported Operators:**
+- Equals, greater/less than, contains, in, not, null checks
+- All operators support type coercion and validation
+
+**[→ Read the full Query documentation](./query/README.md)**
 
 ## Action Philosophy
 
