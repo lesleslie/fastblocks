@@ -1,5 +1,7 @@
 """Additional tests for coverage boost."""
 
+import pytest
+
 
 @pytest.mark.unit
 def test_basic_python_functionality() -> None:

@@ -5,6 +5,8 @@ import asyncio
 import typing as t
 from pathlib import Path
 
+import pytest
+
 
 # Test utilities (same as before)
 class MockAsyncPath:

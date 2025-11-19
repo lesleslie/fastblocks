@@ -15,7 +15,7 @@ This document provides comprehensive information about running, organizing, and 
 - [Test Configuration](#test-configuration)
 - [Troubleshooting](#troubleshooting)
 
----
+______________________________________________________________________
 
 ## Quick Start
 
@@ -67,7 +67,7 @@ pytest tests/test_exceptions.py::test_starlette_caches_exception
 pytest -k "test_auth"
 ```
 
----
+______________________________________________________________________
 
 ## Test Organization
 
@@ -106,6 +106,7 @@ tests/
 #### Unit Tests (`@pytest.mark.unit`)
 
 **Characteristics**:
+
 - Test individual functions/classes in isolation
 - Fast execution (< 1 second each)
 - Heavy use of mocks and fixtures
@@ -113,6 +114,7 @@ tests/
 - ~810 tests (90% of suite)
 
 **Examples**:
+
 - `tests/test_exceptions.py` - Exception handling
 - `tests/test_caching.py` - Cache functionality
 - `tests/adapters/auth/test_auth_patterns.py` - Auth patterns
@@ -121,12 +123,14 @@ tests/
 #### Integration Tests (`@pytest.mark.integration`)
 
 **Characteristics**:
+
 - Test interaction between components
 - May involve multiple modules
 - Test real workflows and scenarios
 - ~90 tests (10% of suite)
 
 **Examples**:
+
 - `tests/test_validation_integration.py` - Validation service integration
 - `tests/test_events_integration.py` - Event system integration
 - `tests/test_health_integration.py` - Health check integration
@@ -135,11 +139,13 @@ tests/
 #### Performance Tests (`@pytest.mark.benchmark`)
 
 **Characteristics**:
+
 - Performance benchmarks
 - Execution time measurements
 - Resource usage tracking
 
 **Examples**:
+
 - `tests/performance/test_performance_verification.py`
 - `tests/performance/test_template_performance.py`
 
@@ -150,7 +156,7 @@ tests/
 - **Comprehensive tests**: `test_<feature>_comprehensive.py`
 - **Adapter tests**: `test_<adapter_name>.py`
 
----
+______________________________________________________________________
 
 ## Running Tests
 
@@ -236,7 +242,7 @@ pytest --durations=10
 pytest -q
 ```
 
----
+______________________________________________________________________
 
 ## Writing Tests
 
@@ -325,14 +331,14 @@ class TestAuthenticationFlow:
 ### Best Practices
 
 1. **One Test, One Assertion**: Each test should verify one specific behavior
-2. **Clear Test Names**: Use descriptive names that explain what is being tested
-3. **Arrange-Act-Assert**: Follow the AAA pattern for test structure
-4. **Use Type Hints**: All test functions should include return type hints
-5. **Document Tests**: Include docstrings explaining test purpose
-6. **Isolate Tests**: Each test should be independent and not rely on others
-7. **Use Markers**: Always add `@pytest.mark.unit` or `@pytest.mark.integration`
+1. **Clear Test Names**: Use descriptive names that explain what is being tested
+1. **Arrange-Act-Assert**: Follow the AAA pattern for test structure
+1. **Use Type Hints**: All test functions should include return type hints
+1. **Document Tests**: Include docstrings explaining test purpose
+1. **Isolate Tests**: Each test should be independent and not rely on others
+1. **Use Markers**: Always add `@pytest.mark.unit` or `@pytest.mark.integration`
 
----
+______________________________________________________________________
 
 ## Mocking Guidelines
 
@@ -346,29 +352,30 @@ The test suite provides pre-built mock classes in `conftest.py`:
 
 ```python
 # Core Mocks
-MockAdapter          # Mock adapter implementation
-MockConfig           # Configuration mock with nested structures
-MockSettings         # Settings with proper load() method
-MockAsyncPath        # Async path operations (no filesystem access)
+MockAdapter  # Mock adapter implementation
+MockConfig  # Configuration mock with nested structures
+MockSettings  # Settings with proper load() method
+MockAsyncPath  # Async path operations (no filesystem access)
 
 # Template Mocks
-MockTemplates        # Template adapter mock
-MockTemplateRenderer # Async template rendering
+MockTemplates  # Template adapter mock
+MockTemplateRenderer  # Async template rendering
 MockTemplateFilters  # Template filter implementation
 
 # Storage Mocks
-MockCache            # In-memory cache
-MockStorage          # In-memory storage
+MockCache  # In-memory cache
+MockStorage  # In-memory storage
 
 # ACB Mocks
-MockAdapters         # Adapters registry mock
-MockConfigModule     # Full config module mock
+MockAdapters  # Adapters registry mock
+MockConfigModule  # Full config module mock
 ```
 
 ### Using MockAsyncPath
 
 ```python
 from tests.conftest import MockAsyncPath
+
 
 @pytest.mark.unit
 async def test_file_operations():
@@ -391,6 +398,7 @@ async def test_file_operations():
 import sys
 import types
 from unittest.mock import MagicMock
+
 
 @pytest.fixture
 def mock_acb():
@@ -418,6 +426,7 @@ def mock_acb():
 ```python
 from unittest.mock import AsyncMock
 
+
 @pytest.mark.unit
 @pytest.mark.asyncio
 async def test_async_function():
@@ -439,6 +448,7 @@ async def test_async_function():
 ```python
 from unittest.mock import patch
 
+
 @pytest.mark.unit
 def test_with_patch():
     """Test with patched module."""
@@ -451,7 +461,7 @@ def test_with_patch():
         mock_func.assert_called_once()
 ```
 
----
+______________________________________________________________________
 
 ## Test Configuration
 
@@ -509,11 +519,11 @@ exclude_also = [
 The global `conftest.py` provides:
 
 1. **ACB Module Patching**: Prevents filesystem access
-2. **Mock Classes**: Comprehensive mocking framework
-3. **Fixtures**: Reusable test components
-4. **Module Cleanup**: Ensures test isolation
+1. **Mock Classes**: Comprehensive mocking framework
+1. **Fixtures**: Reusable test components
+1. **Module Cleanup**: Ensures test isolation
 
----
+______________________________________________________________________
 
 ## Troubleshooting
 
@@ -524,6 +534,7 @@ The global `conftest.py` provides:
 **Symptom**: Tests not being collected
 
 **Solutions**:
+
 ```bash
 # Verify test discovery
 pytest --collect-only
@@ -540,6 +551,7 @@ pytest --markers
 **Symptom**: `ModuleNotFoundError` or `ImportError`
 
 **Solutions**:
+
 ```python
 # Add module mocking in conftest.py or test file
 import sys
@@ -554,11 +566,12 @@ sys.modules["missing_module"] = mock_module
 **Symptom**: `RuntimeError: no running event loop`
 
 **Solutions**:
+
 ```python
 # Ensure @pytest.mark.asyncio is present
 @pytest.mark.asyncio
-async def test_async_function():
-    ...
+async def test_async_function(): ...
+
 
 # Or use pytest-asyncio auto mode (already configured)
 ```
@@ -568,6 +581,7 @@ async def test_async_function():
 **Symptom**: Tests trying to access real files
 
 **Solutions**:
+
 ```python
 # Use MockAsyncPath instead of real paths
 from tests.conftest import MockAsyncPath
@@ -584,6 +598,7 @@ with patch("pathlib.Path.exists", return_value=True):
 **Symptom**: `FAIL Required test coverage of 42% not reached`
 
 **Solutions**:
+
 ```bash
 # Run full test suite (not just one test)
 pytest --cov=fastblocks
@@ -599,6 +614,7 @@ pytest --cov=fastblocks --cov-report=term-missing
 **Symptom**: Tests taking too long
 
 **Solutions**:
+
 ```bash
 # Find slowest tests
 pytest --durations=10
@@ -629,6 +645,7 @@ pytest -n auto
 **Symptom**: Real ACB modules being imported
 
 **Solution**: Patch modules before any imports:
+
 ```python
 import sys
 import types
@@ -639,7 +656,7 @@ sys.modules["acb"] = types.ModuleType("acb")
 from fastblocks import something  # Now safe
 ```
 
----
+______________________________________________________________________
 
 ## Test Statistics
 
@@ -663,7 +680,7 @@ from fastblocks import something  # Now safe
 - **Integration Tests**: ~10-15 seconds
 - **Single Test File**: 1-5 seconds
 
----
+______________________________________________________________________
 
 ## Additional Resources
 
@@ -688,7 +705,7 @@ from fastblocks import something  # Now safe
 - **Test Failures**: Check this TESTING.md troubleshooting section
 - **Coverage Reports**: Use `pytest --cov-report=html` for detailed analysis
 
----
+______________________________________________________________________
 
 ## Changelog
 

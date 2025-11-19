@@ -17,7 +17,6 @@ import pytest
 from pydantic import SecretStr
 from starlette.authentication import (
     AuthCredentials,
-    AuthenticationError,
     SimpleUser,
     UnauthenticatedUser,
 )
@@ -378,7 +377,9 @@ class TestAuthIntegrationPatterns:
         # 1. Encode credentials
         username = "testuser"
         password = "testpass"
-        credentials = base64.b64encode(f"{username}:{password}".encode()).decode("ascii")
+        credentials = base64.b64encode(f"{username}:{password}".encode()).decode(
+            "ascii"
+        )
 
         # 2. Create request with auth header
         request = Mock()

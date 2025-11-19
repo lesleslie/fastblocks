@@ -185,9 +185,7 @@ class HybridTemplates:
             await self.initialize()
         assert self.hybrid_manager is not None
 
-        fragments = await self.hybrid_manager.get_fragments_for_template(
-            template_name
-        )
+        fragments = await self.hybrid_manager.get_fragments_for_template(template_name)
 
         return [
             {

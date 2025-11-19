@@ -3,6 +3,7 @@
 import json
 from unittest.mock import patch
 
+import pytest
 from starlette.responses import HTMLResponse
 
 # Mock the debug module to avoid AttributeError

@@ -5,6 +5,8 @@ import asyncio
 import os
 import sys
 
+import pytest
+
 # Add the current directory to sys.path
 sys.path.insert(0, "/Users/les/Projects/sites/fastest")
 sys.path.insert(0, "/Users/les/Projects/fastblocks")

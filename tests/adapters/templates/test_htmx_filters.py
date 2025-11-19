@@ -1,5 +1,6 @@
 """Tests for FastBlocks HTMX template filters."""
 
+import pytest
 from unittest.mock import Mock, patch
 
 from fastblocks.adapters.templates._filters import (

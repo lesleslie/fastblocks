@@ -5,6 +5,8 @@ import sys
 import typing as t
 from pathlib import Path
 
+import pytest
+
 # Add local paths
 sys.path.insert(0, "/Users/les/Projects/sites/fastest")
 sys.path.insert(0, "/Users/les/Projects/fastblocks")

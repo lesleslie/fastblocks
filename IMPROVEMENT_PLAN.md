@@ -555,7 +555,7 @@ ______________________________________________________________________
 
 **Priority**: MEDIUM | **Effort**: 16 hours | **Status**: ✅ COMPLETED (2025-11-18)
 
-**Achieved**: 223 → 110 type ignores (-113, -50.7% reduction) ✓ Target <111 achieved!
+**Achieved**: 223 → 110 type ignores (-113, -50.7% reduction) ✓ Target \<111 achieved!
 
 - [x] Audit all `# type: ignore` comments
 - [x] Categorize by reason:
@@ -568,41 +568,48 @@ ______________________________________________________________________
 **Batches Completed**:
 
 1. **No-category ignores** (4 removed):
+
    - htmx.py: Request = t.Any assignment (unnecessary)
    - htmx.py: 2 HtmxRequest class definitions (later reverted - actually needed)
    - minify/__init__.py: minify_html import (unnecessary)
 
-2. **Arg-type ignores** (7 fixed with casts):
+1. **Arg-type ignores** (7 fixed with casts):
+
    - config_migration.py: 2 casts for dict[str, Any] arguments
    - jinja2.py: 1 BaseModel.__init__ cast (later reverted - incompatible)
-   - _block_renderer.py: 1 find_undeclared_variables cast
-   - _advanced_manager.py: 2 Jinja2 API casts
+   - \_block_renderer.py: 1 find_undeclared_variables cast
+   - \_advanced_manager.py: 2 Jinja2 API casts
    - models.py: 1 BaseModel append cast
 
-3. **Singleton __new__ ignores** (3 removed):
-   - _workflows_integration.py, _validation_integration.py, _events_integration.py
+1. **Singleton __new__ ignores** (3 removed):
+
+   - \_workflows_integration.py, \_validation_integration.py, \_events_integration.py
    - Pattern confirmed safe via testing
 
-4. **Misc ignores** (2 removed):
-   - _base.py: hasattr __await__ check (unnecessary)
-   - admin/_base.py, routes/_base.py: empty base classes (unnecessary)
+1. **Misc ignores** (2 removed):
 
-5. **Other ignores** (2 fixed):
-   - _language_server.py: typeddict-item with cast
+   - \_base.py: hasattr __await__ check (unnecessary)
+   - admin/\_base.py, routes/\_base.py: empty base classes (unnecessary)
+
+1. **Other ignores** (2 fixed):
+
+   - \_language_server.py: typeddict-item with cast
    - middleware.py: no-untyped-call (removed unnecessary cast)
 
-6. **Union-attr fixes** (4 with type narrowing):
+1. **Union-attr fixes** (4 with type narrowing):
+
    - hybrid.py: Added 4 assert statements after initialization checks
    - Removed union-attr ignores after assertions
 
 **Remaining 110 Ignores** (All legitimate):
+
 - ~57 misc (40 are @env. template filter decorators - Jinja2 untyped API)
 - ~19 union-attr (dynamic union type patterns)
 - ~14 operator (ACB graceful degradation)
 - ~13 attr-defined (Jinja2 dynamic attributes)
 - ~7 no-redef (import redefinition in except blocks)
 
-**Success Criteria**: ✅ <111 type ignores achieved (110), all remaining are justified
+**Success Criteria**: ✅ \<111 type ignores achieved (110), all remaining are justified
 
 ______________________________________________________________________
 
@@ -623,6 +630,7 @@ ______________________________________________________________________
 **Documentation Created**:
 
 1. **docs/TYPE_SYSTEM_MIGRATION.md**: Comprehensive guide for migrating to improved type patterns
+
    - Type narrowing with assertions (Pattern 1)
    - Explicit casts instead of ignores (Pattern 2)
    - Removing unnecessary ignores (Pattern 3)
@@ -632,7 +640,8 @@ ______________________________________________________________________
    - Phase 4 results summary
    - Testing procedures
 
-2. **docs/LESSONS_LEARNED.md**: Audit insights and best practices
+1. **docs/LESSONS_LEARNED.md**: Audit insights and best practices
+
    - Phase-by-phase analysis (Phases 1-4)
    - Technical insights (ACB patterns, type narrowing, mock testing)
    - Process insights (incremental progress, documentation as you go)
@@ -641,7 +650,8 @@ ______________________________________________________________________
    - Success metrics framework
    - Tools & resources catalog
 
-3. **CLAUDE.md - Type System Guidelines**: New section added
+1. **CLAUDE.md - Type System Guidelines**: New section added
+
    - Type ignore best practices
    - Common type patterns (assertions, casts)
    - Type ignore categories breakdown (110 remaining)
@@ -658,8 +668,8 @@ ______________________________________________________________________
 **Documentation Verified**:
 
 1. **docs/ACB_DEPENDS_PATTERNS.md**: Already comprehensive (created in Phase 2)
-2. **fastblocks/mcp/README.md**: MCP integration fully documented
-3. Architecture: No major changes in Phase 4, existing docs sufficient
+1. **fastblocks/mcp/README.md**: MCP integration fully documented
+1. Architecture: No major changes in Phase 4, existing docs sufficient
 
 **Success Criteria**: ✅ All new patterns documented, migration guides complete
 
@@ -686,42 +696,47 @@ ______________________________________________________________________
 **Security Scan Results**:
 
 1. **Bandit Scan**:
+
    - High-severity findings: **0** ✓ (SUCCESS CRITERIA MET!)
    - Medium-severity findings: **0** ✓
    - Low-severity findings: **20** (all acceptable patterns)
-     * 14× assert statements (intentional type narrowing from Phase 4)
-     * 3× try/except/continue (graceful degradation)
-     * 1× try/except/pass (graceful degradation for integrations)
-     * 2× subprocess usage (CLI module, legitimate use, no shell=True)
+     - 14× assert statements (intentional type narrowing from Phase 4)
+     - 3× try/except/continue (graceful degradation)
+     - 1× try/except/pass (graceful degradation for integrations)
+     - 2× subprocess usage (CLI module, legitimate use, no shell=True)
    - Total lines scanned: 30,692
    - Scan time: ~2 seconds
 
-2. **detect-secrets Scan**:
+1. **detect-secrets Scan**:
+
    - Real secrets found: **0** ✓
    - False positives: **4** (all example/placeholder values)
-     * README.md: Base64 example string
-     * README.md: Secret keyword in documentation
-     * auth/README.md: Secret keyword in documentation
-     * env_manager.py: Placeholder values ("application secret", "password")
-     * resources.py: Example connection string
+     - README.md: Base64 example string
+     - README.md: Secret keyword in documentation
+     - auth/README.md: Secret keyword in documentation
+     - env_manager.py: Placeholder values ("application secret", "password")
+     - resources.py: Example connection string
    - Baseline created: `.secrets.baseline` (184 lines)
    - Pre-commit hook configured: ✓
 
 **Security Infrastructure Implemented**:
 
 1. **Static Analysis**:
+
    - Bandit for Python security linting (already configured, now verified)
    - detect-secrets for secret detection (NEW - added to pre-commit)
    - gitleaks for additional secret scanning (already configured)
 
-2. **Pre-Commit Security Hooks**:
+1. **Pre-Commit Security Hooks**:
+
    ```yaml
    - Bandit (high/medium severity, runs on pre-push)
    - detect-secrets (all commits)
    - gitleaks (all commits)
    ```
 
-3. **Security Documentation**:
+1. **Security Documentation**:
+
    - Created `docs/SECURITY.md` (comprehensive architecture document)
    - Security layers documented (CSRF, sessions, auth, validation, templates, headers, static analysis)
    - Threat model documented

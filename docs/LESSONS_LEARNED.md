@@ -11,6 +11,7 @@ ______________________________________________________________________
 The FastBlocks audit successfully improved code quality across all measured dimensions while establishing sustainable development practices. Key achievements include 70% reduction in type errors, 112% increase in test coverage, and comprehensive documentation of modern Python patterns.
 
 **Key Metrics**:
+
 - Pyright Errors: 501 → 150 (-70%)
 - Type Ignores: 223 → 110 (-50.7%)
 - Test Coverage: 15.52% → 33.00% (+112%)
@@ -26,16 +27,19 @@ ______________________________________________________________________
 **Focus**: Quick wins and critical blockers
 
 **What Worked**:
+
 1. **Vulture for dead code detection** - Found 5 unreachable code blocks immediately
-2. **ACB injection pattern audit** - Identified 4 legacy patterns systematically
-3. **CLI optimization** - Event-based shutdown eliminated busy-wait loop
-4. **Task grouping** - Batching similar fixes (imports, unused vars) improved efficiency
+1. **ACB injection pattern audit** - Identified 4 legacy patterns systematically
+1. **CLI optimization** - Event-based shutdown eliminated busy-wait loop
+1. **Task grouping** - Batching similar fixes (imports, unused vars) improved efficiency
 
 **What Didn't Work**:
+
 1. **Task 1.6 deferred** - Fire-and-forget task tracking deemed non-critical
-2. **Initial scope creep** - Had to defer some "nice to have" improvements
+1. **Initial scope creep** - Had to defer some "nice to have" improvements
 
 **Lesson Learned**:
+
 > **Start with automated tooling for quick wins**. Tools like vulture, ruff, and pyright identify 80% of issues faster than manual review. Save manual review for the remaining 20%.
 
 ### Phase 2: Type System Recovery (4 tasks, all completed)
@@ -43,16 +47,19 @@ ______________________________________________________________________
 **Focus**: Fixing fundamental type system issues
 
 **What Worked**:
+
 1. **Async/await audit** - Fixed 150+ missing `await depends.get()` calls
-2. **Sync vs async segregation** - Clear `depends.get_sync()` for template filters
-3. **Systematic categorization** - Grouped errors by type for batch fixing
-4. **Test-driven verification** - Created test files to verify safe pattern removal
+1. **Sync vs async segregation** - Clear `depends.get_sync()` for template filters
+1. **Systematic categorization** - Grouped errors by type for batch fixing
+1. **Test-driven verification** - Created test files to verify safe pattern removal
 
 **What Didn't Work**:
+
 1. **Initial over-reliance on ignores** - Many could be fixed with proper types
-2. **Assumption that all ignores were necessary** - Testing revealed 50% were removable
+1. **Assumption that all ignores were necessary** - Testing revealed 50% were removable
 
 **Lesson Learned**:
+
 > **Test your assumptions about type errors**. Create minimal test cases to verify if an ignore is truly necessary. Many "required" ignores are actually fixable with assertions or casts.
 
 ### Phase 3: Coverage & Quality (6 tasks, all completed)
@@ -60,16 +67,19 @@ ______________________________________________________________________
 **Focus**: Test coverage and quality tools
 
 **What Worked**:
+
 1. **Mock framework** - Tests never create actual files, fast and reliable
-2. **Targeted coverage** - Focused on adapters (templates, auth, routes)
-3. **Integration tests** - Validated end-to-end workflows
-4. **Pre-commit hooks** - Automated quality gates prevent regressions
+1. **Targeted coverage** - Focused on adapters (templates, auth, routes)
+1. **Integration tests** - Validated end-to-end workflows
+1. **Pre-commit hooks** - Automated quality gates prevent regressions
 
 **What Didn't Work**:
+
 1. **Overly ambitious initial target** - 40% coverage too aggressive given time
-2. **Some flaky tests** - Async timing issues required refinement
+1. **Some flaky tests** - Async timing issues required refinement
 
 **Lesson Learned**:
+
 > **Prioritize test quality over quantity**. 204 well-structured tests with mocks are more valuable than 500 flaky tests. Focus on critical paths first.
 
 ### Phase 4: Polish & Optimization (4 tasks, 2 completed)
@@ -77,16 +87,19 @@ ______________________________________________________________________
 **Focus**: Production readiness and documentation
 
 **What Worked**:
+
 1. **Type narrowing with assertions** - Clean alternative to union-attr ignores
-2. **Explicit casts** - Self-documenting, better than silent ignores
-3. **Comprehensive documentation** - Migration guides prevent future issues
-4. **Pattern cataloging** - TYPE_SYSTEM_MIGRATION.md codifies best practices
+1. **Explicit casts** - Self-documenting, better than silent ignores
+1. **Comprehensive documentation** - Migration guides prevent future issues
+1. **Pattern cataloging** - TYPE_SYSTEM_MIGRATION.md codifies best practices
 
 **What Didn't Work**:
+
 1. **Some casts later reverted** - Not all patterns are fixable (e.g., BaseModel.__init__)
-2. **htmx.py conditional inheritance** - Required type ignores (legitimate)
+1. **htmx.py conditional inheritance** - Required type ignores (legitimate)
 
 **Lesson Learned**:
+
 > **Document why ignores remain**. When you can't remove an ignore, explain why. Future developers (including yourself) will thank you.
 
 ______________________________________________________________________
@@ -98,11 +111,13 @@ ______________________________________________________________________
 **Discovery**: `depends.get()` always returns a coroutine, must be awaited
 
 **Impact**:
+
 - Fixed ~60 coroutine access errors in integration files
 - Changed from `depends.get()` → `await depends.get()` or `Inject[Type]` pattern
 - Enabled proper type checking for injected dependencies
 
 **Best Practice**:
+
 ```python
 # ✅ MODERN - Parameter injection (preferred)
 @depends.inject
@@ -125,11 +140,13 @@ def handler(request):
 **Discovery**: Python's type narrowing works with assertions after None checks
 
 **Impact**:
+
 - Removed 4 union-attr ignores in hybrid.py
 - More explicit, self-documenting code
 - Helps Pyright understand control flow
 
 **Best Practice**:
+
 ```python
 # ✅ GOOD - Type narrowing
 if not self.manager:
@@ -150,15 +167,17 @@ result = await self.manager.method()  # type: ignore[union-attr]
 **Discovery**: ~50% of type ignores were unnecessary, removable with testing
 
 **Analysis of 223 original ignores**:
+
 - **Fixable** (~113): Missing awaits, unnecessary singleton ignores, missing assertions
 - **Legitimate** (~110): Jinja2 untyped decorators, ACB patterns, third-party APIs
 
 **Categories of Legitimate Ignores**:
+
 1. **Jinja2 decorators** (~40): `@env.filter()` has no type stubs
-2. **Union attributes** (~19): Dynamic union access patterns
-3. **ACB operators** (~14): Graceful degradation with `|` operator
-4. **Jinja2 attrs** (~13): Sandbox dynamic attributes
-5. **Import redef** (~7): Exception-based import redefinition
+1. **Union attributes** (~19): Dynamic union access patterns
+1. **ACB operators** (~14): Graceful degradation with `|` operator
+1. **Jinja2 attrs** (~13): Sandbox dynamic attributes
+1. **Import redef** (~7): Exception-based import redefinition
 
 **Takeaway**: Categorize all type ignores, fix what you can, document what you can't.
 
@@ -167,11 +186,13 @@ result = await self.manager.method()  # type: ignore[union-attr]
 **Discovery**: Comprehensive mocking eliminates file system dependencies
 
 **Implementation**:
+
 ```python
 # ✅ GOOD - Mock file system
 @pytest.fixture
 def mock_path(tmp_path):
     return MockAsyncPath(tmp_path)
+
 
 # Tests never touch real filesystem
 async def test_template_loading(mock_path):
@@ -180,6 +201,7 @@ async def test_template_loading(mock_path):
 ```
 
 **Benefits**:
+
 - Tests run 10x faster (no I/O)
 - No cleanup required
 - Parallel test execution safe
@@ -192,6 +214,7 @@ async def test_template_loading(mock_path):
 **Discovery**: Strict mode caught 501 latent bugs, many would surface at runtime
 
 **Enabled Settings**:
+
 ```toml
 [tool.pyright]
 strict = ["**/*.py"]
@@ -199,6 +222,7 @@ reportUnusedFunction = false  # Template filters
 ```
 
 **Categories of Bugs Found**:
+
 - Coroutine access (150+): Would crash at runtime
 - Undefined variables (17): Would crash at runtime
 - Type mismatches (39): Potential bugs
@@ -215,12 +239,14 @@ ______________________________________________________________________
 **Approach**: Small, verifiable commits instead of massive refactors
 
 **Results**:
+
 - 20+ commits across 4 phases
 - Each commit: Single focus, tested, documented
 - Easy to review, easy to revert if needed
 - Clear progress tracking
 
 **Commit Pattern**:
+
 ```
 fix(phase4): reduce type ignores from 129 to 110
 - Removed 4 no-category ignores
@@ -235,6 +261,7 @@ fix(phase4): reduce type ignores from 129 to 110
 **Approach**: Document patterns immediately when discovered
 
 **Results**:
+
 - ACB_DEPENDS_PATTERNS.md during Phase 2
 - TYPE_SYSTEM_MIGRATION.md during Phase 4
 - CLAUDE.md updated with Type System Guidelines
@@ -247,6 +274,7 @@ fix(phase4): reduce type ignores from 129 to 110
 **Approach**: Create test file to verify pattern safety before bulk changes
 
 **Example**:
+
 ```bash
 # Test if singleton pattern needs ignore
 cat > /tmp/test_singleton.py << 'EOF'
@@ -263,6 +291,7 @@ uv run pyright /tmp/test_singleton.py
 ```
 
 **Results**:
+
 - Safely removed 3 singleton ignores
 - Verified hasattr pattern (1 ignore removed)
 - Confirmed empty base classes safe (2 ignores removed)
@@ -274,12 +303,14 @@ uv run pyright /tmp/test_singleton.py
 **Approach**: Group similar issues for efficient resolution
 
 **Examples**:
+
 - Batch 1: All Settings/AdapterBase inheritance ignores (53 removed)
 - Batch 2: All CLI no-untyped-def ignores (8 fixed)
 - Batch 3: All singleton __new__ ignores (3 removed)
 - Batch 4: All arg-type ignores (7 fixed with casts)
 
 **Benefits**:
+
 - Faster than one-by-one
 - Consistent patterns
 - Easier to verify
@@ -290,12 +321,14 @@ uv run pyright /tmp/test_singleton.py
 ### 5. Quality Gates Prevent Regression
 
 **Implemented**:
+
 - Pre-commit hooks (ruff, pyright, bandit, vulture)
 - Pytest with coverage requirements
 - Crackerjack comprehensive checks
 - GitHub Actions CI (future)
 
 **Impact**:
+
 - Caught issues before commit
 - Prevented reintroduction of fixed bugs
 - Forced adherence to style guide
@@ -309,11 +342,13 @@ ______________________________________________________________________
 ### 1. Clear Success Criteria Matter
 
 **What Worked**:
-- Each task had measurable target (e.g., "<111 type ignores")
+
+- Each task had measurable target (e.g., "\<111 type ignores")
 - Progress tracking table in IMPROVEMENT_PLAN.md
 - Specific file/line number references
 
 **What Didn't Work**:
+
 - Initial vague targets ("improve quality")
 - Ambiguous completion criteria
 
@@ -322,6 +357,7 @@ ______________________________________________________________________
 ### 2. Tool Selection Is Critical
 
 **Winners**:
+
 - **Pyright**: Best Python type checker (strict mode catches everything)
 - **Ruff**: Fastest linter, excellent autofix
 - **Vulture**: Dead code detection (simple, effective)
@@ -329,6 +365,7 @@ ______________________________________________________________________
 - **UV**: Fast, reliable package management
 
 **Lessons**:
+
 - **Bandit**: Good for security, but high false positive rate
 - **Refurb**: Useful for modernization, requires manual review
 - **Complexipy**: Good metric, needs team buy-in on thresholds
@@ -338,12 +375,14 @@ ______________________________________________________________________
 ### 3. Documentation Audience Matters
 
 **Multiple Audiences Served**:
+
 1. **AI Assistants**: CLAUDE.md (patterns, commands, critical rules)
-2. **Future Developers**: TYPE_SYSTEM_MIGRATION.md (how to migrate)
-3. **Current Team**: IMPROVEMENT_PLAN.md (progress tracking)
-4. **Users**: README.md, fastblocks/mcp/README.md (features, usage)
+1. **Future Developers**: TYPE_SYSTEM_MIGRATION.md (how to migrate)
+1. **Current Team**: IMPROVEMENT_PLAN.md (progress tracking)
+1. **Users**: README.md, fastblocks/mcp/README.md (features, usage)
 
 **Format Matters**:
+
 - CLAUDE.md: Structured for AI parsing (IDs, clear sections)
 - Migration guides: Step-by-step with examples
 - READMEs: Quick start, then deep dive
@@ -356,9 +395,9 @@ ______________________________________________________________________
 
 ### 1. Over-Optimistic Initial Targets
 
-**Mistake**: Set target of <50 Pyright errors from baseline of 501
+**Mistake**: Set target of \<50 Pyright errors from baseline of 501
 
-**Reality**: Achieved 150 errors (-70%), but <50 requires ACB framework changes
+**Reality**: Achieved 150 errors (-70%), but \<50 requires ACB framework changes
 
 **Lesson**: Research constraints before setting targets. Some errors are framework limitations, not bugs.
 
@@ -369,6 +408,7 @@ ______________________________________________________________________
 **Mistake**: Initially treated all type ignores as "bad"
 
 **Reality**:
+
 - 40 are Jinja2 untyped decorator API (legitimate)
 - 14 are ACB graceful degradation (design pattern)
 - 13 are Jinja2 dynamic attributes (sandbox API)
@@ -382,6 +422,7 @@ ______________________________________________________________________
 **Mistake**: Removed some ignores that exposed real type incompatibilities
 
 **Examples**:
+
 - htmx.py: Conditional HtmxRequest inheritance actually needs ignores
 - jinja2.py: BaseModel.__init__ self parameter type incompatibility
 
@@ -394,6 +435,7 @@ ______________________________________________________________________
 **Mistake**: First pass at type ignore reduction only removed 20 ignores
 
 **Reality**: Needed multiple passes with different strategies:
+
 - Pass 1: No-category ignores (4 removed)
 - Pass 2: Arg-type with casts (7 fixed)
 - Pass 3: Singleton patterns (3 removed)
@@ -409,6 +451,7 @@ ______________________________________________________________________
 **Mistake**: Budgeted 8 hours for Task 4.3 (Documentation)
 
 **Reality**: Comprehensive docs took longer:
+
 - TYPE_SYSTEM_MIGRATION.md: 2 hours (comprehensive migration guide)
 - CLAUDE.md updates: 1 hour (Type System Guidelines)
 - LESSONS_LEARNED.md: 2 hours (this document)
@@ -424,6 +467,7 @@ ______________________________________________________________________
 ### 1. Start with Automated Scanning
 
 **Week 1 Checklist**:
+
 ```bash
 # Dead code
 uv run vulture fastblocks
@@ -446,13 +490,15 @@ uv run pytest --cov=fastblocks
 ### 2. Create IMPROVEMENT_PLAN.md Early
 
 **Template Structure**:
+
 1. Current metrics table
-2. Phase breakdown (1-4)
-3. Task definitions with success criteria
-4. Progress tracking
-5. Lessons learned section
+1. Phase breakdown (1-4)
+1. Task definitions with success criteria
+1. Progress tracking
+1. Lessons learned section
 
 **Benefits**:
+
 - Clear roadmap
 - Progress visibility
 - Prevents scope creep
@@ -460,6 +506,7 @@ uv run pytest --cov=fastblocks
 ### 3. Establish Quality Baselines
 
 **Measure Before Fixing**:
+
 - Pyright errors: `uv run pyright fastblocks --stats`
 - Test coverage: `pytest --cov=fastblocks --cov-report=term`
 - Type ignores: `grep -r "# type: ignore" --include="*.py" | wc -l`
@@ -470,15 +517,17 @@ uv run pytest --cov=fastblocks
 ### 4. Document Patterns Immediately
 
 **When You Discover Something**:
+
 1. Add to CLAUDE.md (AI assistant reference)
-2. Create focused doc if complex (e.g., ACB_DEPENDS_PATTERNS.md)
-3. Update migration guide if breaking change
+1. Create focused doc if complex (e.g., ACB_DEPENDS_PATTERNS.md)
+1. Update migration guide if breaking change
 
 **Why**: Fresh insights are clearest. Don't wait.
 
 ### 5. Test Changes in Isolation
 
 **Pattern**:
+
 ```bash
 # Create minimal test case
 cat > /tmp/test_pattern.py << 'EOF'
@@ -495,12 +544,14 @@ python -m pytest /tmp/test_pattern.py
 ### 6. Commit Frequently
 
 **Good Commit Size**:
+
 - 1-20 files changed
 - Single focus/theme
 - Includes tests
 - Updates documentation
 
 **Commit Message Format**:
+
 ```
 type(scope): summary
 
@@ -514,6 +565,7 @@ type(scope): summary
 ### 7. Plan for Multiple Passes
 
 **Typical Pattern**:
+
 - Pass 1: Automated fixes (50% of issues)
 - Pass 2: Pattern-based fixes (30% of issues)
 - Pass 3: Manual review (15% of issues)
@@ -528,27 +580,32 @@ ______________________________________________________________________
 ### Quantitative Metrics
 
 **Code Quality**:
-- Pyright errors (target: <50 or -70% from baseline)
-- Type ignores (target: <50% of baseline)
+
+- Pyright errors (target: \<50 or -70% from baseline)
+- Type ignores (target: \<50% of baseline)
 - Test coverage (target: >40%)
 - Test pass rate (target: >95%)
 
 **Performance**:
-- Test execution time (target: <2 minutes for full suite)
-- CI/CD pipeline time (target: <5 minutes)
+
+- Test execution time (target: \<2 minutes for full suite)
+- CI/CD pipeline time (target: \<5 minutes)
 
 **Maintainability**:
+
 - Documentation coverage (target: all public APIs documented)
-- Code complexity (target: average <10 per function)
+- Code complexity (target: average \<10 per function)
 
 ### Qualitative Metrics
 
 **Developer Experience**:
+
 - IDE autocomplete accuracy
 - Error message clarity
 - Onboarding time for new developers
 
 **Code Health**:
+
 - Consistency of patterns
 - Clarity of abstractions
 - Ease of testing
@@ -556,11 +613,13 @@ ______________________________________________________________________
 ### Sustainability Metrics
 
 **Regression Prevention**:
+
 - Pre-commit hook coverage
 - CI/CD test coverage
 - Documentation currency
 
 **Knowledge Transfer**:
+
 - Documentation completeness
 - Pattern cataloging
 - Migration guide availability
@@ -572,34 +631,41 @@ ______________________________________________________________________
 ### Essential Tools
 
 **Type Checking**:
+
 - Pyright (strict mode)
 - Mypy (alternative)
 
 **Linting**:
+
 - Ruff (fast, comprehensive)
 - Flake8 (alternative)
 
 **Security**:
+
 - Bandit (security linter)
 - detect-secrets (secret scanning)
 
 **Testing**:
+
 - Pytest (testing framework)
 - pytest-asyncio (async support)
 - pytest-cov (coverage)
 
 **Quality**:
+
 - Vulture (dead code)
 - Refurb (modernization)
 - Complexipy (complexity)
 - Crackerjack (comprehensive)
 
 **Package Management**:
+
 - UV (fast, reliable)
 
 ### Configuration Examples
 
 **pyproject.toml**:
+
 ```toml
 [tool.pyright]
 strict = ["**/*.py"]
@@ -625,18 +691,20 @@ ______________________________________________________________________
 The FastBlocks audit demonstrated that systematic quality improvement is achievable through:
 
 1. **Clear metrics and targets**
-2. **Automated tooling**
-3. **Incremental progress**
-4. **Comprehensive documentation**
-5. **Quality gates**
+1. **Automated tooling**
+1. **Incremental progress**
+1. **Comprehensive documentation**
+1. **Quality gates**
 
 **Final Results** (Phases 1-4):
+
 - Health Score: 58 → 82 (+41%)
 - Pyright Errors: 501 → 150 (-70%)
 - Type Ignores: 223 → 110 (-50.7%)
 - Test Coverage: 15.52% → 33.00% (+112%)
 
 **Key Takeaway**:
+
 > Quality is a journey, not a destination. Establish sustainable practices, document patterns, and automate enforcement. The tools and processes matter as much as the code improvements.
 
 ______________________________________________________________________
@@ -644,28 +712,32 @@ ______________________________________________________________________
 ## Next Steps
 
 **Immediate (Post-Audit)**:
+
 1. Complete Task 4.3 (documentation updates) ✓
-2. Complete Task 4.4 (security hardening)
-3. Update README with new metrics
-4. Create GitHub Actions CI pipeline
+1. Complete Task 4.4 (security hardening)
+1. Update README with new metrics
+1. Create GitHub Actions CI pipeline
 
 **Short-Term (1-2 weeks)**:
+
 1. Address remaining 150 Pyright errors where possible
-2. Increase test coverage toward 40% target
-3. Document security architecture
-4. Add performance benchmarks
+1. Increase test coverage toward 40% target
+1. Document security architecture
+1. Add performance benchmarks
 
 **Long-Term (1-3 months)**:
-1. Achieve <50 Pyright errors (may require ACB updates)
-2. Reach 40%+ test coverage
-3. Implement LSP integration for templates
-4. Add automated performance regression testing
+
+1. Achieve \<50 Pyright errors (may require ACB updates)
+1. Reach 40%+ test coverage
+1. Implement LSP integration for templates
+1. Add automated performance regression testing
 
 ______________________________________________________________________
 
 ## Acknowledgments
 
 **Tools That Made This Possible**:
+
 - Pyright team (excellent type checker)
 - Ruff team (blazing fast linter)
 - Pytest team (comprehensive testing)
@@ -674,6 +746,7 @@ ______________________________________________________________________
 - ACB framework (dependency injection, MCP)
 
 **Documentation References**:
+
 - FastBlocks: CLAUDE.md, IMPROVEMENT_PLAN.md
 - Python: PEP 484 (Type Hints), PEP 585 (Union Types)
 - Tools: Pyright docs, Ruff docs, Pytest docs

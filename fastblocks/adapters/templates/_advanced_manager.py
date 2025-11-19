@@ -968,7 +968,9 @@ class HybridTemplatesManager:
             # Find extends, includes, and imports
             node: t.Any
             # find_all accepts strings but type stubs expect Node types
-            for node in parsed.find_all(t.cast(t.Any, ("Extends", "Include", "FromImport"))):
+            for node in parsed.find_all(
+                t.cast(t.Any, ("Extends", "Include", "FromImport"))
+            ):
                 if hasattr(node, "template") and hasattr(node.template, "value"):
                     dependencies.add(node.template.value)
 

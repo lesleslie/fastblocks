@@ -4,6 +4,8 @@ import sys
 import types
 from unittest.mock import MagicMock
 
+import pytest
+
 # Mock ACB modules before importing
 acb_module = types.ModuleType("acb")
 acb_depends_module = types.ModuleType("acb.depends")

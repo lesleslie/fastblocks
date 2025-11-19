@@ -390,7 +390,6 @@ class TestAnalyzeComponentUsage:
             "fastblocks.actions.gather.components.gather_components"
         ) as mock_gather:
             mock_result = ComponentGatherResult(
-                success=True,
                 components={
                     "test_component": {
                         "type": "dataclass",
@@ -441,7 +440,7 @@ class TestAnalyzeComponentUsage:
             "fastblocks.actions.gather.components.gather_components"
         ) as mock_gather:
             mock_result = ComponentGatherResult(
-                success=False, error_message="Gathering failed"
+                error_message="Gathering failed"
             )
             mock_gather.return_value = mock_result
 

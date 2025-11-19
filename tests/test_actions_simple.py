@@ -1,5 +1,6 @@
 """Simple actions tests."""
 
+import pytest
 from fastblocks.actions.minify import minify
 
 

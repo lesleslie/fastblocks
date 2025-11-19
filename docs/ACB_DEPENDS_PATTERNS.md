@@ -272,7 +272,7 @@ error: Condition will always evaluate to False since the types
 ### Expected After Fix
 
 ```
-0 errors, 0 warnings, 0 informations
+0 errors, 0 warnings, 0 information
 ```
 
 ______________________________________________________________________

@@ -9,10 +9,9 @@ Tests cover:
 
 from contextvars import ContextVar
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import Mock
 
 import pytest
-from pydantic import SecretStr
 from starlette.authentication import UnauthenticatedUser
 
 
@@ -62,6 +61,7 @@ class TestAuthProtocol:
 
     def test_protocol_implementation(self) -> None:
         """Test implementing AuthProtocol."""
+
         class TestAuth:
             _current_user: ContextVar[Any] = ContextVar(
                 "current_user",

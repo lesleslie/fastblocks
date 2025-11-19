@@ -9,14 +9,12 @@ Tests cover:
 """
 
 import base64
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from pydantic import SecretStr
-from starlette.authentication import AuthenticationError, AuthCredentials, SimpleUser
+from starlette.authentication import AuthCredentials, AuthenticationError, SimpleUser
 from starlette.middleware import Middleware
-from starlette.middleware.sessions import SessionMiddleware
 
 
 @pytest.mark.unit
@@ -25,8 +23,8 @@ class TestAuthSettings:
 
     def test_auth_settings_inherits_from_base(self) -> None:
         """Test that AuthSettings inherits from AuthBaseSettings."""
-        from fastblocks.adapters.auth.basic import AuthSettings
         from fastblocks.adapters.auth._base import AuthBaseSettings
+        from fastblocks.adapters.auth.basic import AuthSettings
 
         assert issubclass(AuthSettings, AuthBaseSettings)
 
@@ -389,7 +387,7 @@ class TestAuthIntegration:
         from fastblocks.adapters.auth.basic import Auth
 
         secret_key = SecretStr("test-secret")
-        auth = Auth(secret_key=secret_key, user_model=None)
+        Auth(secret_key=secret_key, user_model=None)
 
         # Authenticate multiple users
         users = ["user1", "user2", "user3"]

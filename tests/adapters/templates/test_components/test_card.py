@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+import pytest
+
 # FastBlocks has its own HTMY implementation, doesn't use the htmy library
 Component = Any
 Context = dict

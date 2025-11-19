@@ -282,8 +282,8 @@ avg_age = await query.for_model(User).advanced.avg("age")
 ACB adapters can be configured through three methods:
 
 1. **Environment Variables** (Recommended for production)
-2. **Configuration Files** (`config.yml`, `settings/adapters.yml`)
-3. **Programmatic Configuration** (For advanced use cases)
+1. **Configuration Files** (`config.yml`, `settings/adapters.yml`)
+1. **Programmatic Configuration** (For advanced use cases)
 
 ### Environment Variables
 
@@ -553,9 +553,9 @@ async def handler(request, logger: Inject[Logger]):
 **Mitigation**:
 
 1. Deploy during low-traffic period
-2. Pre-warm cache with critical routes
-3. Monitor cache hit rates post-deployment
-4. Consider gradual rollout with feature flag
+1. Pre-warm cache with critical routes
+1. Monitor cache hit rates post-deployment
+1. Consider gradual rollout with feature flag
 
 ## Troubleshooting
 

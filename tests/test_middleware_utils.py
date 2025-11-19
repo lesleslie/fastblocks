@@ -1,5 +1,6 @@
 """Test middleware utility functions."""
 
+import pytest
 from starlette.types import Scope
 from fastblocks.middleware import MiddlewareUtils, get_request
 
