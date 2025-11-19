@@ -5,6 +5,8 @@ import asyncio
 import typing as t
 from pathlib import Path
 
+import pytest
+
 
 # Standalone AsyncPath-like implementation
 class MockAsyncPath:
@@ -134,6 +136,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
+@pytest.mark.unit
 async def test_component_discovery() -> None:
     """Test component discovery without full ACB setup."""
     print("=== Standalone HTMY Component Test ===")

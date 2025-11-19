@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import IconsBase, IconsBaseSettings
 
 
-class FontAwesomeIconsSettings(IconsBaseSettings):  # type: ignore[misc]
+class FontAwesomeIconsSettings(IconsBaseSettings):
     """FontAwesome-specific settings."""
 
     version: str = "6.4.0"

@@ -11,7 +11,7 @@ async def async_image_url(image_id: str, **transformations: Any) -> str:
     Usage in templates:
         [[ await async_image_url('product.jpg', width=300, height=200, crop='fill') ]]
     """
-    images = depends.get("images")
+    images = await depends.get("images")
     if images and hasattr(images, "get_image_url"):
         result = await images.get_image_url(image_id, **transformations)
         return str(result) if result is not None else image_id
@@ -28,7 +28,7 @@ async def async_font_import() -> str:
             [[ await async_font_import() ]]
         [% endblock %]
     """
-    fonts = depends.get("fonts")
+    fonts = await depends.get("fonts")
     if fonts and hasattr(fonts, "get_font_import"):
         result = await fonts.get_font_import()
         return str(result) if result is not None else ""
@@ -50,7 +50,7 @@ async def async_image_with_transformations(
                                                   {'width': 1200, 'quality': 80},
                                                   class='hero-img') ]]
     """
-    images = depends.get("images")
+    images = await depends.get("images")
     if images:
         # Get transformed URL first
         transform_params = transformations or {}
@@ -93,7 +93,7 @@ async def async_responsive_image(
             'desktop': {'width': 1200, 'quality': 85}
         }) ]]
     """
-    images = depends.get("images")
+    images = await depends.get("images")
     if not images:
         # Fallback to basic img tag
         return f'<img src="{image_id}" alt="{alt}">'
@@ -149,7 +149,7 @@ async def async_optimized_font_stack() -> str:
             [[ await async_optimized_font_stack() ]]
         [% endblock %]
     """
-    fonts = depends.get("fonts")
+    fonts = await depends.get("fonts")
     if not fonts:
         return ""
 
@@ -184,7 +184,7 @@ async def async_critical_css_fonts(critical_fonts: list[str] | None = None) -> s
             [[ await async_critical_css_fonts(['Inter', 'Roboto']) ]]
         [% endblock %]
     """
-    fonts = depends.get("fonts")
+    fonts = await depends.get("fonts")
     if not fonts:
         return ""
 
@@ -213,7 +213,7 @@ async def async_image_placeholder(
     Usage in templates:
         [[ await async_image_placeholder(400, 300, 'Loading...') ]]
     """
-    images = depends.get("images")
+    images = await depends.get("images")
 
     # If the image adapter supports placeholder generation
     if images and hasattr(images, "get_placeholder_url"):
@@ -246,7 +246,7 @@ async def async_lazy_image(
     Usage in templates:
         [[ await async_lazy_image('hero.jpg', 'Hero Image', loading='lazy') ]]
     """
-    images = depends.get("images")
+    images = await depends.get("images")
 
     # Get the actual image URL
     if images and hasattr(images, "get_image_url"):

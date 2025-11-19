@@ -136,8 +136,8 @@ class ComponentBase(ABC):
     async def async_htmy(self, context: dict[str, Any]) -> str:
         """Async version of htmy method."""
         if asyncio.iscoroutinefunction(self.htmy):
-            return await self.htmy(context)  # type: ignore[no-any-return]
-        return self.htmy(context)  # type: ignore[no-any-return]
+            return t.cast(str, await self.htmy(context))
+        return t.cast(str, self.htmy(context))
 
     def add_child(self, child: "ComponentBase") -> None:
         """Add a child component."""
@@ -632,7 +632,7 @@ class AdvancedHTMYComponentRegistry:
             metadata.status = ComponentStatus.ERROR
             metadata.error_message = str(e)
             raise ComponentCompilationError(
-                f"Failed to compile component '{component_name}': {e}"
+                f"Failed to compile component '{metadata.path.stem}': {e}"
             ) from e
 
     async def render_component_with_lifecycle(

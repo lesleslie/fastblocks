@@ -11,7 +11,7 @@ from typing import Any
 from uuid import uuid4
 
 import yaml
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from .discovery import AdapterInfo
 from .registry import AdapterRegistry
@@ -74,7 +74,8 @@ class ConfigurationSchema(BaseModel):
     global_settings: dict[str, Any] = Field(default_factory=dict)
     global_environment: list[EnvironmentVariable] = Field(default_factory=list)
 
-    @validator("adapters", pre=True)
+    @field_validator("adapters", mode="before")
+    @classmethod
     def validate_adapters(cls, v: Any) -> dict[str, AdapterConfiguration]:
         if isinstance(v, dict):
             # Convert dict values to AdapterConfiguration objects if needed
@@ -264,7 +265,11 @@ class ConfigurationManager:
 
         try:
             # Validate configuration schema
-            config_dict = config.dict() if hasattr(config, "dict") else config.__dict__
+            config_dict = (
+                config.model_dump()
+                if hasattr(config, "model_dump")
+                else config.__dict__
+            )
             ConfigurationSchema(**config_dict)
         except ValidationError as e:
             result.status = ConfigurationStatus.ERROR

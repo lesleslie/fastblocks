@@ -1,9 +1,11 @@
 """Test middleware utility functions."""
 
+import pytest
 from starlette.types import Scope
 from fastblocks.middleware import MiddlewareUtils, get_request
 
 
+@pytest.mark.unit
 class TestMiddlewareUtils:
     """Test MiddlewareUtils class functions."""
 
@@ -119,6 +121,7 @@ class TestMiddlewareUtils:
         MiddlewareUtils.set_request(None)
 
 
+@pytest.mark.unit
 def test_middleware_utils_constants_comprehensive() -> None:
     """Test comprehensive middleware utils constants."""
     # Test all HTTP method constants
@@ -137,6 +140,7 @@ def test_middleware_utils_constants_comprehensive() -> None:
     assert MiddlewareUtils.WEBSOCKET is MiddlewareUtils.WEBSOCKET
 
 
+@pytest.mark.unit
 def test_get_request_function() -> None:
     """Test the standalone get_request function."""
     # Clear context first

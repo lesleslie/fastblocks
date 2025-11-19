@@ -21,7 +21,7 @@ class DynamicSitemapSettings(SitemapBaseSettings):
     pass
 
 
-class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):  # type: ignore[override,misc]
+class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
     sitemap: SitemapApp | None = None
 
     async def items(self) -> list[dict[str, t.Any]]:

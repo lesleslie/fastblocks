@@ -12,7 +12,7 @@ from contextlib import suppress
 from uuid import UUID
 
 from acb.adapters import AdapterStatus
-from acb.depends import depends
+from acb.depends import Inject, depends
 from starlette.applications import Starlette
 from fastblocks.applications import FastBlocks
 
@@ -29,14 +29,18 @@ class AdminSettings(AdminBaseSettings): ...
 
 
 class Admin(AdminBase):
+    @depends.inject
     def __init__(
         self,
-        app: Starlette = FastBlocks(),
-        templates: t.Any = depends(),
+        templates: Inject[t.Any],
+        app: Starlette | None = None,
         **kwargs: t.Any,
     ) -> None:
         super().__init__()
         from sqladmin import Admin as SqlAdminBase
+
+        if app is None:
+            app = FastBlocks()
 
         self._sqladmin = SqlAdminBase(app=app, **kwargs)
         self.templates = templates.admin
@@ -46,7 +50,7 @@ class Admin(AdminBase):
 
     async def init(self) -> None:
         with suppress(Exception):
-            models = depends.get("models")
+            models = await depends.get("models")
             if hasattr(models, "get_admin_models"):
                 admin_models = models.get_admin_models()
                 for model in admin_models:

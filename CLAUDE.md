@@ -348,6 +348,64 @@ cache_ttl: 3600
 
 **Pre-commit hooks**: Core file structure validators, UV dependency management, security checks (detect-secrets, bandit), Python quality tools (ruff, pyright, refurb, vulture, complexipy), and project formatting (pyproject-fmt, codespell).
 
+### Type System Guidelines
+
+**Type Ignore Best Practices**:
+
+FastBlocks maintains strict type checking with Pyright. As of Phase 4 (2025-11-18), we've reduced type ignores from 223 to 110 (-50.7%). Remaining ignores are legitimate framework limitations.
+
+- **When to use `# type: ignore`**:
+
+  - External library limitations (Jinja2 untyped decorators, ACB patterns)
+  - Dynamic attribute access (union types, Jinja2 environment)
+  - Graceful degradation patterns (optional ACB module imports)
+
+- **When NOT to use `# type: ignore`**:
+
+  - Use `t.cast(TargetType, value)` for explicit type assertions
+  - Use `assert value is not None` for type narrowing after None checks
+  - Fix the underlying type annotation instead
+
+**Common Type Patterns**:
+
+```python
+# ✅ CORRECT - Type narrowing with assertions
+if not self.manager:
+    await self.initialize()
+assert self.manager is not None  # Narrows Optional[T] → T
+result = await self.manager.method()  # No type ignore needed
+
+# ✅ CORRECT - Explicit casts for known-safe conversions
+from typing import cast as t_cast, Any
+
+result = t_cast(dict[str, Any], some_dynamic_value)
+
+# ❌ WRONG - Unnecessary type ignore
+config = depends.get("config")  # type: ignore
+# Instead: config = await depends.get("config")
+
+
+# ✅ CORRECT - Legitimate ignore with explanation
+@env.filter("my_filter")  # type: ignore[misc]  # Jinja2 untyped decorator API
+def my_filter(value: str) -> str:
+    return value.upper()
+```
+
+**Type Ignore Categories** (110 remaining as of 2025-11-18):
+
+- ~57 misc (40 are Jinja2 `@env.` template filter decorators)
+- ~19 union-attr (legitimate union type patterns)
+- ~14 operator (ACB graceful degradation with `|` operator)
+- ~13 attr-defined (Jinja2 dynamic sandbox attributes)
+- ~7 no-redef (import redefinition in except blocks)
+
+**Pyright Configuration**:
+
+- Strict mode enabled in `pyproject.toml`
+- `reportUnusedFunction = false` (template filters registered via decorators)
+- Current error count: ~150 (down from 501 baseline, -70% reduction)
+- Target: \<50 errors (remaining are primarily ACB Inject[Any] type inference)
+
 ### ACB Best Practices
 
 **Critical Rules**:

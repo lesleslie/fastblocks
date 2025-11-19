@@ -16,6 +16,7 @@ from fastblocks.middleware import (
 )
 
 
+@pytest.mark.unit
 class TestMiddlewarePosition:
     """Test MiddlewarePosition enum."""
 
@@ -29,6 +30,7 @@ class TestMiddlewarePosition:
         assert MiddlewarePosition.SECURITY_HEADERS == 5
 
 
+@pytest.mark.unit
 class TestMiddlewareUtils:
     """Test MiddlewareUtils class."""
 
@@ -50,6 +52,7 @@ class TestMiddlewareUtils:
         assert secure_headers is not None
 
 
+@pytest.mark.unit
 class TestCurrentRequestMiddleware:
     """Test CurrentRequestMiddleware class."""
 
@@ -99,6 +102,7 @@ class TestCurrentRequestMiddleware:
         app.assert_called_once_with(scope, receive, send)
 
 
+@pytest.mark.unit
 class TestSecureHeadersMiddleware:
     """Test SecureHeadersMiddleware class."""
 
@@ -146,6 +150,7 @@ class TestSecureHeadersMiddleware:
         app.assert_called_once_with(scope, receive, send)
 
 
+@pytest.mark.unit
 class TestCacheControlMiddleware:
     """Test CacheControlMiddleware class."""
 
@@ -192,6 +197,7 @@ class TestCacheControlMiddleware:
         app.assert_called_once_with(scope, receive, send)
 
 
+@pytest.mark.unit
 class TestCacheControlResponder:
     """Test CacheControlResponder class."""
 
@@ -202,6 +208,7 @@ class TestCacheControlResponder:
         pass
 
 
+@pytest.mark.unit
 class TestMiddlewareStackManager:
     """Test MiddlewareStackManager class."""
 

@@ -14,15 +14,14 @@ FastBlocks' `AsyncTemplateRenderer` currently uses Jinja2's standard `template.r
 **File**: `fastblocks/adapters/templates/_async_renderer.py`
 
 **Lines 324-339** - `_render_standard()` method:
+
 ```python
 async def _render_standard(self, render_context: RenderContext) -> str:
     """Render template using standard mode."""
     if not self.base_templates or not self.base_templates.app:
         raise RuntimeError("Templates not initialized")
 
-    template = self.base_templates.app.env.get_template(
-        render_context.template_name
-    )
+    template = self.base_templates.app.env.get_template(render_context.template_name)
 
     # Use secure environment if requested
     if render_context.secure_render and self.hybrid_manager:
@@ -38,6 +37,7 @@ async def _render_standard(self, render_context: RenderContext) -> str:
 jinja2-async-environment generates templates as **async generators** that must be iterated with `async for`. Jinja2's standard `render_async()` method is designed for the core Jinja2 async implementation and does NOT properly handle jinja2-async-environment's async generator pattern for **template inheritance**.
 
 **Impact**:
+
 - ✅ **Simple templates work fine** (no inheritance)
 - ❌ **Templates with inheritance fail** with `TypeError: 'async for' requires an object with __aiter__ method, got coroutine`
 - ❌ **Block rendering** may fail in inherited templates
@@ -45,9 +45,10 @@ jinja2-async-environment generates templates as **async generators** that must b
 ## Root Cause
 
 The jinja2-async-environment library:
+
 1. Generates async templates as **async generator functions** via custom code generation
-2. These generators must be **directly called** and iterated with `async for`
-3. The library's own tests **bypass `render_async()` entirely** and call `template.root_render_func()` directly
+1. These generators must be **directly called** and iterated with `async for`
+1. The library's own tests **bypass `render_async()` entirely** and call `template.root_render_func()` directly
 
 Using `render_async()` creates a mismatch between what jinja2-async-environment generates and what Jinja2's standard API expects.
 
@@ -58,12 +59,14 @@ Using `render_async()` creates a mismatch between what jinja2-async-environment 
 Change the rendering pattern to match how jinja2-async-environment is designed:
 
 **Before** (current code - line 338):
+
 ```python
 rendered = await template.render_async(render_context.context)
 return t.cast(str, rendered)
 ```
 
 **After** (correct pattern):
+
 ```python
 # Use root_render_func directly for jinja2-async-environment compatibility
 # This is required for template inheritance to work properly
@@ -75,6 +78,7 @@ return "".join(result)
 ```
 
 **Why This Works**:
+
 - `template.root_render_func()` returns an **async generator** (correct type)
 - Iterating with `async for` properly consumes the generator
 - Template inheritance and blocks work correctly
@@ -83,6 +87,7 @@ return "".join(result)
 ### Option B: Keep render_async() and Accept Limitations ⚠️
 
 If you choose to keep the current pattern:
+
 - **Simple templates will continue working**
 - **Template inheritance will be unreliable**
 - **Users must avoid using Jinja2 inheritance features** (extends, blocks, super)
@@ -103,9 +108,7 @@ async def _render_standard(self, render_context: RenderContext) -> str:
     if not self.base_templates or not self.base_templates.app:
         raise RuntimeError("Templates not initialized")
 
-    template = self.base_templates.app.env.get_template(
-        render_context.template_name
-    )
+    template = self.base_templates.app.env.get_template(render_context.template_name)
 
     # Use secure environment if requested
     if render_context.secure_render and self.hybrid_manager:
@@ -155,6 +158,7 @@ Create a test to verify template inheritance works:
 {% endblock %}
 """
 
+
 # Test code
 async def test_inheritance():
     render_context = RenderContext(
@@ -162,8 +166,8 @@ async def test_inheritance():
         context={
             "page_title": "Test Page",
             "heading": "Welcome",
-            "message": "Template inheritance works!"
-        }
+            "message": "Template inheritance works!",
+        },
     )
     result = await renderer.render(render_context)
     assert "<title>Test Page</title>" in result.content
@@ -181,7 +185,9 @@ async def _stream_template_chunks(
     self, template: t.Any, render_context: RenderContext
 ) -> AsyncIterator[str]:
     """Internal async generator for streaming template chunks."""
-    async for chunk in template.generate_async(render_context.context):  # ✅ Already correct
+    async for chunk in template.generate_async(
+        render_context.context
+    ):  # ✅ Already correct
         # Yield chunks of specified size
         if len(chunk) > render_context.chunk_size:
             for i in range(0, len(chunk), render_context.chunk_size):
@@ -199,6 +205,7 @@ If using the hybrid manager's secure environment (line 334-336), ensure that sec
 ### Performance Impact
 
 **None expected**. The `root_render_func()` pattern is actually the **more direct** approach with potentially **better performance** since it:
+
 - Bypasses Jinja2's `render_async()` wrapper
 - Directly uses the compiled template function
 - Eliminates compatibility layer overhead
@@ -206,19 +213,22 @@ If using the hybrid manager's secure environment (line 334-336), ensure that sec
 ## Testing Recommendations
 
 1. **Create inheritance test suite**:
+
    - Simple inheritance (extends + blocks)
    - Nested inheritance (3+ levels)
    - Multiple blocks in child templates
    - Super() calls to parent blocks
 
-2. **Test all render modes**:
+1. **Test all render modes**:
+
    - Standard mode (most important)
    - Fragment mode
    - Block mode
    - Streaming mode
    - HTMX mode
 
-3. **Test edge cases**:
+1. **Test edge cases**:
+
    - Empty blocks
    - Blocks with complex logic
    - Blocks with nested templates (include)
@@ -229,6 +239,7 @@ If using the hybrid manager's secure environment (line 334-336), ensure that sec
 This issue was discovered while fixing the ACB templates adapter, which uses the same jinja2-async-environment library. The same pattern fix was applied to ACB and should be applied here.
 
 **Related Documentation**:
+
 - jinja2-async-environment bug analysis: `/Users/les/Projects/jinja2-async-environment/docs/TEMPLATE_INHERITANCE_BUG_ANALYSIS.md`
 - ACB templates adapter implementation: `/Users/les/Projects/acb/acb/adapters/templates/jinja2.py`
 

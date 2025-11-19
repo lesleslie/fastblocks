@@ -5,6 +5,8 @@ import sys
 import typing as t
 from pathlib import Path
 
+import pytest
+
 # Add local paths
 sys.path.insert(0, "/Users/les/Projects/sites/fastest")
 sys.path.insert(0, "/Users/les/Projects/fastblocks")
@@ -41,6 +43,7 @@ class MockAsyncPath:
         return self.path.read_text()
 
 
+@pytest.mark.unit
 async def test_component_discovery() -> None:
     """Test component discovery without full ACB setup."""
     print("=== Minimal HTMY Component Test ===")

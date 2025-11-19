@@ -480,12 +480,16 @@ class ConfigurationMigrationManager:
             return error_result
 
         # Perform migration
-        result = await self.migrate_configuration(config_data, target_version)  # type: ignore[arg-type]
+        result = await self.migrate_configuration(
+            cast(dict[str, Any], config_data), target_version
+        )
 
         if result.success:
             # Save migrated configuration
             output_path = output_file or config_file
-            self._save_config_file(config_data, output_path, result)  # type: ignore[arg-type]
+            self._save_config_file(
+                cast(dict[str, Any], config_data), output_path, result
+            )
 
         return result
 

@@ -5,6 +5,8 @@ import asyncio
 import typing as t
 from pathlib import Path
 
+import pytest
+
 
 # Mock cache implementation for testing
 class MockCache:
@@ -298,6 +300,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
+@pytest.mark.unit
 async def test_caching() -> None:
     """Test HTMY component caching functionality."""
     print("=== HTMY Component Caching Test ===")

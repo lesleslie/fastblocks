@@ -105,7 +105,7 @@ def _apply_template_replacements(source: bytes, deployed: bool = False) -> bytes
     return source
 
 
-class BaseTemplateLoader(AsyncBaseLoader):  # type: ignore[misc]
+class BaseTemplateLoader(AsyncBaseLoader):
     config: t.Any = None
     cache: t.Any = None
     storage: t.Any = None
@@ -494,7 +494,7 @@ class RedisLoader(BaseTemplateLoader):
                 await self.cache.scan(f"*.{ext}") if self.cache is not None else []
             )
             if hasattr(scan_result, "__aiter__"):
-                async for k in scan_result:  # type: ignore
+                async for k in scan_result:
                     found.append(k)
             else:
                 found.extend(scan_result)
@@ -592,7 +592,7 @@ class PackageLoader(BaseTemplateLoader):
         return sorted(found)
 
 
-class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
+class ChoiceLoader(AsyncBaseLoader):
     loaders: list[AsyncBaseLoader | LoaderProtocol]
 
     def __init__(
@@ -674,7 +674,7 @@ class Templates(TemplatesBase):
         if app_adapter is not None:
             return app_adapter
         with suppress(Exception):
-            app_adapter = depends.get("app")
+            app_adapter = depends.get_sync("app")
             if app_adapter is not None:
                 return app_adapter
 
@@ -773,9 +773,11 @@ class Templates(TemplatesBase):
             templates.env.loader = literal_eval(self.config.templates.loader)
         for delimiter, value in self.config.templates.delimiters.items():
             setattr(templates.env, delimiter, value)
-        templates.env.globals["config"] = self.config  # type: ignore[assignment]
-        templates.env.globals["render_block"] = templates.render_block  # type: ignore[assignment]
-        templates.env.globals["render_component"] = self._get_htmy_component_renderer()  # type: ignore[assignment]
+        # Type cast globals dict to avoid assignment type errors
+        globals_dict: dict[str, t.Any] = templates.env.globals  # type: ignore[assignment]
+        globals_dict["config"] = self.config
+        globals_dict["render_block"] = templates.render_block
+        globals_dict["render_component"] = self._get_htmy_component_renderer()
         if admin:
             try:
                 from sqladmin.helpers import (  # type: ignore[import-not-found,import-untyped]
@@ -783,13 +785,13 @@ class Templates(TemplatesBase):
                 )
             except ImportError:
                 get_object_identifier = str
-            templates.env.globals["min"] = min  # type: ignore[assignment]
-            templates.env.globals["zip"] = zip  # type: ignore[assignment]
-            templates.env.globals["admin"] = self  # type: ignore[assignment]
-            templates.env.globals["is_list"] = lambda x: isinstance(x, list)  # type: ignore[assignment]
-            templates.env.globals["get_object_identifier"] = get_object_identifier  # type: ignore[assignment]
+            globals_dict["min"] = min
+            globals_dict["zip"] = zip
+            globals_dict["admin"] = self
+            globals_dict["is_list"] = lambda x: isinstance(x, list)
+            globals_dict["get_object_identifier"] = get_object_identifier
         for k, v in self.config.templates.globals.items():
-            templates.env.globals[k] = v  # type: ignore[assignment]
+            globals_dict[k] = v
         return templates
 
     def _resolve_cache(self, cache: t.Any | None) -> t.Any | None:
@@ -829,7 +831,7 @@ class Templates(TemplatesBase):
                         await cache.clear(namespace)
                 self.logger.debug("Template caches cleared")
                 with suppress(Exception):
-                    htmy_adapter = depends.get("htmy")
+                    htmy_adapter = await depends.get("htmy")
                     if htmy_adapter:
                         await htmy_adapter.clear_component_cache()
                         self.logger.debug("HTMY component caches cleared via adapter")
@@ -843,7 +845,7 @@ class Templates(TemplatesBase):
             **kwargs: t.Any,
         ) -> str:
             try:
-                htmy_adapter = depends.get("htmy")
+                htmy_adapter = await depends.get("htmy")
                 if htmy_adapter:
                     htmy_adapter.jinja_templates = self
 
@@ -966,7 +968,7 @@ class Templates(TemplatesBase):
         **kwargs: t.Any,
     ) -> t.Any:
         try:
-            htmy_adapter = depends.get("htmy")
+            htmy_adapter = await depends.get("htmy")
             if htmy_adapter:
                 htmy_adapter.jinja_templates = self
                 return await htmy_adapter.render_component(

@@ -11,6 +11,7 @@ from fastblocks.adapters.icons.fontawesome import (
 from fastblocks.adapters.icons.lucide import LucideIcons, LucideIconsSettings
 
 
+@pytest.mark.unit
 class TestIconsBase:
     """Test IconsBase adapter functionality."""
 
@@ -40,6 +41,7 @@ class TestIconsBase:
             adapter.get_stylesheet_links()
 
 
+@pytest.mark.unit
 class TestFontAwesomeAdapter:
     """Test FontAwesome icon adapter functionality."""
 
@@ -157,6 +159,7 @@ class TestFontAwesomeAdapter:
         assert adapter._normalize_icon_name("fas-home") == "home"  # Remove style prefix
 
 
+@pytest.mark.unit
 class TestLucideAdapter:
     """Test Lucide icon adapter functionality."""
 
@@ -289,6 +292,7 @@ class TestLucideAdapter:
         assert "Download File" in icon_with_text
 
 
+@pytest.mark.unit
 class TestIconAdapterIntegration:
     """Test icon adapter integration patterns."""
 

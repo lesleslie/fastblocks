@@ -12,7 +12,7 @@ from pydantic import SecretStr
 from ._base import ImagesBase, ImagesBaseSettings
 
 
-class CloudflareImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
+class CloudflareImagesSettings(ImagesBaseSettings):
     """Settings for Cloudflare Images adapter."""
 
     # Required ACB 0.19.0+ metadata
@@ -247,7 +247,7 @@ def register_cloudflare_filters(env: Any) -> None:
     @env.filter("cf_image_url")  # type: ignore[misc]
     async def cf_image_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for Cloudflare Images URLs."""
-        images = depends.get("images")
+        images = await depends.get("images")
         if isinstance(images, CloudflareImages):
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"  # Fallback
@@ -255,7 +255,7 @@ def register_cloudflare_filters(env: Any) -> None:
     @env.filter("cf_img_tag")  # type: ignore[misc]
     def cf_img_tag_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for complete Cloudflare img tags."""
-        images = depends.get("images")
+        images = depends.get_sync("images")
         if isinstance(images, CloudflareImages):
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'  # Fallback
@@ -268,7 +268,7 @@ def register_cloudflare_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate responsive image with multiple sizes."""
-        images = depends.get("images")
+        images = depends.get_sync("images")
         if not isinstance(images, CloudflareImages):
             return f'<img src="#{image_id}" alt="{alt}">'
 

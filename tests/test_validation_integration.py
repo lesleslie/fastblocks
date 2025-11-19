@@ -41,6 +41,7 @@ def validation_config():
     return ValidationConfig()
 
 
+@pytest.mark.integration
 class TestValidationServiceBasics:
     """Test basic validation service functionality."""
 
@@ -72,6 +73,7 @@ class TestValidationServiceBasics:
         assert ValidationType.API_RESPONSE == "api_response"
 
 
+@pytest.mark.integration
 class TestTemplateContextValidation:
     """Test template context validation functionality."""
 
@@ -163,6 +165,7 @@ class TestTemplateContextValidation:
         assert errors == []
 
 
+@pytest.mark.integration
 class TestFormInputValidation:
     """Test form input validation functionality."""
 
@@ -337,6 +340,7 @@ class TestFormInputValidation:
             assert any("does not match required pattern" in error for error in errors)
 
 
+@pytest.mark.integration
 class TestAPIValidation:
     """Test API request/response validation."""
 
@@ -391,6 +395,7 @@ class TestAPIValidation:
         assert isinstance(validated, dict)
 
 
+@pytest.mark.integration
 class TestValidationDecorators:
     """Test validation decorators."""
 
@@ -488,6 +493,7 @@ class TestValidationDecorators:
         assert result["username"] == "john"
 
 
+@pytest.mark.integration
 class TestSecurityFeatures:
     """Test security features in detail."""
 
@@ -540,6 +546,7 @@ class TestSecurityFeatures:
             )
 
 
+@pytest.mark.integration
 class TestGracefulDegradation:
     """Test graceful degradation when ACB unavailable."""
 
@@ -569,6 +576,7 @@ class TestGracefulDegradation:
         assert isinstance(ACB_VALIDATION_AVAILABLE, bool)
 
 
+@pytest.mark.integration
 class TestRegistration:
     """Test validation service registration."""
 

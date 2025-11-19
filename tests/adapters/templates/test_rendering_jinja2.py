@@ -68,6 +68,7 @@ def http_request() -> Request:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_template_rendering_with_filters(
     config: Config,
     mock_cache: AsyncMock,
@@ -126,6 +127,7 @@ async def test_template_rendering_with_filters(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_template_not_found_handling(
     config: Config,
     mock_cache: AsyncMock,
@@ -157,6 +159,7 @@ async def test_template_not_found_handling(
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_template_rendering_with_custom_status_and_headers(
     config: Config,
     mock_cache: AsyncMock,

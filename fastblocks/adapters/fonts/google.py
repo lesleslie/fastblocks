@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import FontsBase, FontsBaseSettings
 
 
-class GoogleFontsSettings(FontsBaseSettings):  # type: ignore[misc]
+class GoogleFontsSettings(FontsBaseSettings):
     """Google Fonts-specific settings."""
 
     api_key: str | None = None  # Optional API key for advanced features

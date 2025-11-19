@@ -4,6 +4,8 @@ import sys
 import types
 from unittest.mock import MagicMock
 
+import pytest
+
 # Mock ACB modules before importing
 acb_module = types.ModuleType("acb")
 acb_depends_module = types.ModuleType("acb.depends")
@@ -24,6 +26,7 @@ from fastblocks.middleware import (
 )
 
 
+@pytest.mark.unit
 class TestMiddlewareUtilsSimple:
     def test_get_request(self) -> None:
         """Test MiddlewareUtils.get_request method."""
@@ -48,6 +51,7 @@ class TestMiddlewareUtilsSimple:
         assert MiddlewareUtils.get_request() is None
 
 
+@pytest.mark.unit
 def test_get_middleware_positions() -> None:
     """Test get_middleware_positions function."""
     positions = get_middleware_positions()
@@ -58,6 +62,7 @@ def test_get_middleware_positions() -> None:
     assert positions["CSRF"] == 0
 
 
+@pytest.mark.unit
 def test_middleware_constants() -> None:
     """Test middleware constants and attributes."""
     assert MiddlewareUtils.scope_name == "__starlette_caches__"
@@ -65,6 +70,7 @@ def test_middleware_constants() -> None:
     assert hasattr(MiddlewareUtils, "secure_headers")
 
 
+@pytest.mark.unit
 def test_middleware_position_enum() -> None:
     """Test MiddlewarePosition enum values."""
     assert MiddlewarePosition.CSRF == 0

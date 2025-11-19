@@ -8,6 +8,7 @@ from fastblocks.middleware import CurrentRequestMiddleware, get_request
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_current_request_middleware_http_request() -> None:
     """Test CurrentRequestMiddleware with an HTTP request."""
     # Create mock app, receive, and send functions
@@ -29,6 +30,7 @@ async def test_current_request_middleware_http_request() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_current_request_middleware_websocket_request() -> None:
     """Test CurrentRequestMiddleware with a WebSocket request."""
     # Create mock app, receive, and send functions
@@ -50,6 +52,7 @@ async def test_current_request_middleware_websocket_request() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_current_request_middleware_lifespan_request() -> None:
     """Test CurrentRequestMiddleware with a lifespan request."""
     # Create mock app, receive, and send functions
@@ -71,6 +74,7 @@ async def test_current_request_middleware_lifespan_request() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_get_request_function() -> None:
     """Test the get_request function."""
     # Create mock app, receive, and send functions
@@ -96,6 +100,7 @@ async def test_get_request_function() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.unit
 async def test_current_request_middleware_context_var() -> None:
     """Test that the context var is properly set and reset."""
 

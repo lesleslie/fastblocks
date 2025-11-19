@@ -6,6 +6,8 @@ import sys
 import typing as t
 from pathlib import Path
 
+import pytest
+
 # Add paths
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -44,6 +46,7 @@ class MockAsyncPath:
         return self.path.read_text()
 
 
+@pytest.mark.unit
 async def test_htmy_registry() -> None:
     """Test HTMY component registry functionality."""
     print("=== FastBlocks HTMY Integration Test ===")

@@ -6,7 +6,6 @@ enabling reactive updates, cache invalidation, and admin action tracking.
 Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-10-01
 """
-# type: ignore  # ACB events API stub - graceful degradation
 
 import operator
 import typing as t
@@ -27,12 +26,11 @@ try:
         EventPublisher,
         EventSubscription,
         create_event,
-        event_handler,
     )
 
-    ACB_EVENTS_AVAILABLE = True
+    acb_events_available = True
 except ImportError:
-    ACB_EVENTS_AVAILABLE = False
+    acb_events_available = False
     from typing import Any as Event  # type: ignore[misc]
     from typing import Any as EventHandler  # type: ignore[misc]
     from typing import Any as EventHandlerResult  # type: ignore[misc]
@@ -40,8 +38,8 @@ except ImportError:
     from typing import Any as EventPublisher  # type: ignore[misc]
     from typing import Any as EventSubscription  # type: ignore[misc]
 
-    create_event = None  # type: ignore[assignment]
-    event_handler = None  # type: ignore[assignment]
+    create_event = t.cast(t.Any, None)
+    event_handler = t.cast(t.Any, None)
 
 
 # FastBlocks Event Types
@@ -119,14 +117,14 @@ class AdminActionPayload:
 class CacheInvalidationHandler(EventHandler):  # type: ignore[misc]
     """Handler for cache invalidation events."""
 
-    @depends.inject  # type: ignore[misc]
-    def __init__(self, cache: Inject[t.Any] = depends()) -> None:
+    @depends.inject
+    def __init__(self, cache: Inject[t.Any]) -> None:
         super().__init__()
         self.cache = cache
 
     async def handle(self, event: Event) -> t.Any:
         """Handle cache invalidation event."""
-        if not ACB_EVENTS_AVAILABLE:
+        if not acb_events_available:
             return None
 
         try:
@@ -164,7 +162,7 @@ class TemplateRenderHandler(EventHandler):  # type: ignore[misc]
 
     async def handle(self, event: Event) -> t.Any:
         """Handle template render event."""
-        if not ACB_EVENTS_AVAILABLE:
+        if not acb_events_available:
             return None
 
         try:
@@ -222,7 +220,7 @@ class HtmxUpdateHandler(EventHandler):  # type: ignore[misc]
 
     async def handle(self, event: Event) -> t.Any:
         """Handle HTMX update event."""
-        if not ACB_EVENTS_AVAILABLE:
+        if not acb_events_available:
             return None
 
         try:
@@ -272,7 +270,7 @@ class AdminActionHandler(EventHandler):  # type: ignore[misc]
 
     async def handle(self, event: Event) -> t.Any:
         """Handle admin action event."""
-        if not ACB_EVENTS_AVAILABLE:
+        if not acb_events_available:
             return None
 
         try:
@@ -335,19 +333,19 @@ class FastBlocksEventPublisher:
     def __new__(cls) -> "FastBlocksEventPublisher":
         """Singleton pattern for event publisher."""
         if cls._instance is None:
-            cls._instance = super().__new__(cls)  # type: ignore[misc]
+            cls._instance = super().__new__(cls)
         return cls._instance
 
-    @depends.inject  # type: ignore[misc]
-    def __init__(self, config: Inject[t.Any] = depends()) -> None:
-        if not ACB_EVENTS_AVAILABLE:
+    @depends.inject
+    def __init__(self, config: Inject[t.Any]) -> None:
+        if not acb_events_available:
             return
 
         self.config = config
         self.source = "fastblocks"
 
         # Initialize publisher lazily
-        if self._publisher is None and ACB_EVENTS_AVAILABLE:
+        if self._publisher is None and acb_events_available:
             with suppress(Exception):
                 self._publisher = EventPublisher()
 
@@ -359,7 +357,7 @@ class FastBlocksEventPublisher:
         affected_templates: list[str] | None = None,
     ) -> bool:
         """Publish cache invalidation event."""
-        if not ACB_EVENTS_AVAILABLE or self._publisher is None:
+        if not acb_events_available or self._publisher is None:
             return False
 
         try:
@@ -391,7 +389,7 @@ class FastBlocksEventPublisher:
         error: str | None = None,
     ) -> bool:
         """Publish template render event."""
-        if not ACB_EVENTS_AVAILABLE or self._publisher is None:
+        if not acb_events_available or self._publisher is None:
             return False
 
         try:
@@ -430,7 +428,7 @@ class FastBlocksEventPublisher:
         trigger_data: dict[str, t.Any] | None = None,
     ) -> bool:
         """Publish HTMX update event."""
-        if not ACB_EVENTS_AVAILABLE or self._publisher is None:
+        if not acb_events_available or self._publisher is None:
             return False
 
         try:
@@ -463,7 +461,7 @@ class FastBlocksEventPublisher:
         ip_address: str | None = None,
     ) -> bool:
         """Publish admin action event."""
-        if not ACB_EVENTS_AVAILABLE or self._publisher is None:
+        if not acb_events_available or self._publisher is None:
             return False
 
         try:
@@ -494,7 +492,7 @@ async def register_fastblocks_event_handlers() -> bool:
     Returns:
         True if registration successful, False if ACB Events unavailable
     """
-    if not ACB_EVENTS_AVAILABLE:
+    if not acb_events_available:
         return False
 
     try:
@@ -562,7 +560,7 @@ def get_event_publisher() -> FastBlocksEventPublisher | None:
     Returns:
         Event publisher instance or None if ACB Events unavailable
     """
-    if not ACB_EVENTS_AVAILABLE:
+    if not acb_events_available:
         return None
 
     return FastBlocksEventPublisher()

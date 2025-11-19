@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import ImagesBase, ImagesBaseSettings
 
 
-class CloudinaryImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
+class CloudinaryImagesSettings(ImagesBaseSettings):
     """Cloudinary-specific settings."""
 
     cloud_name: str

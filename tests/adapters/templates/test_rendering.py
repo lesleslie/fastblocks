@@ -16,6 +16,7 @@ class TemplatesWithFilters(Protocol):
     filters: dict[str, Any]
 
 
+@pytest.mark.unit
 class TestTemplateRendering:
     @pytest.fixture
     def template_context(self) -> TemplateContext:
@@ -78,6 +79,7 @@ class TestTemplateRendering:
         assert "title, content, items" in content
 
 
+@pytest.mark.unit
 class TestTemplateErrors:
     @pytest.fixture
     def mock_templates(self, templates: TemplatesBase) -> TemplatesBase:
@@ -113,6 +115,7 @@ class TestTemplateErrors:
             await mock_templates.app.render_template(http_request, template_name)
 
 
+@pytest.mark.unit
 class TestTemplateCaching:
     @pytest.fixture
     def cached_template(self, tmp_path: Path) -> Path:
@@ -137,6 +140,7 @@ class TestTemplateCaching:
         assert response2.body.decode() == "<html><body>Cached content</body></html>"
 
 
+@pytest.mark.unit
 class TestTemplateHelpers:
     @pytest.mark.parametrize(
         ("input_text", "expected_length"),

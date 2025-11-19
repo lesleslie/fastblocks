@@ -21,7 +21,7 @@ class CachedSitemapSettings(SitemapBaseSettings):
     pass
 
 
-class CachedSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
+class CachedSitemap(BaseSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
     _background_task: asyncio.Task[t.Any] | None = None
 
@@ -31,8 +31,8 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):  # type: ignore[override]
 
     async def items(self) -> t.Any:
         try:
-            routes_adapter = depends.get("routes")
-            if hasattr(routes_adapter, "routes"):
+            routes_adapter = await depends.get("routes")
+            if routes_adapter and hasattr(routes_adapter, "routes"):
                 route_paths = [r.path for r in routes_adapter.routes]
                 debug(f"CachedSitemap: Cached {len(route_paths)} routes")
                 return route_paths

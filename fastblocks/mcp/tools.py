@@ -109,7 +109,7 @@ async def validate_template(template_path: str) -> dict[str, Any]:
         content = path.read_text()
 
         # Get syntax support from ACB registry
-        syntax_support = depends.get("syntax_support")
+        syntax_support = await depends.get("syntax_support")
         if syntax_support is None:
             return {
                 "success": False,
@@ -265,7 +265,7 @@ async def render_template(
     """
     try:
         # Get template adapter from ACB
-        templates = depends.get("templates")
+        templates = await depends.get("templates")
         if templates is None:
             return {
                 "success": False,
@@ -311,7 +311,7 @@ async def create_component(
         Dict with component creation status
     """
     try:
-        htmy_adapter = depends.get("htmy")
+        htmy_adapter = await depends.get("htmy")
         if htmy_adapter is None:
             return {
                 "success": False,
@@ -360,7 +360,7 @@ async def list_components() -> dict[str, Any]:
         Dict with list of components and metadata
     """
     try:
-        htmy_adapter = depends.get("htmy")
+        htmy_adapter = await depends.get("htmy")
         if htmy_adapter is None:
             return {
                 "success": False,
@@ -400,7 +400,7 @@ async def validate_component(component_name: str) -> dict[str, Any]:
         Dict with validation status and metadata
     """
     try:
-        htmy_adapter = depends.get("htmy")
+        htmy_adapter = await depends.get("htmy")
         if htmy_adapter is None:
             return {
                 "success": False,
@@ -442,7 +442,7 @@ async def configure_adapter(
     """
     try:
         # Get adapter from ACB registry
-        adapter = depends.get(adapter_name)
+        adapter = await depends.get(adapter_name)
         if adapter is None:
             return {
                 "success": False,

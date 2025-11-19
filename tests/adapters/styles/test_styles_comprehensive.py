@@ -8,6 +8,7 @@ from fastblocks.adapters.style.bulma import BulmaStyle, BulmaStyleSettings
 from fastblocks.adapters.style.vanilla import VanillaStyle, VanillaStyleSettings
 
 
+@pytest.mark.unit
 class TestStyleBase:
     """Test StyleBase adapter functionality."""
 
@@ -37,6 +38,7 @@ class TestStyleBase:
             adapter.get_stylesheet_links()
 
 
+@pytest.mark.unit
 class TestBulmaStyle:
     """Test Bulma CSS framework adapter functionality."""
 
@@ -149,6 +151,7 @@ class TestBulmaStyle:
             assert utilities[variant].startswith("is-")
 
 
+@pytest.mark.unit
 class TestVanillaStyle:
     """Test Vanilla CSS adapter functionality."""
 
@@ -255,6 +258,7 @@ class TestVanillaStyle:
         assert 'class="btn btn-primary btn-large custom-btn"' in html
 
 
+@pytest.mark.unit
 class TestStyleIntegration:
     """Test style adapter integration patterns."""
 

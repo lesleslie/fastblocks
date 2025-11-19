@@ -106,7 +106,7 @@ class AdapterDiscoveryServer:
             # Get all registered instances that might be adapters
             registry = getattr(depends, "_registry", {})
 
-            for key, adapter in registry.items():
+            for _key, adapter in registry.items():
                 if hasattr(adapter, "MODULE_ID") and hasattr(adapter, "MODULE_STATUS"):
                     adapter_name = adapter.__class__.__name__.lower().replace(
                         "adapter", ""

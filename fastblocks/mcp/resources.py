@@ -194,7 +194,7 @@ async def get_htmy_component_catalog() -> dict[str, Any]:
         Dict with component catalog
     """
     try:
-        htmy_adapter = depends.get("htmy")
+        htmy_adapter = await depends.get("htmy")
         if htmy_adapter is None:
             return {
                 "success": False,
@@ -377,7 +377,7 @@ async def get_route_definitions() -> dict[str, Any]:
     """
     try:
         # Try to get routes from ACB registry
-        routes_adapter = depends.get("routes")
+        routes_adapter = await depends.get("routes")
         if routes_adapter is None:
             return {
                 "success": False,

@@ -172,7 +172,7 @@ class HTMYComponentRegistry:
         if self.cache is not None:
             cache_key = self.get_cache_key(component_path, "bytecode")
             result = await self.cache.get(cache_key)
-            return result  # type: ignore[no-any-return]
+            return t.cast(Response, result)
         return None
 
     async def _sync_component_file(
@@ -605,7 +605,7 @@ class HTMYTemplates(TemplatesBase):
                         rendered = await template.render(template_context)
                     else:
                         rendered = template.render(template_context)
-                    return rendered  # type: ignore[no-any-return]
+                    return t.cast(str, rendered)
                 except Exception as e:
                     debug(
                         f"Failed to render template '{template_name}' in HTMY component: {e}"
@@ -724,7 +724,7 @@ class HTMYTemplates(TemplatesBase):
                         rendered = self.jinja_templates.app.render_block(
                             block_name, block_context
                         )
-                    return rendered  # type: ignore[no-any-return]
+                    return t.cast(str, rendered)
                 except Exception as e:
                     debug(
                         f"Failed to render block '{block_name}' in HTMY component: {e}"

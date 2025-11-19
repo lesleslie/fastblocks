@@ -4,6 +4,8 @@ import sys
 import types
 from unittest.mock import MagicMock
 
+import pytest
+
 # Mock ACB modules before importing
 acb_module = types.ModuleType("acb")
 acb_config_module = types.ModuleType("acb.config")
@@ -26,6 +28,7 @@ from fastblocks.applications import FastBlocksSettings, MiddlewareManager
 from fastblocks.middleware import MiddlewarePosition
 
 
+@pytest.mark.unit
 def test_fastblocks_settings_init_subclass() -> None:
     """Test FastBlocksSettings.__init_subclass__."""
 
@@ -36,6 +39,7 @@ def test_fastblocks_settings_init_subclass() -> None:
     assert any(base.__name__ == "AdapterBase" for base in TestSettings.__bases__)
 
 
+@pytest.mark.unit
 def test_middleware_manager_init() -> None:
     """Test MiddlewareManager initialization."""
     manager = MiddlewareManager()
@@ -46,6 +50,7 @@ def test_middleware_manager_init() -> None:
     assert not manager.user_middleware
 
 
+@pytest.mark.unit
 def test_middleware_manager_add_user_middleware() -> None:
     """Test MiddlewareManager.add_user_middleware."""
     manager = MiddlewareManager()
@@ -57,6 +62,7 @@ def test_middleware_manager_add_user_middleware() -> None:
     assert manager._middleware_stack_cache is None
 
 
+@pytest.mark.unit
 def test_middleware_manager_add_system_middleware() -> None:
     """Test MiddlewareManager.add_system_middleware."""
     manager = MiddlewareManager()
@@ -72,6 +78,7 @@ def test_middleware_manager_add_system_middleware() -> None:
     assert manager._middleware_stack_cache is None
 
 
+@pytest.mark.unit
 def test_middleware_manager_get_middleware_stack() -> None:
     """Test MiddlewareManager.get_middleware_stack."""
     stack = MiddlewareManager().get_middleware_stack()
@@ -83,6 +90,7 @@ def test_middleware_manager_get_middleware_stack() -> None:
     assert isinstance(stack["system_middleware"], dict)
 
 
+@pytest.mark.unit
 def test_middleware_manager_extract_middleware_info() -> None:
     """Test MiddlewareManager._extract_middleware_info."""
     manager = MiddlewareManager()
@@ -97,6 +105,7 @@ def test_middleware_manager_extract_middleware_info() -> None:
     assert "class" in info
 
 
+@pytest.mark.unit
 def test_middleware_position_enum_values() -> None:
     """Test MiddlewarePosition enum values."""
     assert MiddlewarePosition.CSRF.value == 0
@@ -107,6 +116,7 @@ def test_middleware_position_enum_values() -> None:
     assert MiddlewarePosition.SECURITY_HEADERS.value == 5
 
 
+@pytest.mark.unit
 def test_middleware_position_names() -> None:
     """Test MiddlewarePosition enum names."""
     assert MiddlewarePosition.CSRF.name == "CSRF"

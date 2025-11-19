@@ -185,6 +185,7 @@ def mock_acb():
         yield acb_modules
 
 
+@pytest.mark.unit
 class TestCLIDirect:
     """Test direct CLI module functions."""
 

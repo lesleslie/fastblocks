@@ -117,8 +117,9 @@ class HybridTemplates:
         """Validate template and return results."""
         if not self.hybrid_manager:
             await self.initialize()
+        assert self.hybrid_manager is not None
 
-        result = await self.hybrid_manager.validate_template(  # type: ignore[union-attr]
+        result = await self.hybrid_manager.validate_template(
             template_source, template_name, context
         )
 
@@ -157,8 +158,9 @@ class HybridTemplates:
         """Get autocomplete suggestions for template editing."""
         if not self.hybrid_manager:
             await self.initialize()
+        assert self.hybrid_manager is not None
 
-        suggestions = await self.hybrid_manager.get_autocomplete_suggestions(  # type: ignore[union-attr]
+        suggestions = await self.hybrid_manager.get_autocomplete_suggestions(
             context, cursor_position, template_name
         )
 
@@ -181,10 +183,9 @@ class HybridTemplates:
         """Get available fragments for a template."""
         if not self.hybrid_manager:
             await self.initialize()
+        assert self.hybrid_manager is not None
 
-        fragments = await self.hybrid_manager.get_fragments_for_template(  # type: ignore[union-attr]
-            template_name
-        )
+        fragments = await self.hybrid_manager.get_fragments_for_template(template_name)
 
         return [
             {
@@ -209,8 +210,9 @@ class HybridTemplates:
         """Render a template fragment."""
         if not self.hybrid_manager:
             await self.initialize()
+        assert self.hybrid_manager is not None
 
-        return await self.hybrid_manager.render_fragment(  # type: ignore[union-attr]
+        return await self.hybrid_manager.render_fragment(
             fragment_name, context, template_name, secure
         )
 
@@ -230,6 +232,7 @@ class HybridTemplates:
         """Render template with Hybrid features."""
         if not self.async_renderer:
             await self.initialize()
+        assert self.async_renderer is not None
 
         # Map mode string to enum
         mode_mapping = {
@@ -252,7 +255,7 @@ class HybridTemplates:
             **kwargs,
         )
 
-        return await self.async_renderer.render_response(  # type: ignore[union-attr]
+        return await self.async_renderer.render_response(
             request, template_name, context, **kwargs
         )
 

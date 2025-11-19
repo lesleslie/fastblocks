@@ -4,6 +4,8 @@ import sys
 import types
 from unittest.mock import MagicMock
 
+import pytest
+
 # Mock ACB modules before importing
 acb_module = types.ModuleType("acb")
 acb_depends_module = types.ModuleType("acb.depends")
@@ -20,18 +22,21 @@ sys.modules["acb.depends"] = acb_depends_module
 from fastblocks.decorators import _wrap_in_middleware, cache_control, cached
 
 
+@pytest.mark.unit
 def test_cached_decorator_import() -> None:
     """Test that cached decorator can be imported."""
     assert cached is not None
     assert callable(cached)
 
 
+@pytest.mark.unit
 def test_cache_control_decorator_import() -> None:
     """Test that cache_control decorator can be imported."""
     assert cache_control is not None
     assert callable(cache_control)
 
 
+@pytest.mark.unit
 def test_wrap_in_middleware() -> None:
     """Test _wrap_in_middleware function."""
     mock_app = MagicMock()
@@ -43,6 +48,7 @@ def test_wrap_in_middleware() -> None:
     assert result == mock_middleware
 
 
+@pytest.mark.unit
 def test_cached_decorator_call() -> None:
     """Test cached decorator call."""
     mock_cache = MagicMock()
@@ -57,6 +63,7 @@ def test_cached_decorator_call() -> None:
     assert result is not None
 
 
+@pytest.mark.unit
 def test_cache_control_decorator_call() -> None:
     """Test cache_control decorator call."""
     # Test that it returns a callable
@@ -69,6 +76,7 @@ def test_cache_control_decorator_call() -> None:
     assert result is not None
 
 
+@pytest.mark.unit
 def test_cached_decorator_with_rules() -> None:
     """Test cached decorator with rules."""
     mock_cache = MagicMock()
@@ -82,6 +90,7 @@ def test_cached_decorator_with_rules() -> None:
     assert result is not None
 
 
+@pytest.mark.unit
 def test_cache_control_decorator_with_kwargs() -> None:
     """Test cache_control decorator with various kwargs."""
     decorator = cache_control(max_age=3600, private=True, no_cache=False)

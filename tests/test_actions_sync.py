@@ -6,6 +6,7 @@ import pytest
 from fastblocks.actions.sync import sync
 
 
+@pytest.mark.unit
 class TestSyncTemplates:
     """Test sync.templates() functionality."""
 
@@ -77,6 +78,7 @@ class TestSyncTemplates:
     # Removed test_sync_templates_error_handling - non-essential mocking test
 
 
+@pytest.mark.unit
 class TestSyncSettings:
     """Test sync.settings() functionality."""
 
@@ -93,6 +95,7 @@ class TestSyncSettings:
     # Removed test_sync_settings_error_handling - non-essential mocking test
 
 
+@pytest.mark.unit
 class TestSyncCache:
     """Test sync.cache() functionality."""
 

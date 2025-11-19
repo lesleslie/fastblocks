@@ -5,6 +5,8 @@ import asyncio
 import typing as t
 from pathlib import Path
 
+import pytest
+
 
 # Test utilities (same as before)
 class MockAsyncPath:
@@ -93,6 +95,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
+@pytest.mark.unit
 async def test_context_sharing() -> None:
     """Test comprehensive context sharing between Jinja2 and HTMY."""
     print("=== Context Sharing Test ===")

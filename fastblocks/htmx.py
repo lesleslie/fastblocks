@@ -37,7 +37,7 @@ try:
     _starlette_available = True
 except ImportError:
     _starlette_available = False
-    Request = t.Any  # type: ignore
+    Request = t.Any
 
 STARLETTE_AVAILABLE = _starlette_available
 
@@ -151,7 +151,7 @@ HtmxScope = dict[str, t.Any]
 
 if STARLETTE_AVAILABLE and Request is not t.Any:
 
-    class HtmxRequest(Request):  # type: ignore
+    class HtmxRequest(Request):  # type: ignore[misc]
         scope: HtmxScope
 
         @property
@@ -168,7 +168,7 @@ if STARLETTE_AVAILABLE and Request is not t.Any:
             return self.htmx.get_all_headers()
 else:
 
-    class HtmxRequest:  # type: ignore
+    class HtmxRequest:  # type: ignore[misc]
         """Placeholder HtmxRequest when Starlette is not available."""
 
         def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:

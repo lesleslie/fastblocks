@@ -28,6 +28,7 @@ from fastblocks.caching import (
 )
 
 
+@pytest.mark.unit
 def test_cacheable_methods() -> None:
     """Test cacheable methods constant."""
     assert isinstance(cacheable_methods, frozenset)
@@ -36,6 +37,7 @@ def test_cacheable_methods() -> None:
     # OPTIONS may not be in cacheable methods in all implementations
 
 
+@pytest.mark.unit
 def test_cacheable_status_codes() -> None:
     """Test cacheable status codes constant."""
     assert isinstance(cacheable_status_codes, frozenset)
@@ -44,6 +46,7 @@ def test_cacheable_status_codes() -> None:
     assert 404 in cacheable_status_codes
 
 
+@pytest.mark.unit
 def test_invalidating_methods() -> None:
     """Test invalidating methods constant."""
     assert isinstance(invalidating_methods, frozenset)
@@ -53,6 +56,7 @@ def test_invalidating_methods() -> None:
     assert "PATCH" in invalidating_methods
 
 
+@pytest.mark.unit
 def test_cache_directives_creation() -> None:
     """Test CacheDirectives creation."""
     directives = CacheDirectives()
@@ -61,6 +65,7 @@ def test_cache_directives_creation() -> None:
     assert isinstance(directives, dict)
 
 
+@pytest.mark.unit
 def test_cache_utils_creation() -> None:
     """Test CacheUtils creation."""
     cache_utils = CacheUtils()
@@ -70,6 +75,7 @@ def test_cache_utils_creation() -> None:
     assert isinstance(cache_utils.__dict__, dict)
 
 
+@pytest.mark.unit
 def test_cache_directives_with_values() -> None:
     """Test CacheDirectives with values."""
     directives = CacheDirectives(max_age=3600, private=True, no_cache=False)
@@ -80,6 +86,7 @@ def test_cache_directives_with_values() -> None:
     assert directives.get("no_cache") is False
 
 
+@pytest.mark.unit
 def test_cache_utils_safe_log() -> None:
     """Test CacheUtils safe_log method."""
     mock_logger = MagicMock()
@@ -92,6 +99,7 @@ def test_cache_utils_safe_log() -> None:
     CacheUtils.safe_log(mock_logger, "info", "test message")
 
 
+@pytest.mark.unit
 def test_cache_constants_types() -> None:
     """Test that cache constants are correct types."""
     # Test types
@@ -105,6 +113,7 @@ def test_cache_constants_types() -> None:
     assert invalidating_methods
 
 
+@pytest.mark.unit
 def test_cache_directives_immutability() -> None:
     """Test that cache constants are immutable."""
     # frozenset should be immutable

@@ -5,6 +5,8 @@ import asyncio
 import typing as t
 from pathlib import Path
 
+import pytest
+
 
 # Standalone AsyncPath-like implementation
 class MockAsyncPath:
@@ -163,6 +165,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
+@pytest.mark.integration
 async def test_bidirectional_interop() -> None:
     """Test bidirectional HTMY-Jinja2 interoperability."""
     print("=== Bidirectional HTMY-Jinja2 Interoperability Test ===")

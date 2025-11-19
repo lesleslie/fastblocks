@@ -6,7 +6,6 @@ It registers FastBlocks-specific health checks while maintaining existing MCP he
 Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-10-01
 """
-# type: ignore  # ACB health service API stub - graceful degradation
 
 import typing as t
 from contextlib import suppress
@@ -20,13 +19,12 @@ try:
     from acb.services.health import (
         HealthCheckMixin,
         HealthCheckResult,
-        HealthCheckType,
         HealthStatus,
     )
 
-    ACB_HEALTH_AVAILABLE = True
+    acb_health_available = True
 except ImportError:
-    ACB_HEALTH_AVAILABLE = False
+    acb_health_available = False
     HealthCheckMixin = object  # Fallback base class
     HealthCheckResult = None
     HealthCheckType = None
@@ -36,14 +34,14 @@ except ImportError:
 class FastBlocksHealthCheck(HealthCheckMixin):  # type: ignore[misc]
     """Base health check implementation for FastBlocks components."""
 
-    @depends.inject  # type: ignore[misc]
+    @depends.inject
     def __init__(
         self,
-        config: Inject[t.Any] = depends(),
+        config: Inject[t.Any],
         component_id: str | None = None,
         component_name: str | None = None,
     ) -> None:
-        if ACB_HEALTH_AVAILABLE:
+        if acb_health_available:
             super().__init__()
         self.config = config
         self._component_id: str = component_id or self.__class__.__name__.lower()
@@ -64,7 +62,7 @@ class FastBlocksHealthCheck(HealthCheckMixin):  # type: ignore[misc]
         check_type: t.Any,  # HealthCheckType when available
     ) -> t.Any:  # HealthCheckResult when available
         """Default health check - override in subclasses."""
-        if not ACB_HEALTH_AVAILABLE:
+        if not acb_health_available:
             return None
 
         return HealthCheckResult(
@@ -90,7 +88,7 @@ class TemplatesHealthCheck(FastBlocksHealthCheck):
         check_type: t.Any,
     ) -> t.Any:
         """Check template system health."""
-        if not ACB_HEALTH_AVAILABLE:
+        if not acb_health_available:
             return None
 
         details: dict[str, t.Any] = {}
@@ -99,7 +97,7 @@ class TemplatesHealthCheck(FastBlocksHealthCheck):
 
         try:
             # Try to get templates adapter
-            templates = depends.get("templates")
+            templates = await depends.get("templates")
 
             if templates is None:
                 status = HealthStatus.DEGRADED
@@ -121,7 +119,7 @@ class TemplatesHealthCheck(FastBlocksHealthCheck):
 
             # Check cache availability
             try:
-                cache = depends.get("cache")
+                cache = await depends.get("cache")
                 details["cache_available"] = cache is not None
             except Exception:
                 details["cache_available"] = False
@@ -191,7 +189,7 @@ class CacheHealthCheck(FastBlocksHealthCheck):
         check_type: t.Any,
     ) -> t.Any:
         """Check cache system health."""
-        if not ACB_HEALTH_AVAILABLE:
+        if not acb_health_available:
             return None
 
         details: dict[str, t.Any] = {}
@@ -200,7 +198,7 @@ class CacheHealthCheck(FastBlocksHealthCheck):
 
         try:
             # Try to get cache adapter
-            cache = depends.get("cache")
+            cache = await depends.get("cache")
 
             if cache is None:
                 status = HealthStatus.DEGRADED
@@ -257,7 +255,7 @@ class RoutesHealthCheck(FastBlocksHealthCheck):
         check_type: t.Any,
     ) -> t.Any:
         """Check routing system health."""
-        if not ACB_HEALTH_AVAILABLE:
+        if not acb_health_available:
             return None
 
         details: dict[str, t.Any] = {}
@@ -266,7 +264,7 @@ class RoutesHealthCheck(FastBlocksHealthCheck):
 
         try:
             # Try to get routes adapter
-            routes = depends.get("routes")
+            routes = await depends.get("routes")
 
             if routes is None:
                 status = HealthStatus.DEGRADED
@@ -303,7 +301,7 @@ class DatabaseHealthCheck(FastBlocksHealthCheck):
         check_type: t.Any,
     ) -> t.Any:
         """Check database health."""
-        if not ACB_HEALTH_AVAILABLE:
+        if not acb_health_available:
             return None
 
         details: dict[str, t.Any] = {}
@@ -312,7 +310,7 @@ class DatabaseHealthCheck(FastBlocksHealthCheck):
 
         try:
             # Try to get sql adapter
-            sql = depends.get("sql")
+            sql = await depends.get("sql")
 
             if sql is None:
                 status = HealthStatus.DEGRADED
@@ -358,12 +356,12 @@ async def register_fastblocks_health_checks() -> bool:
     Returns:
         True if registration successful, False if ACB HealthService unavailable
     """
-    if not ACB_HEALTH_AVAILABLE:
+    if not acb_health_available:
         return False
 
     try:
         # Get ACB HealthService from the service registry
-        health_service = depends.get("health_service")
+        health_service = await depends.get("health_service")
 
         if health_service is None:
             return False
@@ -387,7 +385,7 @@ async def get_fastblocks_health_summary() -> dict[str, t.Any]:
     Returns:
         Dictionary with health status for each component
     """
-    if not ACB_HEALTH_AVAILABLE:
+    if not acb_health_available:
         return {
             "status": "unknown",
             "message": "ACB HealthService not available",
@@ -395,7 +393,7 @@ async def get_fastblocks_health_summary() -> dict[str, t.Any]:
         }
 
     try:
-        health_service = depends.get("health_service")
+        health_service = await depends.get("health_service")
 
         if health_service is None:
             return {

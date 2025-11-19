@@ -9,7 +9,7 @@ from acb.depends import depends
 from ._base import ImagesBase, ImagesBaseSettings
 
 
-class ImageKitImagesSettings(ImagesBaseSettings):  # type: ignore[misc]
+class ImageKitImagesSettings(ImagesBaseSettings):
     """ImageKit-specific settings."""
 
     public_key: str
@@ -28,7 +28,7 @@ class ImageKitImages(ImagesBase):
     def __init__(self) -> None:
         """Initialize ImageKit adapter."""
         super().__init__()
-        self.settings = ImageKitSettings()
+        self.settings = ImageKitImagesSettings()
 
         # Register with ACB dependency system
         with suppress(Exception):

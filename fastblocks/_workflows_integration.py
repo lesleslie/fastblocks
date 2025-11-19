@@ -26,7 +26,6 @@ Usage:
     from fastblocks._workflows_integration import execute_performance_optimization
     result = await execute_performance_optimization()
 """
-# type: ignore  # ACB workflows API stub - graceful degradation
 
 import typing as t
 from contextlib import suppress
@@ -35,7 +34,7 @@ from datetime import datetime
 from acb.depends import depends
 
 # Try to import ACB workflows
-ACB_WORKFLOWS_AVAILABLE = False
+acb_workflows_available = False
 BasicWorkflowEngine = None
 WorkflowDefinition = None
 WorkflowStep = None
@@ -47,7 +46,7 @@ with suppress(ImportError):
         WorkflowStep,
     )
 
-    ACB_WORKFLOWS_AVAILABLE = True
+    acb_workflows_available = True
 
 
 class FastBlocksWorkflowService:
@@ -58,7 +57,7 @@ class FastBlocksWorkflowService:
     def __new__(cls) -> "FastBlocksWorkflowService":
         """Singleton pattern - ensure only one instance exists."""
         if cls._instance is None:
-            cls._instance = super().__new__(cls)  # type: ignore[misc]
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def __init__(self) -> None:
@@ -68,7 +67,7 @@ class FastBlocksWorkflowService:
             self._initialized = True
 
             # Try to get ACB workflow engine
-            if ACB_WORKFLOWS_AVAILABLE and BasicWorkflowEngine:
+            if acb_workflows_available and BasicWorkflowEngine:
                 with suppress(Exception):
                     self._engine = BasicWorkflowEngine(
                         max_concurrent_steps=3,  # Conservative concurrency
@@ -79,7 +78,7 @@ class FastBlocksWorkflowService:
     @property
     def available(self) -> bool:
         """Check if ACB Workflows is available."""
-        return ACB_WORKFLOWS_AVAILABLE and self._engine is not None
+        return acb_workflows_available and self._engine is not None
 
 
 # Singleton instance
@@ -420,7 +419,7 @@ async def _warm_template_cache(
         if templates_result and hasattr(templates_result, "templates"):
             cached_count = 0
             # Pre-cache template metadata (not full rendering)
-            cache = depends.get("cache")
+            cache = await depends.get("cache")
             if cache:
                 for template_name in list(templates_result.templates.keys())[
                     :50
@@ -471,7 +470,7 @@ async def _cleanup_template_cache(
 ) -> dict[str, t.Any]:
     """Clean up unused template cache entries."""
     with suppress(Exception):
-        cache = depends.get("cache")
+        cache = await depends.get("cache")
         if cache and hasattr(cache, "clear_pattern"):
             # Clear stale template cache entries
             await cache.clear_pattern("template:*")
@@ -623,7 +622,7 @@ async def register_fastblocks_workflows() -> bool:
     Returns:
         True if registration successful, False otherwise
     """
-    if not ACB_WORKFLOWS_AVAILABLE:
+    if not acb_workflows_available:
         return False
 
     try:
@@ -646,5 +645,5 @@ __all__ = [
     "execute_template_cleanup",
     "execute_performance_optimization",
     "register_fastblocks_workflows",
-    "ACB_WORKFLOWS_AVAILABLE",
+    "acb_workflows_available",
 ]

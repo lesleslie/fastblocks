@@ -497,4 +497,4 @@ async def handler(request, logger: Inject[Logger]):
 - [ACB Documentation](https://github.com/lesleslie/acb)
 - [ACB Actions README](/Users/les/Projects/acb/acb/actions/README.md)
 - [ACB Adapters README](/Users/les/Projects/acb/acb/adapters/README.md)
-- [FastBlocks CLAUDE.md](<../CLAUDE.md>)
+- [FastBlocks CLAUDE.md](../CLAUDE.md)

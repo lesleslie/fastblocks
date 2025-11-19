@@ -93,6 +93,7 @@ def mock_hash() -> t.Any:
         yield mock_hash
 
 
+@pytest.mark.unit
 class TestCachingConstants:
     def test_cacheable_methods(self) -> None:
         """Test the cacheable_methods constant."""
@@ -117,6 +118,7 @@ class TestCachingConstants:
         assert 500 not in cacheable_status_codes
 
 
+@pytest.mark.unit
 class TestCachingExceptions:
     def test_request_not_cacheable_exception(self) -> None:
         """Test the RequestNotCachable exception."""
@@ -143,6 +145,7 @@ class TestCachingExceptions:
         assert isinstance(exception, Exception)
 
 
+@pytest.mark.unit
 class TestCachingRules:
     def test_rule_initialization(self) -> None:
         """Test initializing a Rule."""
@@ -322,6 +325,7 @@ class TestCachingRules:
         assert rule is None
 
 
+@pytest.mark.unit
 class TestCachingFunctions:
     @pytest.mark.asyncio
     async def test_get_cache_key_basic(
@@ -339,7 +343,10 @@ class TestCachingFunctions:
         # Skip this test for now as it requires more complex mocking
         pytest.skip("This test requires more complex mocking of hash.md5")
 
-    def test_generate_cache_key_invalid_method(self, mock_request: MagicMock) -> None:
+    @pytest.mark.asyncio
+    async def test_generate_cache_key_invalid_method(
+        self, mock_request: MagicMock
+    ) -> None:
         """Test generate_cache_key with a non-cacheable method."""
         # Set up the mock request
         mock_request.method = "POST"
@@ -348,7 +355,7 @@ class TestCachingFunctions:
         mock_config = MagicMock()
         mock_config.app.name = "testapp"
         # Call generate_cache_key
-        cache_key = generate_cache_key(
+        cache_key = await generate_cache_key(
             mock_request.url,
             method=mock_request.method,
             headers=mock_request.headers,
@@ -567,7 +574,7 @@ class TestCachingFunctions:
         mock_config.app.name = "testapp"
 
         # Call generate_cache_key with varying headers
-        cache_key = generate_cache_key(
+        cache_key = await generate_cache_key(
             mock_request.url,
             method=mock_request.method,
             headers=mock_request.headers,
@@ -648,6 +655,7 @@ class TestCachingFunctions:
         mock_cache.get.assert_not_called()
 
 
+@pytest.mark.unit
 class TestSerializationFunctions:
     def test_serialize_response(self, mock_response: MagicMock) -> None:
         """Test serializing a response."""
@@ -714,6 +722,7 @@ class TestSerializationFunctions:
 # TestCacheKeyFunctions moved to test_caching_additional.py
 
 
+@pytest.mark.unit
 class TestCacheHeaderFunctions:
     def test_get_cache_response_headers(self) -> None:
         """Test getting cache response headers."""
@@ -778,6 +787,7 @@ class TestCacheHeaderFunctions:
 # TestCacheResponderClass moved to test_caching_additional.py
 
 
+@pytest.mark.unit
 def test_simple_coverage_boost() -> None:
     """Add simple coverage for unused imports and constants."""
     # Import from the same way as other tests in this file
@@ -814,6 +824,7 @@ def test_simple_coverage_boost() -> None:
     assert invalidating_methods
 
 
+@pytest.mark.unit
 def test_decorators_coverage_boost() -> None:
     """Add coverage for decorators module."""
     from fastblocks.decorators import _MiddlewareFactory, cache_control, cached
@@ -824,6 +835,7 @@ def test_decorators_coverage_boost() -> None:
     assert _MiddlewareFactory is not None
 
 
+@pytest.mark.unit
 def test_more_coverage_boost() -> None:
     """Add more coverage for modules that work."""
     # Test more caching functions that aren't used elsewhere
@@ -863,6 +875,7 @@ def test_more_coverage_boost() -> None:
     assert result
 
 
+@pytest.mark.unit
 def test_even_more_coverage() -> None:
     """Add even more coverage for remaining functions."""
     from fastblocks.caching import (
@@ -877,6 +890,7 @@ def test_even_more_coverage() -> None:
     assert callable(get_cache)
 
 
+@pytest.mark.unit
 def test_comprehensive_coverage_boost() -> None:
     """Comprehensive test to boost coverage across multiple modules."""
     # Test basic Python operations for coverage
@@ -926,6 +940,7 @@ def test_comprehensive_coverage_boost() -> None:
     assert zipped == [(1, "a"), (2, "b"), (3, "c")]
 
 
+@pytest.mark.unit
 def test_advanced_python_features() -> None:
     """Test advanced Python features for additional coverage."""
 
@@ -991,6 +1006,7 @@ def test_advanced_python_features() -> None:
     Path(tmp_path).unlink()
 
 
+@pytest.mark.unit
 def test_additional_coverage_patterns() -> None:
     """Test additional patterns to increase coverage."""
 
