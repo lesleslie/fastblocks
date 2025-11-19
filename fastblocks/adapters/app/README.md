@@ -35,17 +35,126 @@ app:
 
 ## Usage
 
+### Basic Access
+
 ```python
-from acb.depends import depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 
 App = import_adapter("app")
-app = depends.get(App)
 
-# Access app settings
+# Module-level access
+app = depends.get(App)
 app_name: str = app.settings.name
 app_style: str = app.settings.style
 app_theme: str = app.settings.theme
+```
+
+### Using in Route Handlers
+
+```python
+from acb.depends import depends, Inject
+from acb.adapters import import_adapter
+from starlette.routing import Route
+
+App = import_adapter("app")
+Templates = import_adapter("templates")
+
+
+@depends.inject
+async def homepage(request, app: Inject[App], templates: Inject[Templates]):
+    """Homepage with app settings in context."""
+    return await templates.app.render_template(
+        request,
+        "index.html",
+        context={
+            "app_name": app.settings.name,
+            "app_style": app.settings.style,
+            "app_theme": app.settings.theme,
+        },
+    )
+
+
+@depends.inject
+async def settings_page(request, app: Inject[App], templates: Inject[Templates]):
+    """Display current application settings."""
+    return await templates.app.render_template(
+        request,
+        "settings.html",
+        context={"app_settings": app.settings.model_dump()},
+    )
+
+
+routes = [
+    Route("/", endpoint=homepage),
+    Route("/settings", endpoint=settings_page),
+]
+```
+
+### Using in Templates
+
+App settings are automatically available in template context through the `app` variable:
+
+```html
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html data-theme="[[ app.theme ]]">
+  <head>
+    <title>[[ app.name ]]</title>
+
+    [% if app.style == "bulma" %]
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
+    />
+    [% elif app.style == "bootstrap" %]
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    [% endif %]
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="navbar-brand">
+        <span class="navbar-item">[[ app.name ]]</span>
+      </div>
+    </nav>
+
+    [% block content %][% endblock %]
+
+    <footer>
+      <p>&copy; 2025 [[ app.name ]]</p>
+    </footer>
+  </body>
+</html>
+```
+
+### Dynamic Theme Switching
+
+```python
+from acb.depends import depends, Inject
+from acb.adapters import import_adapter
+from starlette.responses import RedirectResponse
+
+App = import_adapter("app")
+
+
+@depends.inject
+async def toggle_theme(request, app: Inject[App]):
+    """Toggle between light and dark theme."""
+    current_theme = app.settings.theme
+
+    # Update theme setting
+    new_theme = "dark" if current_theme == "light" else "light"
+    app.settings.theme = new_theme
+
+    # Store preference in session
+    request.session["theme"] = new_theme
+
+    # Redirect back to referring page
+    referer = request.headers.get("referer", "/")
+    return RedirectResponse(referer, status_code=303)
 ```
 
 ## Settings Reference

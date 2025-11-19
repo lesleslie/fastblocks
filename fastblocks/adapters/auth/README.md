@@ -43,18 +43,17 @@ auth:
 ### Basic Authentication
 
 ```python
-from acb.depends import depends
+from acb.depends import depends, Inject
 from acb.adapters import import_adapter
 from starlette.routing import Route
 from starlette.responses import RedirectResponse
 
 Auth = import_adapter("auth")
 Templates = import_adapter("templates")
-auth = depends.get(Auth)
-templates = depends.get(Templates)
 
 
-async def login(request):
+@depends.inject
+async def login(request, auth: Inject[Auth], templates: Inject[Templates]):
     if request.method == "POST":
         form = await request.form()
         username = form.get("username")
@@ -83,6 +82,70 @@ routes = [
     Route("/login", endpoint=login, methods=["GET", "POST"]),
     Route("/logout", endpoint=logout, methods=["GET"]),
 ]
+```
+
+### HTMX Authentication
+
+FastBlocks' auth adapter works seamlessly with HTMX for dynamic authentication without page reloads:
+
+```python
+from acb.depends import depends, Inject
+from acb.adapters import import_adapter
+from starlette.routing import Route
+from starlette.responses import Response
+
+Auth = import_adapter("auth")
+Templates = import_adapter("templates")
+
+
+@depends.inject
+async def htmx_login(request, auth: Inject[Auth], templates: Inject[Templates]):
+    """Handle HTMX login form submission."""
+    if request.method == "POST":
+        form = await request.form()
+        username = form.get("username")
+        password = form.get("password")
+
+        user = await auth.authenticate(username, password)
+        if user:
+            # Set session data
+            request.session["user"] = user.model_dump()
+
+            # Return success fragment for HTMX
+            response = await templates.app.render_template(
+                request, "blocks/login_success.html", context={"user": user}
+            )
+            # Redirect client to dashboard after login
+            response.headers["HX-Redirect"] = "/dashboard"
+            return response
+
+        # Return error fragment for HTMX
+        return await templates.app.render_template(
+            request,
+            "blocks/login_error.html",
+            context={"error": "Invalid credentials"},
+        )
+
+    return await templates.app.render_template(request, "blocks/login_form.html")
+
+
+routes = [Route("/auth/login", endpoint=htmx_login, methods=["GET", "POST"])]
+```
+
+**Login form template** (`templates/blocks/login_form.html`):
+
+```html
+<form hx-post="/auth/login" hx-target="#login-container" hx-swap="outerHTML">
+    <div class="field">
+        <label class="label">Username</label>
+        <input class="input" type="text" name="username" required>
+    </div>
+    <div class="field">
+        <label class="label">Password</label>
+        <input class="input" type="password" name="password" required>
+    </div>
+    <button class="button is-primary" type="submit">Login</button>
+</form>
 ```
 
 ### Protecting Routes
