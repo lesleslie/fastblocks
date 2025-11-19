@@ -682,7 +682,9 @@ FastBlocks uses an enhanced asynchronous Jinja2 template system designed specifi
 
 **PyCharm/JetBrains IDE Support**: For better template editing experience with FastBlocks' custom `[[` `]]` delimiters, install our official JetBrains plugin:
 
-<iframe width="384px" height="319px" src="https://plugins.jetbrains.com/embeddable/card/28680"></iframe>
+[![JetBrains Plugin](https://img.shields.io/badge/JetBrains-FastBlocks%20Template%20Support-000000?style=for-the-badge&logo=jetbrains)](https://plugins.jetbrains.com/plugin/28680)
+[![Plugin Downloads](https://img.shields.io/jetbrains/plugin/d/28680?style=flat-square&label=downloads)](https://plugins.jetbrains.com/plugin/28680)
+[![Plugin Version](https://img.shields.io/jetbrains/plugin/v/28680?style=flat-square&label=version)](https://plugins.jetbrains.com/plugin/28680)
 
 #### Basic Template Usage
 
