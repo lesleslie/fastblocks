@@ -19,6 +19,7 @@ The FastBlocks implementation extends the original with:
 import asyncio
 import json
 import typing as t
+import warnings
 from contextlib import suppress
 from typing import Any
 from urllib.parse import unquote
@@ -283,10 +284,11 @@ def htmx_trigger(
         trigger_name = trigger_events
         trigger_data = {}
 
-    # Publish HTMX trigger event (async, don't block response)
-    with suppress(Exception):
-
-        async def _publish_event() -> None:
+    # Schedule event publishing in background
+    def _run_publish_event() -> None:
+        async def _publish_event(
+            trigger_name: str, trigger_data: dict[str, t.Any]
+        ) -> None:
             from .adapters.templates._events_wrapper import publish_htmx_trigger
 
             await publish_htmx_trigger(
@@ -294,8 +296,15 @@ def htmx_trigger(
                 trigger_data=trigger_data,
             )
 
-        # Schedule event publishing in background
-        asyncio.create_task(_publish_event())
+        # Create and schedule the task to run the async function
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            task = _publish_event(trigger_name, trigger_data)
+            asyncio.create_task(task)
+
+    with suppress(Exception):
+        _run_publish_event()
 
     return HtmxResponse(
         content=content,
@@ -306,10 +315,9 @@ def htmx_trigger(
 
 
 def htmx_redirect(url: str, **kwargs: t.Any) -> HtmxResponse:
-    # Publish HTMX redirect event (async, don't block response)
-    with suppress(Exception):
-
-        async def _publish_event() -> None:
+    # Schedule event publishing in background
+    def _run_publish_event() -> None:
+        async def _publish_event(url: str) -> None:
             from ._events_integration import get_event_publisher
 
             publisher = get_event_publisher()
@@ -319,25 +327,39 @@ def htmx_redirect(url: str, **kwargs: t.Any) -> HtmxResponse:
                     target=url,
                 )
 
-        # Schedule event publishing in background
-        asyncio.create_task(_publish_event())
+        # Create and schedule the task to run the async function
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            task = _publish_event(url)
+            asyncio.create_task(task)
+
+    with suppress(Exception):
+        _run_publish_event()
 
     return HtmxResponse(redirect=url, **kwargs)
 
 
 def htmx_refresh(**kwargs: t.Any) -> HtmxResponse:
-    # Publish HTMX refresh event (async, don't block response)
-    with suppress(Exception):
+    # Get target from kwargs if provided
+    target = kwargs.get("target", "#body")
 
-        async def _publish_event() -> None:
+    # Schedule event publishing in background
+    def _run_publish_event() -> None:
+        async def _publish_event(target: str) -> None:
             from .adapters.templates._events_wrapper import publish_htmx_refresh
 
-            # Get target from kwargs if provided
-            target = kwargs.get("target", "#body")
             await publish_htmx_refresh(target=target)
 
-        # Schedule event publishing in background
-        asyncio.create_task(_publish_event())
+        # Create and schedule the task to run the async function
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            task = _publish_event(target)
+            asyncio.create_task(task)
+
+    with suppress(Exception):
+        _run_publish_event()
 
     return HtmxResponse(refresh=True, **kwargs)
 

@@ -11,7 +11,7 @@ prerelease-mode = "allow"
 
 [[package]]
 name = "acb"
-version = "0.31.7"
+version = "0.31.8"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "aioconsole" },
@@ -45,9 +45,9 @@ dependencies = [
     { name = "uuid-utils" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c9/81/bf8ed0b683852899e87a43b16ca5950266d3bb80ebb4b82e84fcf1ff145e/acb-0.31.7.tar.gz", hash = "sha256:afa49b9316de6f19efc985d5f95fd138968217a9839a069db8c679d755496046", size = 1408671, upload-time = "2025-11-19T20:53:52.078Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8e/1c/6a127b9d07b0ca61d8f529c512bc8a2bd2d17fe6ce952a91e1466adfa0ce/acb-0.31.8.tar.gz", hash = "sha256:aa20e7da54cf10494f70d31ce610f8a6432a090dd07e4d52e499ae4b096837ca", size = 1410692, upload-time = "2025-11-20T05:08:50.333Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4e/f8/2f9e608a0b9f518e8871ab94cad45848789ffac5f96b3f3772d750f57854/acb-0.31.7-py3-none-any.whl", hash = "sha256:5b3c86cb181f652710eb08002a43e5a4d9d117cc6d5f4b57853c2a2a097238e5", size = 806394, upload-time = "2025-11-19T20:53:48.459Z" },
+    { url = "https://files.pythonhosted.org/packages/26/5d/8d5fef17f3825ddf0d55eb8a6f4418453f07fb162c6d4c610896637b02b9/acb-0.31.8-py3-none-any.whl", hash = "sha256:df11b533a9a5055cc27c2bfac39c28746f6a4c385a6de1e317e219f34833bbce", size = 807643, upload-time = "2025-11-20T05:08:47.197Z" },
 ]
 
 [[package]]
@@ -283,11 +283,11 @@ wheels = [
 
 [[package]]
 name = "beartype"
-version = "0.22.5"
+version = "0.22.6"
 source = { registry = "https://pypi.org/simple/" }
-sdist = { url = "https://files.pythonhosted.org/packages/a6/09/9003e5662691056e0e8b2e6f57c799e71875fac0be0e785d8cb11557cd2a/beartype-0.22.5.tar.gz", hash = "sha256:516a9096cc77103c96153474fa35c3ebcd9d36bd2ec8d0e3a43307ced0fa6341", size = 1586256, upload-time = "2025-11-01T05:49:20.771Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/88/e2/105ceb1704cb80fe4ab3872529ab7b6f365cf7c74f725e6132d0efcf1560/beartype-0.22.6.tar.gz", hash = "sha256:97fbda69c20b48c5780ac2ca60ce3c1bb9af29b3a1a0216898ffabdd523e48f4", size = 1588975, upload-time = "2025-11-20T04:47:14.736Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/f6/073d19f7b571c08327fbba3f8e011578da67ab62a11f98911274ff80653f/beartype-0.22.5-py3-none-any.whl", hash = "sha256:d9743dd7cd6d193696eaa1e025f8a70fb09761c154675679ff236e61952dfba0", size = 1321700, upload-time = "2025-11-01T05:49:18.436Z" },
+    { url = "https://files.pythonhosted.org/packages/98/c9/ceecc71fe2c9495a1d8e08d44f5f31f5bca1350d5b2e27a4b6265424f59e/beartype-0.22.6-py3-none-any.whl", hash = "sha256:0584bc46a2ea2a871509679278cda992eadde676c01356ab0ac77421f3c9a093", size = 1324807, upload-time = "2025-11-20T04:47:11.837Z" },
 ]
 
 [[package]]
@@ -695,7 +695,7 @@ wheels = [
 
 [[package]]
 name = "crackerjack"
-version = "0.44.28"
+version = "0.44.29"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "acb" },
@@ -754,9 +754,9 @@ dependencies = [
     { name = "websockets" },
     { name = "zuban" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4d/6f/7fd5c6b02130f21aff5e362b8195e556652bb825cc4b0716b876ff272680/crackerjack-0.44.28.tar.gz", hash = "sha256:b05649c698c606d98dee54f34f199b32b65480aa5dc1817ca6dba3a1cd4435c8", size = 1892013, upload-time = "2025-11-17T06:51:33.12Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/d4/d0fac3701e55782e3529d327e7e40d32cc6921f13d5046ffd7b9ba701c38/crackerjack-0.44.29.tar.gz", hash = "sha256:094b8020ba0841f9907869984b574fe5e2ef68584f7b7e27acdc3ebf258fca57", size = 1950400, upload-time = "2025-11-20T05:13:46.08Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bb/21/701acdc695415ba814f8db610d53fb8ed8c441e7ec46da9a8af50e8b3185/crackerjack-0.44.28-py3-none-any.whl", hash = "sha256:cfa8107a9b9dae429d7b444cf44b8bdceb6c4593e1b61c1902088168f4bcb8f1", size = 1246652, upload-time = "2025-11-17T06:51:29.253Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/5a/0984dfca114e8a0adb7b76903ead81ac9e212086aeea82ba789ed8d24d01/crackerjack-0.44.29-py3-none-any.whl", hash = "sha256:c70477ca287e64294639bb22c3594a7acf40883e54a4d5d91d1c29a786ee5276", size = 1300899, upload-time = "2025-11-20T05:13:42.102Z" },
 ]
 
 [[package]]
@@ -4048,7 +4048,7 @@ starlette = [
 
 [[package]]
 name = "session-mgmt-mcp"
-version = "0.9.3"
+version = "0.9.4"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "acb" },
@@ -4074,9 +4074,9 @@ dependencies = [
     { name = "transformers" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/61/a3722795fbdcd5c613dde620d459a1bfde7cc12b22bbf51996ad79d4a5b0/session_mgmt_mcp-0.9.3.tar.gz", hash = "sha256:c69ed5e40fc7dd84e05516610d9d14cfa1f1220dd7b1f9fafe2ec88c3f35beee", size = 1313152, upload-time = "2025-11-17T08:54:50.64Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9c/2e/21b3d8b1219d355f1b3117d68443401cd5b6a264e8e74777d72535c3a4c5/session_mgmt_mcp-0.9.4.tar.gz", hash = "sha256:70dd8cb0750b76ae88d15c7e0bb22e0fd9cd4f458cc13da52daf5501002ab3b9", size = 1339302, upload-time = "2025-11-20T05:38:46.379Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/26/5c/8f00efc6f589927edc573062b2974f24d8783456d3cdc5954edec84a9fe4/session_mgmt_mcp-0.9.3-py3-none-any.whl", hash = "sha256:77c07b8597eeee62c7048dc5cb9bbf4eb18f2e14e0641f32599931ef6f2ed27f", size = 369770, upload-time = "2025-11-17T08:54:48.277Z" },
+    { url = "https://files.pythonhosted.org/packages/16/b1/7f17ffa4954a749b3d4aa26b89cea2725b8392e79f9ae6c9b2a7d7841c09/session_mgmt_mcp-0.9.4-py3-none-any.whl", hash = "sha256:34c47521519de20c21881a78d9e29e35f97d57aa13122e9417983f8d2f4ea5a9", size = 379650, upload-time = "2025-11-20T05:38:43.637Z" },
 ]
 
 [[package]]

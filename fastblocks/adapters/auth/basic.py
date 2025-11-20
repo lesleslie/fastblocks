@@ -34,11 +34,9 @@ Created: 2025-01-12
 import base64
 import binascii
 import typing as t
-from contextlib import suppress
 from uuid import UUID
 
 from acb.adapters import AdapterStatus
-from acb.depends import depends
 from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import AuthCredentials, AuthenticationError, SimpleUser
 from starlette.middleware import Middleware
@@ -154,6 +152,3 @@ class Auth(AuthBase):
 
 MODULE_ID = UUID("01937d86-5f3b-7c4d-9e0f-2345678901bc")
 MODULE_STATUS = AdapterStatus.STABLE
-
-with suppress(Exception):
-    depends.set(Auth, "basic")

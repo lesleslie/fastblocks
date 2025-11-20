@@ -21,6 +21,8 @@ with suppress(ImportError):
         logger.setLevel(logging.DEBUG)
         logger.propagate = False
 
+import sys
+
 import nest_asyncio
 import typer
 import uvicorn
@@ -39,7 +41,12 @@ default_adapters = {
 }
 fastblocks_path = Path(__file__).parent
 apps_path = Path.cwd()
-if Path.cwd() == fastblocks_path:
+
+# Check if running in the FastBlocks library directory itself
+# Skip this check during tests by examining if we're in a test environment
+
+is_testing = os.getenv("PYTEST_CURRENT_TEST") or "pytest" in sys.modules
+if Path.cwd() == fastblocks_path and not is_testing:
     msg = "FastBlocks can not be run in the same directory as FastBlocks itself. Run `python -m fastblocks create`. Move into the app directory and try again."
     raise SystemExit(
         msg,

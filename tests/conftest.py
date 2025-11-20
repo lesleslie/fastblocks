@@ -460,9 +460,11 @@ def _patch_acb_modules() -> None:
     _setup_acb_logger(modules_dict["acb.logger"])
     _setup_acb_debug(modules_dict["acb.debug"])
 
-    # Add our modules to sys.modules
+    # Add our modules to sys.modules only if they're not already loaded
+    # This ensures we don't interfere with imports that happen outside of tests
     for module_name, module in modules_dict.items():
-        sys.modules[module_name] = module
+        if module_name not in sys.modules:
+            sys.modules[module_name] = module
 
 
 # Patch ACB modules immediately when conftest.py is imported

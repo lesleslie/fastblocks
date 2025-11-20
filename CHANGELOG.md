@@ -53,7 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - phase4: Fix remaining sync depends.get() in MCP and templates
 - phase4: Fix sync depends.get() and class names in icon/image adapters
 - phase4: Fix sync depends.get() in initializers and template registration
-- phase4: Reduce type ignores from 129 to 110 (target <111 achieved)
+- phase4: Reduce type ignores from 129 to 110 (target \<111 achieved)
 - phase4: Suppress reportUnusedFunction for template filters (182→142)
 - Post-merge cleanup and test fixes
 - tests: Add async/await to caching test functions

@@ -1476,7 +1476,7 @@
     "path": "htmx.py"
   },
   {
-    "complexity": 2,
+    "complexity": 3,
     "file_name": "htmx.py",
     "function_name": "htmx_redirect",
     "path": "htmx.py"
