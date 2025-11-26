@@ -4,7 +4,7 @@ This module provides comprehensive template filters for all FastBlocks secondary
 - Cloudflare Images integration with transformations
 - TwicPics integration with smart cropping
 - WebAwesome icon integration
-- KelpUI component integration
+- Kelp component integration
 - Phosphor, Heroicons, Remix, Material Icons support
 - Font loading and optimization
 - Advanced HTMX integrations
@@ -231,17 +231,17 @@ def wa_icon_with_text(
     return f"{icon} {text}"
 
 
-# KelpUI Component Filters
+# Kelp Component Filters
 def kelp_component(component_type: str, content: str = "", **attributes: t.Any) -> str:
-    """Generate KelpUI component.
+    """Generate Kelp component.
 
     Usage in templates:
         [[ kelp_component('button', 'Click Me', variant='primary', size='large') ]]
     """
     with suppress(Exception):  # Fallback
-        kelpui = depends.get_sync("kelpui")
-        if kelpui:
-            result = kelpui.build_component(component_type, content, **attributes)
+        kelp = depends.get_sync("kelp")
+        if kelp:
+            result = kelp.build_component(component_type, content, **attributes)
             return (
                 str(result)
                 if result is not None
@@ -267,15 +267,15 @@ def kelp_component(component_type: str, content: str = "", **attributes: t.Any) 
 
 
 def kelp_card(title: str = "", content: str = "", **attributes: t.Any) -> str:
-    """Generate KelpUI card component.
+    """Generate Kelp card component.
 
     Usage in templates:
         [[ kelp_card('Card Title', '<p>Card content here</p>', variant='elevated') ]]
     """
     with suppress(Exception):
-        kelpui = depends.get_sync("kelpui")
-        if kelpui and hasattr(kelpui, "build_card"):
-            result = kelpui.build_card(title, content, **attributes)
+        kelp = depends.get_sync("kelp")
+        if kelp and hasattr(kelp, "build_card"):
+            result = kelp.build_card(title, content, **attributes)
             return (
                 str(result)
                 if result is not None
@@ -566,7 +566,7 @@ ENHANCED_FILTERS = {
     # WebAwesome
     "wa_icon": wa_icon,
     "wa_icon_with_text": wa_icon_with_text,
-    # KelpUI
+    # Kelp
     "kelp_component": kelp_component,
     "kelp_card": kelp_card,
     # Icon Libraries

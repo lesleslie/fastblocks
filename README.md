@@ -9,8 +9,8 @@
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
 [![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
 ![Coverage](https://img.shields.io/badge/coverage-33.00%25-yellow)
-![Type Safety](https://img.shields.io/badge/pyright-150_errors-yellow)
-![Code Health](https://img.shields.io/badge/health_score-82%2F100-brightgreen)
+
+> _Last reviewed: 2025-11-19_
 
 ## What is FastBlocks?
 
@@ -42,6 +42,7 @@ If you're new to FastBlocks, here are the key concepts to understand:
 - **Native HTMX Integration**: Built-in HTMX support (not a dependency) for creating dynamic interfaces with server-side rendering
 - **Asynchronous Architecture**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), providing dependency injection, configuration management, and pluggable components
 - **Dual Template Systems**: Advanced asynchronous Jinja2 template system with fragments and partials support using `[[` and `]]` delimiters, plus HTMY for type-safe Python-based component creation
+- **Async Template Stack**: Powered by [jinja2-async-environment](https://github.com/lesleslie/jinja2-async-environment) and [starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja) for true non-blocking rendering, template inheritance safety, and HTMX-friendly block streaming
 - **Modular Design**: Pluggable adapters for authentication, admin interfaces, routing, templates, and sitemap generation
 - **Cloud Flexibility**: Easily switch between cloud providers or create hybrid deployments by swapping adapters
 - **Performance Optimized**: Built-in caching system, Brotli compression, and HTML/CSS/JS minification
@@ -52,158 +53,31 @@ If you're new to FastBlocks, here are the key concepts to understand:
 - **Dependency Injection**: Robust dependency injection system with automatic resolution
 - **Batteries Included, But Replaceable**: Comprehensive defaults with the ability to customize or replace any component
 
+## Documentation Map
+
+- [Getting Started Guide](<./docs/GETTING_STARTED.md>) – step-by-step quick start plus common HTMX patterns
+- [Core Framework Reference](./fastblocks/README.md) – applications, middleware, core architecture
+- [Actions Library](<./fastblocks/actions/README.md>) – minification, gathering, query utilities, and more
+- [Adapters Reference](<./fastblocks/adapters/README.md>) – overview of pluggable adapters
+- [Templates Adapter Guide](<./fastblocks/adapters/templates/README.md>) – async Jinja stack and filters
+- [Technical Docs Index](<./docs/README.md>) – ACB guide, migration notes, archived docs
+- [Async Jinja Troubleshooting](<./docs/JINJA2_ASYNC_ENVIRONMENT_USAGE.md>) – inheritance-safe rendering guidance
+- [Architecture Guide](<./docs/ARCHITECTURE.md>) – Starlette + ACB layering, SSR pipeline, and project layout
+- [Comparisons & Decision Guide](<./docs/COMPARISONS.md>) – framework comparisons and key advantages
+- [Template Examples](<./docs/examples/TEMPLATE_EXAMPLES.md>) – snippets for layout, fragments, and HTMX swaps
+- [Testing Guide](<./tests/TESTING.md>) – instructions for running the FastBlocks test suite
+
 ## Why Choose FastBlocks?
 
-FastBlocks stands out from other Python web frameworks through its unique combination of server-side rendering focus, component-based architecture, and hybrid cloud capabilities. Here's how FastBlocks compares to other popular frameworks:
+FastBlocks pairs server-side rendering with HTMX-first workflows, a flexible adapter ecosystem, and the familiarity of Starlette + ACB. Teams typically choose FastBlocks when they want:
 
-### FastBlocks vs. FastAPI
+- **HTML-first iteration speed** without giving up async performance or modern tooling
+- **Composable infrastructure** thanks to adapters for templates, auth, routes, admin, and storage
+- **Multi-cloud optionality** driven by configuration instead of rewrites
+- **Enterprise-grade defaults** (SQLAdmin, security middleware, monitoring hooks) that stay replaceable
 
-While FastAPI excels at API development, FastBlocks is specifically designed for server-side rendered applications with HTMX:
+Need a deeper comparison against FastAPI, FastHTML, FastHX, FastHTMX, or Litestar? Want the full breakdown of multi-cloud, SSR, performance, and DX advantages? See the [Comparisons & Decision Guide](<./docs/COMPARISONS.md>) for detailed tables, “choose FastBlocks when…” scenarios, and enterprise capability checklists.
 
-| Aspect | FastBlocks | FastAPI |
-|--------|------------|---------|
-| **Primary Focus** | Server-side rendering + HTMX | JSON APIs + OpenAPI |
-| **Template System** | Built-in async Jinja2 with HTMX support | External template engines required |
-| **Component Architecture** | Pluggable adapters for all components | Manual dependency injection setup |
-| **Cloud Flexibility** | Built-in adapter system for multi-cloud | Cloud integration requires custom solutions |
-| **Frontend Approach** | HTMX for dynamic interfaces | Requires separate frontend framework |
-| **Development Speed** | Rapid HTML-first development | Fast API development, slower frontend integration |
-| **SEO Support** | Native server-side rendering | Requires additional SSR setup |
-| **Learning Curve** | Simple HTML + Python | API design + frontend framework |
-
-**Choose FastBlocks when:** You want to build interactive web applications with server-side rendering, need rapid development of admin interfaces, or prefer keeping business logic on the server.
-
-**Choose FastAPI when:** You're building APIs for mobile apps, need extensive OpenAPI documentation, or are creating microservices.
-
-### FastBlocks vs. FastHTML
-
-FastHTML focuses on Python-in-HTML, while FastBlocks uses a traditional template-based approach:
-
-| Aspect | FastBlocks | FastHTML |
-|--------|------------|----------|
-| **Template Approach** | Jinja2 templates with custom delimiters | Python functions generate HTML |
-| **Separation of Concerns** | Clear separation of logic and presentation | Logic and presentation mixed |
-| **Designer Collaboration** | HTML/CSS designers can work directly | Requires Python knowledge for frontend |
-| **Template Ecosystem** | Full Jinja2 ecosystem and tooling | Limited to Python HTML generation |
-| **Component Reusability** | Template blocks and inheritance | Python function composition |
-| **Infrastructure Flexibility** | Adapter pattern for all components | Monolithic approach |
-| **Cloud Deployment** | Built-in multi-cloud support | Manual cloud configuration |
-| **Performance** | Async template caching and optimization | Runtime HTML generation |
-
-**Choose FastBlocks when:** You work with designers, need template reusability, want infrastructure flexibility, or prefer traditional template-based development.
-
-**Choose FastHTML when:** You prefer Python-only development, want inline HTML generation, or are building simple prototypes.
-
-### FastBlocks vs. FastHX
-
-FastHX provides HTMX utilities for FastAPI, while FastBlocks is a complete framework built around HTMX:
-
-| Aspect | FastBlocks | FastHX |
-|--------|------------|--------|
-| **Framework Scope** | Complete web framework | HTMX utilities for FastAPI |
-| **Template Integration** | Built-in async template system | Requires separate template setup |
-| **Component Architecture** | Full adapter system | Limited to HTMX helpers |
-| **Cloud Deployment** | Built-in multi-cloud adapters | Relies on FastAPI deployment |
-| **Development Workflow** | Integrated HTMX + templates | Add-on to existing FastAPI |
-| **Performance Optimization** | Built-in caching, compression, minification | Manual optimization required |
-| **Admin Interface** | Integrated admin system | External admin interface needed |
-| **Configuration Management** | ACB-based configuration system | FastAPI configuration |
-
-**Choose FastBlocks when:** You want a complete HTMX-focused framework, need built-in admin interfaces, or want comprehensive infrastructure adapters.
-
-**Choose FastHX when:** You have an existing FastAPI application and want to add HTMX capabilities incrementally.
-
-### FastBlocks vs. FastHTMX
-
-FastHTMX is another HTMX integration library, while FastBlocks is a complete framework:
-
-| Aspect | FastBlocks | FastHTMX |
-|--------|------------|----------|
-| **Architecture** | Complete framework with adapters | HTMX integration library |
-| **Template System** | Advanced async Jinja2 with fragments | Basic template integration |
-| **Infrastructure** | Pluggable adapters for everything | Manual infrastructure setup |
-| **Cloud Support** | Built-in multi-cloud capabilities | External cloud configuration |
-| **Development Tools** | Full CLI, project generation, testing | Limited tooling |
-| **Performance Features** | Caching, compression, minification | Basic HTMX support |
-| **Admin Interface** | Integrated SQLAlchemy admin | No admin interface |
-| **Dependency Injection** | ACB-based DI system | Manual dependency management |
-
-**Choose FastBlocks when:** You want a batteries-included framework, need enterprise-grade features, or want rapid application development.
-
-**Choose FastHTMX when:** You need a lightweight HTMX integration for an existing application.
-
-### FastBlocks vs. Litestar
-
-Litestar is a modern high-performance framework with HTMX and templating support, while FastBlocks focuses on server-side rendering with cloud flexibility:
-
-| Aspect | FastBlocks | Litestar |
-|--------|------------|----------|
-| **Primary Focus** | Server-side rendering + HTMX | High-performance APIs + SSR |
-| **Template System** | Built-in async Jinja2 with HTMX | Built-in Jinja2, Mako, Minijinja |
-| **HTMX Support** | Native built-in integration | Built-in plugin (litestar-htmx) |
-| **Component Architecture** | Adapter pattern for flexibility | Plugin system |
-| **Cloud Deployment** | Built-in multi-cloud adapters | Manual cloud integration |
-| **Performance** | Optimized for SSR and HTMX | Optimized for API + SSR throughput |
-| **Frontend Integration** | HTMX-first approach | Flexible (API-first or templates) |
-| **Development Experience** | HTML-first rapid development | Type-safe API development |
-| **Infrastructure Flexibility** | Adapter-based multi-cloud | Plugin-based extensions |
-
-**Choose FastBlocks when:** You need multi-cloud deployment flexibility, want adapter-based infrastructure, or require seamless cloud provider switching.
-
-**Choose Litestar when:** You need high-performance APIs, want extensive type safety, or are building API-first applications with optional SSR.
-
-### Key Advantages of FastBlocks
-
-#### 🧩 **Component-Based Architecture**
-
-- **Batteries Included, But Customizable**: Comprehensive defaults for rapid development, with every component easily replaceable
-- **Pluggable Adapters**: Every component (auth, admin, templates, storage, cache) can be swapped without code changes
-- **Consistent Interfaces**: Standardized APIs across all adapters ensure predictable behavior
-- **Independent Evolution**: Update or replace individual components without affecting the entire application
-- **Zero Lock-in**: Unlike monolithic frameworks, you're never locked into specific implementations
-
-#### 🌐 **Multi-Cloud & Hybrid Deployment Ready**
-
-- **Cloud Provider Flexibility**: Switch between AWS, Azure, GCP, or on-premise with configuration changes
-- **Vendor Lock-in Prevention**: Abstract cloud-specific APIs behind adapter interfaces
-- **Hybrid Strategies**: Mix and match services from different providers in the same application
-- **Infrastructure as Code**: Configuration-driven infrastructure decisions
-
-#### 🚀 **Server-Side Rendering Excellence**
-
-- **HTMX-Native**: Native implementation built specifically for HTMX patterns and server-side rendering
-- **Template Block Rendering**: Render specific template fragments for dynamic updates
-- **SEO Optimized**: Full server-side rendering ensures search engine visibility
-- **Progressive Enhancement**: Start with functional HTML, enhance with HTMX
-
-#### ⚡ **Performance Optimized**
-
-- **Async Everything**: Fully asynchronous template loading, caching, and rendering
-- **Built-in Caching**: Redis-based template and response caching with configurable rules
-- **Compression**: Brotli compression reduces payload sizes
-- **Minification**: Built-in HTML, CSS, and JS minification
-
-#### 🛠 **Developer Experience**
-
-- **Rapid Development**: HTML-first approach with powerful template system
-- **Full CLI**: Project generation, development server, testing, and deployment tools
-- **Type Safety**: Pydantic-based configuration and validation throughout
-- **Testing Support**: Comprehensive testing utilities and mocking framework
-
-#### 🏢 **Enterprise Ready**
-
-- **Configuration Management**: Multi-environment configuration with secrets management
-- **Security Built-in**: CSRF protection, secure headers, session management
-- **Admin Interface**: Integrated SQLAlchemy admin for database management
-- **Monitoring**: Built-in integration with Sentry and Logfire
-- **Deployment Options**: Docker, traditional servers, and cloud platforms
-
-### When to Choose FastBlocks
-
-FastBlocks is the ideal choice for:
-
-- **Traditional Web Applications**: Where server-side rendering and SEO matter
-- **Admin Dashboards**: Complex business logic with moderate UI complexity
 - **Content Management Systems**: Where initial load performance is critical
 - **Internal Tools**: Rapid development and maintenance are prioritized
 - **Multi-Cloud Environments**: Organizations needing infrastructure flexibility
@@ -282,387 +156,48 @@ pip install sqladmin>=0.21
 pip install "logfire[starlette]>=3.24" "sentry-sdk[starlette]>=2.32"
 ```
 
-## Quick Start
+## Getting Started
 
-Let's build a simple FastBlocks application step by step:
+Follow the [Getting Started guide](<./docs/GETTING_STARTED.md>) for a full step-by-step tutorial, including HTMX counter blocks, configuration files, and common interaction patterns. The guide consolidates everything that used to live in this README—Quick Start, Common Patterns, and dependency injection examples—so the landing page stays scannable.
 
-### 1. Create Your Application File
-
-Create a file named `myapp.py` with the following code:
+Here's the core of every FastBlocks app:
 
 ```python
 from starlette.routing import Route
 from acb.adapters import import_adapter
 from acb.depends import Inject, depends
 
-# Import adapters - these are pluggable components that FastBlocks uses
-# The Templates adapter handles rendering Jinja2 templates
-# The App adapter provides the FastBlocks application instance
-Templates = import_adapter("templates")  # Get the configured template adapter
-App = import_adapter("app")  # Get the configured app adapter
+Templates = import_adapter("templates")
+App = import_adapter("app")
 
 
-# Define a route handler for the homepage
-# Modern ACB 0.25.1+ uses @depends.inject decorator with Inject[Type] type hints
 @depends.inject
 async def homepage(request, templates: Inject[Templates]):
-    # Render a template and return the response
-    # This is similar to Flask's render_template but async
     return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
 
 
-# Define your application routes
-routes = [
-    Route("/", endpoint=homepage)  # Map the root URL to the homepage function
-]
-
-
-# Create a counter endpoint that demonstrates HTMX functionality
-# This will handle both GET and POST requests
-@depends.inject
-async def counter_block(request, templates: Inject[Templates]):
-    # Get the current count from the session or default to 0
-    count = request.session.get("count", 0)
-
-    # If this is a POST request, increment the counter
-    if request.method == "POST":
-        count += 1
-        request.session["count"] = count
-
-    # Render just the counter block with the current count
-    return await templates.app.render_template(
-        request, "blocks/counter.html", context={"count": count}
-    )
-
-
-# Add the counter route
-routes.append(Route("/block/counter", endpoint=counter_block, methods=["GET", "POST"]))
-
-# Get the FastBlocks application instance
-# For module-level dependency injection, use depends.get()
+routes = [Route("/", endpoint=homepage)]
 app = depends.get(App)
 ```
 
-### 2. Create a Basic Template
+Next steps:
 
-Create a directory named `templates` and add a file named `index.html`:
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>[[ title ]]</title>  <!-- FastBlocks uses [[ ]] instead of {{ }} for variables -->
-
-    <!-- Include HTMX for interactivity without writing JavaScript -->
-    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
-</head>
-<body>
-    <h1>[[ title ]]</h1>
-
-    <!--
-    HTMX attributes explained:
-    - hx-get: The URL to fetch when the element loads
-    - hx-trigger: When to trigger the request (on load in this case)
-    -->
-    <div hx-get="/block/counter" hx-trigger="load">
-        Loading counter...
-    </div>
-
-    <!--
-    - hx-post: Send a POST request to this URL when clicked
-    - hx-target: Update the previous div with the response
-    -->
-    <button hx-post="/block/counter" hx-target="previous div">
-        Increment
-    </button>
-</body>
-</html>
-```
-
-### 3. Create a Template Block
-
-Create a directory named `templates/blocks` and add a file named `counter.html`:
-
-```html
-<div>
-    <!-- This simple template will be rendered and returned for both GET and POST requests -->
-    <h2>Counter: [[ count ]]</h2>
-</div>
-```
-
-### 4. Create a Configuration File
-
-Create a directory named `settings` and add a file named `app.yml`:
-
-```yaml
-app:
-  name: "MyFastBlocksApp"
-  title: "My First FastBlocks App"
-  debug: true
-
-# Configure session middleware
-session:
-  secret_key: "your-secret-key-here"  # In production, use a secure random key
-  max_age: 14400  # Session timeout in seconds (4 hours)
-```
-
-### 5. Run Your Application
-
-Run your application with Uvicorn:
-
-```bash
-uvicorn myapp:app --reload
-```
-
-Now visit http://localhost:8000 in your browser. You should see your page with a counter and an increment button. When you click the button, the counter will increment without a page reload - that's HTMX and FastBlocks working together!
-
-## Common Patterns
-
-Here are some common patterns and examples that will help you get started with FastBlocks:
-
-### 1. Rendering Template Blocks for HTMX
-
-One of the most common patterns in FastBlocks is rendering specific template blocks for HTMX requests:
-
-```python
-from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
-
-Templates = import_adapter("templates")
-
-
-@depends.inject
-async def user_profile_block(request, templates: Inject[Templates]):
-    user_id = request.path_params["user_id"]
-
-    # Fetch user data (in a real app, this would come from a database)
-    user = {
-        "id": user_id,
-        "name": f"User {user_id}",
-        "email": f"user{user_id}@example.com",
-    }
-
-    # Render just the user profile block
-    return await templates.app.render_template_block(
-        request,
-        "users/profile.html",  # Template file
-        "profile_block",  # Block name within the template
-        context={"user": user},
-    )
-
-
-routes = [Route("/users/{user_id}/profile", endpoint=user_profile_block)]
-```
-
-Template (`templates/users/profile.html`):
-
-```html
-{% block profile_block %}
-<div class="user-profile">
-    <h2>[[ user.name ]]</h2>
-    <p>Email: [[ user.email ]]</p>
-</div>
-{% endblock %}
-```
-
-HTML with HTMX:
-
-```html
-<!-- Load user profile when button is clicked -->
-<button hx-get="/users/123/profile" hx-target="#profile-container">
-    Load Profile
-</button>
-<div id="profile-container"></div>
-```
-
-### 2. Form Submission with HTMX
-
-Handling form submissions with HTMX is straightforward in FastBlocks:
-
-```python
-from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
-
-Templates = import_adapter("templates")
-
-
-@depends.inject
-async def contact_form(request, templates: Inject[Templates]):
-    if request.method == "POST":
-        # Get form data
-        form_data = await request.form()
-        name = form_data.get("name")
-        email = form_data.get("email")
-        message = form_data.get("message")
-
-        # In a real app, you would save this to a database
-        # For this example, we'll just return a success message
-
-        # Return just the success message block
-        return await templates.app.render_template_block(
-            request, "contact/form.html", "success_block", context={"name": name}
-        )
-
-    # For GET requests, render the form
-    return await templates.app.render_template(request, "contact/form.html", context={})
-
-
-routes = [Route("/contact", endpoint=contact_form, methods=["GET", "POST"])]
-```
-
-Template (`templates/contact/form.html`):
-
-```html
-<!-- Main template content -->
-<h1>Contact Us</h1>
-
-<!-- Form that submits via HTMX -->
-<form hx-post="/contact" hx-swap="outerHTML">
-    <div class="form-group">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required>
-    </div>
-    <div class="form-group">
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
-    </div>
-    <div class="form-group">
-        <label for="message">Message:</label>
-        <textarea id="message" name="message" required></textarea>
-    </div>
-    <button type="submit">Send Message</button>
-</form>
-
-<!-- Success message block that will replace the form -->
-{% block success_block %}
-<div class="success-message">
-    <h2>Thank you, [[ name ]]!</h2>
-    <p>Your message has been sent successfully.</p>
-    <button hx-get="/contact" hx-target="this" hx-swap="outerHTML">Send Another Message</button>
-</div>
-{% endblock %}
-```
-
-### 3. Using Dependency Injection
-
-FastBlocks leverages ACB's dependency injection system to make components easily accessible:
-
-```python
-from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
-from acb.config import Config
-
-# Import adapters using the modern ACB 0.25.1+ pattern
-Templates = import_adapter("templates")
-Cache = import_adapter("cache")
-
-
-@depends.inject
-async def dashboard(
-    request,
-    templates: Inject[Templates],
-    cache: Inject[Cache],
-    config: Inject[Config],
-):
-    # Get cached data or compute it
-    cache_key = "dashboard_stats"
-    stats = await cache.get(cache_key)
-
-    if not stats:
-        # In a real app, you would fetch this from a database
-        stats = {"users": 1250, "posts": 5432, "comments": 15876}
-
-        # Cache the stats for 5 minutes
-        await cache.set(cache_key, stats, ttl=300)
-
-    # Get app name from configuration
-    app_name = config.app.name
-
-    return await templates.app.render_template(
-        request, "dashboard.html", context={"app_name": app_name, "stats": stats}
-    )
-
-
-routes = [Route("/dashboard", endpoint=dashboard)]
-```
-
-This example demonstrates the modern ACB 0.25.1+ `Inject[Type]` pattern for type-safe dependency injection with automatic fallbacks.
+1. Create an `index.html` template that uses `[[ title ]]`
+1. Add HTMX-friendly blocks like `/block/counter`
+1. Configure the app via `settings/app.yml`
+1. Browse the HTMX, forms, and DI examples in `docs/GETTING_STARTED.md`
 
 ## Architecture Overview
 
-### Relationship with Starlette
+FastBlocks extends Starlette’s ASGI runtime with HTMX-aware requests and middleware, and relies on ACB for dependency injection plus the adapter pattern. The end result is a layered architecture where:
 
-FastBlocks is built directly on top of [Starlette](https://www.starlette.io/), extending its capabilities for server-side rendered applications:
+- Starlette provides routing, middleware, and ASGI lifecycle
+- FastBlocks augments it with SSR-friendly helpers, template streaming, and HTMX ergonomics
+- ACB supplies dependency injection, configuration, and pluggable adapters
 
-- **Class Extension**: The `FastBlocks` class extends Starlette's `Starlette` application class, inheriting all its core functionality
-
-- **Enhanced Request Handling**: Extends Starlette's request handling with HTMX-specific features through the `HtmxRequest` class
-
-- **Middleware Extensions**: Adds specialized middleware components on top of Starlette's middleware system
-
-- **Template Integration**: Enhances Starlette with advanced template rendering capabilities
-
-- **Error Handling**: Extends Starlette's exception handling with template-aware error responses
-
-This approach allows FastBlocks to leverage Starlette's robust ASGI implementation while adding specialized features for server-side rendering and HTMX integration.
-
-### Relationship with ACB
-
-FastBlocks is built on top of [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), which provides the foundational architecture. The relationship can be summarized as:
-
-- **Foundation vs. Framework**: ACB provides the core infrastructure (dependency injection, configuration, adapters pattern) while FastBlocks is a web application framework built on this foundation.
-
-- **Dependency Chain**: User Application → FastBlocks → Starlette + ACB → Python Standard Library
-
-- **Component Architecture**: FastBlocks extends ACB's component architecture with web-specific components like templates, routing, and HTMX integration.
-
-- **Adapter Pattern**: FastBlocks uses ACB's adapter pattern to create pluggable components for authentication, admin interfaces, templates, etc.
-
-#### Modern ACB Integration (v0.14.0+, ACB 0.25.1+)
-
-FastBlocks uses direct ACB imports for dependency management with the modern `Inject[Type]` pattern, providing type safety, performance, and enhanced error handling. See the [Migration Guide](<#migration-guide>) for details on the modern pattern.
-
-### Server-Side Rendering with HTMX
-
-FastBlocks is particularly well-suited for modern server-side rendering applications that use HTMX, offering several advantages over traditional approaches:
-
-- **Reduced Complexity**: Avoid complex client-side state management and JavaScript frameworks
-- **Improved Performance**: Server-side rendering can deliver faster initial page loads and smaller payloads
-- **SEO-Friendly**: Fully rendered HTML content for better search engine optimization
-- **Progressive Enhancement**: Start with functional HTML and enhance with HTMX for interactivity
-- **Simplified Architecture**: Keep business logic on the server where it belongs
-- **Reduced Development Time**: Use HTML templates and simple endpoints instead of complex API design
-
-The combination of FastBlocks' templating system and HTMX offers a modern alternative to complex SPA frameworks, particularly for:
-
-- **Admin dashboards**: Where business logic complexity outweighs UI complexity
-- **Content management systems**: Where SEO and initial load performance are critical
-- **Internal tools**: Where development speed and maintainability are prioritized over cutting-edge UIs
-- **Applications with complex business logic**: Where keeping logic on the server simplifies testing and validation
-
-### Project Structure
-
-FastBlocks follows a component-based architecture with automatic discovery and registration of modules:
-
-```
-fastblocks/
-├── actions/         # Utility functions (minify)
-├── adapters/        # Integration modules for external systems
-│   ├── app/         # Application configuration
-│   ├── auth/        # Authentication adapters
-│   ├── admin/       # Admin interface adapters
-│   ├── routes/      # Routing adapters
-│   ├── sitemap/     # Sitemap generation
-│   └── templates/   # Template engine adapters
-├── applications.py  # FastBlocks application class
-├── middleware.py    # ASGI middleware components
-└── ...
-```
+For a detailed walkthrough—including Starlette integration points, modern `Inject[Type]` usage, HTMX SSR rationale, and the full project structure diagram—see the [Architecture Guide](<./docs/ARCHITECTURE.md>).
 
 ## Core Components
 
@@ -685,6 +220,15 @@ FastBlocks uses an enhanced asynchronous Jinja2 template system designed specifi
 [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-FastBlocks%20Template%20Support-000000?style=for-the-badge&logo=jetbrains)](https://plugins.jetbrains.com/plugin/28680)
 [![Plugin Downloads](https://img.shields.io/jetbrains/plugin/d/28680?style=flat-square&label=downloads)](https://plugins.jetbrains.com/plugin/28680)
 [![Plugin Version](https://img.shields.io/jetbrains/plugin/v/28680?style=flat-square&label=version)](https://plugins.jetbrains.com/plugin/28680)
+
+#### Async Template Stack
+
+FastBlocks layers two companion libraries to keep template rendering fully asynchronous from loaders to HTTP responses:
+
+- **[jinja2-async-environment](https://github.com/lesleslie/jinja2-async-environment)** supplies the event-loop friendly `Environment`, async filesystem/cloud/Redis loaders, and generator-based rendering strategy that preserves template inheritance, macros, and fragments without blocking.
+- **[starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja)** adapts that environment into Starlette's `TemplateResponse`, powering `render_template()` and `render_template_block()` plus HTMX-aware headers and streaming responses.
+
+Because both projects are maintained alongside FastBlocks, upgrades stay in lockstep: Redis bytecode caching, secure template environments, and block streaming land here as soon as they are available upstream. See `docs/JINJA2_ASYNC_ENVIRONMENT_USAGE.md` for architectural details and troubleshooting patterns.
 
 #### Basic Template Usage
 
@@ -1856,7 +1400,7 @@ Special thanks to the following open-source projects that power FastBlocks:
 - [starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja) - Starlette integration for async Jinja2
 - [Bulma](https://bulma.io/) - Modern CSS framework based on Flexbox for beautiful responsive designs
 - [Web Awesome](https://fontawesome.com/webawesome) - Comprehensive icon library and UI components from Font Awesome
-- [Kelp](https://kelpui.com/) - Lightweight UI library for HTML-first development, powered by modern CSS and Web Components
+- [Kelp](https://kelp.com/) - Lightweight UI library for HTML-first development, powered by modern CSS and Web Components
 
 ### Data & Validation
 

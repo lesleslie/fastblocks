@@ -8,7 +8,33 @@ import logging
 import typing as t
 
 from acb import register_pkg
-from acb.adapters import get_installed_adapter
+
+try:
+    from acb.adapters import get_installed_adapter
+except ImportError:  # acb >= 0.19 removed this helper
+    from acb.adapters import get_adapter, get_installed_adapters
+
+    def get_installed_adapter(adapter_name: str) -> str | None:
+        """Compatibility shim that resolves an installed adapter name."""
+        for adapter in get_installed_adapters():
+            meta = getattr(adapter, "metadata", None)
+            provider = getattr(meta, "provider", None)
+            if adapter_name in (adapter.category, adapter.name, provider):
+                provider_str = str(provider) if provider is not None else None
+                adapter_name_str = (
+                    str(adapter.name) if hasattr(adapter, "name") else None
+                )
+                return provider_str or adapter_name_str
+        adapter = get_adapter(adapter_name)
+        if adapter:
+            meta = getattr(adapter, "metadata", None)
+            provider = getattr(meta, "provider", None)
+            provider_str = str(provider) if provider is not None else None
+            adapter_name_str = str(adapter.name) if hasattr(adapter, "name") else None
+            return provider_str or adapter_name_str
+        return None
+
+
 from acb.config import AdapterBase, Config
 from acb.depends import depends
 from starception import install_error_handler
@@ -58,16 +84,20 @@ class ApplicationInitializer:
         )
 
     def _setup_dependencies(self) -> None:
-        self.config = (
-            self.kwargs.get("config")
-            if self.kwargs.get("config") is not None
-            else depends.get("config")
-        )
-        self.logger = (
-            self.kwargs.get("logger")
-            if self.kwargs.get("logger") is not None
-            else depends.get("logger")
-        )
+        self.config = self.kwargs.get("config")
+        if self.config is None:
+            try:
+                self.config = depends.get_sync("config")
+            except Exception:
+                self.config = None
+
+        self.logger = self.kwargs.get("logger")
+        if self.logger is None:
+            try:
+                self.logger = depends.get_sync("logger")
+            except Exception:
+                self.logger = None
+
         self.depends = depends
 
     def _configure_error_handling(self) -> None:
@@ -115,7 +145,7 @@ class ApplicationInitializer:
 
     def _setup_models(self) -> None:
         try:
-            models = self.depends.get("models")  # type: ignore[union-attr]
+            models = self.depends.get_sync("models")  # type: ignore[union-attr]
         except Exception:
             models = None
         object.__setattr__(self.app, "models", models)
@@ -169,9 +199,13 @@ class ApplicationInitializer:
                             f"Some integrations failed to register: {e}"
                         )
 
-            # Use asyncio.run() instead of deprecated loop.run_until_complete()
+            # Use running loop when available, otherwise start a new one
             with suppress(Exception):  # Graceful degradation
-                asyncio.run(register_all())
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(register_all())
+                except RuntimeError:
+                    asyncio.run(register_all())
 
     def _register_event_handlers(self) -> None:
         """Register FastBlocks event handlers, health checks, validation, and workflows with ACB."""

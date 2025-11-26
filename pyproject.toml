@@ -42,12 +42,10 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "acb>=0.31.6",
     "anyio>=4.11.0",
     "brotli-asgi>=1.5.0",
     "granian[reload]>=2.6.0",
     "htmy[lxml]>=0.9.0",
-    "httpx>=0.28.1,<1.0",
     "mcp-common>=0.3.3",
     "minify-html>=0.18.1",
     "pydantic>=2.12.4",
@@ -56,7 +54,7 @@ dependencies = [
     "rjsmin>=1.2.5",
     "secure>=1.0.1",
     "starception>=1.2.1",
-    "starlette>=0.49.3",
+    "starlette>=0.50.0",
     "starlette-async-jinja>=1.13.3",
     "starlette-csrf>=3.0.0",
     "typer>=0.20.0",
@@ -68,8 +66,8 @@ text = "BSD-3-Clause"
 
 [dependency-groups]
 dev = [
-    "bandit>=1.9.1",
-    "crackerjack>=0.44.28",
+    "bandit>=1.9.2",
+    "crackerjack>=0.44.34",
     "detect-secrets>=1.5.0",
     "excalidraw-mcp>=0.34.0",
     "penpot-mcp>=0.1.2",
@@ -82,19 +80,22 @@ dev = [
     "pytest-xdist>=3.8.0",
     "pyyaml>=6.0.3",
     "refurb>=2.2.0",
-    "session-mgmt-mcp>=0.9.3",
+    "session-mgmt-mcp>=0.9.4",
 ]
 admin = [
-    "sqladmin>=0.21.0",
+    "sqladmin>=0.22.0",
 ]
 monitoring = [
-    "logfire[starlette]>=4.14.2",
+    "logfire[starlette]>=4.15.1",
     "sentry-sdk[starlette]>=3.0.0a7",
     "urllib3>=2.5.0",
 ]
 images = [
-    "cloudinary>=1.31.0",
-    "imagekitio>=4.1.1",
+    "cloudinary>=1.44.1",
+    "imagekitio>=4.2.0",
+]
+cache = [
+    "acb>=0.31.12",
 ]
 
 [tool.ruff]

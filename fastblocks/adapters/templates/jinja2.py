@@ -45,7 +45,7 @@ from inspect import isclass
 from pathlib import Path
 from uuid import UUID
 
-from acb.adapters import AdapterStatus, get_adapter, import_adapter
+from acb.adapters import AdapterStatus, get_adapter
 from acb.config import Config
 from acb.debug import debug
 
@@ -71,10 +71,7 @@ from fastblocks.actions.sync.templates import sync_templates
 
 from ._base import TemplatesBase, TemplatesBaseSettings
 
-try:
-    Cache, Storage, Models = import_adapter()
-except Exception:
-    Cache = Storage = Models = None
+Cache, Storage, Models = None, None, None
 
 _TEMPLATE_REPLACEMENTS = [
     (b"{{", b"[["),

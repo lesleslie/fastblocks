@@ -229,7 +229,7 @@ class FastBlocksSyntaxSupport:
             "remixicon_stylesheet_links",
             "material_icons_links",
             "webawesome_stylesheet_links",
-            "kelpui_stylesheet_links",
+            "kelp_stylesheet_links",
         }
 
     def get_completions(

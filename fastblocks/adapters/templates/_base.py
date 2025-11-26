@@ -58,8 +58,10 @@ class TemplatesBaseSettings(Config, ABC):
 
     @depends.inject
     def __init__(self, config: Inject[Config], **values: t.Any) -> None:
+        # Extract cache_timeout from values before passing to parent
+        cache_timeout = values.pop("cache_timeout", 300)
         super().__init__(**values)
-        self.cache_timeout = self.cache_timeout if config.deployed else 1
+        self.cache_timeout = cache_timeout if config.deployed else 1
 
 
 class TemplatesProtocol(t.Protocol):

@@ -39,6 +39,30 @@ async def test_admin_initialization() -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.unit
+async def test_admin_initialization_without_app() -> None:
+    """Ensure Admin falls back to FastBlocks app when app is not provided."""
+    mock_templates = MagicMock()
+    mock_templates.admin = MagicMock()
+
+    mock_fastblocks_app = MagicMock(spec=Starlette)
+    mock_sqladmin_base = MagicMock()
+
+    with (
+        patch(
+            "fastblocks.adapters.admin.sqladmin.FastBlocks",
+            return_value=mock_fastblocks_app,
+        ) as mock_fastblocks,
+        patch("sqladmin.Admin", mock_sqladmin_base) as mock_admin,
+    ):
+        admin = Admin(templates=mock_templates, engine="sqlite://")
+
+        mock_fastblocks.assert_called_once_with()
+        mock_admin.assert_called_once_with(app=mock_fastblocks_app, engine="sqlite://")
+        assert admin.templates == mock_templates.admin
+
+
+@pytest.mark.asyncio
+@pytest.mark.unit
 async def test_admin_getattr() -> None:
     """Test the __getattr__ method of the Admin class."""
     # Mock dependencies
@@ -134,6 +158,32 @@ async def test_admin_init_without_admin_models() -> None:
 
         # Verify add_view was not called
         mock_sqladmin.add_view.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.unit
+async def test_admin_init_handles_depends_errors() -> None:
+    """Init should swallow dependency resolution errors gracefully."""
+    mock_app = MagicMock(spec=Starlette)
+    mock_templates = MagicMock()
+    mock_templates.admin = MagicMock()
+
+    mock_sqladmin = MagicMock()
+
+    with patch(
+        "sqladmin.Admin",
+        return_value=mock_sqladmin,
+    ):
+        admin = Admin(app=mock_app, templates=mock_templates)
+
+        # Force depends.get to raise to ensure the suppress block handles it
+        with patch(
+            "fastblocks.adapters.admin.sqladmin.depends.get",
+            side_effect=RuntimeError("boom"),
+        ):
+            await admin.init()
+
+    mock_sqladmin.add_view.assert_not_called()
 
 
 @pytest.mark.asyncio

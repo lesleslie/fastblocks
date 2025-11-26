@@ -1,6 +1,8 @@
 # Templates Adapter
 
 > **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>)
+>
+> _Last reviewed: 2025-11-19_
 
 The Templates adapter provides template rendering capabilities for FastBlocks applications.
 
@@ -21,6 +23,15 @@ The Templates adapter allows you to:
 - Load templates from various sources (file system, cloud storage, Redis)
 - Use template fragments for HTMX interactions
 - Customize template delimiters and extensions
+
+## Async Template Stack
+
+FastBlocks' implementation is intentionally split across two upstream projects that move in lockstep with this adapter:
+
+- **[jinja2-async-environment](https://github.com/lesleslie/jinja2-async-environment)** supplies the fully asynchronous `Environment`, Redis/cloud/file-system loaders, and generator-based rendering strategy that keeps template inheritance, macros, and block rendering non-blocking.
+- **[starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja)** provides the Starlette integration layer, enabling FastBlocks' `render_template()`/`render_template_block()` helpers, HTMX-aware headers, and streaming `TemplateResponse` objects without custom ASGI plumbing.
+
+This stack gives FastBlocks a consistent async story from template discovery to HTTP response generation. For lower-level details and debugging guidance, see `docs/JINJA2_ASYNC_ENVIRONMENT_USAGE.md`.
 
 ## Available Implementations
 

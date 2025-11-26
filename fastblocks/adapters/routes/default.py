@@ -34,17 +34,44 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-12
 """
 
+import typing as t
 from contextlib import suppress
 from importlib import import_module
 from uuid import UUID
 
-from acb.adapters import (
-    AdapterStatus,
-    get_adapters,
-    get_installed_adapter,
-    import_adapter,
-    root_path,
-)
+try:
+    from acb.adapters import (
+        AdapterStatus,
+        get_adapters,
+        get_installed_adapter,
+        import_adapter,
+        root_path,
+    )
+except ImportError:  # acb >= 0.19 removed get_installed_adapter
+    from acb.adapters import (
+        AdapterStatus,
+        get_adapter,
+        get_adapters,
+        get_installed_adapters,
+        import_adapter,
+        root_path,
+    )
+
+    def get_installed_adapter(adapter_name: str) -> str | None:
+        """Compatibility shim that resolves an installed adapter name."""
+        for adapter in get_installed_adapters():
+            meta = getattr(adapter, "metadata", None)
+            provider = getattr(meta, "provider", None)
+            if adapter_name in (adapter.category, adapter.name, provider):
+                return provider or adapter.name
+        adapter = get_adapter(adapter_name)
+        if adapter:
+            meta = getattr(adapter, "metadata", None)
+            provider = getattr(meta, "provider", None)
+            return provider or adapter.name
+        return None
+
+
 from acb.config import Config
 from acb.debug import debug
 from acb.depends import depends

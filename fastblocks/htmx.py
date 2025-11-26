@@ -24,7 +24,13 @@ from contextlib import suppress
 from typing import Any
 from urllib.parse import unquote
 
-from acb.debug import debug
+try:
+    from acb.debug import debug
+except ImportError:
+    # Fallback debug function if acb.debug is not available
+    import logging
+
+    debug = logging.debug
 from starlette.responses import HTMLResponse
 
 if t.TYPE_CHECKING:
@@ -52,7 +58,7 @@ class HtmxDetails:
 
     def _get_header(self, name: bytes) -> str | None:
         value = _get_header(self._scope, name)
-        if value and debug.enabled:
+        if value and debug:
             debug(f"HtmxDetails: {name.decode()}: {value}")
         return value
 

@@ -27,9 +27,16 @@ import nest_asyncio
 import typer
 import uvicorn
 from acb.actions.encode import dump, load
-from acb.console import console
 from anyio import Path as AsyncPath
 from granian import Granian
+
+try:
+    from acb.console import console
+except ImportError:
+    # Fallback to regular rich console if acb.console is not available
+    from rich.console import Console
+
+    console = Console()
 
 nest_asyncio.apply()
 __all__ = ("cli", "components", "create", "dev", "run")

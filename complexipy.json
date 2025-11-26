@@ -206,12 +206,6 @@
   {
     "complexity": 3,
     "file_name": "applications.py",
-    "function_name": "FastBlocks::_get_dependencies",
-    "path": "applications.py"
-  },
-  {
-    "complexity": 3,
-    "file_name": "applications.py",
     "function_name": "FastBlocks::_get_system_middleware_with_overrides",
     "path": "applications.py"
   },
@@ -237,6 +231,12 @@
     "complexity": 5,
     "file_name": "applications.py",
     "function_name": "MiddlewareManager::_extract_middleware_info",
+    "path": "applications.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "applications.py",
+    "function_name": "FastBlocks::_get_dependencies",
     "path": "applications.py"
   },
   {
@@ -294,12 +294,6 @@
     "path": "initializers.py"
   },
   {
-    "complexity": 2,
-    "file_name": "initializers.py",
-    "function_name": "ApplicationInitializer::_setup_dependencies",
-    "path": "initializers.py"
-  },
-  {
     "complexity": 3,
     "file_name": "initializers.py",
     "function_name": "ApplicationInitializer::_load_acb_modules",
@@ -312,15 +306,21 @@
     "path": "initializers.py"
   },
   {
-    "complexity": 7,
+    "complexity": 4,
     "file_name": "initializers.py",
-    "function_name": "ApplicationInitializer::_register_integrations_async",
+    "function_name": "ApplicationInitializer::_setup_dependencies",
     "path": "initializers.py"
   },
   {
     "complexity": 8,
     "file_name": "initializers.py",
     "function_name": "ApplicationInitializer::_register_event_handlers",
+    "path": "initializers.py"
+  },
+  {
+    "complexity": 8,
+    "file_name": "initializers.py",
+    "function_name": "ApplicationInitializer::_register_integrations_async",
     "path": "initializers.py"
   },
   {
@@ -1508,19 +1508,13 @@
   {
     "complexity": 0,
     "file_name": "main.py",
-    "function_name": "LazyApp::__getattr__",
-    "path": "main.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "main.py",
-    "function_name": "LazyLogger::__getattr__",
-    "path": "main.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "main.py",
     "function_name": "get_logger",
+    "path": "main.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "main.py",
+    "function_name": "LazyApp::__getattr__",
     "path": "main.py"
   },
   {
@@ -1530,7 +1524,13 @@
     "path": "main.py"
   },
   {
-    "complexity": 8,
+    "complexity": 1,
+    "file_name": "main.py",
+    "function_name": "LazyLogger::__getattr__",
+    "path": "main.py"
+  },
+  {
+    "complexity": 9,
     "file_name": "main.py",
     "function_name": "get_app",
     "path": "main.py"
@@ -6571,90 +6571,6 @@
   },
   {
     "complexity": 0,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::__init__",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::_generate_responsive_classes",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::_generate_utility_classes",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::get_component_class",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 1,
-    "file_name": "kelpui.py",
-    "function_name": "_build_kelp_component_html",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 2,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::_generate_animations",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 2,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::_generate_color_variables",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 2,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::_generate_kelpui_css",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 2,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::get_stylesheet_links",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 3,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::_generate_radius_variables",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 3,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::_generate_spacing_variables",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 3,
-    "file_name": "kelpui.py",
-    "function_name": "KelpUIStyle::_generate_typography_variables",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 6,
-    "file_name": "kelpui.py",
-    "function_name": "_determine_component_tag",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 9,
-    "file_name": "kelpui.py",
-    "function_name": "register_kelpui_functions",
-    "path": "kelpui.py"
-  },
-  {
-    "complexity": 0,
     "file_name": "bulma.py",
     "function_name": "BulmaStyle::__init__",
     "path": "bulma.py"
@@ -6668,20 +6584,128 @@
   {
     "complexity": 0,
     "file_name": "bulma.py",
-    "function_name": "BulmaStyle::get_stylesheet_links",
+    "function_name": "BulmaStyle::get_utility_classes",
     "path": "bulma.py"
   },
   {
     "complexity": 0,
     "file_name": "bulma.py",
-    "function_name": "BulmaStyle::get_utility_classes",
+    "function_name": "BulmaStyleSettings::__init__",
     "path": "bulma.py"
   },
   {
-    "complexity": 5,
+    "complexity": 0,
+    "file_name": "bulma.py",
+    "function_name": "BulmaStyleSettings::cdn",
+    "path": "bulma.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "bulma.py",
+    "function_name": "BulmaStyleSettings::cdn",
+    "path": "bulma.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "bulma.py",
+    "function_name": "BulmaStyleSettings::components",
+    "path": "bulma.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "bulma.py",
+    "function_name": "BulmaStyle::get_stylesheet_links",
+    "path": "bulma.py"
+  },
+  {
+    "complexity": 6,
     "file_name": "bulma.py",
     "function_name": "BulmaStyle::build_component_html",
     "path": "bulma.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::__init__",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::_generate_responsive_classes",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::_generate_utility_classes",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::get_component_class",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 1,
+    "file_name": "kelp.py",
+    "function_name": "_build_kelp_component_html",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::_generate_animations",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::_generate_color_variables",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::_generate_kelp_css",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 2,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::get_stylesheet_links",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::_generate_radius_variables",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::_generate_spacing_variables",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "kelp.py",
+    "function_name": "KelpStyle::_generate_typography_variables",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 6,
+    "file_name": "kelp.py",
+    "function_name": "_determine_component_tag",
+    "path": "kelp.py"
+  },
+  {
+    "complexity": 9,
+    "file_name": "kelp.py",
+    "function_name": "register_kelp_functions",
+    "path": "kelp.py"
   },
   {
     "complexity": 0,
@@ -6732,6 +6756,30 @@
     "path": "fontawesome.py"
   },
   {
+    "complexity": 0,
+    "file_name": "fontawesome.py",
+    "function_name": "FontAwesomeIconsSettings::__init__",
+    "path": "fontawesome.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "fontawesome.py",
+    "function_name": "FontAwesomeIconsSettings::cdn",
+    "path": "fontawesome.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "fontawesome.py",
+    "function_name": "FontAwesomeIconsSettings::prefix",
+    "path": "fontawesome.py"
+  },
+  {
+    "complexity": 0,
+    "file_name": "fontawesome.py",
+    "function_name": "FontAwesomeIconsSettings::prefix",
+    "path": "fontawesome.py"
+  },
+  {
     "complexity": 1,
     "file_name": "fontawesome.py",
     "function_name": "FontAwesomeIcons::get_icon_button",
@@ -6750,13 +6798,25 @@
     "path": "fontawesome.py"
   },
   {
+    "complexity": 2,
+    "file_name": "fontawesome.py",
+    "function_name": "FontAwesomeIconsSettings::cdn",
+    "path": "fontawesome.py"
+  },
+  {
+    "complexity": 3,
+    "file_name": "fontawesome.py",
+    "function_name": "FontAwesomeIcons::_normalize_icon_name",
+    "path": "fontawesome.py"
+  },
+  {
     "complexity": 4,
     "file_name": "fontawesome.py",
     "function_name": "FontAwesomeIcons::get_icon_class",
     "path": "fontawesome.py"
   },
   {
-    "complexity": 6,
+    "complexity": 7,
     "file_name": "fontawesome.py",
     "function_name": "FontAwesomeIcons::get_icon_tag",
     "path": "fontawesome.py"

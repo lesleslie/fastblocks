@@ -372,10 +372,10 @@ class MiddlewareStackManager:
     def _ensure_dependencies(self) -> None:
         if self.config is None or self.logger is None:
             if self.config is None:
-                self.config = depends.get_sync("config")
+                self.config = depends.get("config")
             if self.logger is None:
                 try:
-                    self.logger = depends.get_sync("logger")
+                    self.logger = depends.get("logger")
                 except Exception:
                     self.logger = None
 

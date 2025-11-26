@@ -291,7 +291,7 @@ FastBlocks adds web-specific features on top of ACB:
 - **Icons**: RemixIcon, Lucide, Phosphor, FontAwesome, Heroicons, Material Icons
 - **Images**: Cloudflare Images, Cloudinary, ImageKit, TwicPics
 - **Fonts**: Google Fonts, Font Squirrel
-- **Styles**: Bulma, KelpUI, WebAwesome, Vanilla CSS
+- **Styles**: Bulma, Kelp, WebAwesome, Vanilla CSS
 
 ### 4. Admin & Routing
 

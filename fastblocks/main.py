@@ -1,14 +1,16 @@
 import typing as t
+from contextlib import suppress
 from pathlib import Path
 
-from acb import register_pkg
+from acb import ensure_registration, register_pkg
+from acb.adapters import register_adapters, root_path
 from acb.depends import depends
 
 _app_instance = None
 _logger_instance = None
 
 
-def get_app() -> t.Any:
+async def get_app() -> t.Any:
     global _app_instance, _logger_instance
     if _app_instance is None:
         current_dir = Path.cwd()
@@ -32,14 +34,21 @@ def get_app() -> t.Any:
             msg = f"Failed to register FastBlocks adapters: {e}"
             raise RuntimeError(msg) from e
         try:
-            _app_instance = depends.get("app")
+            await ensure_registration()
+        except Exception as e:
+            msg = f"Failed to register packages: {e}"
+            raise RuntimeError(msg) from e
+        with suppress(Exception):
+            await register_adapters(root_path)
+        try:
+            _app_instance = await depends.get("app")
         except Exception as e:
             msg = f"Failed to get app adapter: {e}. Make sure adapters are properly registered and configured."
             raise RuntimeError(
                 msg,
             ) from e
         try:
-            _logger_instance = depends.get("logger")
+            _logger_instance = await depends.get("logger")
         except Exception as e:
             import logging
 
@@ -51,28 +60,32 @@ def get_app() -> t.Any:
 
 
 def get_logger() -> t.Any:
-    get_app()
     return _logger_instance
 
 
 class LazyApp:
     def __getattr__(self, name: str) -> t.Any:
-        return getattr(get_app(), name)
+        if _app_instance is None:
+            msg = "FastBlocks app has not finished initializing"
+            raise AttributeError(msg)
+        return getattr(_app_instance, name)
 
     async def __call__(self, scope: t.Any, receive: t.Any, send: t.Any) -> None:
-        app = get_app()
+        app = await get_app()
         await app(scope, receive, send)
 
 
 class LazyLogger:
     def __getattr__(self, name: str) -> t.Any:
-        return getattr(get_logger(), name)
+        if _logger_instance is None:
+            msg = "FastBlocks logger has not finished initializing"
+            raise AttributeError(msg)
+        return getattr(_logger_instance, name)
 
     def __call__(self, *args: t.Any, **kwargs: t.Any) -> t.Any:
-        logger = get_logger()
+        logger = _logger_instance
         if callable(logger):
-            call_method = logger.__call__
-            return call_method(*args, **kwargs)
+            return logger(*args, **kwargs)
         return logger
 
 

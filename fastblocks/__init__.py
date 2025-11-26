@@ -11,6 +11,6 @@ with suppress(ImportError):
 
     register_pkg()
 
-from . import actions, applications, caching, middleware
+from . import actions, applications, caching, cli, middleware
 
-__all__ = ["actions", "applications", "caching", "exceptions", "middleware"]
+__all__ = ["actions", "applications", "caching", "cli", "exceptions", "middleware"]

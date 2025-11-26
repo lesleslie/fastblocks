@@ -272,7 +272,7 @@ ______________________________________________________________________
 **Style & Icon Adapters** (32 fixes):
 
 - [x] `webawesome.py` - 5 fixes (sync)
-- [x] `kelpui.py` - 3 fixes (sync)
+- [x] `kelp.py` - 3 fixes (sync)
 - [x] `materialicons.py` - 6 fixes (sync)
 - [x] `remixicon.py` - 6 fixes (sync)
 - [x] `phosphor.py` - 6 fixes (sync)
@@ -510,7 +510,7 @@ ______________________________________________________________________
   - Added missing `Inject` import in sqladmin.py
   - Fixed icon adapter class names: PhosphorSettings → PhosphorIconsSettings
   - Fixed image adapter class names: ImageKitSettings → ImageKitImagesSettings
-  - Fixed style adapter class names: KelpUIAdapter → KelpUIStyle, WebAwesomeAdapter → WebAwesomeStyle
+  - Fixed style adapter class names: KelpAdapter → KelpStyle, WebAwesomeAdapter → WebAwesomeStyle
   - Fixed component_name reference in \_htmy_components.py
 
 - **Unnecessary isinstance (10→0)**:

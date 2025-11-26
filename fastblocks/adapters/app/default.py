@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager, suppress
 from time import perf_counter
 from uuid import UUID
 
-from acb.adapters import AdapterStatus, get_adapter, import_adapter
+from acb.adapters import AdapterStatus, get_adapter
 from acb.depends import depends
 from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks.applications import FastBlocks
@@ -21,11 +21,7 @@ from fastblocks.applications import FastBlocks
 from ._base import AppBase, AppBaseSettings
 
 main_start = perf_counter()
-
-try:
-    Cache, Storage = import_adapter()
-except Exception:
-    Cache = Storage = None
+Cache = Storage = None
 
 
 class AppSettings(AppBaseSettings):
@@ -312,3 +308,5 @@ class App(AppBase):
 
 MODULE_ID = UUID("01937d86-8f6e-7f70-c231-5678901234ef")
 MODULE_STATUS = AdapterStatus.STABLE
+
+depends.set(App)

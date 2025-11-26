@@ -1,0 +1,25 @@
+# ACB Adapters Configuration for FastBlocks
+
+adapters:
+  cache:
+    # Using Redis as the cache backend
+    enabled: true
+    backend: "redis"
+    redis:
+      host: "localhost"
+      port: 6379
+      db: 0
+      password: null
+      username: null
+      ssl: false
+      timeout: 30
+
+  # Other adapters configuration
+  config:
+    enabled: true
+    backend: "file"
+    
+  logger:
+    enabled: true
+    backend: "loguru"
+    level: "INFO"

@@ -227,12 +227,17 @@ class FastBlocks(Starlette):
 
     def _get_dependencies(self, config: t.Any, logger: t.Any) -> tuple[t.Any, t.Any]:
         if config is None:
-            config = depends.get("config")
+            try:
+                config = depends.get_sync("config")
+            except Exception:
+                config = None
         if logger is None:
             try:
-                logger = depends.get("logger")
+                logger = depends.get_sync("logger")
             except Exception:
                 logger = None
+        if logger is not None and not hasattr(logger, "debug"):
+            logger = None
         return config, logger
 
     def _separate_exception_handlers(

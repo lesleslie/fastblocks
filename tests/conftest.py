@@ -467,9 +467,10 @@ def _patch_acb_modules() -> None:
             sys.modules[module_name] = module
 
 
-# Patch ACB modules immediately when conftest.py is imported
-# This needs to happen before any test modules import FastBlocks modules with ACB dependencies
-_patch_acb_modules()
+# DO NOT patch ACB modules immediately when conftest.py is imported
+# This was causing global state pollution and test isolation issues
+# Instead, we'll handle mocking at the test level where needed
+# _patch_acb_modules()
 
 
 def pytest_configure(config) -> None:
@@ -1415,7 +1416,7 @@ def patch_template_loaders():
         yield
 
 
-@pytest.fixture(autouse=True)
+# pytest.fixture(autouse=True)  # Commented out to prevent global state pollution
 def mock_acb():  # noqa: C901
     """Mock the ACB module for testing."""
     # Create mock modules
@@ -1636,6 +1637,7 @@ def _create_module_structure() -> dict[str, types.ModuleType]:
     """Create the FastBlocks module structure dictionary."""
     return {
         "fastblocks": types.ModuleType("fastblocks"),
+        "fastblocks.cli": types.ModuleType("fastblocks.cli"),
         "fastblocks.exceptions": types.ModuleType("fastblocks.exceptions"),
         "fastblocks.middleware": types.ModuleType("fastblocks.middleware"),
         "fastblocks.caching": types.ModuleType("fastblocks.caching"),
@@ -1682,6 +1684,7 @@ def _setup_module_components(module_structure: dict[str, types.ModuleType]) -> N
     """Set up components for each module in the structure."""
     _setup_exceptions_module(module_structure["fastblocks.exceptions"])
     _setup_middleware_module(module_structure["fastblocks.middleware"])
+    _setup_cli_module(module_structure["fastblocks.cli"])
     _setup_templates_base_module(
         module_structure["fastblocks.adapters.templates._base"],
     )
@@ -1693,6 +1696,26 @@ def _setup_module_components(module_structure: dict[str, types.ModuleType]) -> N
     )
     _setup_admin_base_module(module_structure["fastblocks.adapters.admin._base"])
     _setup_routes_module(module_structure["fastblocks.adapters.routes"])
+
+
+def _setup_cli_module(cli_module: types.ModuleType) -> None:
+    """Set up the CLI module with necessary attributes."""
+    # Import real CLI components if available, otherwise create mocks
+    try:
+        from fastblocks.cli import cli, components, create, dev, run
+
+        cli_module.cli = cli
+        cli_module.components = components
+        cli_module.create = create
+        cli_module.dev = dev
+        cli_module.run = run
+    except ImportError:
+        # Create mock objects if import fails
+        cli_module.cli = MagicMock()
+        cli_module.components = MagicMock()
+        cli_module.create = MagicMock()
+        cli_module.dev = MagicMock()
+        cli_module.run = MagicMock()
 
 
 def _setup_exception_classes(exceptions_module: types.ModuleType) -> None:
@@ -3246,7 +3269,7 @@ class MockPrefixLoader(MockAsyncBaseLoader):
         return sorted(templates)
 
 
-@pytest.fixture(autouse=True)
+# @pytest.fixture(autouse=True)  # Commented out to prevent global state interference
 def cleanup_acb_depends():
     """Clean up ACB depends registry after each test to prevent interdependencies."""
     yield
@@ -3271,6 +3294,6 @@ def cleanup_acb_depends():
         pass
 
 
-# Use the function to prevent unused warning - call at end after all classes are defined
-_setup_fastblocks_module_structure()
-# Now only creates modules that don't already exist
+# # Commented out to prevent global module interference
+# # _setup_fastblocks_module_structure()
+# # Now only creates modules that don't already exist
