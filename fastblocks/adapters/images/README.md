@@ -1,6 +1,6 @@
 # Image Adapters
 
-> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Adapters](../README.md) | [Templates](../templates/README.md)
+> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Adapters](<../README.md>) | [Templates](<../templates/README.md>)
 >
 > _Last reviewed: 2025-11-19_
 
@@ -50,7 +50,7 @@ Adapters that implement `get_img_tag()` can also be called directly inside your 
 When building a new adapter:
 
 1. Subclass `ImagesBaseSettings` for configuration (API keys, delivery domains, etc.).
-2. Implement an `ImagesBase` subclass with `upload_image()`, `get_image_url()`, and `get_img_tag()`.
-3. Register any extra template filters if your service exposes unique capabilities (e.g., custom transformation macros).
+1. Implement an `ImagesBase` subclass with `upload_image()`, `get_image_url()`, and `get_img_tag()`.
+1. Register any extra template filters if your service exposes unique capabilities (e.g., custom transformation macros).
 
 See the Cloudinary and ImageKit modules for realistic end-to-end implementations.

@@ -197,6 +197,10 @@ pytest -m integration
 # Performance benchmarks only
 pytest -m benchmark
 
+# Slow tests (can be skipped)
+pytest -m slow
+pytest -m "not slow"  # Skip slow tests
+
 # Combine markers with OR
 pytest -m "unit or integration"
 
@@ -240,6 +244,21 @@ pytest --durations=10
 
 # Quiet mode
 pytest -q
+```
+
+### Parallel Execution
+
+FastBlocks tests support parallel execution using pytest-xdist:
+
+```bash
+# Run tests in parallel (auto-detected CPU count)
+pytest
+
+# Explicitly specify number of workers
+pytest -n 4
+
+# Run tests grouped by file (recommended for FastBlocks)
+pytest --dist=loadfile
 ```
 
 ______________________________________________________________________
@@ -371,6 +390,33 @@ MockAdapters  # Adapters registry mock
 MockConfigModule  # Full config module mock
 ```
 
+### Available Fixtures
+
+The test suite also provides reusable pytest fixtures in `conftest.py`:
+
+```python
+mock_config()  # Consistent mock configuration
+mock_templates()  # Pre-configured mock templates adapter
+mock_request()  # Mock HTTP request
+mock_response()  # Mock HTTP response
+mock_fastblocks_app()  # Mock FastBlocks application
+```
+
+### Test Utilities
+
+Additional testing utilities are available in `tests/test_utils.py`:
+
+```python
+TestClient()  # Simplified test client for app requests
+create_mock_request()  # Create mock requests with specific parameters
+create_mock_response()  # Create mock responses with specific parameters
+async_test()  # Decorator to run async tests
+create_mock_config_with_values()  # Create config with custom values
+create_mock_app_with_middleware()  # Create mock app with middleware support
+```
+
+````
+
 ### Using MockAsyncPath
 
 ```python
@@ -390,7 +436,7 @@ async def test_file_operations():
     # Async iteration
     async for item in path.iterdir():
         print(item)  # No items by default
-```
+````
 
 ### Mocking ACB Dependencies
 

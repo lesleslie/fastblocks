@@ -88,38 +88,45 @@ class UniversalQueryParser:
             return int(value)
         return value
 
+    def _apply_operator_filter(
+        self, query_builder: t.Any, field: str, operator: str, value: t.Any
+    ) -> t.Any:
+        """Apply a single filter based on operator."""
+        if operator == "equals":
+            query_builder = query_builder.where(field, value)
+        elif operator == "gt":
+            query_builder = query_builder.where_gt(field, value)
+        elif operator == "gte":
+            query_builder = query_builder.where_gte(field, value)
+        elif operator == "lt":
+            query_builder = query_builder.where_lt(field, value)
+        elif operator == "lte":
+            query_builder = query_builder.where_lte(field, value)
+        elif operator == "contains":
+            query_builder = query_builder.where_like(field, f"%{value}%")
+        elif operator == "icontains":
+            query_builder = query_builder.where_ilike(field, f"%{value}%")
+        elif operator == "in":
+            query_builder = query_builder.where_in(field, value)
+        elif operator == "not":
+            query_builder = query_builder.where_not(field, value)
+        elif operator == "null":
+            if value:
+                query_builder = query_builder.where_null(field)
+            else:
+                query_builder = query_builder.where_not_null(field)
+        else:
+            debug(f"Unknown operator '{operator}' for field '{field}', skipping")
+        return query_builder
+
     def _apply_filters(  # noqa: C901
         self, query_builder: t.Any, filters: list[tuple[str, str, t.Any]]
     ) -> t.Any:
         for field, operator, value in filters:
             try:
-                if operator == "equals":
-                    query_builder = query_builder.where(field, value)
-                elif operator == "gt":
-                    query_builder = query_builder.where_gt(field, value)
-                elif operator == "gte":
-                    query_builder = query_builder.where_gte(field, value)
-                elif operator == "lt":
-                    query_builder = query_builder.where_lt(field, value)
-                elif operator == "lte":
-                    query_builder = query_builder.where_lte(field, value)
-                elif operator == "contains":
-                    query_builder = query_builder.where_like(field, f"%{value}%")
-                elif operator == "icontains":
-                    query_builder = query_builder.where_ilike(field, f"%{value}%")
-                elif operator == "in":
-                    query_builder = query_builder.where_in(field, value)
-                elif operator == "not":
-                    query_builder = query_builder.where_not(field, value)
-                elif operator == "null":
-                    if value:
-                        query_builder = query_builder.where_null(field)
-                    else:
-                        query_builder = query_builder.where_not_null(field)
-                else:
-                    debug(
-                        f"Unknown operator '{operator}' for field '{field}', skipping"
-                    )
+                query_builder = self._apply_operator_filter(
+                    query_builder, field, operator, value
+                )
             except AttributeError as e:
                 debug(
                     f"Query builder method not available for operator '{operator}': {e}"

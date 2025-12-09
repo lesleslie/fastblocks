@@ -276,37 +276,20 @@ class HeroiconsIcons(IconsBase):
 
         return f"heroicon heroicon-{variant}"
 
-    def get_icon_tag(
-        self,
-        icon_name: str,
-        variant: str | None = None,
-        size: str | None = None,
-        **attributes: Any,
-    ) -> str:
-        if not self.settings:
-            self.settings = HeroiconsIconsSettings()
-
-        # Resolve icon aliases
-        if icon_name in self.settings.icon_aliases:
-            icon_name = self.settings.icon_aliases[icon_name]
-
-        # Use default variant if not specified
-        if not variant:
-            variant = self.settings.default_variant
-
-        # Validate variant
-        if variant not in self.settings.enabled_variants:
-            variant = self.settings.default_variant
-
-        # Determine size
+    def _get_icon_size(self, size: str | None, variant: str) -> str:
+        """Determine icon size based on input and variant."""
         if size and size in self.settings.size_presets:
-            icon_size = self.settings.size_presets[size]
+            return self.settings.size_presets[size]
         elif size and size.isdigit():
-            icon_size = size
+            return size
         else:
             # Default size based on variant
-            icon_size = "20" if variant == "mini" else self.settings.default_size
+            return "20" if variant == "mini" else self.settings.default_size
 
+    def _build_icon_class(
+        self, icon_name: str, variant: str, size: str | None, attributes: dict[str, Any]
+    ) -> str:
+        """Build the complete icon class string."""
         # Build base icon class
         icon_class = self.get_icon_class(icon_name, variant)
 
@@ -340,10 +323,14 @@ class HeroiconsIcons(IconsBase):
         state_classes, attributes = process_state_attributes(attributes, "heroicon")
 
         # Combine all classes
-        icon_class += (
+        return icon_class + (
             transform_classes + animation_classes + color_class + state_classes
         )
 
+    def _build_svg_attributes(
+        self, icon_class: str, icon_size: str, variant: str, attributes: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Build SVG attributes with variant-specific settings."""
         # Build SVG attributes
         svg_attrs = {
             "class": icon_class,
@@ -360,6 +347,41 @@ class HeroiconsIcons(IconsBase):
             svg_attrs.setdefault("fill", "none")
         else:
             svg_attrs.setdefault("fill", "currentColor")
+
+        return svg_attrs
+
+    def get_icon_tag(
+        self,
+        icon_name: str,
+        variant: str | None = None,
+        size: str | None = None,
+        **attributes: Any,
+    ) -> str:
+        if not self.settings:
+            self.settings = HeroiconsIconsSettings()
+
+        # Resolve icon aliases
+        if icon_name in self.settings.icon_aliases:
+            icon_name = self.settings.icon_aliases[icon_name]
+
+        # Use default variant if not specified
+        if not variant:
+            variant = self.settings.default_variant
+
+        # Validate variant
+        if variant not in self.settings.enabled_variants:
+            variant = self.settings.default_variant
+
+        # Determine size
+        icon_size = self._get_icon_size(size, variant)
+
+        # Build icon class
+        icon_class = self._build_icon_class(icon_name, variant, size, attributes)
+
+        # Build SVG attributes
+        svg_attrs = self._build_svg_attributes(
+            icon_class, icon_size, variant, attributes
+        )
 
         # Generate SVG content and build tag
         svg_content = self._get_icon_svg_content(icon_name, variant)

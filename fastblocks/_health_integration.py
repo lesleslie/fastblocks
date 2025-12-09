@@ -83,6 +83,29 @@ class TemplatesHealthCheck(FastBlocksHealthCheck):
             component_name="Template System",
         )
 
+    def _check_template_adapter_status(
+        self, templates: t.Any, details: dict[str, t.Any]
+    ) -> tuple[t.Any, str]:
+        """Check templates adapter status and update details."""
+        if not hasattr(templates, "app") or templates.app is None:
+            return HealthStatus.DEGRADED, "Template app not initialized"
+
+        details["jinja_env_initialized"] = True
+
+        # Check template directory accessibility
+        if hasattr(templates.app, "env") and templates.app.env.loader:
+            details["loader_available"] = True
+            return HealthStatus.HEALTHY, "Template system operational"
+        return HealthStatus.DEGRADED, "Template loader not configured"
+
+    async def _check_cache_availability(self, details: dict[str, t.Any]) -> None:
+        """Check cache availability and update details."""
+        try:
+            cache = await depends.get("cache")
+            details["cache_available"] = cache is not None
+        except Exception:
+            details["cache_available"] = False
+
     async def _perform_health_check(
         self,
         check_type: t.Any,
@@ -103,26 +126,12 @@ class TemplatesHealthCheck(FastBlocksHealthCheck):
                 status = HealthStatus.DEGRADED
                 message = "Templates adapter not initialized"
             else:
-                # Check if templates has required attributes
-                if hasattr(templates, "app") and templates.app is not None:
-                    details["jinja_env_initialized"] = True
-
-                    # Check template directory accessibility
-                    if hasattr(templates.app, "env") and templates.app.env.loader:
-                        details["loader_available"] = True
-                    else:
-                        status = HealthStatus.DEGRADED
-                        message = "Template loader not configured"
-                else:
-                    status = HealthStatus.DEGRADED
-                    message = "Template app not initialized"
+                status, message = self._check_template_adapter_status(
+                    templates, details
+                )
 
             # Check cache availability
-            try:
-                cache = await depends.get("cache")
-                details["cache_available"] = cache is not None
-            except Exception:
-                details["cache_available"] = False
+            await self._check_cache_availability(details)
 
         except Exception as e:
             status = HealthStatus.UNHEALTHY
@@ -379,6 +388,38 @@ async def register_fastblocks_health_checks() -> bool:
         return False
 
 
+def _determine_overall_health_status(results: dict[str, t.Any]) -> str:
+    """Determine overall health status from individual component results."""
+    statuses = [r.get("status", "unknown") for r in results.values()]
+
+    if "unhealthy" in statuses or "critical" in statuses:
+        return "unhealthy"
+    elif "degraded" in statuses:
+        return "degraded"
+    elif all(s == "healthy" for s in statuses):
+        return "healthy"
+    return "unknown"
+
+
+async def _get_component_health_results(health_service: t.Any) -> dict[str, t.Any]:
+    """Get health results for all components."""
+    component_ids = ["templates", "cache", "routes", "database"]
+    results = {}
+
+    for component_id in component_ids:
+        try:
+            result = await health_service.get_component_health(component_id)
+            if result:
+                results[component_id] = result.to_dict()
+        except Exception:
+            results[component_id] = {
+                "status": "unknown",
+                "message": "Health check failed",
+            }
+
+    return results
+
+
 async def get_fastblocks_health_summary() -> dict[str, t.Any]:
     """Get comprehensive health summary for all FastBlocks components.
 
@@ -403,31 +444,10 @@ async def get_fastblocks_health_summary() -> dict[str, t.Any]:
             }
 
         # Get health status for all registered components
-        component_ids = ["templates", "cache", "routes", "database"]
-        results = {}
-
-        for component_id in component_ids:
-            try:
-                result = await health_service.get_component_health(component_id)
-                if result:
-                    results[component_id] = result.to_dict()
-            except Exception:
-                results[component_id] = {
-                    "status": "unknown",
-                    "message": "Health check failed",
-                }
+        results = await _get_component_health_results(health_service)
 
         # Determine overall status
-        statuses = [r.get("status", "unknown") for r in results.values()]
-
-        if "unhealthy" in statuses or "critical" in statuses:
-            overall_status = "unhealthy"
-        elif "degraded" in statuses:
-            overall_status = "degraded"
-        elif all(s == "healthy" for s in statuses):
-            overall_status = "healthy"
-        else:
-            overall_status = "unknown"
+        overall_status = _determine_overall_health_status(results)
 
         return {
             "status": overall_status,

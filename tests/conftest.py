@@ -3294,6 +3294,42 @@ def cleanup_acb_depends():
         pass
 
 
+@pytest.fixture
+def mock_config():
+    """Provide a consistent mock configuration for tests."""
+    return MockConfig()
+
+
+@pytest.fixture
+def mock_templates(mock_config):
+    """Provide a consistent mock templates adapter for tests."""
+    return MockTemplates(config=mock_config)
+
+
+@pytest.fixture
+def mock_request():
+    """Provide a mock request for testing."""
+    return Request(scope={"type": "http", "method": "GET", "path": "/test"})
+
+
+@pytest.fixture
+def mock_response():
+    """Provide a mock response for testing."""
+    return HTMLResponse(content="test")
+
+
+@pytest.fixture
+def mock_fastblocks_app(mock_config):
+    """Provide a mock FastBlocks application for testing."""
+    from unittest.mock import Mock
+
+    app = Mock()
+    app.config = mock_config
+    app.middleware = []
+    app.routes = []
+    return app
+
+
 # # Commented out to prevent global module interference
 # # _setup_fastblocks_module_structure()
 # # Now only creates modules that don't already exist

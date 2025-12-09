@@ -101,54 +101,74 @@ class FontSquirrelFonts(FontsBase):
 
         return f"@font-face {{\n{chr(10).join(properties)}\n}}"
 
+    def _handle_single_file_path(self, font_config: dict[str, t.Any]) -> list[str]:
+        """Handle single file path configuration."""
+        src_parts = []
+        file_path = font_config["path"]
+        format_hint = self._get_format_from_path(file_path)
+        url = self._normalize_font_url(file_path)
+        src_parts.append(f"url('{url}') format('{format_hint}')")
+        return src_parts
+
+    def _handle_multiple_file_paths(self, font_config: dict[str, t.Any]) -> list[str]:
+        """Handle multiple file paths with formats."""
+        src_parts = []
+        files = font_config["files"]
+
+        # Sort files by format priority
+        sorted_files = sorted(
+            files,
+            key=lambda f: self.FORMAT_PRIORITIES.index(f.get("format", "ttf"))
+            if f.get("format") in self.FORMAT_PRIORITIES
+            else 999,
+        )
+
+        for file_info in sorted_files:
+            file_path = file_info.get("path")
+            format_hint = file_info.get("format") or self._get_format_from_path(
+                file_path
+            )
+
+            if file_path and format_hint:
+                url = self._normalize_font_url(file_path)
+                src_parts.append(f"url('{url}') format('{format_hint}')")
+
+        return src_parts
+
+    def _handle_directory_discovery(self, font_config: dict[str, t.Any]) -> list[str]:
+        """Handle directory-based font discovery."""
+        src_parts = []
+        directory = font_config["directory"]
+        family = font_config.get("family") or font_config.get("name", "")
+        weight = font_config.get("weight", "400")
+        style = font_config.get("style", "normal")
+
+        # Look for font files in directory
+        if family:  # Only proceed if family name is available
+            discovered_files = self._discover_font_files(
+                directory, family, weight, style
+            )
+            for file_path, format_hint in discovered_files:
+                url = self._normalize_font_url(file_path)
+                src_parts.append(f"url('{url}') format('{format_hint}')")
+
+        return src_parts
+
     def _build_src_declaration(self, font_config: dict[str, t.Any]) -> str:
         """Build the src property for @font-face."""
         src_parts = []
 
         # Handle single file path
         if "path" in font_config:
-            file_path = font_config["path"]
-            format_hint = self._get_format_from_path(file_path)
-            url = self._normalize_font_url(file_path)
-            src_parts.append(f"url('{url}') format('{format_hint}')")
+            src_parts.extend(self._handle_single_file_path(font_config))
 
         # Handle multiple file paths with formats
         elif "files" in font_config:
-            files = font_config["files"]
-
-            # Sort files by format priority
-            sorted_files = sorted(
-                files,
-                key=lambda f: self.FORMAT_PRIORITIES.index(f.get("format", "ttf"))
-                if f.get("format") in self.FORMAT_PRIORITIES
-                else 999,
-            )
-
-            for file_info in sorted_files:
-                file_path = file_info.get("path")
-                format_hint = file_info.get("format") or self._get_format_from_path(
-                    file_path
-                )
-
-                if file_path and format_hint:
-                    url = self._normalize_font_url(file_path)
-                    src_parts.append(f"url('{url}') format('{format_hint}')")
+            src_parts.extend(self._handle_multiple_file_paths(font_config))
 
         # Handle directory-based discovery
         elif "directory" in font_config:
-            directory = font_config["directory"]
-            family = font_config.get("family") or font_config.get("name", "")
-            weight = font_config.get("weight", "400")
-            style = font_config.get("style", "normal")
-
-            # Look for font files in directory
-            if family:  # Only proceed if family name is available
-                discovered_files = self._discover_font_files(
-                    directory, family, weight, style
-                )
-                for file_path, format_hint in discovered_files:
-                    url = self._normalize_font_url(file_path)
-                    src_parts.append(f"url('{url}') format('{format_hint}')")
+            src_parts.extend(self._handle_directory_discovery(font_config))
 
         return ", ".join(src_parts)
 

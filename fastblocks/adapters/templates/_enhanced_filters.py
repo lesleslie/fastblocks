@@ -146,6 +146,22 @@ def twicpics_image(image_id: str, **transformations: t.Any) -> str:
     return image_id
 
 
+def _separate_image_attributes(
+    transform_params: dict[str, t.Any],
+) -> tuple[dict[str, t.Any], dict[str, t.Any]]:
+    """Separate image attributes from transformation parameters."""
+    img_attrs = {}
+    transform_only = {}
+
+    for key, value in transform_params.items():
+        if key in ("class", "id", "style", "loading", "alt"):
+            img_attrs[key] = value
+        else:
+            transform_only[key] = value
+
+    return img_attrs, transform_only
+
+
 def twicpics_smart_crop(
     image_id: str, width: int, height: int, focus: str = "auto", **attributes: t.Any
 ) -> str:
@@ -163,14 +179,7 @@ def twicpics_smart_crop(
             } | attributes
 
             # Extract img attributes from transform params
-            img_attrs = {}
-            transform_only = {}
-
-            for key, value in transform_params.items():
-                if key in ("class", "id", "style", "loading", "alt"):
-                    img_attrs[key] = value
-                else:
-                    transform_only[key] = value
+            img_attrs, transform_only = _separate_image_attributes(transform_params)
 
             image_url = twicpics.get_image_url(image_id, **transform_only)
 

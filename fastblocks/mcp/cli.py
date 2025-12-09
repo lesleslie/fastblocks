@@ -307,6 +307,39 @@ def validate(adapter_name: str) -> None:
     asyncio.run(_validate())
 
 
+async def _display_all_adapters_health(health_system: t.Any, format: str) -> None:
+    """Display health results for all adapters."""
+    results = await health_system.check_all_adapters()
+    if format == "json":
+        output = {name: result.to_dict() for name, result in results.items()}
+        click.echo(json.dumps(output, indent=2))
+    else:
+        click.echo("Health Check Results:")
+        click.echo("-" * 50)
+        for name, result in results.items():
+            _display_health_result_summary(name, result)
+
+
+async def _display_single_adapter_health(
+    health_system: t.Any, adapter_name: str, format: str
+) -> None:
+    """Display health result for a single adapter."""
+    result = await health_system.check_adapter_health(adapter_name)
+    if format == "json":
+        click.echo(json.dumps(result.to_dict(), indent=2))
+    else:
+        _display_health_result_detail(adapter_name, result)
+
+
+async def _display_system_health_summary_cli(health_system: t.Any, format: str) -> None:
+    """Display system health summary."""
+    summary = health_system.get_system_health_summary()
+    if format == "json":
+        click.echo(json.dumps(summary, indent=2))
+    else:
+        _display_system_health_summary(summary)
+
+
 @cli.command()
 @click.argument("adapter_name", required=False)
 @click.option("--all", is_flag=True, help="Check all adapters")
@@ -320,29 +353,11 @@ def health(
         _registry, health_system = await get_registry_and_health()
 
         if all:
-            results = await health_system.check_all_adapters()
-            if format == "json":
-                output = {name: result.to_dict() for name, result in results.items()}
-                click.echo(json.dumps(output, indent=2))
-            else:
-                click.echo("Health Check Results:")
-                click.echo("-" * 50)
-                for name, result in results.items():
-                    _display_health_result_summary(name, result)
-
+            await _display_all_adapters_health(health_system, format)
         elif adapter_name:
-            result = await health_system.check_adapter_health(adapter_name)
-            if format == "json":
-                click.echo(json.dumps(result.to_dict(), indent=2))
-            else:
-                _display_health_result_detail(adapter_name, result)
-
+            await _display_single_adapter_health(health_system, adapter_name, format)
         else:
-            summary = health_system.get_system_health_summary()
-            if format == "json":
-                click.echo(json.dumps(summary, indent=2))
-            else:
-                _display_system_health_summary(summary)
+            await _display_system_health_summary_cli(health_system, format)
 
     asyncio.run(_health())
 

@@ -1,6 +1,6 @@
 # Style Adapters
 
-> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Adapters](../README.md) | [Templates](../templates/README.md)
+> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Adapters](<../README.md>) | [Templates](<../templates/README.md>)
 >
 > _Last reviewed: 2025-11-19_
 
@@ -48,7 +48,7 @@ Replace `kelp_` with the adapter prefix you have enabled (e.g., `webawesome_styl
 To add a new style adapter:
 
 1. Create `MyStyleSettings(StyleBaseSettings)` and declare adapter metadata (`MODULE_ID`, `MODULE_STATUS`).
-2. Implement `MyStyle(StyleBase)` with `get_stylesheet_links()` and `get_component_class()`.
-3. Register any globals/filters in `register_mystyle_functions(env)` so templates can discover your adapter.
+1. Implement `MyStyle(StyleBase)` with `get_stylesheet_links()` and `get_component_class()`.
+1. Register any globals/filters in `register_mystyle_functions(env)` so templates can discover your adapter.
 
 Use the existing adapters as references—the dependency injection hooks and exported names are intentionally consistent across implementations.

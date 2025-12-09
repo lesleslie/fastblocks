@@ -180,12 +180,15 @@ markers = [
     "unit: marks test as a unit test",
     "performance: mark test as a performance test (disables parallel execution)",
     "integration: marks test as an integration test",
+    "slow: mark test as slow to skip with --skip-slow",
 ]
 timeout = "300"
 timeout_method = "thread"
 addopts = [
     "--cov=fastblocks",
-    "--cov-report=term"
+    "--cov-report=term",
+    "-n", "auto",
+    "--dist=loadfile"
 ]
 filterwarnings = [
     "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",

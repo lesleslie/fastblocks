@@ -18,7 +18,7 @@ adapters:
   config:
     enabled: true
     backend: "file"
-    
+
   logger:
     enabled: true
     backend: "loguru"

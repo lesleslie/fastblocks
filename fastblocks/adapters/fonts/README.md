@@ -1,6 +1,6 @@
 # Font Adapters
 
-> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Adapters](../README.md) | [Templates](../templates/README.md)
+> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Adapters](<../README.md>) | [Templates](<../templates/README.md>)
 >
 > _Last reviewed: 2025-11-19_
 
@@ -41,6 +41,7 @@ In Python, you can always access the adapter directly:
 
 ```python
 from acb.depends import depends
+
 Fonts = depends.get_sync("fonts")
 font_css = await Fonts.get_font_import()
 ```
@@ -50,7 +51,7 @@ font_css = await Fonts.get_font_import()
 New font adapters should:
 
 1. Subclass `FontsBaseSettings` for configuration (hostnames, kit IDs, etc.).
-2. Implement `get_font_import()` (async) and optionally helper methods like `get_font_family()` or `get_optimized_loading()`.
-3. Register any sync wrappers (`get_sync_font_import`) if your adapter needs to be reachable from sync template contexts.
+1. Implement `get_font_import()` (async) and optionally helper methods like `get_font_family()` or `get_optimized_loading()`.
+1. Register any sync wrappers (`get_sync_font_import`) if your adapter needs to be reachable from sync template contexts.
 
 Use the Google Fonts adapter as a reference for how to generate preconnect tags, CSS variables, and preloads while staying compliant with the base protocol.

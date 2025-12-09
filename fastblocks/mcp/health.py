@@ -108,38 +108,48 @@ class HealthCheckSystem:
 
         return result
 
-    async def _perform_functional_checks(
-        self, adapter_name: str, adapter: Any, start_time: float
-    ) -> HealthCheckResult:
-        """Perform functional health checks on an adapter."""
+    def _determine_health_status(
+        self, checks: list[str], warnings: list[str]
+    ) -> tuple[str, str]:
+        """Determine health status and message based on checks and warnings."""
+        if checks:
+            status = "warning" if warnings else "healthy"
+            message = f"Passed {len(checks)} checks"
+            if warnings:
+                message += f", {len(warnings)} warnings"
+        else:
+            status = "error"
+            message = "No functional checks passed"
+        return status, message
+
+    async def _perform_category_specific_checks(
+        self, adapter_info: Any, adapter: Any
+    ) -> list[str]:
+        """Perform category-specific health checks."""
+        checks = []
+        category = adapter_info.category
+
+        # Category-specific health checks
+        if category == "images":
+            checks.extend(await self._check_image_adapter(adapter))
+        elif category == "styles":
+            checks.extend(await self._check_style_adapter(adapter))
+        elif category == "icons":
+            checks.extend(await self._check_icon_adapter(adapter))
+        elif category == "fonts":
+            checks.extend(await self._check_font_adapter(adapter))
+        elif category == "templates":
+            checks.extend(await self._check_template_adapter(adapter))
+
+        return checks
+
+    async def _check_acb_registration(
+        self, adapter_name: str
+    ) -> tuple[list[str], list[str]]:
+        """Check ACB registration for the adapter."""
         checks = []
         warnings = []
 
-        # Check if adapter has required methods based on its type
-        adapter_info = await self.registry.get_adapter_info(adapter_name)
-
-        if adapter_info:
-            category = adapter_info.category
-
-            # Category-specific health checks
-            if category == "images":
-                checks.extend(await self._check_image_adapter(adapter))
-            elif category == "styles":
-                checks.extend(await self._check_style_adapter(adapter))
-            elif category == "icons":
-                checks.extend(await self._check_icon_adapter(adapter))
-            elif category == "fonts":
-                checks.extend(await self._check_font_adapter(adapter))
-            elif category == "templates":
-                checks.extend(await self._check_template_adapter(adapter))
-
-        # Check settings availability
-        if hasattr(adapter, "settings"):
-            checks.append("Settings available")
-        else:
-            warnings.append("No settings found")
-
-        # Check ACB registration
         try:
             from acb.depends import depends
 
@@ -151,17 +161,38 @@ class HealthCheckSystem:
         except Exception:
             warnings.append("ACB registration check failed")
 
+        return checks, warnings
+
+    async def _perform_functional_checks(
+        self, adapter_name: str, adapter: Any, start_time: float
+    ) -> HealthCheckResult:
+        """Perform functional health checks on an adapter."""
+        checks = []
+        warnings = []
+
+        # Check if adapter has required methods based on its type
+        adapter_info = await self.registry.get_adapter_info(adapter_name)
+
+        if adapter_info:
+            checks.extend(
+                await self._perform_category_specific_checks(adapter_info, adapter)
+            )
+
+        # Check settings availability
+        if hasattr(adapter, "settings"):
+            checks.append("Settings available")
+        else:
+            warnings.append("No settings found")
+
+        # Check ACB registration
+        acb_checks, acb_warnings = await self._check_acb_registration(adapter_name)
+        checks.extend(acb_checks)
+        warnings.extend(acb_warnings)
+
         duration_ms = (time.time() - start_time) * 1000
 
         # Determine overall status
-        if checks:
-            status = "warning" if warnings else "healthy"
-            message = f"Passed {len(checks)} checks"
-            if warnings:
-                message += f", {len(warnings)} warnings"
-        else:
-            status = "error"
-            message = "No functional checks passed"
+        status, message = self._determine_health_status(checks, warnings)
 
         return HealthCheckResult(
             adapter_name,
