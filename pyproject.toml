@@ -331,6 +331,7 @@ index-url = "https://pypi.org/simple/"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
 prerelease = "allow"
+override-dependencies = ["pyscn<1.5.1"]
 
 [tool.vulture]
 min_confidence = 86
