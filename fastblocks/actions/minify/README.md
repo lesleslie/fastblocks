@@ -1,23 +1,23 @@
 # Minify Action
 
-> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../README.md>) | [Adapters](<../../adapters/README.md>)
+> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../../README.md) | [Actions](../README.md) | [Adapters](../../adapters/README.md)
 
 The Minify action provides code and asset optimization for FastBlocks web applications. It reduces file sizes through safe transformations, whitespace removal, and redundancy elimination while preserving functionality and improving performance.
 
 ## Table of Contents
 
-- [Overview](<#overview>)
-- [Features](<#features>)
-- [Usage](<#usage>)
-  - [HTML Minification](<#html-minification>)
-  - [CSS Minification](<#css-minification>)
-  - [JavaScript Minification](<#javascript-minification>)
-- [API Reference](<#api-reference>)
-- [Examples](<#examples>)
-- [Performance Benefits](<#performance-benefits>)
-- [Integration Patterns](<#integration-patterns>)
-- [Best Practices](<#best-practices>)
-- [Related Actions](<#related-actions>)
+- [Overview](#overview)
+- [Features](#features)
+- [Usage](#usage)
+  - [HTML Minification](#html-minification)
+  - [CSS Minification](#css-minification)
+  - [JavaScript Minification](#javascript-minification)
+- [API Reference](#api-reference)
+- [Examples](#examples)
+- [Performance Benefits](#performance-benefits)
+- [Integration Patterns](#integration-patterns)
+- [Best Practices](#best-practices)
+- [Related Actions](#related-actions)
 
 ## Overview
 
@@ -630,6 +630,6 @@ class CachedMinifier:
 
 ## Related Actions
 
-- [Gather Action](<../gather/README.md>): Discover templates and assets before minifying
-- [Sync Action](<../sync/README.md>): Synchronize minified assets across environments
+- [Gather Action](../gather/README.md): Discover templates and assets before minifying
+- [Sync Action](../sync/README.md): Synchronize minified assets across environments
 - [ACB Compress Action](https://github.com/lesleslie/acb/tree/main/acb/actions/compress): Additional compression utilities

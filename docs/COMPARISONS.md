@@ -1,6 +1,6 @@
 # FastBlocks Comparisons & Decision Guide
 
-> **FastBlocks Documentation**: [Main](../README.md) | [Core Features](../fastblocks/README.md) | [Actions](../fastblocks/actions/README.md) | [Adapters](../fastblocks/adapters/README.md)
+> **FastBlocks Documentation**: [Main](../README.md) | [Core Features](../README.md#fastblocks) | [Actions](../fastblocks/actions/README.md) | [Adapters](../fastblocks/adapters/README.md)
 >
 > _Last reviewed: 2025-11-19_
 

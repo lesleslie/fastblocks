@@ -24,14 +24,6 @@
       "type": "http",
       "url": "http://localhost:3032/mcp"
     },
-    "gitlab": {
-      "args": [
-        "-y",
-        "@zereight/mcp-gitlab@2.0.6"
-      ],
-      "command": "npx",
-      "type": "stdio"
-    },
     "logfire": {
       "args": [
         "logfire-mcp@latest"
@@ -88,7 +80,7 @@
       "type": "http",
       "url": "https://mcp.sentry.dev/mcp"
     },
-    "session-mgmt": {
+    "session-buddy": {
       "type": "http",
       "url": "http://localhost:8678/mcp"
     },

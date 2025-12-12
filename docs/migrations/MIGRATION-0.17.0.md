@@ -165,9 +165,9 @@ uv add --group monitoring
 
 ## Questions?
 
-- See [README.md](./README.md) for updated installation examples
-- Check [CHANGELOG.md](./CHANGELOG.md) for detailed release notes
-- Review [CLAUDE.md](./CLAUDE.md) for development guidelines
+- See [README.md](../../README.md) for updated installation examples
+- Check [CHANGELOG.md](../../CHANGELOG.md) for detailed release notes
+- Review [CLAUDE.md](../../CLAUDE.md) for development guidelines
 
 ## Migration Checklist
 

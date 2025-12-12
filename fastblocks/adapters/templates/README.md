@@ -1,6 +1,6 @@
 # Templates Adapter
 
-> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>)
+> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
 >
 > _Last reviewed: 2025-11-19_
 

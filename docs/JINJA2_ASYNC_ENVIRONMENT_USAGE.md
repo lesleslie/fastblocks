@@ -240,8 +240,8 @@ This issue was discovered while fixing the ACB templates adapter, which uses the
 
 **Related Documentation**:
 
-- jinja2-async-environment bug analysis: `/Users/les/Projects/jinja2-async-environment/docs/TEMPLATE_INHERITANCE_BUG_ANALYSIS.md`
-- ACB templates adapter implementation: `/Users/les/Projects/acb/acb/adapters/templates/jinja2.py`
+- jinja2-async-environment bug analysis: `https://github.com/lesleslie/jinja2-async-environment/blob/main/docs/TEMPLATE_INHERITANCE_BUG_ANALYSIS.md`
+- ACB templates adapter implementation: `https://github.com/lesleslie/acb/blob/main/acb/adapters/templates/jinja2.py`
 
 ## Conclusion
 

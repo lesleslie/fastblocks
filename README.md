@@ -2,7 +2,7 @@
 <img src="./images/fastblocks-logo.png" alt="FastBlocks Logo">
 </p>
 
-> **FastBlocks Documentation**: [Main](<#fastblocks>) | [Core Features](./fastblocks/README.md) | [Actions](<./fastblocks/actions/README.md>) | [Adapters](<./fastblocks/adapters/README.md>)
+> **FastBlocks Documentation**: [Main](#fastblocks) | [Core Features](#fastblocks) | [Actions](./fastblocks/actions/README.md) | [Adapters](./fastblocks/adapters/README.md)
 
 # FastBlocks
 
@@ -55,17 +55,17 @@ If you're new to FastBlocks, here are the key concepts to understand:
 
 ## Documentation Map
 
-- [Getting Started Guide](<./docs/GETTING_STARTED.md>) – step-by-step quick start plus common HTMX patterns
-- [Core Framework Reference](./fastblocks/README.md) – applications, middleware, core architecture
-- [Actions Library](<./fastblocks/actions/README.md>) – minification, gathering, query utilities, and more
-- [Adapters Reference](<./fastblocks/adapters/README.md>) – overview of pluggable adapters
-- [Templates Adapter Guide](<./fastblocks/adapters/templates/README.md>) – async Jinja stack and filters
-- [Technical Docs Index](<./docs/README.md>) – ACB guide, migration notes, archived docs
-- [Async Jinja Troubleshooting](<./docs/JINJA2_ASYNC_ENVIRONMENT_USAGE.md>) – inheritance-safe rendering guidance
-- [Architecture Guide](<./docs/ARCHITECTURE.md>) – Starlette + ACB layering, SSR pipeline, and project layout
-- [Comparisons & Decision Guide](<./docs/COMPARISONS.md>) – framework comparisons and key advantages
-- [Template Examples](<./docs/examples/TEMPLATE_EXAMPLES.md>) – snippets for layout, fragments, and HTMX swaps
-- [Testing Guide](<./tests/TESTING.md>) – instructions for running the FastBlocks test suite
+- [Getting Started Guide](./docs/GETTING_STARTED.md) – step-by-step quick start plus common HTMX patterns
+- [Core Framework Reference](./README.md#fastblocks) – applications, middleware, core architecture
+- [Actions Library](./fastblocks/actions/README.md) – minification, gathering, query utilities, and more
+- [Adapters Reference](./fastblocks/adapters/README.md) – overview of pluggable adapters
+- [Templates Adapter Guide](./fastblocks/adapters/templates/README.md) – async Jinja stack and filters
+- [Technical Docs Index](./docs/README.md) – ACB guide, migration notes, archived docs
+- [Async Jinja Troubleshooting](./docs/JINJA2_ASYNC_ENVIRONMENT_USAGE.md) – inheritance-safe rendering guidance
+- [Architecture Guide](./docs/ARCHITECTURE.md) – Starlette + ACB layering, SSR pipeline, and project layout
+- [Comparisons & Decision Guide](./docs/COMPARISONS.md) – framework comparisons and key advantages
+- [Template Examples](./docs/examples/TEMPLATE_EXAMPLES.md) – snippets for layout, fragments, and HTMX swaps
+- [Testing Guide](./tests/TESTING.md) – instructions for running the FastBlocks test suite
 
 ## Why Choose FastBlocks?
 
@@ -76,7 +76,7 @@ FastBlocks pairs server-side rendering with HTMX-first workflows, a flexible ada
 - **Multi-cloud optionality** driven by configuration instead of rewrites
 - **Enterprise-grade defaults** (SQLAdmin, security middleware, monitoring hooks) that stay replaceable
 
-Need a deeper comparison against FastAPI, FastHTML, FastHX, FastHTMX, or Litestar? Want the full breakdown of multi-cloud, SSR, performance, and DX advantages? See the [Comparisons & Decision Guide](<./docs/COMPARISONS.md>) for detailed tables, “choose FastBlocks when…” scenarios, and enterprise capability checklists.
+Need a deeper comparison against FastAPI, FastHTML, FastHX, FastHTMX, or Litestar? Want the full breakdown of multi-cloud, SSR, performance, and DX advantages? See the [Comparisons & Decision Guide](./docs/COMPARISONS.md) for detailed tables, “choose FastBlocks when…” scenarios, and enterprise capability checklists.
 
 - **Content Management Systems**: Where initial load performance is critical
 - **Internal Tools**: Rapid development and maintenance are prioritized
@@ -88,31 +88,31 @@ FastBlocks combines the development speed of modern frameworks with the infrastr
 
 ## Table of Contents
 
-- [Why Choose FastBlocks?](<#why-choose-fastblocks>)
-- [Key Concepts](<#key-concepts>)
-- [Installation](<#installation>)
-- [Quick Start](<#quick-start>)
-- [Common Patterns](<#common-patterns>)
-- [Architecture Overview](<#architecture-overview>)
-- [Core Components](<#core-components>)
-  - [Templates](<#templates>)
-  - [Routing](<#routing>)
-  - [Middleware](<#middleware>)
-  - [HTMX Integration](<#htmx-integration>)
-  - [HTMY Components](<#htmy-components>)
-- [Database Models and Queries](<#database-models-and-queries>)
-- [Adapters](<#adapters>)
-- [Actions](<#actions>)
-- [Configuration](<#configuration>)
-- [Command-Line Interface (CLI)](<#command-line-interface-cli>)
-  - [Creating a New Project](<#creating-a-new-project>)
-  - [Running Your Application](<#running-your-application>)
-  - [CLI Options](<#cli-options>)
-- [Migration Guide](<#migration-guide>)
-- [Examples](<#examples>)
-- [Documentation](<#documentation>)
-- [License](<#license>)
-- [Acknowledgements](<#acknowledgements>)
+- [Why Choose FastBlocks?](#why-choose-fastblocks)
+- [Key Concepts](#key-concepts)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Common Patterns](#common-patterns)
+- [Architecture Overview](#architecture-overview)
+- [Core Components](#core-components)
+  - [Templates](#templates)
+  - [Routing](#routing)
+  - [Middleware](#middleware)
+  - [HTMX Integration](#htmx-integration)
+  - [HTMY Components](#htmy-components)
+- [Database Models and Queries](#database-models-and-queries)
+- [Adapters](#adapters)
+- [Actions](#actions)
+- [Configuration](#configuration)
+- [Command-Line Interface (CLI)](#command-line-interface-cli)
+  - [Creating a New Project](#creating-a-new-project)
+  - [Running Your Application](#running-your-application)
+  - [CLI Options](#cli-options)
+- [Migration Guide](#migration-guide)
+- [Examples](#examples)
+- [Documentation](#documentation)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 ## Installation
 
@@ -138,7 +138,7 @@ FastBlocks uses **PEP 735 dependency groups** for optional features. Install the
 | Multiple Groups | Install multiple features at once | `uv add --group admin --group monitoring --group sitemap` |
 | Development | Development tools | `uv add --group dev` |
 
-**Note**: Version 0.17.0+ uses dependency groups instead of extras. See [MIGRATION-0.17.0.md](<./docs/migrations/MIGRATION-0.17.0.md>) for details.
+**Note**: Version 0.17.0+ uses dependency groups instead of extras. See [MIGRATION-0.17.0.md](./docs/migrations/MIGRATION-0.17.0.md) for details.
 
 You can also install FastBlocks using pip:
 
@@ -158,7 +158,7 @@ pip install "logfire[starlette]>=3.24" "sentry-sdk[starlette]>=2.32"
 
 ## Getting Started
 
-Follow the [Getting Started guide](<./docs/GETTING_STARTED.md>) for a full step-by-step tutorial, including HTMX counter blocks, configuration files, and common interaction patterns. The guide consolidates everything that used to live in this README—Quick Start, Common Patterns, and dependency injection examples—so the landing page stays scannable.
+Follow the [Getting Started guide](./docs/GETTING_STARTED.md) for a full step-by-step tutorial, including HTMX counter blocks, configuration files, and common interaction patterns. The guide consolidates everything that used to live in this README—Quick Start, Common Patterns, and dependency injection examples—so the landing page stays scannable.
 
 Here's the core of every FastBlocks app:
 
@@ -197,7 +197,7 @@ FastBlocks extends Starlette’s ASGI runtime with HTMX-aware requests and middl
 - FastBlocks augments it with SSR-friendly helpers, template streaming, and HTMX ergonomics
 - ACB supplies dependency injection, configuration, and pluggable adapters
 
-For a detailed walkthrough—including Starlette integration points, modern `Inject[Type]` usage, HTMX SSR rationale, and the full project structure diagram—see the [Architecture Guide](<./docs/ARCHITECTURE.md>).
+For a detailed walkthrough—including Starlette integration points, modern `Inject[Type]` usage, HTMX SSR rationale, and the full project structure diagram—see the [Architecture Guide](./docs/ARCHITECTURE.md).
 
 ## Core Components
 
@@ -775,7 +775,7 @@ Here are some common HTMX patterns you can use with FastBlocks:
 
 ### HTMY Components
 
-FastBlocks includes support for [HTMY](https://github.com/lesleslie/htmy), a Python-based HTML component library that brings type safety and component reusability to your templates.
+FastBlocks includes support for [HTMY](#htmy-components), a Python-based HTML component library that brings type safety and component reusability to your templates.
 
 #### When to Use HTMY vs Jinja2
 
@@ -1024,7 +1024,7 @@ For comprehensive adapter documentation including:
 - Best practices and troubleshooting
 - Integration patterns
 
-See the [**Adapters Documentation**](<./fastblocks/adapters/README.md>).
+See the [**Adapters Documentation**](./fastblocks/adapters/README.md).
 
 ## Database Models and Queries
 
@@ -1091,7 +1091,7 @@ Actions are utility functions that perform specific tasks:
 - **Sync**: Bidirectional synchronization of templates, settings, and cache across environments
 - **Minify**: HTML, CSS, and JavaScript minification
 
-For more information about actions, see the [Actions Documentation](<./fastblocks/actions/README.md>).
+For more information about actions, see the [Actions Documentation](./fastblocks/actions/README.md).
 
 ## Configuration
 
@@ -1368,16 +1368,16 @@ app = depends.get(App)
 
 For more detailed documentation about FastBlocks components:
 
-- [**Core Features**](./fastblocks/README.md): Applications, middleware, and core functionality
-- [**Actions**](<./fastblocks/actions/README.md>): Utility functions like minification
-- [**Adapters**](<./fastblocks/adapters/README.md>): Pluggable components for various features
-  - [**App Adapter**](<./fastblocks/adapters/app/README.md>): Application configuration
-  - [**Auth Adapter**](<./fastblocks/adapters/auth/README.md>): Authentication providers
-  - [**Admin Adapter**](<./fastblocks/adapters/admin/README.md>): Admin interface
-  - [**Routes Adapter**](<./fastblocks/adapters/routes/README.md>): Routing system
-  - [**Templates Adapter**](<./fastblocks/adapters/templates/README.md>): Template engine
-  - [**Sitemap Adapter**](<./fastblocks/adapters/sitemap/README.md>): Sitemap generation
-- [**Running Tests**](<./tests/TESTING.md>): Comprehensive guide to testing FastBlocks components
+- [**Core Features**](./README.md#fastblocks): Applications, middleware, and core functionality
+- [**Actions**](./fastblocks/actions/README.md): Utility functions like minification
+- [**Adapters**](./fastblocks/adapters/README.md): Pluggable components for various features
+  - [**App Adapter**](./fastblocks/adapters/app/README.md): Application configuration
+  - [**Auth Adapter**](./fastblocks/adapters/auth/README.md): Authentication providers
+  - [**Admin Adapter**](./fastblocks/adapters/admin/README.md): Admin interface
+  - [**Routes Adapter**](./fastblocks/adapters/routes/README.md): Routing system
+  - [**Templates Adapter**](./fastblocks/adapters/templates/README.md): Template engine
+  - [**Sitemap Adapter**](./fastblocks/adapters/sitemap/README.md): Sitemap generation
+- [**Running Tests**](./tests/TESTING.md): Comprehensive guide to testing FastBlocks components
 
 ## License
 
@@ -1399,7 +1399,6 @@ Special thanks to the following open-source projects that power FastBlocks:
 - [jinja2-async-environment](https://github.com/lesleslie/jinja2-async-environment) - Asynchronous Jinja2 environment
 - [starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja) - Starlette integration for async Jinja2
 - [Bulma](https://bulma.io/) - Modern CSS framework based on Flexbox for beautiful responsive designs
-- [Web Awesome](https://fontawesome.com/webawesome) - Comprehensive icon library and UI components from Font Awesome
 - [Kelp](https://kelp.com/) - Lightweight UI library for HTML-first development, powered by modern CSS and Web Components
 
 ### Data & Validation
@@ -1411,9 +1410,9 @@ Special thanks to the following open-source projects that power FastBlocks:
 
 ### Components & Rendering
 
-- [HTMY](https://github.com/lesleslie/htmy) - Python-based HTML components with type safety
-- [asgi-htmx](https://github.com/marcelotrylesisnki/asgi-htmx) - ASGI HTMX integration (enhanced and integrated into FastBlocks)
-- [asgi-sitemaps](https://github.com/DahlitzFlorian/asgi-sitemaps) - ASGI sitemap generation (enhanced and integrated into FastBlocks)
+- [HTMY](#htmy-components) - Python-based HTML components with type safety
+- [asgi-htmx](https://github.com/florimondmanca/asgi-htmx) - ASGI HTMX integration (enhanced and integrated into FastBlocks)
+- [asgi-sitemaps](https://github.com/florimondmanca/asgi-sitemaps) - ASGI sitemap generation (enhanced and integrated into FastBlocks)
 
 ### Performance & Infrastructure
 
@@ -1428,14 +1427,13 @@ Special thanks to the following open-source projects that power FastBlocks:
 - [Granian](https://github.com/emmett-framework/granian) - Alternative high-performance ASGI server
 - [Typer](https://typer.tiangolo.com/) - Modern CLI framework for building command-line interfaces
 - [icecream](https://github.com/gruns/icecream) - Enhanced debugging utilities
-- [bevy](https://github.com/bevy-engine/bevy) - Dependency injection framework (via ACB)
+- [bevy](https://github.com/bevyengine/bevy) - Rust game engine inspiration for ACB architecture
 - [msgspec](https://github.com/jcrist/msgspec) - High-performance serialization library
 - [attrs](https://github.com/python-attrs/attrs) - Classes without boilerplate
 
 ### Development Environment
 
 - [PyCharm](https://www.jetbrains.com/pycharm/) - The premier Python IDE that powered the development of FastBlocks
-- [Claude Code](https://claude.ai/code) - AI-powered development assistant that accelerated development and ensured code quality
 
 ## Special Acknowledgments
 

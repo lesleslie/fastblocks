@@ -80,7 +80,7 @@ dev = [
     "pytest-xdist>=3.8.0",
     "pyyaml>=6.0.3",
     "refurb>=2.2.0",
-    "session-mgmt-mcp>=0.9.4",
+    "session-buddy>=0.9.4",
 ]
 admin = [
     "sqladmin>=0.22.0",

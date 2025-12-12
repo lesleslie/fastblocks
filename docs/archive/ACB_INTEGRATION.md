@@ -495,6 +495,5 @@ async def handler(request, logger: Inject[Logger]):
 ## References
 
 - [ACB Documentation](https://github.com/lesleslie/acb)
-- [ACB Actions README](/Users/les/Projects/acb/acb/actions/README.md)
-- [ACB Adapters README](/Users/les/Projects/acb/acb/adapters/README.md)
-- [FastBlocks CLAUDE.md](../CLAUDE.md)
+- [ACB Actions README](https://github.com/lesleslie/acb/tree/main/acb/actions)
+- [ACB Adapters README](https://github.com/lesleslie/acb/tree/main/acb/adapters)

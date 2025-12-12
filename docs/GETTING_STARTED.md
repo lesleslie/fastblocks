@@ -1,6 +1,6 @@
 # Getting Started with FastBlocks
 
-> **FastBlocks Documentation**: [Main](<../README.md>) | [Core Features](../fastblocks/README.md) | [Actions](<../fastblocks/actions/README.md>) | [Adapters](<../fastblocks/adapters/README.md>)
+> **FastBlocks Documentation**: [Main](../README.md) | [Core Features](../README.md#fastblocks) | [Actions](../fastblocks/actions/README.md) | [Adapters](../fastblocks/adapters/README.md)
 >
 > _Last reviewed: 2025-11-19_
 
@@ -319,7 +319,7 @@ This example demonstrates the modern ACB 0.25.1+ `Inject[Type]` pattern for type
 
 ## Next Steps
 
-1. Explore the [Template Adapter guide](<../fastblocks/adapters/templates/README.md>) for filters, loaders, and async internals.
-1. Deep-dive into [async template rendering](<./JINJA2_ASYNC_ENVIRONMENT_USAGE.md>) if you hit inheritance or streaming issues.
-1. Review the [Template Examples](<./examples/TEMPLATE_EXAMPLES.md>) for fragment ideas.
-1. When you're ready to customize infrastructure, browse the [Adapters reference](<../fastblocks/adapters/README.md>).
+1. Explore the [Template Adapter guide](../fastblocks/adapters/templates/README.md) for filters, loaders, and async internals.
+1. Deep-dive into [async template rendering](./JINJA2_ASYNC_ENVIRONMENT_USAGE.md) if you hit inheritance or streaming issues.
+1. Review the [Template Examples](./examples/TEMPLATE_EXAMPLES.md) for fragment ideas.
+1. When you're ready to customize infrastructure, browse the [Adapters reference](../fastblocks/adapters/README.md).

@@ -12,7 +12,7 @@ ______________________________________________________________________
 
 # FastBlocks MCP Server
 
-> **FastBlocks Documentation**: [Main](<../../README.md>) | [Core Features](../README.md) | [Actions](<../actions/README.md>) | [Adapters](<../adapters/README.md>)
+> **FastBlocks Documentation**: [Main](../../README.md) | [Core Features](../../README.md) | [Actions](../actions/README.md) | [Adapters](../adapters/README.md)
 
 Complete implementation of the Model Context Protocol (MCP) server for FastBlocks, enabling IDE/AI assistant integration.
 
@@ -442,7 +442,7 @@ Planned improvements for the MCP server:
 
 ## Related Documentation
 
-- [FastBlocks README](../README.md) - Project overview
+- [FastBlocks README](../../README.md) - Project overview
 - [ACB Documentation](https://github.com/lesleslie/acb) - ACB framework
 - [MCP Specification](https://modelcontextprotocol.io) - MCP protocol details
 

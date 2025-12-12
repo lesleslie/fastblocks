@@ -554,8 +554,6 @@ ______________________________________________________________________
 
 ## See Also
 
-- **[ACB Plugin Architecture](../../acb/docs/PLUGIN_ARCHITECTURE.md)**: Complete architectural guide
-- **[ACB MCP API Reference](../../acb/docs/MCP_API.md)**: Full API documentation
 - **FastBlocks Source**: `/Users/les/Projects/fastblocks/fastblocks/mcp/`
 
 ______________________________________________________________________

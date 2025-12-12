@@ -1,6 +1,6 @@
 # App Adapter
 
-> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>)
+> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
 
 The App adapter manages application configuration and initialization in FastBlocks.
 

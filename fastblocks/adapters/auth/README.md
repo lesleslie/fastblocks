@@ -1,6 +1,6 @@
 # Auth Adapter
 
-> **FastBlocks Documentation**: [Main](<../../../README.md>) | [Core Features](../../README.md) | [Actions](<../../actions/README.md>) | [Adapters](<../README.md>)
+> **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
 
 The Auth adapter provides authentication mechanisms for FastBlocks applications.
 
