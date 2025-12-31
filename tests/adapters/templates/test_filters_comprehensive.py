@@ -446,7 +446,7 @@ class TestFilterRegistration:
                 "fonts": mock_fonts,
             }.get(name)
 
-        mock_depends.get.side_effect = mock_get
+        mock_depends.get_sync.side_effect = mock_get
 
         context = get_global_template_context()
 
