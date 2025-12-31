@@ -430,7 +430,7 @@ class TestFilterRegistration:
         assert "img_tag" in mock_env.filters  # Sync filter
         assert "async_image_url" in mock_env.filters  # Async filter
 
-    @patch("fastblocks.adapters.templates.registration.depends")
+    @patch("fastblocks.adapters.templates._registration.depends")
     def test_get_global_template_context(self, mock_depends):
         """Test global template context generation."""
         mock_images = MagicMock()
@@ -519,7 +519,7 @@ class TestFilterIntegration:
     def test_filter_chaining_compatibility(self):
         """Test that filters can be chained in templates."""
         # This tests the return types are compatible for chaining
-        with patch("fastblocks.adapters.templates.filters.depends") as mock_depends:
+        with patch("fastblocks.adapters.templates._filters.depends") as mock_depends:
             mock_depends.get_sync.return_value = None
 
             # Test that string outputs can be chained
@@ -534,7 +534,7 @@ class TestFilterIntegration:
 
     def test_filter_error_handling(self):
         """Test filter error handling."""
-        with patch("fastblocks.adapters.templates.filters.depends") as mock_depends:
+        with patch("fastblocks.adapters.templates._filters.depends") as mock_depends:
             # Test when depends.get returns None
             mock_depends.get_sync.return_value = None
 
@@ -548,7 +548,7 @@ class TestFilterIntegration:
     def test_filter_attribute_handling(self):
         """Test attribute handling across filters."""
         # Test that all filters handle various attribute types
-        with patch("fastblocks.adapters.templates.filters.depends") as mock_depends:
+        with patch("fastblocks.adapters.templates._filters.depends") as mock_depends:
             mock_depends.get_sync.return_value = None
 
             # Test with different attribute types
@@ -591,7 +591,7 @@ class TestFilterIntegration:
     def test_filter_performance_considerations(self):
         """Test performance-related aspects of filters."""
         # Test that filters don't have expensive operations in their core logic
-        with patch("fastblocks.adapters.templates.filters.depends") as mock_depends:
+        with patch("fastblocks.adapters.templates._filters.depends") as mock_depends:
             mock_depends.get_sync.return_value = None
 
             # These should be fast even with fallback behavior

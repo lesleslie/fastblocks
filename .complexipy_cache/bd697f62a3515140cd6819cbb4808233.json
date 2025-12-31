@@ -247,9 +247,15 @@
       "path": "fastblocks/_health_integration.py"
     },
     {
-      "complexity": 3,
+      "complexity": 2,
       "file_name": "_health_integration.py",
       "function_name": "HealthService::register_component",
+      "path": "fastblocks/_health_integration.py"
+    },
+    {
+      "complexity": 3,
+      "file_name": "_health_integration.py",
+      "function_name": "HealthService::get_component_health",
       "path": "fastblocks/_health_integration.py"
     },
     {
@@ -262,12 +268,6 @@
       "complexity": 4,
       "file_name": "_health_integration.py",
       "function_name": "CacheHealthCheck::_perform_health_check",
-      "path": "fastblocks/_health_integration.py"
-    },
-    {
-      "complexity": 4,
-      "file_name": "_health_integration.py",
-      "function_name": "HealthService::get_component_health",
       "path": "fastblocks/_health_integration.py"
     },
     {
@@ -2779,7 +2779,7 @@
       "path": "fastblocks/adapters/admin/sqladmin.py"
     },
     {
-      "complexity": 9,
+      "complexity": 6,
       "file_name": "sqladmin.py",
       "function_name": "Admin::init",
       "path": "fastblocks/adapters/admin/sqladmin.py"
@@ -3553,15 +3553,15 @@
       "path": "fastblocks/adapters/icons/heroicons.py"
     },
     {
-      "complexity": 6,
+      "complexity": 5,
       "file_name": "heroicons.py",
-      "function_name": "_create_hero_button",
+      "function_name": "HeroiconsIcons::_get_icon_size",
       "path": "fastblocks/adapters/icons/heroicons.py"
     },
     {
-      "complexity": 7,
+      "complexity": 6,
       "file_name": "heroicons.py",
-      "function_name": "HeroiconsIcons::_get_icon_size",
+      "function_name": "_create_hero_button",
       "path": "fastblocks/adapters/icons/heroicons.py"
     },
     {
@@ -4123,6 +4123,12 @@
       "path": "fastblocks/adapters/images/twicpics.py"
     },
     {
+      "complexity": 1,
+      "file_name": "oneiric_helper.py",
+      "function_name": "register_candidate",
+      "path": "fastblocks/adapters/oneiric_helper.py"
+    },
+    {
       "complexity": 0,
       "file_name": "_base.py",
       "function_name": "RoutesBaseSettings::__init__",
@@ -4165,7 +4171,7 @@
       "path": "fastblocks/adapters/routes/default.py"
     },
     {
-      "complexity": 2,
+      "complexity": 1,
       "file_name": "default.py",
       "function_name": "Routes::init",
       "path": "fastblocks/adapters/routes/default.py"
@@ -7647,13 +7653,13 @@
     {
       "complexity": 9,
       "file_name": "caching.py",
-      "function_name": "learn_cache_key",
+      "function_name": "get_adapter",
       "path": "fastblocks/caching.py"
     },
     {
-      "complexity": 11,
+      "complexity": 9,
       "file_name": "caching.py",
-      "function_name": "get_adapter",
+      "function_name": "learn_cache_key",
       "path": "fastblocks/caching.py"
     },
     {
@@ -9957,13 +9963,13 @@
     {
       "complexity": 2,
       "file_name": "tools.py",
-      "function_name": "_should_skip_variant_dir",
+      "function_name": "_determine_template_type",
       "path": "fastblocks/mcp/tools.py"
     },
     {
-      "complexity": 3,
+      "complexity": 2,
       "file_name": "tools.py",
-      "function_name": "_determine_template_type",
+      "function_name": "_should_skip_variant_dir",
       "path": "fastblocks/mcp/tools.py"
     },
     {
@@ -10243,7 +10249,7 @@
       "path": "fastblocks/middleware.py"
     },
     {
-      "complexity": 5,
+      "complexity": 4,
       "file_name": "middleware.py",
       "function_name": "MiddlewareStackManager::_register_conditional_middleware",
       "path": "fastblocks/middleware.py"

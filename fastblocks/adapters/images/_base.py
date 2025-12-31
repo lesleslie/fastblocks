@@ -1,6 +1,5 @@
 """Base classes and protocols for image adapters."""
 
-from contextlib import suppress
 from typing import Any, Protocol
 from uuid import UUID
 

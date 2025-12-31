@@ -73,6 +73,7 @@ from datetime import datetime
 
 depends = Resolver()
 
+
 async def add_blog_posts_to_sitemap() -> None:
     """Add blog posts to sitemap during application startup."""
     try:
@@ -104,6 +105,7 @@ from starlette.responses import Response
 from starlette.routing import Route
 
 depends = Resolver()
+
 
 async def get_sitemap(request) -> Response:
     """Generate and serve sitemap XML."""

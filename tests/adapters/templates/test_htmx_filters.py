@@ -53,8 +53,8 @@ class TestEnhancedHtmxAttrs:
 class TestHtmxComponent:
     """Test htmx_component filter."""
 
-    @patch("fastblocks.adapters.templates.filters.depends")
-    @patch("fastblocks.adapters.templates.filters.style_class")
+    @patch("fastblocks.adapters.templates._filters.depends")
+    @patch("fastblocks.adapters.templates._filters.style_class")
     def test_htmx_component_basic(self, mock_style_class, mock_depends):
         """Test basic HTMX component generation."""
         mock_style_class.return_value = "card shadow-md"
@@ -67,7 +67,7 @@ class TestHtmxComponent:
         assert 'hx-get="/api/details/123"' in result
         assert 'hx-target="#details"' in result
 
-    @patch("fastblocks.adapters.templates.filters.style_class")
+    @patch("fastblocks.adapters.templates._filters.style_class")
     def test_htmx_component_no_style_adapter(self, mock_style_class):
         """Test HTMX component without style adapter."""
         mock_style_class.return_value = "button"
@@ -217,7 +217,7 @@ class TestHtmxModal:
 class TestHtmxImgSwap:
     """Test htmx_img_swap filter."""
 
-    @patch("fastblocks.adapters.templates.filters.depends")
+    @patch("fastblocks.adapters.templates._filters.depends")
     def test_htmx_img_swap_with_adapter(self, mock_depends):
         """Test image swap with image adapter."""
         mock_images = Mock()
@@ -234,7 +234,7 @@ class TestHtmxImgSwap:
         assert 'hx-swap="outerHTML"' in result
         assert 'hx-trigger="mouseenter once"' in result
 
-    @patch("fastblocks.adapters.templates.filters.depends")
+    @patch("fastblocks.adapters.templates._filters.depends")
     def test_htmx_img_swap_no_adapter(self, mock_depends):
         """Test image swap without adapter."""
         mock_depends.get.return_value = None

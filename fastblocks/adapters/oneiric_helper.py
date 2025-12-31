@@ -47,7 +47,7 @@ def register_candidate(
         ...     domain="fastblocks",
         ...     key="templates",
         ...     factory=lambda: templates_instance,
-        ...     metadata={"class": "Templates"}
+        ...     metadata={"class": "Templates"},
         ... )
     """
     try:

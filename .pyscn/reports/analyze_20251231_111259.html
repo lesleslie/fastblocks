@@ -1,0 +1,2460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pyscn Analysis Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .score-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .grade-a { background: #4caf50; color: white; }
+        .grade-b { background: #8bc34a; color: white; }
+        .grade-c { background: #ff9800; color: white; }
+        .grade-d { background: #ff5722; color: white; }
+        .grade-f { background: #f44336; color: white; }
+        
+        .tabs {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .tab-buttons {
+            display: flex;
+            background: #f5f5f5;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .metric-label {
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .risk-low { color: #4caf50; }
+        .risk-medium { color: #ff9800; }
+        .risk-high { color: #f44336; }
+        
+        .severity-critical { color: #f44336; }
+        .severity-warning { color: #ff9800; }
+        .severity-info { color: #2196f3; }
+
+         
+        .score-bars {
+            margin: 20px 0;
+        }
+        .score-bar-item {
+            margin-bottom: 24px;
+        }
+        .score-bar-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .score-label {
+            font-weight: 600;
+            color: #333;
+        }
+        .score-value {
+            font-weight: 700;
+            color: #667eea;
+        }
+        .score-bar-container {
+            width: 100%;
+            height: 12px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .score-bar-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 6px;
+        }
+        .score-excellent { background: linear-gradient(90deg, #4caf50, #66bb6a); }
+        .score-good { background: linear-gradient(90deg, #8bc34a, #9ccc65); }
+        .score-fair { background: linear-gradient(90deg, #ff9800, #ffa726); }
+        .score-poor { background: linear-gradient(90deg, #f44336, #ef5350); }
+        .score-detail {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #666;
+        }
+
+         
+        .tab-header-with-score {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .score-badge-compact {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            white-space: nowrap;
+        }
+        .score-badge-compact.score-excellent {
+            background: linear-gradient(135deg, #4caf50, #66bb6a);
+            box-shadow: 0 2px 6px rgba(76, 175, 80, 0.4);
+        }
+        .score-badge-compact.score-good {
+            background: linear-gradient(135deg, #8bc34a, #9ccc65);
+            box-shadow: 0 2px 6px rgba(139, 195, 74, 0.4);
+        }
+        .score-badge-compact.score-fair {
+            background: linear-gradient(135deg, #ff9800, #ffa726);
+            box-shadow: 0 2px 6px rgba(255, 152, 0, 0.4);
+        }
+        .score-badge-compact.score-poor {
+            background: linear-gradient(135deg, #f44336, #ef5350);
+            box-shadow: 0 2px 6px rgba(244, 67, 54, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>pyscn Analysis Report</h1>
+            <p>Generated: 2025-12-31 11:12:59</p>
+            <div class="score-badge grade-c">
+                Health Score: 70/100 (Grade: C)
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab-buttons">
+                <button class="tab-button active" onclick="showTab('summary', this)">Summary</button>
+                
+                <button class="tab-button" onclick="showTab('complexity', this)">Complexity</button>
+                
+                
+                <button class="tab-button" onclick="showTab('deadcode', this)">Dead Code</button>
+                
+                
+                <button class="tab-button" onclick="showTab('clone', this)">Clone Detection</button>
+                
+                
+                <button class="tab-button" onclick="showTab('cbo', this)">Class Coupling</button>
+                
+                
+                
+                <button class="tab-button" onclick="showTab('sys-deps', this)">Dependencies</button>
+                
+                
+                <button class="tab-button" onclick="showTab('sys-arch', this)">Architecture</button>
+                
+                
+            </div>
+
+            <div id="summary" class="tab-content active">
+                <h2>Analysis Summary</h2>
+
+                <h3 style="margin-top: 20px; margin-bottom: 16px; color: #2c3e50;">Quality Scores</h3>
+                <div class="score-bars">
+                    
+                    <div class="score-bar-item">
+                        <div class="score-bar-header">
+                            <span class="score-label">Complexity</span>
+                            <span class="score-value">65/100</span>
+                        </div>
+                        <div class="score-bar-container">
+                            <div class="score-bar-fill score-fair" style="width: 65%"></div>
+                        </div>
+                        <div class="score-detail">Avg: 6.3, High-risk: 0</div>
+                    </div>
+                    
+
+                    
+                    <div class="score-bar-item">
+                        <div class="score-bar-header">
+                            <span class="score-label">Dead Code</span>
+                            <span class="score-value">100/100</span>
+                        </div>
+                        <div class="score-bar-container">
+                            <div class="score-bar-fill score-excellent" style="width: 100%"></div>
+                        </div>
+                        <div class="score-detail">0 issues, 0 critical</div>
+                    </div>
+                    
+
+                    
+                    <div class="score-bar-item">
+                        <div class="score-bar-header">
+                            <span class="score-label">Duplication</span>
+                            <span class="score-value">0/100</span>
+                        </div>
+                        <div class="score-bar-container">
+                            <div class="score-bar-fill score-poor" style="width: 0%"></div>
+                        </div>
+                        <div class="score-detail">35.4% duplication, 24 groups</div>
+                    </div>
+                    
+
+                    
+                    <div class="score-bar-item">
+                        <div class="score-bar-header">
+                            <span class="score-label">Coupling (CBO)</span>
+                            <span class="score-value">90/100</span>
+                        </div>
+                        <div class="score-bar-container">
+                            <div class="score-bar-fill score-excellent" style="width: 90%"></div>
+                        </div>
+                        <div class="score-detail">Avg: 1.8, High-coupling: 0/201</div>
+                    </div>
+                    
+
+                    
+                    <div class="score-bar-item">
+                        <div class="score-bar-header">
+                            <span class="score-label">Dependencies</span>
+                            <span class="score-value">95/100</span>
+                        </div>
+                        <div class="score-bar-container">
+                            <div class="score-bar-fill score-excellent" style="width: 95%"></div>
+                        </div>
+                        <div class="score-detail">2 cycles, Depth: 7</div>
+                    </div>
+                    
+
+                    
+                    <div class="score-bar-item">
+                        <div class="score-bar-header">
+                            <span class="score-label">Architecture</span>
+                            <span class="score-value">100/100</span>
+                        </div>
+                        <div class="score-bar-container">
+                            <div class="score-bar-fill score-excellent" style="width: 100%"></div>
+                        </div>
+                        <div class="score-detail">100% compliant</div>
+                    </div>
+                    
+                </div>
+
+                <h3 style="margin-top: 24px; margin-bottom: 16px; color: #2c3e50;">File Statistics</h3>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">119</div>
+                        <div class="metric-label">Total Files</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">119</div>
+                        <div class="metric-label">Analyzed Files</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">6.26</div>
+                        <div class="metric-label">Avg Complexity</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">Dead Code Issues</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">1028</div>
+                        <div class="metric-label">Unique Fragments</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">35.4%</div>
+                        <div class="metric-label">Code Duplication</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-value">201</div>
+                        <div class="metric-label">Total Classes</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">High Coupling (CBO)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">1.82</div>
+                        <div class="metric-label">Avg CBO</div>
+                    </div>
+                    
+                </div>
+
+                
+                
+                
+                <h3 style="margin-top: 16px; color: #2c3e50;">Dependencies</h3>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">119</div>
+                        <div class="metric-label">Total Modules</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">143</div>
+                        <div class="metric-label">Total Dependencies</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">7</div>
+                        <div class="metric-label">Max Depth</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-value">❌ 1</div>
+                        <div class="metric-label">Circular Dependencies</div>
+                    </div>
+                    
+                </div>
+                
+
+                
+                <h3 style="margin-top: 8px; color: #2c3e50;">Architecture</h3>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">Violations</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">100.0%</div>
+                        <div class="metric-label">Compliance</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">1</div>
+                        <div class="metric-label">Layers Analyzed</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">143</div>
+                        <div class="metric-label">Total Rules</div>
+                    </div>
+                </div>
+                
+                
+            </div>
+
+            
+            <div id="complexity" class="tab-content">
+                <div class="tab-header-with-score">
+                    <h2 style="margin: 0;">Complexity Analysis</h2>
+                    <div class="score-badge-compact score-fair">
+                        65/100
+                    </div>
+                </div>
+                
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">291</div>
+                        <div class="metric-label">Total Functions</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">6.26</div>
+                        <div class="metric-label">Average</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">17</div>
+                        <div class="metric-label">Maximum</div>
+                    </div>
+                </div>
+                
+                <h3>Top Complex Functions</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Function</th>
+                            <th>File</th>
+                            <th>Complexity</th>
+                            <th>Nesting Depth</th>
+                            <th>Risk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        
+                        <tr>
+                            <td>get_app</td>
+                            <td>fastblocks/main.py</td>
+                            <td>17</td>
+                            <td>4</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>ConfigurationHealthChecker._generate_recommendations</td>
+                            <td>fastblocks/mcp/config_health.py</td>
+                            <td>15</td>
+                            <td>2</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>HtmxResponse._set_htmx_headers</td>
+                            <td>fastblocks/htmx.py</td>
+                            <td>13</td>
+                            <td>2</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>ConfigurationAuditor._audit_configuration_structure</td>
+                            <td>fastblocks/mcp/config_audit.py</td>
+                            <td>13</td>
+                            <td>4</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>create_choice_loader</td>
+                            <td>fastblocks/actions/gather/templates.py</td>
+                            <td>12</td>
+                            <td>2</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>gather_components</td>
+                            <td>fastblocks/actions/gather/components.py</td>
+                            <td>12</td>
+                            <td>3</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>PackageLoader.__init__</td>
+                            <td>fastblocks/adapters/templates/jinja2.py</td>
+                            <td>11</td>
+                            <td>2</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>TwicPicsImages._build_transform_parts</td>
+                            <td>fastblocks/adapters/images/twicpics.py</td>
+                            <td>11</td>
+                            <td>3</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>gather_routes</td>
+                            <td>fastblocks/actions/gather/routes.py</td>
+                            <td>11</td>
+                            <td>3</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>Templates.init_envs</td>
+                            <td>fastblocks/adapters/templates/jinja2.py</td>
+                            <td>11</td>
+                            <td>3</td>
+                            <td class="risk-medium">medium</td>
+                        </tr>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                    </tbody>
+                </table>
+                
+                <p style="color: #666; margin-top: 10px;">Showing top 10 of 291 functions</p>
+                
+                
+            </div>
+            
+
+            
+            <div id="deadcode" class="tab-content">
+                <div class="tab-header-with-score">
+                    <h2 style="margin: 0;">Dead Code Detection</h2>
+                    <div class="score-badge-compact score-excellent">
+                        100/100
+                    </div>
+                </div>
+                
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">Total Issues</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">Critical</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">Warnings</div>
+                    </div>
+                </div>
+                
+                
+                <p style="color: #4caf50; font-weight: bold; margin-top: 20px;">✓ No dead code detected</p>
+                
+                
+            </div>
+            
+
+            
+            <div id="clone" class="tab-content">
+                <div class="tab-header-with-score">
+                    <h2 style="margin: 0;">Clone Detection</h2>
+                    <div class="score-badge-compact score-poor">
+                        0/100
+                    </div>
+                </div>
+                
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">1028</div>
+                        <div class="metric-label">Unique Fragments</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">24</div>
+                        <div class="metric-label">Clone Groups</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">0.96</div>
+                        <div class="metric-label">Avg Similarity</div>
+                    </div>
+                </div>
+                
+                
+                <h3>Clone Groups</h3>
+                <p style="color: #666; margin-bottom: 15px;">Code fragments grouped by similarity</p>
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 9 - 3 clones (Type Type-2, similarity: 1.00)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/actions/sync/settings.py</td>
+                                <td>138-152</td>
+                                <td>15 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/actions/sync/static.py</td>
+                                <td>194-208</td>
+                                <td>15 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/actions/sync/templates.py</td>
+                                <td>223-237</td>
+                                <td>15 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 16 - 3 clones (Type Type-2, similarity: 1.00)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/adapters/icons/heroicons.py</td>
+                                <td>101-111</td>
+                                <td>11 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/adapters/icons/materialicons.py</td>
+                                <td>130-140</td>
+                                <td>11 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/adapters/icons/phosphor.py</td>
+                                <td>83-93</td>
+                                <td>11 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 3 - 4 clones (Type Type-2, similarity: 1.00)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/_validation_integration.py</td>
+                                <td>760-810</td>
+                                <td>51 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/_validation_integration.py</td>
+                                <td>775-808</td>
+                                <td>34 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/_validation_integration.py</td>
+                                <td>857-902</td>
+                                <td>46 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/_validation_integration.py</td>
+                                <td>871-900</td>
+                                <td>30 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 7 - 3 clones (Type Type-4, similarity: 1.00)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/actions/gather/routes.py</td>
+                                <td>41-64</td>
+                                <td>24 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/actions/gather/strategies.py</td>
+                                <td>61-84</td>
+                                <td>24 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/actions/sync/strategies.py</td>
+                                <td>63-102</td>
+                                <td>40 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 21 - 5 clones (Type Type-2, similarity: 1.00)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/cli.py</td>
+                                <td>418-451</td>
+                                <td>34 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/cli.py</td>
+                                <td>496-526</td>
+                                <td>31 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/cli.py</td>
+                                <td>632-675</td>
+                                <td>44 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/cli.py</td>
+                                <td>679-726</td>
+                                <td>48 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/cli.py</td>
+                                <td>903-955</td>
+                                <td>53 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 4 - 3 clones (Type Type-2, similarity: 0.99)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/_workflows_integration.py</td>
+                                <td>205-304</td>
+                                <td>100 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/_workflows_integration.py</td>
+                                <td>307-408</td>
+                                <td>102 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/_workflows_integration.py</td>
+                                <td>411-512</td>
+                                <td>102 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 8 - 3 clones (Type Type-2, similarity: 0.99)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/actions/sync/settings.py</td>
+                                <td>137-154</td>
+                                <td>18 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/actions/sync/static.py</td>
+                                <td>193-210</td>
+                                <td>18 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/actions/sync/templates.py</td>
+                                <td>222-239</td>
+                                <td>18 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 15 - 3 clones (Type Type-2, similarity: 0.99)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/adapters/icons/heroicons.py</td>
+                                <td>94-518</td>
+                                <td>425 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/adapters/icons/materialicons.py</td>
+                                <td>123-778</td>
+                                <td>656 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/adapters/icons/phosphor.py</td>
+                                <td>76-472</td>
+                                <td>397 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 23 - 3 clones (Type Type-2, similarity: 0.99)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/mcp/config_health.py</td>
+                                <td>271-339</td>
+                                <td>69 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/mcp/config_health.py</td>
+                                <td>341-383</td>
+                                <td>43 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/mcp/config_health.py</td>
+                                <td>529-587</td>
+                                <td>59 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                <div style="background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                    <h4 style="margin-top: 0; color: #333;">Group 22 - 4 clones (Type Type-2, similarity: 0.98)</h4>
+                    <table class="table" style="margin-bottom: 0;">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Lines</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            
+                            <tr>
+                                <td>fastblocks/cli.py</td>
+                                <td>643-673</td>
+                                <td>31 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/cli.py</td>
+                                <td>644-673</td>
+                                <td>30 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/cli.py</td>
+                                <td>690-724</td>
+                                <td>35 lines</td>
+                            </tr>
+                            
+                            
+                            
+                            <tr>
+                                <td>fastblocks/cli.py</td>
+                                <td>691-724</td>
+                                <td>34 lines</td>
+                            </tr>
+                            
+                            
+                            
+                        </tbody>
+                    </table>
+                </div>
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                <p style="color: #666; margin-top: 10px;">Showing top 10 of 24 clone groups</p>
+                
+                
+                
+            </div>
+            
+
+            
+            <div id="cbo" class="tab-content">
+                <div class="tab-header-with-score">
+                    <h2 style="margin: 0;">Class Coupling</h2>
+                    <div class="score-badge-compact score-excellent">
+                        90/100
+                    </div>
+                </div>
+                <p style="margin-bottom: 20px; color: #666;">Coupling Between Objects (CBO) metrics</p>
+                
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">201</div>
+                        <div class="metric-label">Total Classes</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">High Risk Classes</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">1.82</div>
+                        <div class="metric-label">Average CBO</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">8</div>
+                        <div class="metric-label">Max CBO</div>
+                    </div>
+                </div>
+                
+                <h3>Most Dependent Classes</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>File</th>
+                            <th>CBO</th>
+                            <th>Risk Level</th>
+                            <th>Dependent Classes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        
+                        <tr>
+                            <td>Templates</td>
+                            <td>fastblocks/adapters/templates/jinja2.py</td>
+                            <td>8</td>
+                            <td class="risk-medium">medium</td>
+                            <td>AsyncPath, AsyncBaseLoader, RedisLoader, StorageLoader, FileSystemLoader, PackageLoader, ChoiceLoader, TemplatesBase</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>ConfigurationManager</td>
+                            <td>fastblocks/mcp/configuration.py</td>
+                            <td>7</td>
+                            <td class="risk-medium">medium</td>
+                            <td>Any, ConfigurationSchema, AdapterConfiguration, EnvironmentVariable, ConfigurationValidationResult, ConfigurationProfile, ConfigurationBackup</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>AdvancedHTMYComponentRegistry</td>
+                            <td>fastblocks/adapters/templates/_htmy_components.py</td>
+                            <td>6</td>
+                            <td class="risk-medium">medium</td>
+                            <td>ComponentMetadata, ComponentScaffolder, ComponentValidator, ComponentLifecycleManager, ComponentCompilationError, ComponentValidationError</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>ConfigurationSchema</td>
+                            <td>fastblocks/mcp/configuration.py</td>
+                            <td>6</td>
+                            <td class="risk-medium">medium</td>
+                            <td>datetime, AdapterConfiguration, Any, EnvironmentVariable, BaseModel, ConfigurationProfile</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>HTMYTemplates</td>
+                            <td>fastblocks/adapters/templates/htmy.py</td>
+                            <td>6</td>
+                            <td class="risk-medium">medium</td>
+                            <td>TemplatesBase, AsyncPath, Any, HTMYTemplatesSettings, HTMYComponentRegistry, ComponentNotFound</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>HybridTemplatesManager</td>
+                            <td>fastblocks/adapters/templates/_advanced_manager.py</td>
+                            <td>5</td>
+                            <td class="risk-low">low</td>
+                            <td>TemplateValidationError, TemplateValidationResult, FragmentInfo, AutocompleteItem, HybridTemplatesSettings</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>EnhancedCacheManager</td>
+                            <td>fastblocks/adapters/templates/_enhanced_cache.py</td>
+                            <td>5</td>
+                            <td class="risk-low">low</td>
+                            <td>UUID, CacheEntry, Any, CacheMetrics, CacheStats</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>FastBlocksSyntaxSupport</td>
+                            <td>fastblocks/adapters/templates/_syntax_support.py</td>
+                            <td>4</td>
+                            <td class="risk-low">low</td>
+                            <td>UUID, CompletionItem, SyntaxError, FastBlocksSyntaxSettings</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>ComponentMetadata</td>
+                            <td>fastblocks/adapters/templates/_htmy_components.py</td>
+                            <td>4</td>
+                            <td class="risk-low">low</td>
+                            <td>ComponentType, ComponentStatus, Any, AsyncPath</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>CloudflareImages</td>
+                            <td>fastblocks/adapters/images/cloudflare.py</td>
+                            <td>4</td>
+                            <td class="risk-low">low</td>
+                            <td>ImagesBase, UUID, Any, CloudflareImagesSettings</td>
+                        </tr>
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                    </tbody>
+                </table>
+                
+                <p style="color: #666; margin-top: 10px;">Showing top 10 of 201 classes</p>
+                
+                
+            </div>
+            
+
+            
+            
+            <div id="sys-deps" class="tab-content">
+                <div class="tab-header-with-score">
+                    <h2 style="margin: 0;">Module Dependencies</h2>
+                    <div class="score-badge-compact score-excellent">
+                        95/100
+                    </div>
+                </div>
+                <p style="margin-bottom: 20px; color: #666;">Project-wide module dependency graph metrics</p>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">119</div>
+                        <div class="metric-label">Total Modules</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">143</div>
+                        <div class="metric-label">Total Dependencies</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">7</div>
+                        <div class="metric-label">Max Depth</div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-value">❌ 1</div>
+                        <div class="metric-label">Circular Dependencies</div>
+                    </div>
+                    
+                </div>
+
+                
+                
+                <h3 style="margin-top: 30px;">Circular Dependencies</h3>
+                
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">Severity</th>
+                            <th style="width: 8%;">Size</th>
+                            <th>Dependency Paths</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        
+                        <tr>
+                            <td>
+                                <span style="background: #d1ecf1; color: #0c5460; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold;">LOW</span>
+                            </td>
+                            <td>2</td>
+                            <td>
+                                
+                                    
+                                        
+                                        <code style="font-size: 11px;">fastblocks.actions.gather.middleware → fastblocks.applications</code>
+                                    
+                                
+                                    
+                                        <br>
+                                        <code style="font-size: 11px;">fastblocks.applications → fastblocks.actions.gather.middleware</code>
+                                    
+                                
+                                
+                            </td>
+                        </tr>
+                        
+                        
+                        
+                    </tbody>
+                </table>
+
+                
+                
+
+                
+                
+                <div style="padding: 15px; background: #d1ecf1; border-left: 4px solid #17a2b8; border-radius: 4px; margin: 20px 0;">
+                    <strong style="color: #0c5460;">💡 Suggestions for Breaking Cycles:</strong>
+                    <ul style="margin: 10px 0 0 20px; color: #0c5460;">
+                        
+                        <li>Consider introducing interfaces or abstract base classes to invert dependencies</li>
+                        
+                        <li>Break cycle between fastblocks.actions.gather.middleware and fastblocks.applications by introducing a third module or using dependency injection</li>
+                        
+                        <li>Review your architecture to ensure proper layer separation (e.g., presentation → application → domain → infrastructure)</li>
+                        
+                        <li>Consider using event-driven patterns to decouple tightly coupled modules</li>
+                        
+                    </ul>
+                </div>
+                
+                
+                
+
+                
+                <h3>Longest Dependency Chains</h3>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Depth</th>
+                            <th>Path</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        
+                        <tr>
+                            <td>1</td>
+                            <td>7</td>
+                            <td>fastblocks.actions.gather.application → fastblocks.applications → fastblocks.initializers → fastblocks._validation_integration → fastblocks.exceptions → fastblocks.htmx → fastblocks.adapters.templates._events_wrapper</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>2</td>
+                            <td>6</td>
+                            <td>fastblocks.actions.gather.application → fastblocks.applications → fastblocks.initializers → fastblocks._validation_integration → fastblocks.exceptions → fastblocks.htmx</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>3</td>
+                            <td>6</td>
+                            <td>fastblocks.actions.gather.middleware → fastblocks.middleware → fastblocks.caching → fastblocks.exceptions → fastblocks.htmx → fastblocks.adapters.templates._events_wrapper</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>4</td>
+                            <td>6</td>
+                            <td>fastblocks.adapters.admin.sqladmin → fastblocks.applications → fastblocks.initializers → fastblocks.exceptions → fastblocks.htmx → fastblocks.adapters.templates._events_wrapper</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>5</td>
+                            <td>6</td>
+                            <td>fastblocks.adapters.app.default → fastblocks.applications → fastblocks.initializers → fastblocks.exceptions → fastblocks.htmx → fastblocks.adapters.templates._events_wrapper</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>6</td>
+                            <td>6</td>
+                            <td>fastblocks.mcp.__main__ → fastblocks.mcp.server → fastblocks.mcp.tools → fastblocks.mcp.health → fastblocks.mcp.registry → fastblocks.mcp.discovery</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>7</td>
+                            <td>5</td>
+                            <td>fastblocks.actions.gather.application → fastblocks.applications → fastblocks.initializers → fastblocks._validation_integration → fastblocks.adapters.oneiric_helper</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>8</td>
+                            <td>5</td>
+                            <td>fastblocks.actions.gather.application → fastblocks.applications → fastblocks.initializers → fastblocks._validation_integration → fastblocks.exceptions</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>9</td>
+                            <td>5</td>
+                            <td>fastblocks.actions.gather.application → fastblocks.applications → fastblocks.initializers → fastblocks._workflows_integration → fastblocks.actions.gather</td>
+                        </tr>
+                        
+                        
+                        
+                        <tr>
+                            <td>10</td>
+                            <td>5</td>
+                            <td>fastblocks.actions.gather.middleware → fastblocks.middleware → fastblocks.caching → fastblocks.exceptions → fastblocks.htmx</td>
+                        </tr>
+                        
+                        
+                    </tbody>
+                </table>
+                
+            </div>
+            
+
+            
+            <div id="sys-arch" class="tab-content">
+                <div class="tab-header-with-score">
+                    <h2 style="margin: 0;">Architecture Validation</h2>
+                    <div class="score-badge-compact score-excellent">
+                        100/100
+                    </div>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">1</div>
+                        <div class="metric-label">Layers Analyzed</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">143</div>
+                        <div class="metric-label">Total Rules</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">Violations</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">100.0%</div>
+                        <div class="metric-label">Compliance</div>
+                    </div>
+                </div>
+
+                
+                <p style="color: #4caf50; font-weight: bold; margin-top: 20px;">✓ No architecture violations</p>
+                
+            </div>
+            
+            
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName, el) {
+            
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            
+            document.getElementById(tabName).classList.add('active');
+            
+            
+            if (el) { el.classList.add('active'); }
+        }
+    </script>
+</body>
+</html>

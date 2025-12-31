@@ -225,7 +225,7 @@ class Routes(RoutesBase):
         if await base_routes_path.exists():
             await self.gather_routes(base_routes_path)
         # Static file serving (simplified for Oneiric)
-        try:
+        with suppress(Exception):
             from starlette.staticfiles import StaticFiles
 
             # Placeholder for storage path (would be resolved via Oneiric)
@@ -246,8 +246,6 @@ class Routes(RoutesBase):
                     name="static",
                 ),
             )
-        except Exception:
-            pass
         debug(self.routes)
 
 

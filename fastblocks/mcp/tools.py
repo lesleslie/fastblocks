@@ -176,8 +176,7 @@ def _determine_template_type(suffix: str) -> str:
         return "jinja2"
     elif suffix == ".py":
         return "htmy"
-    else:
-        return "unknown"
+    return "unknown"
 
 
 def _create_template_info(template_file: Path, variant_name: str) -> dict[str, str]:

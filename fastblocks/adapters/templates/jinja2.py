@@ -31,6 +31,9 @@ Created: 2025-01-12
 
 import asyncio
 import re
+
+# Import Oneiric registration helper
+import sys
 import typing as t
 from ast import literal_eval
 from contextlib import suppress
@@ -43,10 +46,6 @@ from uuid import UUID
 
 from oneiric.core.config import OneiricSettings
 from oneiric.core.resolution import Resolver
-
-# Import Oneiric registration helper
-import sys
-from pathlib import Path
 
 # Add parent directory to path for helper import
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -952,7 +951,10 @@ class Templates(TemplatesBase):
             domain="fastblocks",
             key="templates",
             factory=lambda: self,
-            metadata={"class": "Templates", "module": "fastblocks.adapters.templates.jinja2"},
+            metadata={
+                "class": "Templates",
+                "module": "fastblocks.adapters.templates.jinja2",
+            },
         )
         self._admin = None
         self._admin_initialized = False

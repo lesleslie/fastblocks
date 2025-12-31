@@ -5,14 +5,14 @@
 [34m[DEBUG] Failed to add stderr log handler: _LoggerProxy.add() got an unexpected keyword argument 'enqueue' | module=acb.adapters.logger.logly | function=_debug[0m
 [37m[INFO] App path: /Users/les/Projects/fastblocks | module=acb.adapters.logger.logly | function=_log_app_info[0m
 [37m[INFO] App deployed: False | module=acb.adapters.logger.logly | function=_log_app_info[0m
-                                                                                
- Usage: python -m fastblocks mcp [OPTIONS]                                      
-                                                                                
- Start the FastBlocks MCP (Model Context Protocol) server.                      
-                                                                                
- Enables IDE/AI assistant integration for FastBlocks development                
- including template management, component creation, and adapter configuration.  
-                                                                                
+
+ Usage: python -m fastblocks mcp [OPTIONS]
+
+ Start the FastBlocks MCP (Model Context Protocol) server.
+
+ Enables IDE/AI assistant integration for FastBlocks development
+ including template management, component creation, and adapter configuration.
+
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --port  -p      INTEGER  Port for MCP server (default: auto) [default: 0]    │
 │ --host          TEXT     Host to bind MCP server to [default: localhost]     │

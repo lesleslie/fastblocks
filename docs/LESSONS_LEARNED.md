@@ -123,14 +123,17 @@ ______________________________________________________________________
 @depends.inject
 async def handler(request, config: Inject[Config]):
     # config is already resolved!
+    pass
 
 # ✅ ACCEPTABLE - Module-level with await
 async def handler(request):
     config = await depends.get("config")
+    return config
 
 # ❌ WRONG - No await (returns coroutine)
-def handler(request):
+async def handler(request):
     config = depends.get("config")  # Coroutine, not Config!
+    return config
 ```
 
 **Takeaway**: Modern ACB 0.25.1+ `Inject[Type]` pattern eliminates manual awaits and improves type inference.

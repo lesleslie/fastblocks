@@ -8,12 +8,13 @@ Created: 2025-10-01
 """
 
 import typing as t
+from contextlib import suppress
 from uuid import UUID
+
+from adapters.oneiric_helper import register_candidate
 
 # Oneiric imports for dependency injection
 from oneiric.core.resolution import Resolver
-
-from adapters.oneiric_helper import register_candidate
 
 # Custom Oneiric-compatible health system
 depends = Resolver()
@@ -72,23 +73,19 @@ class HealthService:
 
     async def register_component(self, component: t.Any) -> bool:
         """Register a health check component."""
-        try:
+        with suppress(Exception):
             if hasattr(component, "component_id"):
                 self.components[component.component_id] = component
                 return True
-        except Exception:
-            pass
         return False
 
     async def get_component_health(self, component_id: str) -> HealthCheckResult | None:
         """Get health status for a specific component."""
-        try:
+        with suppress(Exception):
             component = self.components.get(component_id)
             if component and hasattr(component, "_perform_health_check"):
                 # Use a simple check type for now
                 return await component._perform_health_check("standard")
-        except Exception:
-            pass
         return None
 
 
@@ -420,7 +417,10 @@ async def register_fastblocks_health_checks() -> bool:
             domain="fastblocks",
             key="health",
             factory=lambda: health_service,
-            metadata={"class": "HealthService", "module": "fastblocks._health_integration"},
+            metadata={
+                "class": "HealthService",
+                "module": "fastblocks._health_integration",
+            },
         )
 
         return True

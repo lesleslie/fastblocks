@@ -290,9 +290,7 @@ async def execute_cache_warming(
 
     return {
         "workflow_id": workflow.workflow_id,
-        "state": result.state.value
-        if hasattr(result.state, "value")
-        else str(result.state),
+        "state": result.state.value if hasattr(result.state, "value") else result.state,
         "completed_at": datetime.now().isoformat(),
         "steps_completed": len(
             [s for s in result.step_results.values() if s.state == "completed"]
@@ -394,9 +392,7 @@ async def execute_template_cleanup(
 
     return {
         "workflow_id": workflow.workflow_id,
-        "state": result.state.value
-        if hasattr(result.state, "value")
-        else str(result.state),
+        "state": result.state.value if hasattr(result.state, "value") else result.state,
         "completed_at": datetime.now().isoformat(),
         "steps_completed": len(
             [s for s in result.step_results.values() if s.state == "completed"]
@@ -498,9 +494,7 @@ async def execute_performance_optimization(
 
     return {
         "workflow_id": workflow.workflow_id,
-        "state": result.state.value
-        if hasattr(result.state, "value")
-        else str(result.state),
+        "state": result.state.value if hasattr(result.state, "value") else result.state,
         "completed_at": datetime.now().isoformat(),
         "steps_completed": len(
             [s for s in result.step_results.values() if s.state == "completed"]

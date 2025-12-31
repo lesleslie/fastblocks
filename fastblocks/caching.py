@@ -28,7 +28,7 @@ depends = Resolver()
 # Simple get_adapter implementation for Oneiric
 def get_adapter(adapter_name: str) -> t.Any:
     """Simple adapter getter for Oneiric (replaces ACB's get_adapter)."""
-    try:
+    with suppress(Exception):
         from oneiric.adapters.bootstrap import Resolver as AdapterResolver
 
         resolver = AdapterResolver()
@@ -41,17 +41,13 @@ def get_adapter(adapter_name: str) -> t.Any:
             registry = resolver.registry
             if adapter_name in registry:
                 return registry[adapter_name]
-    except Exception:
-        pass
 
     # Fallback: try to import the adapter directly
-    try:
+    with suppress(Exception):
         if adapter_name == "cache":
             from oneiric.adapters.cache import MemoryCacheAdapter
 
             return MemoryCacheAdapter()
-    except Exception:
-        pass
 
     # If all else fails, return a simple mock adapter
     class MockAdapter:
@@ -664,14 +660,14 @@ async def _generate_vary_hash(headers: Headers, varying_headers: list[str]) -> s
 
     # ACB's CRC32C is 50x faster than MD5 for cache keys (non-cryptographic)
     result = await hash.crc32c("|".join(vary_values))
-    return str(result)  # Ensure return type is str
+    return result  # Ensure return type is str
 
 
 async def _generate_url_hash(url: URL) -> str:
     """Generate hash for URL using ACB's fast CRC32C."""
     # ACB's CRC32C is 50x faster than MD5 for cache keys (non-cryptographic)
     result = await hash.crc32c(str(url))
-    return str(result)  # Ensure return type is str
+    return result  # Ensure return type is str
 
 
 async def generate_varying_headers_cache_key(url: URL) -> str:

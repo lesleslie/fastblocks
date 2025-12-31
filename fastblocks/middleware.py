@@ -412,11 +412,9 @@ class MiddlewareStackManager:
         if not self.config:
             return
         # Dual import for get_adapter
-        try:
+        with suppress(ImportError):
             from oneiric.core.adapters import get_adapter
-        except ImportError:
             # MIGRATED: Removed ACB import - using Oneiric equivalent
-            pass
 
         self._middleware_registry[MiddlewarePosition.CSRF] = CSRFMiddleware
         self._middleware_options[MiddlewarePosition.CSRF] = {

@@ -11,12 +11,15 @@
 ## Changes Made
 
 ### 1. Import Replacement
+
 **Before:**
+
 ```python
 from acb.depends import depends
 ```
 
 **After:**
+
 ```python
 from oneiric.core.resolution import Resolver
 from oneiric.core.config import OneiricSettings
@@ -26,7 +29,9 @@ depends = Resolver()
 ```
 
 ### 2. Migration Indicator
+
 Added migration status indicator at end of file:
+
 ```python
 # Migration status indicator
 _using_oneiric = True
@@ -35,18 +40,21 @@ _using_oneiric = True
 ## Technical Details
 
 ### File Analysis
+
 - **Total Lines**: 111
 - **Functions**: 5 registration functions
 - **Complexity**: Medium (template environment setup, filter registration, global context management)
 - **Dependencies**: Uses `_filters.py` and `_async_filters.py` modules
 
 ### Key Components
+
 1. **Filter Registration**: `register_fastblocks_filters()` and `register_async_fastblocks_filters()`
-2. **Global Context**: `get_global_template_context()` with adapter instances
-3. **Template Setup**: `setup_fastblocks_template_environment()` for complete environment configuration
-4. **Custom Delimiters**: FastBlocks-specific template syntax configuration
+1. **Global Context**: `get_global_template_context()` with adapter instances
+1. **Template Setup**: `setup_fastblocks_template_environment()` for complete environment configuration
+1. **Custom Delimiters**: FastBlocks-specific template syntax configuration
 
 ### Migration Strategy
+
 - **Direct Replacement**: Replaced ACB `depends` with Oneiric `Resolver()`
 - **Backward Compatibility**: Maintained all existing functionality
 - **No Breaking Changes**: All public APIs preserved
@@ -55,16 +63,19 @@ _using_oneiric = True
 ## Verification Results
 
 ### Import Test
+
 ```bash
 python -c "from fastblocks.adapters.templates._registration import register_fastblocks_filters, setup_fastblocks_template_environment, _using_oneiric; print('Import successful!'); print(f'Using Oneiric: {_using_oneiric}')"
 ```
 
 **Result**: ✅ SUCCESS
+
 - Import completed without errors
 - `_using_oneiric` returns `True`
 - All functions accessible
 
 ### Functionality Test
+
 ```python
 # Test basic functionality
 from jinja2 import Environment
@@ -86,6 +97,7 @@ print(f"Block start: {env.block_start_string}")
 ```
 
 **Result**: ✅ SUCCESS
+
 - All registration functions work correctly
 - Template environment configuration successful
 - Custom delimiters applied properly
@@ -94,12 +106,14 @@ print(f"Block start: {env.block_start_string}")
 ## Impact Assessment
 
 ### Positive Impacts
+
 1. **ACB Dependency Reduction**: Eliminated 1 ACB import
-2. **Oneiric Integration**: Full compatibility with Oneiric framework
-3. **Template System Preservation**: All registration functionality maintained
-4. **Future-Proofing**: Ready for complete ACB removal
+1. **Oneiric Integration**: Full compatibility with Oneiric framework
+1. **Template System Preservation**: All registration functionality maintained
+1. **Future-Proofing**: Ready for complete ACB removal
 
 ### No Negative Impacts
+
 - ✅ No breaking changes
 - ✅ No functionality loss
 - ✅ No performance degradation
@@ -109,11 +123,13 @@ print(f"Block start: {env.block_start_string}")
 ## Migration Statistics
 
 ### Before Migration
+
 - ACB imports: 1
 - Oneiric imports: 0
 - Migration indicators: 0
 
 ### After Migration
+
 - ACB imports: 0
 - Oneiric imports: 2
 - Migration indicators: 1
@@ -121,6 +137,7 @@ print(f"Block start: {env.block_start_string}")
 ## Code Quality
 
 ### Maintained Features
+
 - ✅ Filter registration system
 - ✅ Async filter support
 - ✅ Global template context
@@ -130,6 +147,7 @@ print(f"Block start: {env.block_start_string}")
 - ✅ Error handling with `suppress(Exception)`
 
 ### Preserved Patterns
+
 - ✅ Jinja2 environment integration
 - ✅ Async environment support
 - ✅ Adapter dependency resolution
@@ -139,15 +157,19 @@ print(f"Block start: {env.block_start_string}")
 ## Next Steps
 
 ### Immediate Next Migration
+
 **File**: `fastblocks/adapters/templates/_syntax_support.py`
-**ACB Imports**: 
+**ACB Imports**:
+
 - `from acb.config import Settings` (line 10)
 - `from acb.depends import depends` (line 11)
 
 ### Remaining Template Files
+
 1. `_syntax_support.py` - Syntax support and autocomplete system
 
 ### Cleanup Tasks
+
 - Review and remove any remaining ACB references in comments
 - Update documentation to reflect Oneiric migration
 - Run comprehensive integration tests

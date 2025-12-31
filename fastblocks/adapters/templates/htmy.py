@@ -29,6 +29,7 @@ import asyncio
 import typing as t
 from contextlib import suppress
 from enum import Enum
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -268,7 +269,6 @@ class HTMYComponentRegistry:
             compile(source, str(component_path), "exec")
             # Create a module-like namespace to execute the compiled code
             import importlib.util
-            import os
             import tempfile
 
             # Create a temporary module to safely load the component
@@ -295,7 +295,7 @@ class HTMYComponentRegistry:
                         break
             finally:
                 # Clean up the temporary file
-                os.unlink(temp_module_path)
+                Path(temp_module_path).unlink()
 
             # Cache the compiled form instead of pickle-able bytecode
             self._component_cache[component_name] = component_class
@@ -309,7 +309,6 @@ class HTMYComponentRegistry:
         try:
             # Import and analyze component safely
             import importlib.util
-            import os
             import tempfile
 
             # Create a temporary module to safely load the component
@@ -336,7 +335,7 @@ class HTMYComponentRegistry:
                         break
             finally:
                 # Clean up the temporary file
-                os.unlink(temp_module_path)
+                Path(temp_module_path).unlink()
 
             self._component_cache[component_name] = component_class
             return component_class

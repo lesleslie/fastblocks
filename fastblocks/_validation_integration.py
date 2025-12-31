@@ -37,10 +37,10 @@ from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
 
+from adapters.oneiric_helper import register_candidate
+
 # Oneiric imports for dependency injection
 from oneiric.core.resolution import Resolver
-
-from adapters.oneiric_helper import register_candidate
 
 # Custom Oneiric-compatible validation system
 depends = Resolver()
@@ -1031,7 +1031,10 @@ async def register_fastblocks_validation() -> bool:
             domain="fastblocks",
             key="validation",
             factory=lambda: validation_service,
-            metadata={"class": "ValidationService", "module": "fastblocks._validation_integration"},
+            metadata={
+                "class": "ValidationService",
+                "module": "fastblocks._validation_integration",
+            },
         )
 
         return validation_service.available

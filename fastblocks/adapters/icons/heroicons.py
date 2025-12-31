@@ -288,9 +288,8 @@ class HeroiconsIcons(IconsBase):
             return self.settings.size_presets[size]
         elif size and size.isdigit():
             return size
-        else:
-            # Default size based on variant
-            return "20" if variant == "mini" else self.settings.default_size
+        # Default size based on variant
+        return "20" if variant == "mini" else self.settings.default_size
 
     def _build_icon_class(
         self, icon_name: str, variant: str, size: str | None, attributes: dict[str, Any]

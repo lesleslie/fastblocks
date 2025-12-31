@@ -55,14 +55,11 @@ class Admin(AdminBase):
     async def init(self) -> None:
         with suppress(Exception):
             # For Oneiric, try to get models using resolve
-            try:
-                models = await depends.resolve("fastblocks", "models")
-                if models and hasattr(models, "get_admin_models"):
-                    admin_models = models.get_admin_models()
-                    for model in admin_models:
-                        self._sqladmin.add_view(model)
-            except Exception:
-                pass  # Gracefully handle any dependency resolution errors
+            models = await depends.resolve("fastblocks", "models")
+            if models and hasattr(models, "get_admin_models"):
+                admin_models = models.get_admin_models()
+                for model in admin_models:
+                    self._sqladmin.add_view(model)
 
 
 MODULE_ID = UUID("01937d86-7f5d-7e6f-b120-4567890123de")

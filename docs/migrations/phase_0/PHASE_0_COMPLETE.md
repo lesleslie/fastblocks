@@ -3,6 +3,7 @@
 ## Baseline Capture Summary
 
 ### 1. ACB Usage Baseline
+
 - **Total ACB occurrences**: 218 across the codebase
 - **Detailed usage captured**: `acb_usage_detailed.txt`
 - **Key files with ACB usage**:
@@ -15,6 +16,7 @@
   - `fastblocks/mcp/server.py`: MCP server creation
 
 ### 2. MCP CLI Baseline
+
 - **Current MCP command**: `python -m fastblocks mcp [OPTIONS]`
 - **Options**:
   - `--port/-p`: Port for MCP server (default: auto)
@@ -22,16 +24,19 @@
 - **Current implementation**: Uses ACB's `create_mcp_server()`
 
 ### 3. Health Probe Baseline
+
 - **Status**: Not currently available in FastBlocks CLI
 - **Note**: Health functionality will be added as part of Oneiric migration
 
 ### 4. Dependency Baseline
+
 - **Current dependencies in pyproject.toml**:
   - `acb>=0.31.12` (current ACB dependency)
   - `oneiric>=0.3.4` (new Oneiric dependency)
   - `mcp-common>=0.3.3` (MCP common with Oneiric support)
 
 ### 5. Recovery Plan
+
 - **Rollback strategy**: Git tag-based rollback
 - **Current version**: v0.18.7
 - **Rollback procedure**: `git checkout v0.18.6 && uv sync`

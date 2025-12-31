@@ -921,7 +921,7 @@ class HybridTemplatesManager:
             else:
                 # Render entire template
                 template = env.get_template(fragment_info.template_path)
-                return str(template.render(context or {}))
+                return template.render(context or {})
 
         except Exception as e:
             raise TemplateError(f"Error rendering fragment '{fragment_name}': {e}")

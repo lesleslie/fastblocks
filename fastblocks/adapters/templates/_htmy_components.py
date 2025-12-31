@@ -18,13 +18,13 @@ Created: 2025-01-13
 
 import asyncio
 import inspect
-import os
 import tempfile
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields, is_dataclass
 from datetime import datetime
 from enum import Enum
+from pathlib import Path
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -405,7 +405,7 @@ class ComponentValidator:
                     break
         finally:
             # Clean up the temporary file
-            os.unlink(temp_module_path)
+            Path(temp_module_path).unlink()
 
         return component_class
 
@@ -531,7 +531,7 @@ class AdvancedHTMYComponentRegistry:
             if not await search_path.exists():
                 continue
 
-            async for component_file in search_path.rglob("*.py"):
+            for component_file in search_path.rglob("*.py"):
                 if component_file.name == "__init__.py":
                     continue
 
@@ -631,7 +631,7 @@ class AdvancedHTMYComponentRegistry:
                         break
             finally:
                 # Clean up the temporary file
-                os.unlink(temp_module_path)
+                Path(temp_module_path).unlink()
 
             return component_class
         except Exception as e:

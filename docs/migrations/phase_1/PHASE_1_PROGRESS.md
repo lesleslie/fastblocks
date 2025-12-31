@@ -7,9 +7,11 @@ All 5 core runtime files have been successfully migrated from ACB to Oneiric!
 ## Completed Migrations
 
 ### ✅ 1. `fastblocks/main.py` - Core Registration and DI
+
 **Status**: COMPLETE
 
 **Changes Made:**
+
 - ✅ Replaced `from acb import ensure_registration, register_pkg` with Oneiric equivalents
 - ✅ Replaced `from acb.adapters import register_adapters, root_path` with Oneiric adapter system
 - ✅ Replaced `from acb.depends import depends` with Oneiric `Resolver`
@@ -18,15 +20,18 @@ All 5 core runtime files have been successfully migrated from ACB to Oneiric!
 - ✅ Maintained all existing functionality
 
 **Verification:**
+
 ```bash
 python -c "import fastblocks.main; print('Using Oneiric:', fastblocks.main._using_oneiric)"
 # Output: Using Oneiric: True
 ```
 
 ### ✅ 2. `fastblocks/initializers.py` - Package Registration
+
 **Status**: COMPLETE
 
 **Changes Made:**
+
 - ✅ Replaced `from acb import register_pkg` with Oneiric equivalent
 - ✅ Replaced `from acb.config import AdapterBase, Config` with Oneiric settings
 - ✅ Replaced `from acb.depends import depends` with Oneiric resolver
@@ -37,15 +42,18 @@ python -c "import fastblocks.main; print('Using Oneiric:', fastblocks.main._usin
 - ✅ Maintained all existing functionality with dual import strategy
 
 **Verification:**
+
 ```bash
 python -c "import fastblocks.initializers; print('Using Oneiric:', fastblocks.initializers._using_oneiric)"
 # Output: Using Oneiric: True
 ```
 
 ### ✅ 3. `fastblocks/middleware.py` - Middleware System
+
 **Status**: COMPLETE
 
 **Changes Made:**
+
 - ✅ Replaced `from acb.debug import debug` with Oneiric logger-based debug function
 - ✅ Replaced `from acb.depends import depends` with Oneiric `Resolver()`
 - ✅ Replaced `from acb.adapters import get_adapter` with dual import strategy
@@ -57,15 +65,18 @@ python -c "import fastblocks.initializers; print('Using Oneiric:', fastblocks.in
 - ✅ Preserved all existing middleware behavior and API compatibility
 
 **Verification:**
+
 ```bash
 python -c "import fastblocks.middleware; print('Using Oneiric:', fastblocks.middleware._using_oneiric)"
 # Output: Using Oneiric: True
 ```
 
 ### ✅ 4. `fastblocks/exceptions.py` - Exception Handling System
+
 **Status**: COMPLETE
 
 **Changes Made:**
+
 - ✅ Replaced `from acb.depends import depends` with Oneiric `Resolver()`
 - ✅ Updated `safe_depends_get()` function to use Oneiric resolver
 - ✅ Maintained all exception handling functionality including:
@@ -76,15 +87,18 @@ python -c "import fastblocks.middleware; print('Using Oneiric:', fastblocks.midd
 - ✅ Preserved all existing exception handling behavior and API compatibility
 
 **Verification:**
+
 ```bash
 python -c "import fastblocks.exceptions; print('✓ exceptions.py imports successfully')"
 # Output: ✓ exceptions.py imports successfully
 ```
 
 ### ✅ 5. `fastblocks/caching.py` - Caching System
+
 **Status**: COMPLETE
 
 **Changes Made:**
+
 - ✅ Replaced `from acb.depends import depends` with Oneiric `Resolver()`
 - ✅ Replaced `from acb.adapters import get_adapter` with custom Oneiric implementation
 - ✅ Replaced `from acb.actions.hash import hash` with custom CRC32C implementation
@@ -103,6 +117,7 @@ python -c "import fastblocks.exceptions; print('✓ exceptions.py imports succes
   - Cache serialization and deserialization
 
 **Verification:**
+
 ```bash
 python -c "import fastblocks.caching; print('✓ caching.py imports successfully')"
 # Output: ✓ caching.py imports successfully
@@ -111,12 +126,14 @@ python -c "import fastblocks.caching; print('✓ caching.py imports successfully
 ## Migration Statistics
 
 ### ACB Usage Reduction
+
 - **Before Phase 1**: 218 ACB occurrences
 - **After main.py migration**: Reduced ACB usage in core runtime
 - **After initializers.py migration**: Further reduced ACB usage
 - **After middleware.py migration**: Further reduced ACB usage in middleware system
 
 ### Files Migrated
+
 - ✅ `fastblocks/main.py` - Core runtime
 - ✅ `fastblocks/initializers.py` - Initialization system
 - ✅ `fastblocks/middleware.py` - Middleware system
@@ -124,11 +141,13 @@ python -c "import fastblocks.caching; print('✓ caching.py imports successfully
 - ✅ `fastblocks/caching.py` - Caching system
 
 ### Files Remaining for Phase 1
+
 - ✅ **Phase 1 Complete!** All 5 core files migrated successfully
 
 ## Verification Results
 
 ### Import Tests
+
 ```bash
 python -c "import fastblocks.main"                    # ✅ SUCCESS
 python -c "import fastblocks.initializers"            # ✅ SUCCESS
@@ -139,6 +158,7 @@ python -m fastblocks --help                         # ✅ SUCCESS
 ```
 
 ### Oneiric Usage Verification
+
 ```bash
 python -c "import fastblocks.main; print('Using Oneiric:', fastblocks.main._using_oneiric)"
 # ✅ Output: Using Oneiric: True
@@ -155,11 +175,13 @@ python -c "import fastblocks.middleware; print('Using Oneiric:', fastblocks.midd
 ## Migration Strategy Validation
 
 ### Dual Import Strategy ✅
+
 - Both files successfully import Oneiric components when available
 - Fallback to ACB components works correctly
 - No breaking changes to existing functionality
 
 ### Backward Compatibility ✅
+
 - All existing FastBlocks CLI commands work
 - No regression in core functionality
 - Graceful degradation maintained
@@ -167,18 +189,22 @@ python -c "import fastblocks.middleware; print('Using Oneiric:', fastblocks.midd
 ## Next Steps
 
 ### Immediate Next Steps
+
 1. **Continue Phase 1**: Migrate remaining core files
+
    - `fastblocks/middleware.py`
    - `fastblocks/exceptions.py`
    - `fastblocks/caching.py`
 
-2. **Update Integration Modules**:
+1. **Update Integration Modules**:
+
    - `fastblocks/_events_integration.py`
    - `fastblocks/_health_integration.py`
    - `fastblocks/_validation_integration.py`
    - `fastblocks/_workflows_integration.py`
 
 ### Phase 1 Exit Gate Checklist
+
 - [x] Core runtime starts/stops using Oneiric resolver with no DI errors
 - [x] Health endpoint returns OK and includes Oneiric resolver status
 - [x] Config loads through Oneiric settings; no implicit ACB fallback
@@ -198,10 +224,10 @@ python -c "import fastblocks.middleware; print('Using Oneiric:', fastblocks.midd
 We have successfully completed Phase 1 of the Oneiric migration! All 5 core runtime files have been migrated from ACB to Oneiric:
 
 1. ✅ `fastblocks/main.py` - The heart of FastBlocks runtime
-2. ✅ `fastblocks/initializers.py` - The initialization system
-3. ✅ `fastblocks/middleware.py` - The middleware system
-4. ✅ `fastblocks/exceptions.py` - The exception handling system
-5. ✅ `fastblocks/caching.py` - The caching system
+1. ✅ `fastblocks/initializers.py` - The initialization system
+1. ✅ `fastblocks/middleware.py` - The middleware system
+1. ✅ `fastblocks/exceptions.py` - The exception handling system
+1. ✅ `fastblocks/caching.py` - The caching system
 
 ### Key Achievements
 
@@ -222,6 +248,7 @@ We have successfully completed Phase 1 of the Oneiric migration! All 5 core runt
 ### Verification Results
 
 All tests passing:
+
 ```bash
 python -c "import fastblocks.main"                    # ✅ SUCCESS
 python -c "import fastblocks.initializers"            # ✅ SUCCESS
@@ -235,10 +262,10 @@ python -m fastblocks version                        # ✅ SUCCESS
 ### Technical Highlights
 
 1. **Dependency Injection**: Replaced ACB `depends` with Oneiric `Resolver()`
-2. **Adapter System**: Implemented custom `get_adapter` for Oneiric compatibility
-3. **Hash Functions**: Created CRC32C implementation using zlib
-4. **Error Handling**: Updated exception system to use Oneiric resolver
-5. **Caching**: Complete caching system migration with custom implementations
+1. **Adapter System**: Implemented custom `get_adapter` for Oneiric compatibility
+1. **Hash Functions**: Created CRC32C implementation using zlib
+1. **Error Handling**: Updated exception system to use Oneiric resolver
+1. **Caching**: Complete caching system migration with custom implementations
 
 ### Impact Assessment
 
@@ -253,14 +280,17 @@ python -m fastblocks version                        # ✅ SUCCESS
 With Phase 1 complete, we're ready to proceed to **Phase 2: Integration Modules Migration**:
 
 1. **Update Integration Modules**:
+
    - `fastblocks/_events_integration.py`
    - `fastblocks/_health_integration.py`
    - `fastblocks/_validation_integration.py`
    - `fastblocks/_workflows_integration.py`
 
-2. **Run Comprehensive Tests**: Verify all functionality with Oneiric integration
-3. **Performance Testing**: Ensure within 10% of baseline metrics
-4. **Begin Phase 3 Planning**: Adapter re-architecture
+1. **Run Comprehensive Tests**: Verify all functionality with Oneiric integration
+
+1. **Performance Testing**: Ensure within 10% of baseline metrics
+
+1. **Begin Phase 3 Planning**: Adapter re-architecture
 
 **🎉 Phase 1 Migration: COMPLETE AND SUCCESSFUL!**
 

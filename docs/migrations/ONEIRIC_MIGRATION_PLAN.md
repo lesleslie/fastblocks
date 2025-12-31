@@ -4,6 +4,7 @@
 **Owner:** Platform Core
 **Scope:** FastBlocks runtime + adapters + MCP server migration from ACB to Oneiric
 **References:**
+
 - oneiric/docs/analysis/ADAPTER_OBSOLESCENCE_ANALYSIS.md
 - oneiric/docs/ONEIRIC_VS_ACB.md
 - oneiric/docs/STRATEGIC_ROADMAP.md
@@ -12,13 +13,14 @@
 - crackerjack/docs/MIGRATION_GUIDE_0.47.0.md
 - crackerjack/docs/archive/implementation-plans/ONEIRIC_MIGRATION_EXECUTION_PLAN.md
 
----
+______________________________________________________________________
 
 ## Progress Tracking
 
 Update checkboxes as tasks are completed. Add dates or notes inline when needed.
 
 ### Phase 0: Alignment + Baselines
+
 - [ ] Confirm Oneiric cutover posture (no hybrid ACB path).
 - [ ] Confirm hard break: no compatibility shims, legacy support, or migration layers.
 - [ ] Confirm Oneiric + mcp-common versions are sourced from `pyproject.toml` and `uv.lock`.
@@ -28,13 +30,14 @@ Update checkboxes as tasks are completed. Add dates or notes inline when needed.
 - [ ] Run pre-migration health check: `fastblocks health --probe > health_baseline.json`.
 - [ ] Define cutover recovery plan (revert tag + rollback steps) with owner and trigger criteria.
 - [ ] Block Phase 1 start until recovery plan is approved.
-**Exit gate (approval: you)**
+  **Exit gate (approval: you)**
 - [ ] Recovery plan includes explicit trigger thresholds (health probe failure, CLI regression, adapter smoke failure).
 - [ ] Baselines attached (ACB scan output, MCP CLI commands, client config snippets, health probe).
 - [ ] Oneiric + mcp-common version sources documented (`pyproject.toml`, `uv.lock`).
 - [ ] Rollback procedure tested in staging environment.
 
 ### Phase 1: Core Runtime Migration (ACB -> Oneiric)
+
 - [ ] Replace ACB registration/DI in `fastblocks/main.py` with Oneiric resolver/lifecycle entrypoint.
   - Replace `from acb import ensure_registration, register_pkg` with Oneiric equivalents
   - Replace `from acb.adapters import register_adapters, root_path` with Oneiric adapter registry
@@ -60,12 +63,12 @@ Update checkboxes as tasks are completed. Add dates or notes inline when needed.
   - [ ] workflows (`fastblocks/_workflows_integration.py`)
 - [ ] Update imports and type hints throughout core modules.
 - [ ] Verify all ACB imports removed: `rg -n "\\bacb\\b" fastblocks/main.py fastblocks/initializers.py fastblocks/middleware.py fastblocks/exceptions.py fastblocks/caching.py` returns 0.
-**Config migration (code-handled)**
+  **Config migration (code-handled)**
 - [ ] Add settings migration module: map legacy keys/env vars to Oneiric settings.
 - [ ] Log warnings for deprecated keys; fail fast on missing mandatory mappings.
 - [ ] Emit a one-time migration report in logs.
 - [ ] Add tests for config migration with sample legacy configs.
-**Exit gate (approval: you)**
+  **Exit gate (approval: you)**
 - [ ] Core runtime starts/stops using Oneiric resolver with no DI errors.
 - [ ] Health endpoint returns OK and includes Oneiric resolver status.
 - [ ] Config loads through Oneiric settings; no implicit ACB fallback.
@@ -73,6 +76,7 @@ Update checkboxes as tasks are completed. Add dates or notes inline when needed.
 - [ ] Performance metrics within 10% of baseline (startup time, memory usage).
 
 ### Phase 2: Adapter Re-architecture (Required)
+
 **Source:** `oneiric/docs/analysis/ADAPTER_OBSOLESCENCE_ANALYSIS.md` explicitly states:
 "Rearchitecture Needed: admin, app adapters," and recommends moving admin -> services and app -> core.
 
@@ -112,7 +116,7 @@ Update checkboxes as tasks are completed. Add dates or notes inline when needed.
 - [ ] Add validation tests for new service/core boundaries.
   - Test service isolation and API contracts
   - Test core functionality and extension points
-**Exit gate (approval: you)**
+    **Exit gate (approval: you)**
 - [ ] Admin service boundary + route map + API surface docs complete.
 - [ ] App core responsibilities + API surface docs complete.
 - [ ] At least one admin route and one app core flow migrated and validated.
@@ -121,15 +125,18 @@ Update checkboxes as tasks are completed. Add dates or notes inline when needed.
 - [ ] Performance metrics within 15% of baseline for migrated routes.
 
 ### Phase 3: Adapter Conversion (ACB -> Oneiric)
+
 Convert each adapter category to Oneiric registration, metadata, lifecycle, and settings models.
 
 **Global adapter tasks:**
+
 - [ ] Replace `acb.depends` usage inside adapters with Oneiric access patterns.
 - [ ] Replace `acb.adapters` metadata/registration with Oneiric adapter metadata registration.
 - [ ] Ensure every adapter has init/health/cleanup coverage.
 - [ ] Add Oneiric settings models for adapter configuration.
 
 **Adapter categories:**
+
 - [ ] templates: define Oneiric settings model (`fastblocks/adapters/templates/`)
 - [ ] templates: migrate registration/metadata to Oneiric
 - [ ] templates: implement init/health/cleanup lifecycle
@@ -168,13 +175,14 @@ Convert each adapter category to Oneiric registration, metadata, lifecycle, and 
 - [ ] sitemap: migrate registration/metadata to Oneiric
 - [ ] sitemap: implement init/health/cleanup lifecycle
 - [ ] sitemap: complete adapter smoke checklist
-**Exit gate (approval: you)**
+  **Exit gate (approval: you)**
 - [ ] Oneiric settings model exists for each adapter category.
 - [ ] Each adapter passes init/health/cleanup + one basic operation check.
 - [ ] `acb.depends` and `acb.adapters` usage removed in adapters.
 - [ ] Admin/app adapters removed or relocated per Phase 2 outputs.
 
 ### Phase 4: MCP Server Migration (mcp-common CLI Factory)
+
 - [ ] Replace `acb.create_mcp_server` in `fastblocks/mcp/server.py` with `MCPServerCLIFactory`.
   - Replace `from acb import create_mcp_server` with `from mcp_common.cli import MCPServerCLIFactory`
   - Update server initialization to use factory pattern
@@ -199,7 +207,7 @@ Convert each adapter category to Oneiric registration, metadata, lifecycle, and 
 - [ ] Add MCP error handling and graceful degradation.
   - Implement fallback mechanisms for MCP failures
   - Add comprehensive error logging and monitoring
-**Exit gate (approval: you)**
+    **Exit gate (approval: you)**
 - [ ] MCP lifecycle commands `start/stop/restart/status/health` succeed.
 - [ ] `.oneiric_cache/` contains PID + snapshot files; health JSON valid.
 - [ ] MCP tools register and run via new CLI surface.
@@ -207,7 +215,9 @@ Convert each adapter category to Oneiric registration, metadata, lifecycle, and 
 - [ ] Performance metrics within 10% of baseline for MCP operations.
 
 ### Phase 5: Validation Gates + Cutover
+
 **Crackerjack-style gates (required):**
+
 - [ ] MCP lifecycle commands work: `start/stop/restart/status/health`.
 - [ ] `health --probe` returns live data (not cached snapshot).
 - [ ] `.oneiric_cache/runtime_health.json` exists and is valid JSON.
@@ -217,6 +227,7 @@ Convert each adapter category to Oneiric registration, metadata, lifecycle, and 
 - [ ] Refresh `uv.lock` to reflect ACB removal.
 
 **Functional parity:**
+
 - [ ] Define parity matrix (core runtime, admin services, app core, MCP tools, key adapters).
 - [ ] Parity matrix is functional-only (no performance/regression metrics).
 - [ ] Execute parity matrix and record pass/fail evidence.
@@ -226,30 +237,35 @@ Convert each adapter category to Oneiric registration, metadata, lifecycle, and 
 - [ ] Adapter category smoke checks pass (init/health/cleanup + basic usage).
 
 **Performance validation:**
+
 - [ ] Measure and record baseline performance metrics.
 - [ ] Compare Oneiric performance against baseline.
 - [ ] Validate performance within acceptable thresholds (≤15% degradation).
 - [ ] Test under load conditions (concurrent requests, high traffic).
 
 **Error handling validation:**
+
 - [ ] Test graceful degradation scenarios.
 - [ ] Validate error messages and logging.
 - [ ] Test recovery from failure states.
 - [ ] Validate fallback mechanisms.
 
 **Security validation:**
+
 - [ ] Validate authentication and authorization.
 - [ ] Test secure configuration handling.
 - [ ] Validate data protection mechanisms.
 - [ ] Test audit logging and monitoring.
 
 **Incremental rollout strategy:**
+
 - [ ] Implement feature flags for critical components.
 - [ ] Create canary deployment plan.
 - [ ] Define rollback triggers and thresholds.
 - [ ] Implement monitoring and alerting for rollout.
 
 **Exit gate (approval: you)**
+
 - [ ] Functional parity matrix completed with evidence.
 - [ ] Zero ACB imports; `acb` removed from deps; `uv.lock` refreshed.
 - [ ] Rollback rehearse completed in staging (revert tag + rollback steps).
@@ -258,17 +274,19 @@ Convert each adapter category to Oneiric registration, metadata, lifecycle, and 
 - [ ] Incremental rollout plan approved and tested.
 
 ### Phase 6: Docs + Release
+
 - [ ] Update FastBlocks docs to Oneiric-only usage.
 - [ ] Add migration notes for MCP clients and CLI command changes.
 - [ ] Release notes include ACB removal and Oneiric cutover details.
 
----
+______________________________________________________________________
 
 ## Notes
+
 - Keep this plan current as tasks complete. Add dates or short notes next to checkboxes.
 - Use Crackerjack migration docs as reference for CLI adoption and validation gates.
 
----
+______________________________________________________________________
 
 ## Appendix E: Technical Enhancements Guide
 
@@ -277,11 +295,13 @@ Convert each adapter category to Oneiric registration, metadata, lifecycle, and 
 **Goal:** migrate legacy config keys/env vars to Oneiric settings at runtime with explicit validation.
 
 **Scope**
+
 - Read legacy config inputs (files, env vars, CLI flags) used by ACB.
 - Map to Oneiric settings fields with explicit conversion rules.
 - Warn on deprecated keys, fail fast on missing mandatory mappings.
 
 **Implementation checklist**
+
 - [ ] Create `fastblocks/config/migration.py` (or equivalent) for legacy->Oneiric mapping.
 - [ ] Define a mapping table with defaults and coercion rules.
 - [ ] Add validation: missing required fields raise a clear exception.
@@ -291,6 +311,7 @@ Convert each adapter category to Oneiric registration, metadata, lifecycle, and 
 - [ ] Add error handling for malformed config files.
 
 **Example mapping table (structure only)**
+
 ```python
 LEGACY_TO_ONEIRIC = {
     "ACB_FOO_ENABLED": ("oneiric.foo.enabled", bool),
@@ -301,6 +322,7 @@ LEGACY_TO_ONEIRIC = {
 ```
 
 **Validation commands:**
+
 ```bash
 # Test config migration with sample legacy config
 python -c "from fastblocks.config.migration import migrate_config; migrate_config('tests/legacy_config.json')"
@@ -309,19 +331,21 @@ python -c "from fastblocks.config.migration import migrate_config; migrate_confi
 ACB_FOO_ENABLED=true ACB_BAR_URL="http://example.com" python -c "from fastblocks.config.migration import migrate_config; print(migrate_config())"
 ```
 
----
+______________________________________________________________________
 
 ## Appendix D: Staging Rollback Runbook (Stub)
 
 **Purpose:** validate rollback steps before cutover and document exact commands.
 
 **Pre-conditions**
+
 - [ ] Staging environment mirrors prod config shape and Oneiric deps.
 - [ ] Current release tag identified (e.g., `vX.Y.Z`).
 - [ ] Rollback tag identified (e.g., `vX.Y.(Z-1)`).
 - [ ] Backup current staging environment state.
 
 **Rollback rehearsal steps**
+
 - [ ] Deploy Oneiric build to staging:
   ```bash
   git checkout vX.Y.Z
@@ -353,6 +377,7 @@ ACB_FOO_ENABLED=true ACB_BAR_URL="http://example.com" python -c "from fastblocks
   ```
 
 **Rollback validation criteria:**
+
 - [ ] Health endpoint returns OK status
 - [ ] MCP server starts and responds to commands
 - [ ] Core runtime functionality restored
@@ -360,6 +385,7 @@ ACB_FOO_ENABLED=true ACB_BAR_URL="http://example.com" python -c "from fastblocks
 - [ ] Performance metrics within expected ranges
 
 **Emergency rollback procedure:**
+
 ```bash
 # Emergency rollback script
 #!/bin/bash
@@ -411,6 +437,7 @@ Use this table to capture pass/fail evidence for core flows. Keep entries short 
 | Adapter resolution | Adapter load | Oneiric adapter registry resolves adapters | [ ] | `fastblocks adapters list` |
 
 **Performance validation commands:**
+
 ```bash
 # Measure startup time
 TIMEFORMAT='%3R'; time fastblocks start 2>&1 | grep real
@@ -423,6 +450,7 @@ ps aux | grep fastblocks | grep -v grep | awk '{print $4, $5, $6, $11}'
 ```
 
 **Error handling validation commands:**
+
 ```bash
 # Test graceful degradation
 fastblocks start --disable-cache
@@ -434,23 +462,26 @@ fastblocks start && pkill -9 fastblocks && fastblocks start
 fastblocks start --fallback-mode
 ```
 
----
+______________________________________________________________________
 
 ## Appendix E: Technical Enhancements Guide
 
 **Type System Migration:**
+
 - [ ] Document ACB → Oneiric type system differences
 - [ ] Create type migration guide for developers
 - [ ] Update type hints throughout codebase
 - [ ] Add type validation tests
 
 **Async/Await Pattern Migration:**
+
 - [ ] Document ACB → Oneiric async pattern differences
 - [ ] Update async function signatures
 - [ ] Validate async context management
 - [ ] Test async error handling
 
 **Dependency Injection Migration:**
+
 - [ ] Document ACB → Oneiric DI pattern differences
 - [ ] Update DI container configuration
 - [ ] Validate DI resolution performance
@@ -459,37 +490,45 @@ fastblocks start --fallback-mode
 **Code Examples:**
 
 **ACB → Oneiric Type Migration:**
+
 ```python
 # ACB style
 from acb.config import Config
 from typing import Optional
 
+
 class ACBConfig(Config):
     debug: Optional[bool] = False
+
 
 # Oneiric style
 from oneiric.config import Settings
 from typing import Optional
 
+
 class OneiricSettings(Settings):
     debug: Optional[bool] = False
-    
+
     class Config:
         env_prefix = "ONEIRIC_"
 ```
 
 **ACB → Oneiric Async Migration:**
+
 ```python
 # ACB style
 from acb.depends import depends
+
 
 @depends.inject
 async def acb_service():
     # ACB async context
     pass
 
+
 # Oneiric style
 from oneiric.di import inject
+
 
 @inject
 async def oneiric_service():
@@ -498,17 +537,21 @@ async def oneiric_service():
 ```
 
 **ACB → Oneiric DI Migration:**
+
 ```python
 # ACB style
 from acb.depends import depends
+
 
 class ACBService:
     @depends.inject
     def __init__(self, config: Config):
         self.config = config
 
+
 # Oneiric style
 from oneiric.di import inject
+
 
 class OneiricService:
     @inject
@@ -517,6 +560,7 @@ class OneiricService:
 ```
 
 **Validation Commands:**
+
 ```bash
 # Validate type system migration
 mypy fastblocks --strict
@@ -536,6 +580,7 @@ python -c "from fastblocks.config import Settings; import timeit; print(timeit.t
 Use this checklist for each adapter category (templates, auth, routes, images, icons, fonts, style, sitemap).
 
 **Per-adapter checks**
+
 - [ ] Init: adapter loads with Oneiric settings model.
 - [ ] Health: health check reports OK (or expected degraded state).
 - [ ] Basic operation: primary function works (see category examples).
@@ -544,6 +589,7 @@ Use this checklist for each adapter category (templates, auth, routes, images, i
 - [ ] Error handling: graceful degradation on failure.
 
 **Category examples (fill in for each adapter)**
+
 - templates: render a simple template with substitutions.
   ```bash
   fastblocks templates render --template "test.html" --context '{"title": "Test"}'
@@ -578,6 +624,7 @@ Use this checklist for each adapter category (templates, auth, routes, images, i
   ```
 
 **Adapter validation commands:**
+
 ```bash
 # List all adapters
 fastblocks adapters list

@@ -13,10 +13,10 @@ from contextlib import suppress
 from dataclasses import dataclass
 from uuid import UUID
 
+from adapters.oneiric_helper import register_candidate
+
 # Oneiric imports for dependency injection
 from oneiric.core.resolution import Resolver
-
-from adapters.oneiric_helper import register_candidate
 
 # Custom Oneiric-compatible events system
 depends = Resolver()
@@ -604,14 +604,20 @@ async def register_fastblocks_event_handlers() -> bool:
             domain="fastblocks",
             key="template_handler",
             factory=lambda: template_handler,
-            metadata={"class": "TemplateEventHandler", "module": "fastblocks._events_integration"},
+            metadata={
+                "class": "TemplateEventHandler",
+                "module": "fastblocks._events_integration",
+            },
         )
         register_candidate(
             depends,
             domain="fastblocks",
             key="admin_handler",
             factory=lambda: admin_handler,
-            metadata={"class": "AdminEventHandler", "module": "fastblocks._events_integration"},
+            metadata={
+                "class": "AdminEventHandler",
+                "module": "fastblocks._events_integration",
+            },
         )
 
         return True

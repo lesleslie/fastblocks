@@ -1,6 +1,5 @@
 """ImageKit image adapter implementation."""
 
-from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
