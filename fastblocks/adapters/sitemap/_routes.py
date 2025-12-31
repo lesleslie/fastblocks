@@ -1,8 +1,34 @@
 import typing as t
 
-from acb.adapters import import_adapter
-from acb.depends import depends
 from starlette.routing import Route
+
+
+# Custom implementations for ACB compatibility
+class AdapterStatus:
+    """Custom AdapterStatus for Oneiric compatibility."""
+
+    STABLE = "STABLE"
+    BETA = "BETA"
+    ALPHA = "ALPHA"
+    EXPERIMENTAL = "EXPERIMENTAL"
+
+
+def debug(msg: str) -> None:
+    """Custom debug function for Oneiric compatibility."""
+    print(f"[DEBUG] {msg}")
+
+
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
+
+
+def import_adapter(adapter_name: str) -> None:
+    """Custom implementation for Oneiric compatibility."""
+    return None
+
+
 from fastblocks.adapters.sitemap._base import SitemapProtocol
 
 

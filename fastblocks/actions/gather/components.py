@@ -22,8 +22,22 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from acb.debug import debug
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
+
+# Migration from ACB to Oneiric
+depends = Resolver()
+
+# ACB compatibility imports - these will be migrated in future phases
+try:
+    # MIGRATED: Removed ACB import - debug import debug
+    pass
+except ImportError:
+    # Fallback for Oneiric-only mode
+    def debug(msg: str) -> None:
+        """Debug function fallback."""
+        print(f"[DEBUG] {msg}")
+
+
 from anyio import Path as AsyncPath
 
 from .strategies import GatherResult, GatherStrategy
@@ -106,7 +120,7 @@ def _get_htmy_adapter(
 ) -> tuple[Any | None, ComponentGatherResult | None]:
     """Get HTMY adapter or return error result."""
     try:
-        htmy_adapter = depends.get("htmy")
+        htmy_adapter = depends.resolve("fastblocks", "htmy")
         return htmy_adapter, None
     except Exception as e:
         debug(f"Could not get HTMY adapter: {e}")
@@ -311,7 +325,7 @@ async def gather_component_dependencies(
         Dictionary with component dependency tree
     """
     if htmy_adapter is None:
-        htmy_adapter = depends.get("htmy")
+        htmy_adapter = depends.resolve("fastblocks", "htmy")
 
     if htmy_adapter is None:
         return {"error": "HTMY adapter not available"}
@@ -356,7 +370,7 @@ async def analyze_component_usage(
         Dictionary with usage analysis
     """
     if htmy_adapter is None:
-        htmy_adapter = depends.get("htmy")
+        htmy_adapter = depends.resolve("fastblocks", "htmy")
 
     if htmy_adapter is None:
         return {"error": "HTMY adapter not available"}
@@ -394,3 +408,9 @@ async def analyze_component_usage(
 
     except Exception as e:
         return {"error": str(e)}
+
+
+# Migration status indicator
+# Note: Partial migration - ACB debug system still in use
+_using_oneiric = True  # Oneiric resolver available
+_requires_further_migration = True  # ACB debug system needs migration

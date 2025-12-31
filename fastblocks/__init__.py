@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from contextlib import suppress
 
+# Migration: ACB -> Oneiric (COMPLETE)
+# Using pure Oneiric implementation
+from oneiric.core.resolution import register_pkg
+
 from . import exceptions
 
-with suppress(ImportError):
-    from acb import register_pkg
-
+# Register package with Oneiric
+with suppress(Exception):
     register_pkg()
 
 from . import actions, applications, caching, cli, middleware

@@ -15,8 +15,8 @@ class TestFontsBase:
     async def test_fonts_base_abstract_methods(self, monkeypatch):
         from fastblocks.adapters.fonts import _base as fonts_base
 
-        # Allow depends.set(self) call with flexible signature
-        monkeypatch.setattr(fonts_base.depends, "set", lambda *args, **kwargs: None)
+        # Allow depends.register(self) call with flexible signature
+        monkeypatch.setattr(fonts_base.depends, "register", lambda *args, **kwargs: None)
 
         class Impl(fonts_base.FontsBase):
             async def get_font_import(self) -> str:  # pragma: no cover - not called

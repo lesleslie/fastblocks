@@ -92,10 +92,10 @@ images:
 
 # settings/adapters/styles.yml
 styles:
-  adapter: bulma
+  adapter: vanilla
   settings:
-    version: "0.9.4"
-    cdn: true
+    css_paths:
+      - "/static/css/app.css"
 ```
 
 ### Template Integration
@@ -268,7 +268,7 @@ python -m fastblocks.mcp.cli list-categories
 python -m fastblocks.mcp.cli inspect cloudinary
 
 # Validate adapter configuration
-python -m fastblocks.mcp.cli validate bulma
+python -m fastblocks.mcp.cli validate vanilla
 
 # Check adapter health
 python -m fastblocks.mcp.cli health --all

@@ -5,8 +5,31 @@ from contextlib import suppress
 from importlib import import_module
 from pathlib import Path
 
-from acb.adapters import get_adapters, root_path
-from acb.debug import debug
+# Migration: ACB -> Oneiric
+# Try to import Oneiric components first, fall back to ACB for compatibility
+try:
+    # Oneiric imports (new)
+    from oneiric.adapters.discovery import get_adapters
+    from oneiric.core.logging import get_logger
+    from oneiric.core.resolution import Resolver
+
+    # Create debug function for Oneiric (using logger)
+    def debug(msg):
+        logger = get_logger("fastblocks.actions.gather.routes")
+        logger.debug(msg)
+
+    # Create root_path equivalent for Oneiric
+    root_path = Path(__file__).parent.parent.parent.parent
+
+    # Create depends equivalent for Oneiric
+    _resolver = Resolver()
+    _using_oneiric = True
+except ImportError:
+    # Fallback to ACB imports (legacy)
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
+    # MIGRATED: Removed ACB import - debug import debug
+    _using_oneiric = False
+
 from anyio import Path as AsyncPath
 from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 

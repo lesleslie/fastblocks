@@ -113,9 +113,12 @@ async def test_admin_init_with_admin_models() -> None:
     ):
         admin = Admin(app=mock_app, templates=mock_templates)
 
-        # Mock depends.get to return our mock models
+        # Mock depends.resolve to return our mock models
+        async def mock_resolve(domain, key):
+            return mock_models
+
         with patch(
-            "fastblocks.adapters.admin.sqladmin.depends.get", return_value=mock_models
+            "fastblocks.adapters.admin.sqladmin.depends.resolve", side_effect=mock_resolve
         ):
             # Call init
             await admin.init()
@@ -149,9 +152,12 @@ async def test_admin_init_without_admin_models() -> None:
     ):
         admin = Admin(app=mock_app, templates=mock_templates)
 
-        # Mock depends.get to return our mock models
+        # Mock depends.resolve to return our mock models
+        async def mock_resolve(domain, key):
+            return mock_models
+
         with patch(
-            "fastblocks.adapters.admin.sqladmin.depends.get", return_value=mock_models
+            "fastblocks.adapters.admin.sqladmin.depends.resolve", side_effect=mock_resolve
         ):
             # Call init
             await admin.init()
@@ -176,10 +182,13 @@ async def test_admin_init_handles_depends_errors() -> None:
     ):
         admin = Admin(app=mock_app, templates=mock_templates)
 
-        # Force depends.get to raise to ensure the suppress block handles it
+        # Force depends.resolve to raise to ensure the suppress block handles it
+        async def mock_resolve_error(domain, key):
+            raise RuntimeError("boom")
+
         with patch(
-            "fastblocks.adapters.admin.sqladmin.depends.get",
-            side_effect=RuntimeError("boom"),
+            "fastblocks.adapters.admin.sqladmin.depends.resolve",
+            side_effect=mock_resolve_error,
         ):
             await admin.init()
 

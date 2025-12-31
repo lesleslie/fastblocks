@@ -4,9 +4,12 @@ from contextlib import suppress
 from urllib.parse import quote_plus
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 
 from ._base import FontsBase, FontsBaseSettings
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 class GoogleFontsSettings(FontsBaseSettings):
@@ -54,7 +57,7 @@ class GoogleFonts(FontsBase):
         super().__init__()
         self.settings = GoogleFontsSettings()
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self)
 
@@ -241,4 +244,6 @@ class GoogleFonts(FontsBase):
 FontsSettings = GoogleFontsSettings
 Fonts = GoogleFonts
 
-depends.set(Fonts, "google")
+# Register with Oneiric resolver (fail gracefully if not supported)
+with suppress(Exception):
+    depends.set(Fonts, "google")

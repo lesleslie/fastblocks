@@ -25,8 +25,22 @@ from dataclasses import dataclass, field
 from enum import Enum
 from uuid import UUID
 
-from acb.adapters import AdapterStatus
-from acb.depends import depends
+# Oneiric imports
+from oneiric.core.resolution import Resolver
+
+
+# Custom implementations for ACB compatibility
+class AdapterStatus:
+    """Custom AdapterStatus for Oneiric compatibility."""
+
+    STABLE = "STABLE"
+    BETA = "BETA"
+    ALPHA = "ALPHA"
+    EXPERIMENTAL = "EXPERIMENTAL"
+
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 from jinja2 import (
     Environment,
     StrictUndefined,
@@ -304,7 +318,7 @@ class HybridTemplatesManager:
     async def _initialize_base_templates(self) -> None:
         """Initialize base templates instance."""
         try:
-            self.base_templates = depends.get("templates")
+            self.base_templates = depends.resolve("fastblocks", "templates")
         except Exception:
             self.base_templates = Templates()
             if not self.base_templates.app:
@@ -988,6 +1002,9 @@ class HybridTemplatesManager:
 
 MODULE_ID = UUID("01937d87-1234-7890-abcd-1234567890ab")
 MODULE_STATUS = AdapterStatus.EXPERIMENTAL
+
+# Migration indicators
+_using_oneiric = True
 
 # Register the advanced manager
 with suppress(Exception):

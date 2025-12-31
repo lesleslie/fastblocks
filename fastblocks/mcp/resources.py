@@ -3,9 +3,12 @@
 import logging
 from typing import Any
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 
 logger = logging.getLogger(__name__)
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 # Template Resources
@@ -194,7 +197,7 @@ async def get_htmy_component_catalog() -> dict[str, Any]:
         Dict with component catalog
     """
     try:
-        htmy_adapter = await depends.get("htmy")
+        htmy_adapter = await depends.resolve("fastblocks", "htmy")
         if htmy_adapter is None:
             return {
                 "success": False,
@@ -329,7 +332,7 @@ async def get_best_practices() -> dict[str, Any]:
                 "Extract reusable components",
             ],
             "template_organization": [
-                "Use variant-based organization (base, bulma, etc.)",
+                "Use variant-based organization (base, vanilla, etc.)",
                 "Keep blocks focused and small",
                 "Use template inheritance for layouts",
             ],
@@ -377,7 +380,7 @@ async def get_route_definitions() -> dict[str, Any]:
     """
     try:
         # Try to get routes from ACB registry
-        routes_adapter = await depends.get("routes")
+        routes_adapter = await depends.resolve("fastblocks", "routes")
         if routes_adapter is None:
             return {
                 "success": False,
@@ -465,7 +468,7 @@ async def register_fastblocks_resources(server: Any) -> None:
         server: MCP server instance from ACB
     """
     try:
-        from acb.mcp import register_resources  # type: ignore[attr-defined]
+        # MIGRATED: Removed ACB MCP registration - Oneiric MCP not yet available
 
         # Define resource registry
         resources = {

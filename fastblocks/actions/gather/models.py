@@ -6,8 +6,31 @@ from contextlib import suppress
 from importlib import import_module
 from pathlib import Path
 
-from acb.adapters import get_adapters, root_path
-from acb.debug import debug
+from oneiric.core.resolution import Resolver
+
+# Migration from ACB to Oneiric
+depends = Resolver()
+
+# ACB compatibility imports - these will be migrated in future phases
+try:
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
+    # MIGRATED: Removed ACB import - debug import debug
+    pass
+except ImportError:
+    # Fallback for Oneiric-only mode
+    def debug(msg: str) -> None:
+        """Debug function fallback."""
+        print(f"[DEBUG] {msg}")
+
+    def get_adapters():
+        """Adapter fallback - returns empty list."""
+        return []
+
+    def root_path() -> Path:
+        """Root path fallback - returns current directory."""
+        return Path.cwd()
+
+
 from anyio import Path as AsyncPath
 
 from .strategies import GatherStrategy, gather_with_strategy
@@ -695,3 +718,9 @@ def get_model_info(
         info["collection_name"] = model_class.__collection__
 
     return info
+
+
+# Migration status indicator
+# Note: Partial migration - ACB adapter and debug systems still in use
+_using_oneiric = True  # Oneiric resolver available
+_requires_further_migration = True  # ACB systems need migration

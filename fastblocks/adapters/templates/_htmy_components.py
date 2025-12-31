@@ -28,9 +28,15 @@ from enum import Enum
 from typing import Any, Optional
 from uuid import uuid4
 
-from acb.debug import debug
 from anyio import Path as AsyncPath
 from starlette.requests import Request
+
+
+# Custom debug function for Oneiric compatibility
+def debug(msg: str) -> None:
+    """Custom debug function for Oneiric compatibility."""
+    print(f"[DEBUG] {msg}")
+
 
 try:
     from pydantic import BaseModel

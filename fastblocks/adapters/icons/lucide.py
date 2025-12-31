@@ -4,7 +4,10 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 from ._base import IconsBase, IconsBaseSettings
 
@@ -107,7 +110,10 @@ class LucideIcons(IconsBase):
         super().__init__()
         self.settings = LucideIconsSettings()
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
+        with suppress(Exception):
+            # Register with Oneiric resolver (fail gracefully if not supported)
+            pass
         with suppress(Exception):
             depends.set(self)
 
@@ -150,6 +156,19 @@ class LucideIcons(IconsBase):
     @staticmethod
     def _get_svg_icon_tag(icon_name: str, **attributes: Any) -> str:
         """Generate SVG icon tag for JavaScript initialization."""
+        # Convert class_ to class (Python keyword handling)
+        if "class_" in attributes:
+            attributes["class"] = attributes.pop("class_")
+
+        # Convert stroke_width to stroke-width (HTML attribute naming)
+        if "stroke_width" in attributes:
+            attributes["stroke-width"] = attributes.pop("stroke_width")
+
+        # Handle aria_label parameter (use hyphen in HTML)
+        if "aria_label" in attributes:
+            # User-provided aria-label should be used instead of auto-generated
+            attributes["aria-label"] = attributes.pop("aria_label")
+
         # Build attributes string
         attr_parts = [f'data-lucide="{icon_name}"']
 
@@ -160,7 +179,7 @@ class LucideIcons(IconsBase):
 
         # Handle other attributes
         for key, value in attributes.items():
-            if key in ("class", "id", "style", "stroke-width", "color"):
+            if key in ("class", "id", "style", "stroke-width", "color", "title"):
                 attr_parts.append(f'{key}="{value}"')
             elif key.startswith(("data-", "aria-")):
                 attr_parts.append(f'{key}="{value}"')
@@ -175,6 +194,15 @@ class LucideIcons(IconsBase):
     @staticmethod
     def _get_font_icon_tag(icon_name: str, **attributes: Any) -> str:
         """Generate font icon tag."""
+        # Convert class_ to class (Python keyword handling)
+        if "class_" in attributes:
+            attributes["class"] = attributes.pop("class_")
+
+        # Handle aria_label parameter (use hyphen in HTML)
+        if "aria_label" in attributes:
+            # User-provided aria-label should be used instead of auto-generated
+            attributes["aria-label"] = attributes.pop("aria_label")
+
         icon_class = f"lucide lucide-{icon_name}"
 
         # Add any additional classes
@@ -247,6 +275,8 @@ class LucideIcons(IconsBase):
 IconsSettings = LucideIconsSettings
 Icons = LucideIcons
 
-depends.set(Icons, "lucide")
+# Register with Oneiric resolver (fail gracefully if not supported)
+with suppress(Exception):
+    depends.set(Icons, "lucide")
 
 __all__ = ["LucideIcons", "LucideIconsSettings", "IconsSettings", "Icons"]

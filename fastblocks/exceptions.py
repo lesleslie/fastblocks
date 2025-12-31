@@ -5,11 +5,14 @@ from dataclasses import dataclass
 from enum import Enum
 from operator import itemgetter
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
 from fastblocks.htmx import HtmxRequest
+
+# Replace ACB depends with Oneiric Resolver
+depends = Resolver()
 
 _templates_cache = None
 
@@ -106,7 +109,7 @@ class DefaultErrorHandler(ErrorHandler):
         if hasattr(request, "scope") and request.scope.get("htmx"):
             return PlainTextResponse(content=message, status_code=status_code)
 
-        templates = safe_depends_get("templates", _exception_cache)
+        templates = await safe_depends_get("templates", _exception_cache)
         if templates:
             with suppress(Exception):
                 result = await templates.app.render_template(
@@ -128,14 +131,14 @@ def register_error_handler(handler: ErrorHandler, priority: int = 0) -> None:
     _error_registry.register(handler, priority)
 
 
-def safe_depends_get(
+async def safe_depends_get(
     key: str,
     cache_dict: dict[str, t.Any],
     default: t.Any = None,
 ) -> t.Any:
     if key not in cache_dict:
         try:
-            cache_dict[key] = depends.get(key)
+            cache_dict[key] = await depends.resolve("fastblocks", key)
         except Exception:
             cache_dict[key] = default
     return cache_dict[key]

@@ -2,7 +2,21 @@
 
 import typing as t
 
-from acb.debug import debug
+from oneiric.core.resolution import Resolver
+
+# Migration from ACB to Oneiric
+depends = Resolver()
+
+# ACB compatibility imports - these will be migrated in future phases
+try:
+    # MIGRATED: Removed ACB import - debug import debug
+    pass
+except ImportError:
+    # Fallback for Oneiric-only mode
+    def debug(msg: str) -> None:
+        """Debug function fallback."""
+        print(f"[DEBUG] {msg}")
+
 
 from .strategies import SyncResult, SyncStrategy
 
@@ -43,9 +57,9 @@ async def sync_cache(
     result = CacheSyncResult()
 
     try:
-        from acb.depends import depends
+        # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        cache = await depends.get("cache")
+        cache = await depends.resolve("fastblocks", "cache")
 
         if not cache:
             result.errors.append(Exception("Cache adapter not available"))
@@ -227,9 +241,9 @@ async def _warm_template_cache(
     ]
 
     try:
-        from acb.depends import depends
+        # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        storage = await depends.get("storage")
+        storage = await depends.resolve("fastblocks", "storage")
 
         if not storage:
             debug("Storage not available for template warming")
@@ -307,9 +321,9 @@ async def invalidate_template_cache(
     }
 
     try:
-        from acb.depends import depends
+        # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        cache = await depends.get("cache")
+        cache = await depends.resolve("fastblocks", "cache")
 
         if not cache:
             result["errors"].append("Cache adapter not available")
@@ -375,9 +389,9 @@ async def get_cache_stats(
 
 
 async def _get_cache_adapter(stats: dict[str, t.Any]) -> t.Any:
-    from acb.depends import depends
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-    cache = await depends.get("cache")
+    cache = await depends.resolve("fastblocks", "cache")
     if not cache:
         stats["errors"].append("Cache adapter not available")
     return cache
@@ -493,3 +507,9 @@ def get_cache_sync_summary(result: CacheSyncResult) -> dict[str, t.Any]:
             "cleared": result.cleared_namespaces,
         },
     }
+
+
+# Migration status indicator
+# Note: Partial migration - ACB debug system still in use
+_using_oneiric = True  # Oneiric resolver available
+_requires_further_migration = True  # ACB debug system needs migration

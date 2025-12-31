@@ -15,8 +15,8 @@ class TestImagesBase:
     async def test_images_base_abstract_methods(self, monkeypatch):
         from fastblocks.adapters.images import _base as images_base
 
-        # Allow depends.set(self) call
-        monkeypatch.setattr(images_base.depends, "set", lambda *args, **kwargs: None)
+        # Allow depends.register(self) call
+        monkeypatch.setattr(images_base.depends, "register", lambda *args, **kwargs: None)
 
         # Base abstract methods raise
         base = images_base.ImagesBase()

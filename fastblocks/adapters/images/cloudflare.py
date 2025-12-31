@@ -6,7 +6,6 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import httpx
-from acb.depends import depends
 from pydantic import SecretStr
 
 from ._base import ImagesBase, ImagesBaseSettings
@@ -47,7 +46,7 @@ class CloudflareImages(ImagesBase):
         self.settings: CloudflareImagesSettings | None = None
         self._client: httpx.AsyncClient | None = None
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self)
 
@@ -247,7 +246,7 @@ def register_cloudflare_filters(env: Any) -> None:
     @env.filter("cf_image_url")  # type: ignore[misc]
     async def cf_image_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for Cloudflare Images URLs."""
-        images = await depends.get("images")
+        images = await depends.resolve("fastblocks", "images")
         if isinstance(images, CloudflareImages):
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"  # Fallback

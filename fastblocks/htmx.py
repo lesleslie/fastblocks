@@ -24,13 +24,26 @@ from contextlib import suppress
 from typing import Any
 from urllib.parse import unquote
 
+# Migration: ACB -> Oneiric
+# Try to import Oneiric components first, fall back to ACB for compatibility
 try:
-    from acb.debug import debug
+    # Oneiric imports (new)
+    from oneiric.core.logging import get_logger
+
+    # Create debug function for Oneiric (using logger)
+    def debug(msg):
+        logger = get_logger("fastblocks.htmx")
+        logger.debug(msg)
+
+    _using_oneiric = True
 except ImportError:
+    # Fallback to ACB imports (legacy)
+    # MIGRATED: Removed ACB import - debug import debug
     # Fallback debug function if acb.debug is not available
     import logging
 
     debug = logging.debug
+    _using_oneiric = False
 from starlette.responses import HTMLResponse
 
 if t.TYPE_CHECKING:

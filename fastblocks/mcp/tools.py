@@ -5,12 +5,15 @@ import operator
 from pathlib import Path
 from typing import Any
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 
 from .discovery import AdapterDiscoveryServer
 from .health import HealthCheckSystem
 
 logger = logging.getLogger(__name__)
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 # Template Management Tools
@@ -27,7 +30,7 @@ async def create_template(
     Args:
         name: Template name (e.g., "user_card")
         template_type: Template engine (jinja2, htmy)
-        variant: Template variant/theme (base, bulma, etc.)
+        variant: Template variant/theme (base, vanilla, etc.)
         content: Template content (optional, uses default if empty)
 
     Returns:
@@ -109,7 +112,7 @@ async def validate_template(template_path: str) -> dict[str, Any]:
         content = path.read_text()
 
         # Get syntax support from ACB registry
-        syntax_support = await depends.get("syntax_support")
+        syntax_support = await depends.resolve("fastblocks", "syntax_support")
         if syntax_support is None:
             return {
                 "success": False,
@@ -153,9 +156,7 @@ def _should_skip_variant_dir(variant_dir: Path, variant_filter: str | None) -> b
     Returns:
         True if should skip, False otherwise
     """
-    if not variant_dir.is_dir():
-        return True
-
+    # Skip if variant filter is set and directory name doesn't match
     if variant_filter and variant_dir.name != variant_filter:
         return True
 
@@ -169,9 +170,14 @@ def _determine_template_type(suffix: str) -> str:
         suffix: File suffix (e.g., '.html', '.py')
 
     Returns:
-        Template type ('jinja2' or 'htmy')
+        Template type ('jinja2', 'htmy', or 'unknown')
     """
-    return "jinja2" if suffix == ".html" else "htmy"
+    if suffix in (".html", ".jinja2", ".j2"):
+        return "jinja2"
+    elif suffix == ".py":
+        return "htmy"
+    else:
+        return "unknown"
 
 
 def _create_template_info(template_file: Path, variant_name: str) -> dict[str, str]:
@@ -218,7 +224,7 @@ async def list_templates(variant: str | None = None) -> dict[str, Any]:
     """List all available FastBlocks templates.
 
     Args:
-        variant: Optional variant filter (base, bulma, etc.)
+        variant: Optional variant filter (base, vanilla, etc.)
 
     Returns:
         Dict with list of discovered templates
@@ -258,14 +264,14 @@ async def render_template(
     Args:
         template_name: Template name to render
         context: Template context variables
-        variant: Template variant (base, bulma, etc.)
+        variant: Template variant (base, vanilla, etc.)
 
     Returns:
         Dict with rendered output or error
     """
     try:
         # Get template adapter from ACB
-        templates = await depends.get("templates")
+        templates = await depends.resolve("fastblocks", "templates")
         if templates is None:
             return {
                 "success": False,
@@ -311,7 +317,7 @@ async def create_component(
         Dict with component creation status
     """
     try:
-        htmy_adapter = await depends.get("htmy")
+        htmy_adapter = await depends.resolve("fastblocks", "htmy")
         if htmy_adapter is None:
             return {
                 "success": False,
@@ -360,7 +366,7 @@ async def list_components() -> dict[str, Any]:
         Dict with list of components and metadata
     """
     try:
-        htmy_adapter = await depends.get("htmy")
+        htmy_adapter = await depends.resolve("fastblocks", "htmy")
         if htmy_adapter is None:
             return {
                 "success": False,
@@ -400,7 +406,7 @@ async def validate_component(component_name: str) -> dict[str, Any]:
         Dict with validation status and metadata
     """
     try:
-        htmy_adapter = await depends.get("htmy")
+        htmy_adapter = await depends.resolve("fastblocks", "htmy")
         if htmy_adapter is None:
             return {
                 "success": False,
@@ -442,7 +448,7 @@ async def configure_adapter(
     """
     try:
         # Get adapter from ACB registry
-        adapter = await depends.get(adapter_name)
+        adapter = await depends.resolve("fastblocks", adapter_name)
         if adapter is None:
             return {
                 "success": False,
@@ -548,7 +554,7 @@ async def register_fastblocks_tools(server: Any) -> None:
         server: MCP server instance from ACB
     """
     try:
-        from acb.mcp import register_tools  # type: ignore[attr-defined]
+        # MIGRATED: Removed ACB MCP registration - Oneiric MCP not yet available
 
         # Define tool registry
         tools = {

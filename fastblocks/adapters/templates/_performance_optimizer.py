@@ -8,7 +8,10 @@ from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
+
+# Migration from ACB to Oneiric
+depends = Resolver()
 
 
 @dataclass
@@ -277,3 +280,7 @@ def get_performance_optimizer() -> PerformanceOptimizer:
     if _performance_optimizer is None:
         _performance_optimizer = PerformanceOptimizer()
     return _performance_optimizer
+
+
+# Migration status indicator
+_using_oneiric = True

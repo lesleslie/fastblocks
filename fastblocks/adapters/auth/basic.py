@@ -17,12 +17,10 @@ Requirements:
 
 Usage:
 ```python
-from acb.depends import Inject, depends
-from acb.adapters import import_adapter
+# Updated for Oneiric
+from fastblocks.adapters.auth.basic import Auth
 
-auth = depends.get("auth")
-
-Auth = import_adapter("auth")
+auth = Auth(secret_key="your-secret-key")
 
 auth_middleware = await auth.init()
 ```
@@ -36,7 +34,7 @@ import binascii
 import typing as t
 from uuid import UUID
 
-from acb.adapters import AdapterStatus
+# Oneiric imports
 from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import AuthCredentials, AuthenticationError, SimpleUser
 from starlette.middleware import Middleware
@@ -109,27 +107,15 @@ class Auth(AuthBase):
         secret_key: SecretStr | None = None,
         user_model: t.Any | None = None,
     ) -> None:
+        # For Oneiric, we'll use a simpler approach
+        # In practice, this would be replaced with actual config resolution
         if secret_key is None:
-            from acb.config import Config
-
-            config = Config()
-            config.init()
-            secret_key = config.get("auth.secret_key")
-            if secret_key is None:
-                secret_key = (
-                    getattr(self.config.app, "secret_key", None)
-                    if hasattr(self, "config")
-                    else None
-                )
-            if secret_key is None:
-                raise ValueError(
-                    "secret_key must be provided either directly or via config"
-                )
+            raise ValueError("secret_key must be provided directly (Oneiric migration)")
 
         super().__init__(secret_key, user_model)
         self.secret_key = secret_key
         if not self.secret_key:
-            raise ValueError("secret_key must be provided via config or parameter")
+            raise ValueError("secret_key must be provided via parameter")
         self.name = "basic"
         self.user_model = user_model
 
@@ -151,4 +137,4 @@ class Auth(AuthBase):
 
 
 MODULE_ID = UUID("01937d86-5f3b-7c4d-9e0f-2345678901bc")
-MODULE_STATUS = AdapterStatus.STABLE
+MODULE_STATUS = "STABLE"  # Oneiric-compatible status

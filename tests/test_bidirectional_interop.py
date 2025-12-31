@@ -195,7 +195,7 @@ async def _setup_test_environment() -> (
 ):
     """Set up the test environment and validate paths."""
     component_path = MockAsyncPath(
-        "/Users/les/Projects/sites/fastest/templates/app/bulma/components"
+        "/Users/les/Projects/sites/fastest/templates/app/vanilla/components"
     )
     registry = HTMYComponentRegistry([component_path])
     print("✓ Registry created")

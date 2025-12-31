@@ -373,16 +373,17 @@ async def test_default_error_handler_template_exception() -> None:
 
 
 @pytest.mark.unit
-def test_safe_depends_get_cached() -> None:
+@pytest.mark.asyncio
+async def test_safe_depends_get_cached() -> None:
     """Test safe_depends_get with cached value."""
     cache = {"test_key": "cached_value"}
 
-    with patch("fastblocks.exceptions.depends.get") as mock_get:
-        result = safe_depends_get("test_key", cache)
+    with patch("fastblocks.exceptions.depends.resolve", new_callable=AsyncMock) as mock_resolve:
+        result = await safe_depends_get("test_key", cache)
 
         assert result == "cached_value"
-        # Should not call depends.get since value is cached
-        mock_get.assert_not_called()
+        # Should not call depends.resolve since value is cached
+        mock_resolve.assert_not_awaited()
 
 
 @pytest.mark.unit

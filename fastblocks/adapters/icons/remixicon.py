@@ -4,7 +4,7 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 
 from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
@@ -15,6 +15,9 @@ from ._utils import (
     process_state_attributes,
     process_transformations,
 )
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 class RemixIconSettings(IconsBaseSettings):
@@ -102,7 +105,7 @@ class RemixIcon(IconsBase):
         super().__init__()
         self.settings: RemixIconSettings | None = None
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self)
 
@@ -742,7 +745,9 @@ def register_remixicon_filters(env: Any) -> None:
 IconsSettings = RemixIconSettings
 Icons = RemixIcon
 
-depends.set(Icons, "remixicon")
+# Register with Oneiric resolver (fail gracefully if not supported)
+with suppress(Exception):
+    depends.set(Icons, "remixicon")
 
 
 # ACB 0.19.0+ compatibility

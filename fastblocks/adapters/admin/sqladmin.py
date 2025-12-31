@@ -11,12 +11,17 @@ import typing as t
 from contextlib import suppress
 from uuid import UUID
 
-from acb.adapters import AdapterStatus
-from acb.depends import Inject, depends
+# Oneiric imports
+from oneiric.core.resolution import Resolver
 from starlette.applications import Starlette
 from fastblocks.applications import FastBlocks
 
+from ..oneiric_helper import register_candidate
 from ._base import AdminBase, AdminBaseSettings
+
+# Custom Oneiric-compatible adapter system
+depends = Resolver()
+_using_oneiric = True
 
 Auth = None
 Storage = None
@@ -29,10 +34,9 @@ class AdminSettings(AdminBaseSettings): ...
 
 
 class Admin(AdminBase):
-    @depends.inject
     def __init__(
         self,
-        templates: Inject[t.Any],
+        templates: t.Any | None = None,
         app: Starlette | None = None,
         **kwargs: t.Any,
     ) -> None:
@@ -43,22 +47,35 @@ class Admin(AdminBase):
             app = FastBlocks()
 
         self._sqladmin = SqlAdminBase(app=app, **kwargs)
-        self.templates = templates.admin
+        self.templates = templates.admin if templates else None
 
     def __getattr__(self, name: str) -> t.Any:
         return getattr(self._sqladmin, name)
 
     async def init(self) -> None:
         with suppress(Exception):
-            models = await depends.get("models")
-            if hasattr(models, "get_admin_models"):
-                admin_models = models.get_admin_models()
-                for model in admin_models:
-                    self._sqladmin.add_view(model)
+            # For Oneiric, try to get models using resolve
+            try:
+                models = await depends.resolve("fastblocks", "models")
+                if models and hasattr(models, "get_admin_models"):
+                    admin_models = models.get_admin_models()
+                    for model in admin_models:
+                        self._sqladmin.add_view(model)
+            except Exception:
+                pass  # Gracefully handle any dependency resolution errors
 
 
 MODULE_ID = UUID("01937d86-7f5d-7e6f-b120-4567890123de")
-MODULE_STATUS = AdapterStatus.STABLE
+MODULE_STATUS = "STABLE"  # Oneiric-compatible status
 
-with suppress(Exception):
-    depends.set(Admin, "sqladmin")
+# Register with Oneiric resolver
+register_candidate(
+    depends,
+    domain="fastblocks",
+    key="admin",
+    factory=Admin,
+    metadata={
+        "class": "Admin",
+        "module": "fastblocks.adapters.admin.sqladmin",
+    },
+)

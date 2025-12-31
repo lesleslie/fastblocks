@@ -256,7 +256,7 @@ class TestAppBaseModule:
         # Test attributes
         assert hasattr(settings, "style")
         assert hasattr(settings, "theme")
-        assert settings.style == "bulma"
+        assert settings.style == "vanilla"
         assert settings.theme == "light"
 
     def test_app_base_protocol(self, ensure_adapter_modules_fixture: dict) -> None:
@@ -310,7 +310,7 @@ class TestAppDefaultModule:
 
         # Test attributes
         assert hasattr(settings, "style")
-        assert settings.style == "bulma"
+        assert settings.style == "vanilla"
         assert hasattr(settings, "theme")
         assert settings.theme == "light"
         assert hasattr(settings, "name")

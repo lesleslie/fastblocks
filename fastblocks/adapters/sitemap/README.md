@@ -68,24 +68,25 @@ You can add dynamic URLs to the sitemap using dependency injection:
 
 ```python
 import typing as t
-from acb.depends import depends, Inject
-from acb.adapters import import_adapter
+from oneiric.core.resolution import Resolver
 from datetime import datetime
 
-Sitemap = import_adapter("sitemap")
+depends = Resolver()
 
-
-@depends.inject
-async def add_blog_posts_to_sitemap(sitemap: Inject[Sitemap]) -> None:
+async def add_blog_posts_to_sitemap() -> None:
     """Add blog posts to sitemap during application startup."""
-    posts = await get_blog_posts_from_database()
-    for post in posts:
-        sitemap.add_url(
-            url=f"/blog/{post.slug}",
-            priority=0.7,
-            changefreq="weekly",
-            lastmod=post.updated_at or post.created_at,
-        )
+    try:
+        sitemap = depends.resolve("sitemap")
+        posts = await get_blog_posts_from_database()
+        for post in posts:
+            sitemap.add_url(
+                url=f"/blog/{post.slug}",
+                priority=0.7,
+                changefreq="weekly",
+                lastmod=post.updated_at or post.created_at,
+            )
+    except Exception as e:
+        print(f"Error adding blog posts to sitemap: {e}")
 
 
 # Call this function during application startup
@@ -98,19 +99,21 @@ You can manually generate the sitemap using dependency injection:
 
 ```python
 import typing as t
-from acb.depends import depends, Inject
-from acb.adapters import import_adapter
+from oneiric.core.resolution import Resolver
 from starlette.responses import Response
 from starlette.routing import Route
 
-Sitemap = import_adapter("sitemap")
+depends = Resolver()
 
-
-@depends.inject
-async def get_sitemap(request, sitemap: Inject[Sitemap]) -> Response:
+async def get_sitemap(request) -> Response:
     """Generate and serve sitemap XML."""
-    sitemap_xml = await sitemap.generate()
-    return Response(content=sitemap_xml, media_type="application/xml")
+    try:
+        sitemap = depends.resolve("sitemap")
+        sitemap_xml = await sitemap.generate()
+        return Response(content=sitemap_xml, media_type="application/xml")
+    except Exception as e:
+        print(f"Error generating sitemap: {e}")
+        return Response(content="Error generating sitemap", status_code=500)
 
 
 routes = [Route("/custom-sitemap.xml", endpoint=get_sitemap)]
@@ -136,18 +139,18 @@ The Sitemap adapter is implemented in the following files:
 
 ```python
 import typing as t
-from acb.config import Settings
+from oneiric.core.config import OneiricSettings
 from datetime import datetime
 
 
-class SitemapBaseSettings(Settings):
+class SitemapBaseSettings(OneiricSettings):
     enabled: bool = True
     base_url: str = ""
     cache_timeout: int = 3600
     static_urls: list[dict[str, t.Any]] = []
 
 
-class SitemapBase(AdapterBase):
+class SitemapBase:
     def add_url(
         self,
         url: str,

@@ -44,10 +44,12 @@ classifiers = [
 dependencies = [
     "anyio>=4.11.0",
     "brotli-asgi>=1.5.0",
+    "browser-use>=0.5.11",
     "granian[reload]>=2.6.0",
     "htmy[lxml]>=0.9.0",
     "mcp-common>=0.3.3",
     "minify-html>=0.18.1",
+    "oneiric>=0.3.4",
     "pydantic>=2.12.4",
     "pyfiglet>=1.0.4",
     "rcssmin>=1.2.2",
@@ -97,6 +99,11 @@ images = [
 cache = [
     "acb>=0.31.12",
 ]
+
+[tool.fastblocks-mcp]
+http_port = 3035
+http_host = "127.0.0.1"
+enable_http_transport = true
 
 [tool.ruff]
 target-version = "py313"
@@ -341,3 +348,8 @@ paths = [
 ignore_names = [
     "cls",
 ]
+
+[tool.crackerjack]
+# Override default maxkb for check-added-large-files
+# UV lock files can exceed 1MB as the project grows
+maxkb = 1200

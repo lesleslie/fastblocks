@@ -4,7 +4,22 @@ import typing as t
 from pathlib import Path
 
 import yaml
-from acb.debug import debug
+from oneiric.core.resolution import Resolver
+
+# Migration from ACB to Oneiric
+depends = Resolver()
+
+# ACB compatibility imports - these will be migrated in future phases
+try:
+    # MIGRATED: Removed ACB import - debug import debug
+    pass
+except ImportError:
+    # Fallback for Oneiric-only mode
+    def debug(msg: str) -> None:
+        """Debug function fallback."""
+        print(f"[DEBUG] {msg}")
+
+
 from anyio import Path as AsyncPath
 
 from .strategies import (
@@ -190,10 +205,10 @@ def _prepare_sync_config(
 
 async def _initialize_adapters(result: TemplateSyncResult) -> dict[str, t.Any] | None:
     try:
-        from acb.depends import depends
+        # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        storage = await depends.get("storage")
-        cache = await depends.get("cache")
+        storage = await depends.resolve("fastblocks", "storage")
+        cache = await depends.resolve("fastblocks", "cache")
         if not storage:
             result.errors.append(Exception("Storage adapter not available"))
             return None
@@ -666,10 +681,10 @@ async def warm_template_cache(
         ]
 
     try:
-        from acb.depends import depends
+        # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        cache = await depends.get("cache")
-        storage = await depends.get("storage")
+        cache = await depends.resolve("fastblocks", "cache")
+        storage = await depends.resolve("fastblocks", "storage")
 
         if not cache or not storage:
             result["errors"].append(Exception("Cache or storage not available"))
@@ -718,9 +733,9 @@ async def get_template_sync_status(
     }
 
     try:
-        from acb.depends import depends
+        # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        storage = await depends.get("storage")
+        storage = await depends.resolve("fastblocks", "storage")
 
         if not storage:
             status["error"] = "Storage adapter not available"
@@ -783,6 +798,12 @@ async def _process_template_files_for_status(
         details_list.append(file_status)
 
     _calculate_out_of_sync_total(status)
+
+
+# Migration status indicator
+# Note: Partial migration - ACB debug system still in use
+_using_oneiric = True  # Oneiric resolver available
+_requires_further_migration = True  # ACB debug system needs migration
 
 
 def _create_file_status_info(

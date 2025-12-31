@@ -2,7 +2,11 @@
 
 from typing import Any
 
-from acb.depends import depends
+# Oneiric imports
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 async def async_image_url(image_id: str, **transformations: Any) -> str:
@@ -11,7 +15,11 @@ async def async_image_url(image_id: str, **transformations: Any) -> str:
     Usage in templates:
         [[ await async_image_url('product.jpg', width=300, height=200, crop='fill') ]]
     """
-    images = await depends.get("images")
+    try:
+        images = await depends.resolve("fastblocks", "images")
+    except Exception:
+        images = None
+
     if images and hasattr(images, "get_image_url"):
         result = await images.get_image_url(image_id, **transformations)
         return str(result) if result is not None else image_id
@@ -28,7 +36,11 @@ async def async_font_import() -> str:
             [[ await async_font_import() ]]
         [% endblock %]
     """
-    fonts = await depends.get("fonts")
+    try:
+        fonts = await depends.resolve("fastblocks", "fonts")
+    except Exception:
+        fonts = None
+
     if fonts and hasattr(fonts, "get_font_import"):
         result = await fonts.get_font_import()
         return str(result) if result is not None else ""
@@ -50,7 +62,11 @@ async def async_image_with_transformations(
                                                   {'width': 1200, 'quality': 80},
                                                   class='hero-img') ]]
     """
-    images = await depends.get("images")
+    try:
+        images = await depends.resolve("fastblocks", "images")
+    except Exception:
+        images = None
+
     if images:
         # Get transformed URL first
         transform_params = transformations or {}
@@ -59,24 +75,38 @@ async def async_image_with_transformations(
         # Build img tag with transformed URL
         attr_parts = [f'src="{image_url}"', f'alt="{alt}"']
         for key, value in attributes.items():
+            # Handle class_ as alias for class to avoid Python keyword conflict
+            attr_name = "class" if key == "class_" else key
             if key in (
                 "width",
                 "height",
                 "class",
+                "class_",
                 "id",
                 "style",
                 "loading",
                 "decoding",
             ):
-                attr_parts.append(f'{key}="{value}"')
+                attr_parts.append(f'{attr_name}="{value}"')
 
         return f"<img {' '.join(attr_parts)}>"
 
     # Fallback to basic img tag
     attr_parts = [f'src="{image_id}"', f'alt="{alt}"']
     for key, value in attributes.items():
-        if key in ("width", "height", "class", "id", "style", "loading", "decoding"):
-            attr_parts.append(f'{key}="{value}"')
+        # Handle class_ as alias for class to avoid Python keyword conflict
+        attr_name = "class" if key == "class_" else key
+        if key in (
+            "width",
+            "height",
+            "class",
+            "class_",
+            "id",
+            "style",
+            "loading",
+            "decoding",
+        ):
+            attr_parts.append(f'{attr_name}="{value}"')
 
     return f"<img {' '.join(attr_parts)}>"
 
@@ -93,7 +123,11 @@ async def async_responsive_image(
             'desktop': {'width': 1200, 'quality': 85}
         }) ]]
     """
-    images = await depends.get("images")
+    try:
+        images = await depends.resolve("fastblocks", "images")
+    except Exception:
+        images = None
+
     if not images:
         # Fallback to basic img tag
         return f'<img src="{image_id}" alt="{alt}">'
@@ -108,7 +142,7 @@ async def async_responsive_image(
         srcset_parts.append(f"{size_url} {width}w")
 
         # Use the largest size as default src
-        if width > int(src_url.split("w")[0] if "w" in src_url else "0"):
+        if width > 400:  # Default to largest size for src
             src_url = size_url
 
     # Build img tag with srcset
@@ -126,17 +160,20 @@ async def async_responsive_image(
         )
 
     for key, value in attributes.items():
+        # Handle class_ as alias for class to avoid Python keyword conflict
+        attr_name = "class" if key == "class_" else key
         if key in (
             "width",
             "height",
             "class",
+            "class_",
             "id",
             "style",
             "loading",
             "decoding",
             "sizes",
         ):
-            attr_parts.append(f'{key}="{value}"')
+            attr_parts.append(f'{attr_name}="{value}"')
 
     return f"<img {' '.join(attr_parts)}>"
 
@@ -149,7 +186,11 @@ async def async_optimized_font_stack() -> str:
             [[ await async_optimized_font_stack() ]]
         [% endblock %]
     """
-    fonts = await depends.get("fonts")
+    try:
+        fonts = await depends.resolve("fastblocks", "fonts")
+    except Exception:
+        fonts = None
+
     if not fonts:
         return ""
 
@@ -184,7 +225,11 @@ async def async_critical_css_fonts(critical_fonts: list[str] | None = None) -> s
             [[ await async_critical_css_fonts(['Inter', 'Roboto']) ]]
         [% endblock %]
     """
-    fonts = await depends.get("fonts")
+    try:
+        fonts = await depends.resolve("fastblocks", "fonts")
+    except Exception:
+        fonts = None
+
     if not fonts:
         return ""
 
@@ -213,7 +258,10 @@ async def async_image_placeholder(
     Usage in templates:
         [[ await async_image_placeholder(400, 300, 'Loading...') ]]
     """
-    images = await depends.get("images")
+    try:
+        images = await depends.resolve("fastblocks", "images")
+    except Exception:
+        images = None
 
     # If the image adapter supports placeholder generation
     if images and hasattr(images, "get_placeholder_url"):
@@ -246,7 +294,10 @@ async def async_lazy_image(
     Usage in templates:
         [[ await async_lazy_image('hero.jpg', 'Hero Image', loading='lazy') ]]
     """
-    images = await depends.get("images")
+    try:
+        images = await depends.resolve("fastblocks", "images")
+    except Exception:
+        images = None
 
     # Get the actual image URL
     if images and hasattr(images, "get_image_url"):
@@ -296,3 +347,6 @@ FASTBLOCKS_ASYNC_FILTERS = {
     "async_image_placeholder": async_image_placeholder,
     "async_lazy_image": async_lazy_image,
 }
+
+# Migration indicator
+_using_oneiric = True

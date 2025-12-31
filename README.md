@@ -1,5 +1,5 @@
 <p align="center">
-<img src="./images/fastblocks-logo.png" alt="FastBlocks Logo">
+<img src="./assets/fastblocks-logo.png" alt="FastBlocks Logo">
 </p>
 
 > **FastBlocks Documentation**: [Main](#fastblocks) | [Core Features](#fastblocks) | [Actions](./fastblocks/actions/README.md) | [Adapters](./fastblocks/adapters/README.md)
@@ -1142,7 +1142,7 @@ python -m fastblocks create
 You'll be prompted for:
 
 - **app_name**: Name of your application
-- **style**: UI framework to use (bulma, webawesome, kelp, or custom)
+- **style**: UI framework to use (vanilla, webawesome, kelp, or custom)
 - **domain**: Application domain
 
 This will create a new directory with the following structure:
@@ -1208,7 +1208,7 @@ python -m fastblocks run --docker
 #### Create Command
 
 ```bash
-python -m fastblocks create --app-name myapp --style bulma --domain example.com
+python -m fastblocks create --app-name myapp --style vanilla --domain example.com
 ```
 
 #### Dev Command
@@ -1398,7 +1398,6 @@ Special thanks to the following open-source projects that power FastBlocks:
 - [Jinja2](https://jinja.palletsprojects.com/) - The template engine
 - [jinja2-async-environment](https://github.com/lesleslie/jinja2-async-environment) - Asynchronous Jinja2 environment
 - [starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja) - Starlette integration for async Jinja2
-- [Bulma](https://bulma.io/) - Modern CSS framework based on Flexbox for beautiful responsive designs
 - [Kelp](https://kelp.com/) - Lightweight UI library for HTML-first development, powered by modern CSS and Web Components
 
 ### Data & Validation

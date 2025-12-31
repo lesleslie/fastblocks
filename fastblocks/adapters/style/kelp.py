@@ -4,9 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 
 from ._base import StyleBase, StyleBaseSettings
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 class KelpStyleSettings(StyleBaseSettings):
@@ -96,7 +99,7 @@ class KelpStyle(StyleBase):
         super().__init__()
         self.settings: KelpStyleSettings | None = None
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self)
 
@@ -857,7 +860,9 @@ def register_kelp_functions(env: Any) -> None:
 StyleSettings = KelpStyleSettings
 Style = KelpStyle
 
-depends.set(Style, "kelp")
+# Register with Oneiric resolver (fail gracefully if not supported)
+with suppress(Exception):
+    depends.set(Style, "kelp")
 
 
 # ACB 0.19.0+ compatibility

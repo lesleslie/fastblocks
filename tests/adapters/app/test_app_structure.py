@@ -35,7 +35,7 @@ class TestAppStructure:
 
         class AppBaseSettings:
             name: str = "fastblocks"
-            style: str = "bulma"
+            style: str = "vanilla"
             theme: str = "light"
 
         class AppProtocol(t.Protocol):
@@ -61,7 +61,7 @@ class TestAppStructure:
         assert hasattr(AppBaseSettingsType, "style")
         assert hasattr(AppBaseSettingsType, "theme")
         assert AppBaseSettingsType.name == "fastblocks"
-        assert AppBaseSettingsType.style == "bulma"
+        assert AppBaseSettingsType.style == "vanilla"
         assert AppBaseSettingsType.theme == "light"
 
         assert hasattr(AppProtocolType, "init")
@@ -80,7 +80,7 @@ class TestAppStructure:
 
         class AppBaseSettings:
             name: str = "fastblocks"
-            style: str = "bulma"
+            style: str = "vanilla"
             theme: str = "light"
 
         class AppBase:

@@ -1,9 +1,21 @@
 import asyncio
-import logging
+
+# Replace ACB actions with standard Python alternatives
+import json
 import os
 import signal
+
+# Remove ACB logger intercept handler - use standard logging
+# with suppress(ImportError):
+#     # MIGRATED: Removed ACB import - logger import InterceptHandler
+#     for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+#         logger = logging.getLogger(logger_name)
+#         logger.handlers.clear()
+#         logger.addHandler(InterceptHandler())
+#         logger.setLevel(logging.DEBUG)
+#         logger.propagate = False
+import sys
 import typing as t
-from contextlib import suppress
 from enum import Enum
 from importlib.metadata import version as get_version
 from pathlib import Path
@@ -11,32 +23,16 @@ from subprocess import DEVNULL
 from subprocess import run as execute
 from typing import Annotated
 
-with suppress(ImportError):
-    from acb.logger import InterceptHandler
-
-    for logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
-        logger = logging.getLogger(logger_name)
-        logger.handlers.clear()
-        logger.addHandler(InterceptHandler())
-        logger.setLevel(logging.DEBUG)
-        logger.propagate = False
-
-import sys
-
 import nest_asyncio
 import typer
 import uvicorn
-from acb.actions.encode import dump, load
 from anyio import Path as AsyncPath
 from granian import Granian
 
-try:
-    from acb.console import console
-except ImportError:
-    # Fallback to regular rich console if acb.console is not available
-    from rich.console import Console
+# Use standard rich console instead of ACB console
+from rich.console import Console
 
-    console = Console()
+console = Console()
 
 nest_asyncio.apply()
 __all__ = ("cli", "components", "create", "dev", "run")
@@ -144,13 +140,31 @@ def dev(granian: bool = False) -> None:
 
 
 def _display_adapters() -> None:
-    from acb.adapters import get_adapters
+    # Replace ACB adapter discovery with Oneiric adapter registry
+    from oneiric.core.resolution import Resolver
 
     console.print("[bold green]Available Adapters:[/bold green]")
-    adapters = get_adapters()
+
+    # Use Oneiric resolver to discover adapters
+    depends = Resolver()
+    try:
+        # Try to get adapter registry from Oneiric
+        adapter_registry = depends.resolve("adapter_registry")
+        if adapter_registry:
+            adapters = adapter_registry.get_all_adapters()
+        else:
+            # Fallback: try to discover adapters manually
+            adapters = []
+            console.print("  [dim]Adapter registry not available[/dim]")
+            return
+    except Exception:
+        console.print("  [dim]No adapters found[/dim]")
+        return
+
     if not adapters:
         console.print("  [dim]No adapters found[/dim]")
         return
+
     categories: dict[str, list[t.Any]] = {}
     for adapter in adapters:
         if adapter.category not in categories:
@@ -322,10 +336,11 @@ def scaffold(
 
     async def scaffold_component() -> None:
         try:
-            from acb.depends import depends
+            from oneiric.core.resolution import Resolver
 
-            # Get HTMY adapter
-            htmy_adapter = await depends.get("htmy")
+            # Get HTMY adapter using Oneiric resolver
+            depends = Resolver()
+            htmy_adapter = await depends.resolve("htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -406,9 +421,11 @@ def list_components() -> None:
 
     async def list_all_components() -> None:
         try:
-            from acb.depends import depends
+            from oneiric.core.resolution import Resolver
 
-            htmy_adapter = await depends.get("htmy")
+            # Get HTMY adapter using Oneiric resolver
+            depends = Resolver()
+            htmy_adapter = await depends.resolve("htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -484,9 +501,11 @@ def validate(
 
     async def validate_component() -> None:
         try:
-            from acb.depends import depends
+            from oneiric.core.resolution import Resolver
 
-            htmy_adapter = await depends.get("htmy")
+            # Get HTMY adapter using Oneiric resolver
+            depends = Resolver()
+            htmy_adapter = await depends.resolve("htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -544,9 +563,11 @@ def info(
 
     async def get_component_info() -> None:
         try:
-            from acb.depends import depends
+            from oneiric.core.resolution import Resolver
 
-            htmy_adapter = await depends.get("htmy")
+            # Get HTMY adapter using Oneiric resolver
+            depends = Resolver()
+            htmy_adapter = await depends.resolve("htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -623,9 +644,11 @@ def syntax_check(
         try:
             from pathlib import Path
 
-            from acb.depends import depends
+            from oneiric.core.resolution import Resolver
 
-            syntax_support = await depends.get("syntax_support")
+            # Get syntax support using Oneiric resolver
+            depends = Resolver()
+            syntax_support = await depends.resolve("syntax_support")
             if syntax_support is None:
                 console.print(
                     "[red]Syntax support not available. Make sure you're in a FastBlocks project.[/red]"
@@ -668,9 +691,11 @@ def format_template(
         try:
             from pathlib import Path
 
-            from acb.depends import depends
+            from oneiric.core.resolution import Resolver
 
-            syntax_support = await depends.get("syntax_support")
+            # Get syntax support using Oneiric resolver
+            depends = Resolver()
+            syntax_support = await depends.resolve("syntax_support")
             if syntax_support is None:
                 console.print(
                     "[red]Syntax support not available. Make sure you're in a FastBlocks project.[/red]"
@@ -713,7 +738,6 @@ def generate_ide_config(
 ) -> None:
     """Generate IDE configuration files for FastBlocks syntax support."""
     import asyncio
-    import json
 
     async def generate_config() -> None:
         try:
@@ -892,9 +916,11 @@ def start_language_server(
 
     async def start_server() -> None:
         try:
-            from acb.depends import depends
+            from oneiric.core.resolution import Resolver
 
-            language_server = await depends.get("language_server")
+            # Get language server using Oneiric resolver
+            depends = Resolver()
+            language_server = await depends.resolve("language_server")
             if language_server is None:
                 console.print(
                     "[red]Language server not available. Make sure you're in a FastBlocks project.[/red]"
@@ -1064,9 +1090,7 @@ def mcp(
             console.print("\n[yellow]MCP server stopped by user[/yellow]")
         except ImportError as e:
             console.print(f"[red]MCP dependencies not available: {e}[/red]")
-            console.print(
-                "[dim]Make sure ACB is installed with MCP support (acb>=0.23.0)[/dim]"
-            )
+            console.print("[dim]Make sure Oneiric and mcp-common are installed[/dim]")
         except Exception as e:
             console.print(f"[red]Error starting MCP server: {e}[/red]")
 

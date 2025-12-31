@@ -7,8 +7,17 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from acb.config import AdapterBase
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
+
+
+# Custom AdapterBase for Oneiric compatibility
+class AdapterBase:
+    """Custom AdapterBase for Oneiric compatibility."""
+
+    pass
 
 
 class AdapterInfo:
@@ -101,7 +110,7 @@ class AdapterDiscoveryServer:
         with suppress(Exception):
             # Try to get adapters from ACB registry
             # This may not be available in all ACB versions
-            from acb.depends import depends
+            # Use existing depends resolver
 
             # Get all registered instances that might be adapters
             registry = getattr(depends, "_registry", {})

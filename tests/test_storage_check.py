@@ -30,7 +30,7 @@ async def test_storage_check() -> None:
 
         # Create search paths
         search_paths = [
-            AsyncPath("/Users/les/Projects/sites/fastest/templates/app/bulma"),
+            AsyncPath("/Users/les/Projects/sites/fastest/templates/app/vanilla"),
         ]
 
         loader = FileSystemLoader(search_paths)

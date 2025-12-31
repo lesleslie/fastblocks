@@ -268,39 +268,40 @@ class TestAsyncFilters:
     """Test asynchronous template filters."""
 
     @pytest.mark.asyncio
-    @patch("fastblocks.adapters.templates.async_filters.depends")
+    @patch("fastblocks.adapters.templates._async_filters.depends")
     async def test_async_image_url_with_adapter(self, mock_depends):
         """Test async_image_url with image adapter."""
         mock_adapter = MagicMock()
         mock_adapter.get_image_url = AsyncMock(
             return_value="https://example.com/test.jpg?w=300"
         )
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
 
         result = await async_image_url("test.jpg", width=300)
 
         assert result == "https://example.com/test.jpg?w=300"
+        mock_depends.resolve.assert_called_once_with("fastblocks", "images")
         mock_adapter.get_image_url.assert_called_once_with("test.jpg", width=300)
 
     @pytest.mark.asyncio
-    @patch("fastblocks.adapters.templates.async_filters.depends")
+    @patch("fastblocks.adapters.templates._async_filters.depends")
     async def test_async_image_url_fallback(self, mock_depends):
         """Test async_image_url fallback behavior."""
-        mock_depends.get_sync.return_value = None
+        mock_depends.resolve = AsyncMock(side_effect=Exception("No images"))
 
         result = await async_image_url("test.jpg", width=300)
 
         assert result == "test.jpg"
 
     @pytest.mark.asyncio
-    @patch("fastblocks.adapters.templates.async_filters.depends")
+    @patch("fastblocks.adapters.templates._async_filters.depends")
     async def test_async_font_import_with_adapter(self, mock_depends):
         """Test async_font_import with font adapter."""
         mock_adapter = MagicMock()
         mock_adapter.get_font_import = AsyncMock(
             return_value='<link rel="stylesheet" href="fonts.css">'
         )
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
 
         result = await async_font_import()
 
@@ -308,24 +309,24 @@ class TestAsyncFilters:
         mock_adapter.get_font_import.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch("fastblocks.adapters.templates.async_filters.depends")
+    @patch("fastblocks.adapters.templates._async_filters.depends")
     async def test_async_font_import_fallback(self, mock_depends):
         """Test async_font_import fallback behavior."""
-        mock_depends.get_sync.return_value = None
+        mock_depends.resolve = AsyncMock(side_effect=Exception("No fonts"))
 
         result = await async_font_import()
 
         assert result == ""
 
     @pytest.mark.asyncio
-    @patch("fastblocks.adapters.templates.async_filters.depends")
+    @patch("fastblocks.adapters.templates._async_filters.depends")
     async def test_async_image_with_transformations(self, mock_depends):
         """Test async_image_with_transformations."""
         mock_adapter = MagicMock()
         mock_adapter.get_image_url = AsyncMock(
             return_value="https://example.com/hero.jpg?w=1200&q=85"
         )
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
 
         result = await async_image_with_transformations(
             "hero.jpg", "Hero Image", {"width": 1200, "quality": 85}, class_="hero-img"
@@ -337,7 +338,7 @@ class TestAsyncFilters:
         assert 'class="hero-img"' in result
 
     @pytest.mark.asyncio
-    @patch("fastblocks.adapters.templates.async_filters.depends")
+    @patch("fastblocks.adapters.templates._async_filters.depends")
     async def test_async_responsive_image(self, mock_depends):
         """Test async_responsive_image generation."""
         mock_adapter = MagicMock()
@@ -348,7 +349,7 @@ class TestAsyncFilters:
             return f"https://example.com/{image_id}?w={width}"
 
         mock_adapter.get_image_url = AsyncMock(side_effect=mock_get_image_url)
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
 
         sizes = {
             "mobile": {"width": 400, "quality": 75},
@@ -366,7 +367,7 @@ class TestAsyncFilters:
         assert "sizes=" in result
 
     @pytest.mark.asyncio
-    @patch("fastblocks.adapters.templates.async_filters.depends")
+    @patch("fastblocks.adapters.templates._async_filters.depends")
     async def test_async_optimized_font_stack(self, mock_depends):
         """Test async_optimized_font_stack generation."""
         mock_adapter = MagicMock()
@@ -377,7 +378,7 @@ class TestAsyncFilters:
             '<link rel="preload" href="font.woff2">'
         )
         mock_adapter.get_css_variables.return_value = ":root { --font-primary: Inter; }"
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
 
         result = await async_optimized_font_stack()
 
@@ -562,7 +563,7 @@ class TestFilterIntegration:
     async def test_async_filter_error_handling(self):
         """Test async filter error handling."""
         with patch(
-            "fastblocks.adapters.templates.async_filters.depends"
+            "fastblocks.adapters.templates._async_filters.depends"
         ) as mock_depends:
             mock_depends.get_sync.return_value = None
 

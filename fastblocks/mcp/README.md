@@ -342,7 +342,7 @@ templates = await mcp_client.call_tool("list_templates")
 # Create new template based on user request
 result = await mcp_client.call_tool(
     "create_template",
-    {"name": "dashboard", "template_type": "jinja2", "variant": "bulma"},
+    {"name": "dashboard", "template_type": "jinja2", "variant": "vanilla"},
 )
 
 # Get syntax reference

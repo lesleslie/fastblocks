@@ -75,7 +75,7 @@ def ensure_cli_module():
 
         def mock_create(
             app_name: str,
-            style: str = "bulma",
+            style: str = "vanilla",
             domain: str = "example.com",
         ):
             """Create new FastBlocks application."""

@@ -1,13 +1,15 @@
 import typing as t
 
-from acb.config import AdapterBase
-from acb.config import AppSettings as AppConfigSettings
+# Oneiric imports
+from oneiric.core.config import OneiricSettings
 from starlette.routing import Router
 
 
-class AppBaseSettings(AppConfigSettings):
+class AppBaseSettings(OneiricSettings):
+    """App base settings using OneiricSettings."""
+
     name: str = "fastblocks"
-    style: str = "bulma"
+    style: str = "vanilla"
     theme: str = "light"
 
 
@@ -17,9 +19,10 @@ class AppProtocol(t.Protocol):
     async def lifespan(self) -> t.AsyncIterator[None]: ...
 
 
-class AppBase(AdapterBase):
+class AppBase:
+    """App base adapter using Oneiric."""
+
     router: Router | None
 
     def __init__(self) -> None:
-        super().__init__()
         self.router = None

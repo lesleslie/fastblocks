@@ -1,0 +1,3 @@
+[34m[DEBUG] Failed to add stderr log handler: _LoggerProxy.add() got an unexpected keyword argument 'enqueue' | module=acb.adapters.logger.logly | function=_debug[0m
+[37m[INFO] App path: /Users/les/Projects/fastblocks | module=acb.adapters.logger.logly | function=_log_app_info[0m
+[37m[INFO] App deployed: False | module=acb.adapters.logger.logly | function=_log_app_info[0m

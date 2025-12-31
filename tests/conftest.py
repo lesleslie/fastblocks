@@ -3294,6 +3294,67 @@ def cleanup_acb_depends():
         pass
 
 
+pytest.fixture(autouse=True)
+def reset_oneiric_resolver():
+    """Reset Oneiric Resolver state between tests to prevent state pollution."""
+    from oneiric.core.resolution import Resolver
+
+    # Get or create the singleton resolver
+    try:
+        # Import patterns that might have cached resolver instances
+        resolver_patterns = [
+            "fastblocks.actions.gather.application",
+            "fastblocks.actions.gather.components",
+            "fastblocks.adapters.templates._async_filters",
+            "fastblocks.adapters.images._base",
+            "fastblocks.adapters.icons._base",
+            "fastblocks.fonts._base",
+            "fastblocks.style._base",
+        ]
+
+        for pattern in resolver_patterns:
+            with suppress(ImportError):
+                module = sys.modules.get(pattern)
+                if module and hasattr(module, 'depends'):
+                    resolver = module.depends
+                    # Clear resolver registry if available
+                    if hasattr(resolver, 'registry'):
+                        resolver.registry.clear()
+                    if hasattr(resolver, '_resolver_cache'):
+                        resolver._resolver_cache.clear()
+    except Exception:
+        pass
+
+    yield
+
+
+@pytest.fixture(autouse=True)
+def reset_acb_modules():
+    """Clean up ACB modules after tests to prevent state pollution."""
+    acb_module_names = [
+        "acb",
+        "acb.adapters",
+        "acb.config",
+        "acb.depends",
+        "acb.actions",
+        "acb.actions.encode",
+        "acb.actions.hash",
+        "acb.logger",
+        "acb.debug",
+        "acb.console",
+        "acb.adapters.app",
+        "acb.adapters.auth",
+        "acb.adapters.admin",
+    ]
+
+    # Clean up sys.modules after each test
+    yield
+
+    for module_name in acb_module_names:
+        if module_name in sys.modules:
+            del sys.modules[module_name]
+
+
 @pytest.fixture
 def mock_config():
     """Provide a consistent mock configuration for tests."""

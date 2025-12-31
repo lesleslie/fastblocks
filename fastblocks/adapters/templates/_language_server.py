@@ -6,13 +6,16 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
-from acb.depends import depends
+from oneiric.core.config import OneiricSettings
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 from ._syntax_support import FastBlocksSyntaxSupport
 
 
-class LanguageServerSettings(Settings):
+class LanguageServerSettings(OneiricSettings):
     """Settings for FastBlocks Language Server."""
 
     # Required ACB 0.19.0+ metadata

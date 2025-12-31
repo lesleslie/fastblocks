@@ -4,8 +4,26 @@ from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
 from enum import IntEnum
 
-from acb.debug import debug
-from acb.depends import depends
+# Dual import strategy for Oneiric migration
+try:
+    # Oneiric imports (new)
+    from oneiric.core.logging import get_logger
+    from oneiric.core.resolution import Resolver
+
+    # Create debug function for Oneiric (using logger)
+    def debug(msg):
+        logger = get_logger("fastblocks.middleware")
+        logger.debug(msg)
+
+    # Create depends equivalent for Oneiric
+    depends = Resolver()
+    _using_oneiric = True
+except ImportError:
+    # Fallback to ACB imports (legacy)
+    # MIGRATED: Removed ACB import - debug import debug
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
+    _using_oneiric = False
+
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
 from starlette.datastructures import URL, Headers, MutableHeaders
@@ -156,7 +174,7 @@ class SecureHeadersMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
         try:
-            self.logger = depends.get("logger")
+            self.logger = depends.resolve("fastblocks", "logger")
         except Exception:
             self.logger = None
 
@@ -372,10 +390,10 @@ class MiddlewareStackManager:
     def _ensure_dependencies(self) -> None:
         if self.config is None or self.logger is None:
             if self.config is None:
-                self.config = depends.get("config")
+                self.config = depends.resolve("fastblocks", "config")
             if self.logger is None:
                 try:
-                    self.logger = depends.get("logger")
+                    self.logger = depends.resolve("fastblocks", "logger")
                 except Exception:
                     self.logger = None
 
@@ -393,7 +411,12 @@ class MiddlewareStackManager:
         self._ensure_dependencies()
         if not self.config:
             return
-        from acb.adapters import get_adapter
+        # Dual import for get_adapter
+        try:
+            from oneiric.core.adapters import get_adapter
+        except ImportError:
+            # MIGRATED: Removed ACB import - using Oneiric equivalent
+            pass
 
         self._middleware_registry[MiddlewarePosition.CSRF] = CSRFMiddleware
         self._middleware_options[MiddlewarePosition.CSRF] = {

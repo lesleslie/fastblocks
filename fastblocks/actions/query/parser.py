@@ -10,18 +10,31 @@ Created: 2025-01-13
 import typing as t
 from contextlib import suppress
 
-from acb.debug import debug
-from acb.depends import Inject, depends
+from oneiric.core.logging import get_logger
+
+# Migration: ACB -> Oneiric
+# Using Oneiric for dependency injection
+from oneiric.core.resolution import Resolver
+
+
+# Create debug function for Oneiric (using logger)
+def debug(msg):
+    logger = get_logger("fastblocks.actions.query.parser")
+    logger.debug(msg)
+
+
+# Create depends equivalent for Oneiric
+depends = Resolver()
+
 from starlette.requests import Request
 from fastblocks.htmx import HtmxRequest
 
 
 class UniversalQueryParser:
-    @depends.inject
     def __init__(
         self,
         request: HtmxRequest | Request,
-        query: Inject[t.Any],
+        query: t.Any,
         model_class: t.Any = None,
         pattern: str = "advanced",
         default_limit: int = 10,
@@ -262,7 +275,7 @@ class UniversalQueryParser:
 
 async def get_model_for_query(model_name: str) -> t.Any | None:
     try:
-        models = await depends.get("models")
+        models = await depends.resolve("fastblocks", "models")
         if models and hasattr(models, model_name):
             return getattr(models, model_name)
     except Exception as e:
@@ -293,7 +306,8 @@ async def create_query_context(
         debug(f"Model '{model_name}' not found")
         return context
 
-    parser = UniversalQueryParser(request, model_class)
+    query = await depends.resolve("fastblocks", "query")
+    parser = UniversalQueryParser(request, query, model_class)
 
     context.update(
         {

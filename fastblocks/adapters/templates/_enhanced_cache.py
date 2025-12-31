@@ -27,7 +27,11 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+# Oneiric imports
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 class CacheTier(Enum):
@@ -594,6 +598,9 @@ def get_enhanced_cache() -> EnhancedCacheManager:
         _enhanced_cache = EnhancedCacheManager()
     return _enhanced_cache
 
+
+# Migration indicator
+_using_oneiric = True
 
 # ACB 0.19.0+ compatibility
 __all__ = [

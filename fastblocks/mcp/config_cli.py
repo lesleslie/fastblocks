@@ -9,8 +9,13 @@ from pathlib import Path
 from typing import Any
 
 import click
-from acb.console import Console
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
+
+# Use standard rich console instead of ACB console
+from rich.console import Console
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 from mcp_common.ui import ServerPanels
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt

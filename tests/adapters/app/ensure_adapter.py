@@ -34,7 +34,7 @@ def create_adapter_modules() -> dict[str, types.ModuleType]:  # noqa: C901
 
         def __init__(self) -> None:
             """Initialize app settings."""
-            self.style = "bulma"
+            self.style = "vanilla"
             self.theme = "light"
 
     @t.runtime_checkable

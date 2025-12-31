@@ -164,7 +164,7 @@ async def test_component_discovery() -> None:
 def _setup_standalone_registry() -> tuple[HTMYComponentRegistry, MockAsyncPath]:
     """Set up the standalone component registry."""
     component_path = MockAsyncPath(
-        "/Users/les/Projects/sites/fastest/templates/app/bulma/components"
+        "/Users/les/Projects/sites/fastest/templates/app/vanilla/components"
     )
     registry = HTMYComponentRegistry([component_path])
 

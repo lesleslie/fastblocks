@@ -4,7 +4,10 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 from .discovery import AdapterDiscoveryServer, AdapterInfo
 

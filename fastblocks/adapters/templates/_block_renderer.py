@@ -23,8 +23,22 @@ from dataclasses import dataclass, field
 from enum import Enum
 from uuid import UUID
 
-from acb.adapters import AdapterStatus
-from acb.depends import depends
+# Oneiric imports
+from oneiric.core.resolution import Resolver
+
+
+# Custom implementations for ACB compatibility
+class AdapterStatus:
+    """Custom AdapterStatus for Oneiric compatibility."""
+
+    STABLE = "STABLE"
+    BETA = "BETA"
+    ALPHA = "ALPHA"
+    EXPERIMENTAL = "EXPERIMENTAL"
+
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 from jinja2 import Environment, meta
 from jinja2.nodes import Block, Extends, Include
 from starlette.requests import Request
@@ -175,7 +189,9 @@ class BlockRenderer:
 
         if not self.hybrid_manager:
             try:
-                self.hybrid_manager = await depends.get("hybrid_template_manager")
+                self.hybrid_manager = await depends.resolve(
+                    "fastblocks", "hybrid_template_manager"
+                )
             except Exception:
                 self.hybrid_manager = HybridTemplatesManager()
                 await self.hybrid_manager.initialize()
@@ -566,6 +582,9 @@ class BlockRenderer:
 
 MODULE_ID = UUID("01937d89-1234-7890-abcd-1234567890ab")
 MODULE_STATUS = AdapterStatus.STABLE
+
+# Migration indicator
+_using_oneiric = True
 
 # Register the block renderer
 with suppress(Exception):

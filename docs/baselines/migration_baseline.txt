@@ -1,0 +1,38 @@
+=== PHASE 0: ALIGNMENT + BASELINES ===
+1. Capturing ACB usage baseline...
+     218
+2. Recording MCP CLI commands...
+[34m[DEBUG] Failed to add stderr log handler: _LoggerProxy.add() got an unexpected keyword argument 'enqueue' | module=acb.adapters.logger.logly | function=_debug[0m
+[37m[INFO] App path: /Users/les/Projects/fastblocks | module=acb.adapters.logger.logly | function=_log_app_info[0m
+[37m[INFO] App deployed: False | module=acb.adapters.logger.logly | function=_log_app_info[0m
+                                                                                
+ Usage: python -m fastblocks mcp [OPTIONS]                                      
+                                                                                
+ Start the FastBlocks MCP (Model Context Protocol) server.                      
+                                                                                
+ Enables IDE/AI assistant integration for FastBlocks development                
+ including template management, component creation, and adapter configuration.  
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --port  -p      INTEGER  Port for MCP server (default: auto) [default: 0]    │
+│ --host          TEXT     Host to bind MCP server to [default: localhost]     │
+│ --help                   Show this message and exit.                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+3. Running health probe...
+Usage: python -m fastblocks [OPTIONS] COMMAND [ARGS]...
+Try 'python -m fastblocks --help' for help.
+╭─ Error ──────────────────────────────────────────────────────────────────────╮
+│ No such command 'health'.                                                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+[34m[DEBUG] Failed to add stderr log handler: _LoggerProxy.add() got an unexpected keyword argument 'enqueue' | module=acb.adapters.logger.logly | function=_debug[0m
+[37m[INFO] App path: /Users/les/Projects/fastblocks | module=acb.adapters.logger.logly | function=_log_app_info[0m
+[37m[INFO] App deployed: False | module=acb.adapters.logger.logly | function=_log_app_info[0m
+Health probe not available
+4. Capturing detailed ACB usage...
+Detailed ACB usage captured in acb_usage_detailed.txt
+5. Checking current dependencies...
+Current dependencies:
+    "mcp-common>=0.3.3",
+    "oneiric>=0.3.4",
+    "acb>=0.31.12",

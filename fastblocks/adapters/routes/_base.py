@@ -1,7 +1,15 @@
-from acb.config import AdapterBase, Settings
+# Oneiric imports
+from oneiric.core.config import OneiricSettings
 
 
-class RoutesBaseSettings(Settings): ...
+class RoutesBaseSettings(OneiricSettings):
+    """Routes base settings using OneiricSettings."""
+
+    def __init__(self, **data: dict) -> None:
+        super().__init__(**data)
 
 
-class RoutesBase(AdapterBase): ...
+class RoutesBase:
+    """Routes base adapter using Oneiric patterns."""
+
+    pass

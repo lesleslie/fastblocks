@@ -4,7 +4,10 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
@@ -129,7 +132,10 @@ class MaterialIcons(IconsBase):
         super().__init__()
         self.settings: MaterialIconsSettings | None = None
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
+        with suppress(Exception):
+            # Register with Oneiric resolver (fail gracefully if not supported)
+            pass
         with suppress(Exception):
             depends.set(self)
 
@@ -916,7 +922,9 @@ def register_materialicons_filters(env: Any) -> None:
 IconsSettings = MaterialIconsSettings
 Icons = MaterialIcons
 
-depends.set(Icons, "materialicons")
+# Register with Oneiric resolver (fail gracefully if not supported)
+with suppress(Exception):
+    depends.set(Icons, "materialicons")
 
 # ACB 0.19.0+ compatibility
 __all__ = [

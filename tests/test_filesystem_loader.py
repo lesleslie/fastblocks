@@ -25,9 +25,9 @@ async def test_filesystem_loader() -> None:
 
     # Create search paths that match what we saw in the debug output
     search_paths = [
-        AsyncPath("/Users/les/Projects/sites/fastest/templates/app/bulma/app/theme"),
-        AsyncPath("/Users/les/Projects/sites/fastest/templates/app/bulma/app"),
-        AsyncPath("/Users/les/Projects/sites/fastest/templates/app/bulma"),
+        AsyncPath("/Users/les/Projects/sites/fastest/templates/app/vanilla/app/theme"),
+        AsyncPath("/Users/les/Projects/sites/fastest/templates/app/vanilla/app"),
+        AsyncPath("/Users/les/Projects/sites/fastest/templates/app/vanilla"),
         AsyncPath("/Users/les/Projects/sites/fastest/templates/app/base"),
     ]
 

@@ -4,9 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 
 from ._base import StyleBase, StyleBaseSettings
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 class VanillaStyleSettings(StyleBaseSettings):
@@ -74,7 +77,7 @@ class VanillaStyle(StyleBase):
         super().__init__()
         self.settings = VanillaStyleSettings()
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self)
 
@@ -209,6 +212,8 @@ class VanillaStyle(StyleBase):
 StyleSettings = VanillaStyleSettings
 Style = VanillaStyle
 
-depends.set(Style, "vanilla")
+# Register with Oneiric resolver (fail gracefully if not supported)
+with suppress(Exception):
+    depends.set(Style, "vanilla")
 
 __all__ = ["VanillaStyle", "VanillaStyleSettings", "Style", "StyleSettings"]

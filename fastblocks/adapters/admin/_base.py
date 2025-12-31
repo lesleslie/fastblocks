@@ -1,9 +1,16 @@
-from acb.config import AdapterBase, Settings
+# Oneiric imports
+from oneiric.core.config import OneiricSettings
 
 
-class AdminBaseSettings(Settings):
+class AdminBaseSettings(OneiricSettings):
+    """Admin base settings using OneiricSettings."""
+
     style: str = "bootstrap"
     title: str = "FastBlocks Dashboard"
 
 
-class AdminBase(AdapterBase): ...
+class AdminBase:
+    """Admin base adapter using Oneiric."""
+
+    def __init__(self, settings: AdminBaseSettings | None = None):
+        self.settings = settings or AdminBaseSettings()

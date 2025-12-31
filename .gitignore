@@ -34,3 +34,5 @@ coverage.json
 *.bak
 /.fastblocks/
 /.envrc
+/.secrets.baseline
+/adapters.yaml

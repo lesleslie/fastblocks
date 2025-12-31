@@ -7,8 +7,17 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from acb.config import Settings
-from acb.depends import depends
+from oneiric.core.config import OneiricSettings
+from oneiric.core.resolution import Resolver
+
+# Migration from ACB to Oneiric
+depends = Resolver()
+
+
+class Settings(OneiricSettings):
+    """Base settings class for Oneiric compatibility."""
+
+    pass
 
 
 @dataclass
@@ -719,3 +728,7 @@ __all__ = [
     "SyntaxError",
     "register_syntax_filters",
 ]
+
+
+# Migration status indicator
+_using_oneiric = True

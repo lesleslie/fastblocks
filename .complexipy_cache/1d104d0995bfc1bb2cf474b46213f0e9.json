@@ -2035,6 +2035,12 @@
       "path": "server.py"
     },
     {
+      "complexity": 3,
+      "file_name": "server.py",
+      "function_name": "_get_http_app",
+      "path": "server.py"
+    },
+    {
       "complexity": 5,
       "file_name": "server.py",
       "function_name": "FastBlocksMCPServer::initialize",

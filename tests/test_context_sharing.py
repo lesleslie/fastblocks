@@ -125,7 +125,7 @@ async def _setup_context_test_environment() -> (
 ):
     """Set up the test environment for context sharing tests."""
     component_path = MockAsyncPath(
-        "/Users/les/Projects/sites/fastest/templates/app/bulma/components"
+        "/Users/les/Projects/sites/fastest/templates/app/vanilla/components"
     )
     registry = HTMYComponentRegistry([component_path])
     print("✓ Registry created")

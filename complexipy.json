@@ -6571,60 +6571,6 @@
   },
   {
     "complexity": 0,
-    "file_name": "bulma.py",
-    "function_name": "BulmaStyle::__init__",
-    "path": "bulma.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "bulma.py",
-    "function_name": "BulmaStyle::get_component_class",
-    "path": "bulma.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "bulma.py",
-    "function_name": "BulmaStyle::get_utility_classes",
-    "path": "bulma.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "bulma.py",
-    "function_name": "BulmaStyleSettings::__init__",
-    "path": "bulma.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "bulma.py",
-    "function_name": "BulmaStyleSettings::cdn",
-    "path": "bulma.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "bulma.py",
-    "function_name": "BulmaStyleSettings::cdn",
-    "path": "bulma.py"
-  },
-  {
-    "complexity": 0,
-    "file_name": "bulma.py",
-    "function_name": "BulmaStyleSettings::components",
-    "path": "bulma.py"
-  },
-  {
-    "complexity": 3,
-    "file_name": "bulma.py",
-    "function_name": "BulmaStyle::get_stylesheet_links",
-    "path": "bulma.py"
-  },
-  {
-    "complexity": 6,
-    "file_name": "bulma.py",
-    "function_name": "BulmaStyle::build_component_html",
-    "path": "bulma.py"
-  },
-  {
-    "complexity": 0,
     "file_name": "kelp.py",
     "function_name": "KelpStyle::__init__",
     "path": "kelp.py"

@@ -22,8 +22,19 @@ import typing as t
 from contextlib import suppress
 from uuid import UUID
 
-from acb.adapters import AdapterStatus
-from acb.depends import depends
+
+# Custom AdapterStatus for Oneiric compatibility
+class AdapterStatus:
+    STABLE = "STABLE"
+    BETA = "BETA"
+    ALPHA = "ALPHA"
+    EXPERIMENTAL = "EXPERIMENTAL"
+
+
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -54,7 +65,7 @@ class HybridTemplates:
 
         # Get or create base templates
         try:
-            self.base_templates = depends.get("templates")
+            self.base_templates = depends.resolve("fastblocks", "templates")
         except Exception:
             self.base_templates = Templates()
             await self.base_templates.init()

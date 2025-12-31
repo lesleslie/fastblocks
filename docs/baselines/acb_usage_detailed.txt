@@ -1,0 +1,218 @@
+fastblocks/applications.py:4:from acb.config import AdapterBase
+fastblocks/applications.py:5:from acb.depends import depends
+fastblocks/cli.py:15:    from acb.logger import InterceptHandler
+fastblocks/cli.py:29:from acb.actions.encode import dump, load
+fastblocks/cli.py:34:    from acb.console import console
+fastblocks/cli.py:36:    # Fallback to regular rich console if acb.console is not available
+fastblocks/cli.py:148:    from acb.adapters import get_adapters
+fastblocks/cli.py:326:            from acb.depends import depends
+fastblocks/cli.py:410:            from acb.depends import depends
+fastblocks/cli.py:488:            from acb.depends import depends
+fastblocks/cli.py:548:            from acb.depends import depends
+fastblocks/cli.py:627:            from acb.depends import depends
+fastblocks/cli.py:672:            from acb.depends import depends
+fastblocks/cli.py:896:            from acb.depends import depends
+fastblocks/cli.py:1069:                "[dim]Make sure ACB is installed with MCP support (acb>=0.23.0)[/dim]"
+fastblocks/_events_integration.py:16:from acb.adapters import AdapterStatus
+fastblocks/_events_integration.py:17:from acb.depends import Inject, depends
+fastblocks/_events_integration.py:21:    from acb.events import (
+fastblocks/exceptions.py:8:from acb.depends import depends
+fastblocks/initializers.py:10:from acb import register_pkg
+fastblocks/initializers.py:13:    from acb.adapters import get_installed_adapter
+fastblocks/initializers.py:14:except ImportError:  # acb >= 0.19 removed this helper
+fastblocks/initializers.py:15:    from acb.adapters import get_adapter, get_installed_adapters
+fastblocks/initializers.py:38:from acb.config import AdapterBase, Config
+fastblocks/initializers.py:39:from acb.depends import depends
+fastblocks/initializers.py:70:            from acb.logger import InterceptHandler
+fastblocks/middleware.py:7:from acb.debug import debug
+fastblocks/middleware.py:8:from acb.depends import depends
+fastblocks/middleware.py:396:        from acb.adapters import get_adapter
+fastblocks/_workflows_integration.py:34:from acb.depends import depends
+fastblocks/_workflows_integration.py:43:    from acb.workflows import (  # type: ignore[no-redef]
+fastblocks/htmx.py:28:    from acb.debug import debug
+fastblocks/htmx.py:30:    # Fallback debug function if acb.debug is not available
+fastblocks/main.py:5:from acb import ensure_registration, register_pkg
+fastblocks/main.py:6:from acb.adapters import register_adapters, root_path
+fastblocks/main.py:7:from acb.depends import depends
+fastblocks/_validation_integration.py:40:from acb.depends import depends
+fastblocks/_validation_integration.py:55:    from acb.services.validation import (  # type: ignore[no-redef]
+fastblocks/__init__.py:10:    from acb import register_pkg
+fastblocks/adapters/routes/default.py:23:from acb.depends import Inject, depends
+fastblocks/adapters/routes/default.py:24:from acb.adapters import import_adapter
+fastblocks/adapters/routes/default.py:43:    from acb.adapters import (
+fastblocks/adapters/routes/default.py:50:except ImportError:  # acb >= 0.19 removed get_installed_adapter
+fastblocks/adapters/routes/default.py:51:    from acb.adapters import (
+fastblocks/adapters/routes/default.py:75:from acb.config import Config
+fastblocks/adapters/routes/default.py:76:from acb.debug import debug
+fastblocks/adapters/routes/default.py:77:from acb.depends import depends
+fastblocks/adapters/auth/basic.py:20:from acb.depends import Inject, depends
+fastblocks/adapters/auth/basic.py:21:from acb.adapters import import_adapter
+fastblocks/adapters/auth/basic.py:39:from acb.adapters import AdapterStatus
+fastblocks/adapters/auth/basic.py:113:            from acb.config import Config
+fastblocks/caching.py:14:from acb.actions.hash import hash
+fastblocks/caching.py:22:from acb.adapters import get_adapter
+fastblocks/caching.py:23:from acb.depends import depends
+fastblocks/adapters/templates/htmy.py:17:from acb.depends import Inject, depends
+fastblocks/adapters/templates/htmy.py:43:    from acb.adapters import AdapterStatus as _AdapterStatus
+fastblocks/adapters/templates/htmy.py:44:    from acb.adapters import get_adapter as _get_adapter
+fastblocks/adapters/templates/htmy.py:45:    from acb.adapters import import_adapter as _import_adapter
+fastblocks/adapters/templates/htmy.py:46:    from acb.adapters import root_path as _root_path
+fastblocks/adapters/templates/htmy.py:74:from acb.debug import debug
+fastblocks/adapters/templates/htmy.py:75:from acb.depends import depends
+fastblocks/adapters/templates/_filters.py:5:from acb.depends import depends
+fastblocks/adapters/fonts/google.py:7:from acb.depends import depends
+fastblocks/adapters/templates/_async_filters.py:5:from acb.depends import depends
+fastblocks/adapters/fonts/_base.py:7:from acb.config import AdapterBase, Settings
+fastblocks/adapters/fonts/_base.py:8:from acb.depends import depends
+fastblocks/adapters/fonts/squirrel.py:8:from acb.depends import depends
+fastblocks/adapters/auth/_base.py:4:from acb.config import AdapterBase, Config, Settings
+fastblocks/adapters/auth/_base.py:5:from acb.depends import Inject, depends
+fastblocks/adapters/images/cloudinary.py:7:from acb.depends import depends
+fastblocks/adapters/images/cloudflare.py:9:from acb.depends import depends
+fastblocks/adapters/images/twicpics.py:10:from acb.depends import depends
+fastblocks/adapters/app/default.py:16:from acb.adapters import AdapterStatus, get_adapter
+fastblocks/adapters/app/default.py:17:from acb.depends import depends
+fastblocks/adapters/app/default.py:106:        from acb.depends import depends
+fastblocks/adapters/app/default.py:132:            from acb.depends import depends
+fastblocks/adapters/images/imagekit.py:7:from acb.depends import depends
+fastblocks/adapters/images/_base.py:7:from acb.config import AdapterBase, Settings
+fastblocks/adapters/images/_base.py:8:from acb.depends import depends
+fastblocks/actions/query/parser.py:13:from acb.debug import debug
+fastblocks/actions/query/parser.py:14:from acb.depends import Inject, depends
+fastblocks/adapters/admin/sqladmin.py:14:from acb.adapters import AdapterStatus
+fastblocks/adapters/admin/sqladmin.py:15:from acb.depends import Inject, depends
+fastblocks/adapters/templates/_performance_optimizer.py:11:from acb.depends import depends
+fastblocks/adapters/templates/hybrid.py:25:from acb.adapters import AdapterStatus
+fastblocks/adapters/templates/hybrid.py:26:from acb.depends import depends
+fastblocks/adapters/templates/_enhanced_cache.py:11:- acb[cache]>=0.19.0
+fastblocks/adapters/templates/_enhanced_cache.py:30:from acb.depends import depends
+fastblocks/adapters/admin/_base.py:1:from acb.config import AdapterBase, Settings
+fastblocks/adapters/templates/_async_renderer.py:27:from acb.adapters import AdapterStatus
+fastblocks/adapters/templates/_async_renderer.py:28:from acb.depends import depends
+fastblocks/adapters/templates/_language_server.py:9:from acb.config import Settings
+fastblocks/adapters/templates/_language_server.py:10:from acb.depends import depends
+fastblocks/_health_integration.py:14:from acb.adapters import AdapterStatus
+fastblocks/_health_integration.py:15:from acb.depends import Inject, depends
+fastblocks/_health_integration.py:19:    from acb.services.health import (
+fastblocks/adapters/templates/_base.py:4:from acb.adapters import get_adapters, root_path
+fastblocks/adapters/templates/_base.py:5:from acb.config import AdapterBase, Config
+fastblocks/adapters/templates/_base.py:6:from acb.depends import Inject, depends
+fastblocks/adapters/templates/_base.py:13:    from acb import get_context
+fastblocks/adapters/icons/phosphor.py:7:from acb.depends import depends
+fastblocks/adapters/app/_base.py:3:from acb.config import AdapterBase
+fastblocks/adapters/app/_base.py:4:from acb.config import AppSettings as AppConfigSettings
+fastblocks/adapters/routes/_base.py:1:from acb.config import AdapterBase, Settings
+fastblocks/adapters/templates/_htmy_components.py:31:from acb.debug import debug
+fastblocks/adapters/icons/lucide.py:7:from acb.depends import depends
+fastblocks/adapters/templates/jinja2.py:20:from acb.depends import Inject, depends
+fastblocks/adapters/templates/jinja2.py:21:from acb.adapters import import_adapter
+fastblocks/adapters/templates/jinja2.py:48:from acb.adapters import AdapterStatus, get_adapter
+fastblocks/adapters/templates/jinja2.py:49:from acb.config import Config
+fastblocks/adapters/templates/jinja2.py:50:from acb.debug import debug
+fastblocks/adapters/templates/jinja2.py:61:from acb.depends import depends
+fastblocks/actions/sync/settings.py:11:from acb.actions.hash import hash
+fastblocks/actions/sync/settings.py:12:from acb.debug import debug
+fastblocks/actions/sync/settings.py:99:        from acb.depends import depends
+fastblocks/actions/sync/settings.py:631:        from acb.config import reload_config  # type: ignore[attr-defined]
+fastblocks/actions/sync/settings.py:632:        from acb.depends import depends
+fastblocks/actions/sync/settings.py:755:    from acb.depends import depends
+fastblocks/adapters/style/kelp.py:7:from acb.depends import depends
+fastblocks/mcp/resources.py:6:from acb.depends import depends
+fastblocks/mcp/resources.py:468:        from acb.mcp import register_resources  # type: ignore[attr-defined]
+fastblocks/actions/sync/static.py:12:from acb.debug import debug
+fastblocks/actions/sync/static.py:164:        from acb.depends import depends
+fastblocks/actions/sync/static.py:737:    from acb.depends import depends
+fastblocks/actions/sync/static.py:865:    from acb.depends import depends
+fastblocks/adapters/templates/_advanced_manager.py:28:from acb.adapters import AdapterStatus
+fastblocks/adapters/templates/_advanced_manager.py:29:from acb.depends import depends
+fastblocks/adapters/style/webawesome.py:7:from acb.depends import depends
+fastblocks/mcp/config_cli.py:12:from acb.console import Console
+fastblocks/mcp/config_cli.py:13:from acb.depends import depends
+fastblocks/adapters/icons/remixicon.py:7:from acb.depends import depends
+fastblocks/adapters/templates/_enhanced_filters.py:23:from acb.adapters import AdapterStatus
+fastblocks/adapters/templates/_enhanced_filters.py:24:from acb.depends import depends
+fastblocks/adapters/style/_base.py:7:from acb.config import AdapterBase, Settings
+fastblocks/adapters/style/_base.py:8:from acb.depends import depends
+fastblocks/adapters/style/vanilla.py:7:from acb.depends import depends
+fastblocks/adapters/icons/fontawesome.py:7:from acb.depends import depends
+fastblocks/adapters/templates/_events_wrapper.py:16:from acb.depends import depends
+fastblocks/adapters/icons/_base.py:7:from acb.config import AdapterBase, Settings
+fastblocks/adapters/icons/_base.py:8:from acb.depends import depends
+fastblocks/adapters/icons/heroicons.py:7:from acb.depends import depends
+fastblocks/mcp/tools.py:8:from acb.depends import depends
+fastblocks/mcp/tools.py:551:        from acb.mcp import register_tools  # type: ignore[attr-defined]
+fastblocks/adapters/templates/_registration.py:6:from acb.depends import depends
+fastblocks/actions/sync/templates.py:7:from acb.debug import debug
+fastblocks/actions/sync/templates.py:193:        from acb.depends import depends
+fastblocks/actions/sync/templates.py:669:        from acb.depends import depends
+fastblocks/actions/sync/templates.py:721:        from acb.depends import depends
+fastblocks/mcp/health.py:154:            from acb.depends import depends
+fastblocks/adapters/sitemap/static.py:11:from acb.adapters import AdapterStatus
+fastblocks/adapters/sitemap/static.py:12:from acb.debug import debug
+fastblocks/adapters/sitemap/static.py:13:from acb.depends import depends
+fastblocks/actions/sync/cache.py:5:from acb.debug import debug
+fastblocks/actions/sync/cache.py:46:        from acb.depends import depends
+fastblocks/actions/sync/cache.py:230:        from acb.depends import depends
+fastblocks/actions/sync/cache.py:310:        from acb.depends import depends
+fastblocks/actions/sync/cache.py:378:    from acb.depends import depends
+fastblocks/mcp/registry.py:7:from acb.depends import depends
+fastblocks/mcp/server.py:38:            from acb import HAS_MCP
+fastblocks/mcp/server.py:44:            from acb import create_mcp_server
+fastblocks/mcp/server.py:143:        from acb import HAS_MCP, create_mcp_server
+fastblocks/adapters/icons/materialicons.py:7:from acb.depends import depends
+fastblocks/adapters/templates/_block_renderer.py:26:from acb.adapters import AdapterStatus
+fastblocks/adapters/templates/_block_renderer.py:27:from acb.depends import depends
+fastblocks/adapters/sitemap/dynamic.py:12:from acb.adapters import AdapterStatus
+fastblocks/adapters/sitemap/dynamic.py:13:from acb.debug import debug
+fastblocks/adapters/sitemap/dynamic.py:14:from acb.depends import depends
+fastblocks/adapters/sitemap/native.py:12:from acb.adapters import AdapterStatus
+fastblocks/adapters/sitemap/native.py:13:from acb.debug import debug
+fastblocks/adapters/sitemap/native.py:14:from acb.depends import depends
+fastblocks/adapters/sitemap/asgi.py:13:from acb.adapters import AdapterStatus
+fastblocks/adapters/sitemap/asgi.py:14:from acb.depends import depends
+fastblocks/adapters/sitemap/cached.py:12:from acb.adapters import AdapterStatus
+fastblocks/adapters/sitemap/cached.py:13:from acb.debug import debug
+fastblocks/adapters/sitemap/cached.py:14:from acb.depends import depends
+fastblocks/adapters/sitemap/core.py:27:from acb.debug import debug
+fastblocks/adapters/sitemap/core.py:28:from acb.depends import depends
+fastblocks/adapters/sitemap/_routes.py:3:from acb.adapters import import_adapter
+fastblocks/adapters/sitemap/_routes.py:4:from acb.depends import depends
+fastblocks/adapters/sitemap/_base.py:5:from acb.config import AdapterBase, Settings
+fastblocks/actions/gather/models.py:9:from acb.adapters import get_adapters, root_path
+fastblocks/actions/gather/models.py:10:from acb.debug import debug
+fastblocks/actions/gather/strategies.py:8:from acb.debug import debug
+fastblocks/actions/gather/strategies.py:259:        from acb.adapters import root_path
+fastblocks/actions/gather/templates.py:8:from acb.debug import debug
+fastblocks/actions/gather/templates.py:206:            from acb.adapters import get_adapter
+fastblocks/actions/gather/templates.py:254:        from acb.depends import depends
+fastblocks/actions/gather/templates.py:313:        from acb.depends import depends
+fastblocks/actions/gather/templates.py:403:        from acb.depends import depends
+fastblocks/actions/gather/components.py:25:from acb.debug import debug
+fastblocks/actions/gather/components.py:26:from acb.depends import depends
+fastblocks/actions/gather/application.py:6:from acb.adapters import get_adapters
+fastblocks/actions/gather/application.py:7:from acb.debug import debug
+fastblocks/actions/gather/application.py:176:                    module_path = f"acb.adapters.{adapter_name}"
+fastblocks/actions/gather/application.py:182:                    module_path = f"acb.adapters.{adapter_name}.{module_name}"
+fastblocks/actions/gather/application.py:203:        "acb.depends",
+fastblocks/actions/gather/application.py:204:        "acb.config",
+fastblocks/actions/gather/application.py:205:        "acb.debug",
+fastblocks/actions/gather/application.py:206:        "acb.adapters",
+fastblocks/actions/gather/application.py:209:        "acb.storage",
+fastblocks/actions/gather/application.py:210:        "acb.cache",
+fastblocks/actions/gather/application.py:211:        "acb.queue",
+fastblocks/actions/gather/application.py:212:        "acb.testing",
+fastblocks/actions/gather/application.py:241:        from acb.depends import depends
+fastblocks/actions/gather/application.py:311:            adapter_init_path = f"acb.adapters.{adapter.name}.init"
+fastblocks/actions/gather/application.py:335:        from acb.depends import depends
+fastblocks/actions/gather/application.py:344:        from acb.config import Config
+fastblocks/actions/gather/application.py:373:        from acb.depends import depends
+fastblocks/actions/gather/middleware.py:7:from acb.debug import debug
+fastblocks/actions/gather/middleware.py:132:        from acb.depends import depends
+fastblocks/actions/sync/strategies.py:8:from acb.debug import debug
+fastblocks/adapters/templates/_syntax_support.py:10:from acb.config import Settings
+fastblocks/adapters/templates/_syntax_support.py:11:from acb.depends import depends
+fastblocks/actions/gather/routes.py:8:from acb.adapters import get_adapters, root_path
+fastblocks/actions/gather/routes.py:9:from acb.debug import debug
+fastblocks/mcp/discovery.py:10:from acb.config import AdapterBase
+fastblocks/mcp/discovery.py:11:from acb.depends import depends
+fastblocks/mcp/discovery.py:104:            from acb.depends import depends

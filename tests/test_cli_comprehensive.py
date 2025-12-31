@@ -140,7 +140,7 @@ def ensure_cli_module(mock_acb):  # noqa: C901
 
         def mock_create(
             app_name: str,
-            style: str = "bulma",
+            style: str = "vanilla",
             domain: str = "example.com",
         ):
             """Create new FastBlocks application."""
@@ -159,9 +159,9 @@ def ensure_cli_module(mock_acb):  # noqa: C901
         class MockStyles(Enum):
             """Mock styles enum."""
 
-            bulma = "bulma"
-            bootstrap = "bootstrap"
-            tailwind = "tailwind"
+            vanilla = "vanilla"
+            webawesome = "webawesome"
+            custom = "custom"
 
         # Add attributes to cli module
         cli_module.app = mock_app
@@ -316,8 +316,9 @@ def mock_cli_module(clean_modules: None) -> t.Generator[types.ModuleType]:
 
     # Define the Styles enum
     class Styles(str, Enum):
-        bulma = "bulma"
         webawesome = "webawesome"
+        kelp = "kelp"
+        vanilla = "vanilla"
         custom = "custom"
 
         def __str__(self) -> str:
@@ -380,7 +381,7 @@ def mock_cli_module(clean_modules: None) -> t.Generator[types.ModuleType]:
 
     def create_command(
         app_name: str,
-        style: Styles = Styles.bulma,
+        style: Styles = Styles.vanilla,
         domain: str = "example.com",
     ) -> None:
         app_path = MagicMock()
@@ -562,8 +563,8 @@ class TestCLIComprehensive:
 
         # Create a simplified version of the Styles enum
         class Styles(str, Enum):
-            bulma = "bulma"
             webawesome = "webawesome"
+            vanilla = "vanilla"
             custom = "custom"
 
         # Define a mock update_configs function
@@ -591,7 +592,7 @@ class TestCLIComprehensive:
 
         # Test the function (should raise SystemExit)
         with pytest.raises(SystemExit):
-            test_create(app_name="test_app", style=Styles.bulma)
+            test_create(app_name="test_app", style=Styles.vanilla)
 
         # Verify the mocks were called
         mkdir_mock.assert_called_once_with("test_app")

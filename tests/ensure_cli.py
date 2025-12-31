@@ -67,7 +67,7 @@ def ensure_cli_module():  # noqa: C901
 
         def mock_create(
             app_name: str,
-            style: str = "bulma",
+            style: str = "vanilla",
             domain: str = "example.com",
         ):
             """Create new FastBlocks application."""
@@ -88,7 +88,7 @@ def ensure_cli_module():  # noqa: C901
         class MockStyles(Enum):
             """Mock styles enum."""
 
-            bulma = "bulma"
+            vanilla = "vanilla"
             bootstrap = "bootstrap"
             tailwind = "tailwind"
 

@@ -13,15 +13,9 @@ class TestAdminBaseSettings:
         assert settings.style == "bootstrap"
 
 
-@pytest.fixture
-def mock_adapter_base() -> t.Any:
-    with patch("fastblocks.adapters.admin._base.AdapterBase") as mock:
-        yield mock
-
-
 @pytest.mark.unit
 class TestAdminBase:
-    def test_admin_base_class(self, mock_adapter_base: t.Any) -> None:
+    def test_admin_base_class(self) -> None:
         from fastblocks.adapters.admin._base import AdminBase
 
         assert hasattr(AdminBase, "__name__")

@@ -73,7 +73,7 @@ async def _setup_minimal_test_environment() -> tuple[t.Any, MockAsyncPath]:
     from fastblocks.adapters.templates.htmy import HTMYComponentRegistry
 
     component_path = MockAsyncPath(
-        "/Users/les/Projects/sites/fastest/templates/app/bulma/components"
+        "/Users/les/Projects/sites/fastest/templates/app/vanilla/components"
     )
     registry = HTMYComponentRegistry([component_path])  # type: ignore[arg-type]
 

@@ -10,7 +10,6 @@ The style adapters provide pluggable CSS frameworks for FastBlocks. Each adapter
 
 | Adapter | Module | Highlights |
 |---------|--------|------------|
-| Bulma | `bulma.py` | Wraps Bulma's CDN build, exposes helper classes for buttons, cards, notifications, etc. |
 | Web Awesome | `webawesome.py` | Ships Font Awesome 7's Web Awesome components plus preset utility classes. |
 | Kelp | `kelp.py` | First-party lightweight system with generated CSS variables, utility classes, and component builders. |
 | Vanilla | `vanilla.py` | Minimal, semantic styling intended as a starting point for bespoke themes. |
@@ -31,7 +30,7 @@ styles:
       - "/static/css/app.css"
 ```
 
-Switching adapters is as simple as changing the `adapter` field to `bulma`, `webawesome`, or `vanilla`. Adapter-specific options live inside `settings`.
+Switching adapters is as simple as changing the `adapter` field to `webawesome`, `kelp`, or `vanilla`. Adapter-specific options live inside `settings`.
 
 ## Template Helpers
 

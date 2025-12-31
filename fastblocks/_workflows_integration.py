@@ -1,7 +1,7 @@
-"""ACB Workflows integration for FastBlocks.
+"""Oneiric Workflows integration for FastBlocks.
 
-This module provides background job orchestration using ACB's Workflows system,
-with graceful degradation when ACB workflows are not available.
+This module provides background job orchestration using Oneiric-compatible workflows,
+with custom implementations for workflow execution and management.
 
 Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-10-01
@@ -11,7 +11,7 @@ Key Features:
 - Template cleanup workflows (remove stale templates, optimize storage)
 - Performance optimization workflows (database query optimization, index maintenance)
 - Scheduled background tasks
-- Graceful degradation when Workflows unavailable
+- Oneiric-compatible dependency injection
 
 Usage:
     # Execute cache warming workflow
@@ -31,26 +31,140 @@ import typing as t
 from contextlib import suppress
 from datetime import datetime
 
-from acb.depends import depends
+# Oneiric imports for dependency injection
+from oneiric.core.resolution import Resolver
 
-# Try to import ACB workflows
-acb_workflows_available = False
-BasicWorkflowEngine = None
-WorkflowDefinition = None
-WorkflowStep = None
+# Custom Oneiric-compatible workflow system
+depends = Resolver()
+_using_oneiric = True
 
-with suppress(ImportError):
-    from acb.workflows import (  # type: ignore[no-redef]
-        BasicWorkflowEngine,
-        WorkflowDefinition,
-        WorkflowStep,
-    )
+# Workflow system availability
+acb_workflows_available = False  # Using Oneiric now
 
-    acb_workflows_available = True
+
+# Custom Oneiric-compatible Workflow System
+class WorkflowState:
+    """Workflow execution states."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class WorkflowStep:
+    """Workflow step definition."""
+
+    def __init__(
+        self,
+        step_id: str,
+        name: str,
+        action: str,
+        params: dict[str, t.Any],
+        retry_on_failure: bool = False,
+        max_retries: int = 0,
+        depends_on: list[str] | None = None,
+    ):
+        self.step_id = step_id
+        self.name = name
+        self.action = action
+        self.params = params
+        self.retry_on_failure = retry_on_failure
+        self.max_retries = max_retries
+        self.depends_on = depends_on or []
+
+
+class WorkflowDefinition:
+    """Workflow definition."""
+
+    def __init__(
+        self,
+        workflow_id: str,
+        name: str,
+        description: str,
+        steps: list[WorkflowStep],
+        max_execution_time: int,
+    ):
+        self.workflow_id = workflow_id
+        self.name = name
+        self.description = description
+        self.steps = steps
+        self.max_execution_time = max_execution_time
+
+
+class WorkflowResult:
+    """Workflow execution result."""
+
+    def __init__(self, state: str, step_results: dict[str, t.Any]):
+        self.state = state
+        self.step_results = step_results
+
+
+class BasicWorkflowEngine:
+    """Simple workflow engine for Oneiric-compatible workflow execution."""
+
+    def __init__(
+        self,
+        max_concurrent_steps: int = 3,
+        enable_retry: bool = True,
+        max_retries: int = 2,
+    ):
+        self.max_concurrent_steps = max_concurrent_steps
+        self.enable_retry = enable_retry
+        self.max_retries = max_retries
+
+    async def execute(
+        self,
+        workflow: WorkflowDefinition,
+        context: dict[str, t.Any],
+        action_handlers: dict[str, t.Callable],
+    ) -> WorkflowResult:
+        """Execute a workflow."""
+        step_results = {}
+
+        try:
+            # Execute steps sequentially (simplified for Oneiric)
+            for step in workflow.steps:
+                try:
+                    handler = action_handlers.get(step.action)
+                    if handler:
+                        result = await handler(context, step.params)
+                        step_results[step.step_id] = {
+                            "state": "completed",
+                            "result": result,
+                            "error": None,
+                        }
+                    else:
+                        step_results[step.step_id] = {
+                            "state": "failed",
+                            "result": None,
+                            "error": f"Handler not found for action: {step.action}",
+                        }
+                except Exception as e:
+                    step_results[step.step_id] = {
+                        "state": "failed",
+                        "result": None,
+                        "error": str(e),
+                    }
+
+            # Determine overall state
+            failed_steps = [s for s in step_results.values() if s["state"] == "failed"]
+            state = WorkflowState.FAILED if failed_steps else WorkflowState.COMPLETED
+
+            return WorkflowResult(state, step_results)
+
+        except Exception as e:
+            return WorkflowResult(
+                WorkflowState.FAILED,
+                {
+                    "error": str(e),
+                    "state": WorkflowState.FAILED,
+                },
+            )
 
 
 class FastBlocksWorkflowService:
-    """FastBlocks wrapper for ACB Workflows with graceful degradation."""
+    """FastBlocks workflow service with Oneiric integration."""
 
     _instance: t.ClassVar["FastBlocksWorkflowService | None"] = None
 
@@ -61,24 +175,19 @@ class FastBlocksWorkflowService:
         return cls._instance
 
     def __init__(self) -> None:
-        """Initialize workflow service with ACB integration."""
+        """Initialize workflow service with Oneiric integration."""
         if not hasattr(self, "_initialized"):
-            self._engine: t.Any = None  # BasicWorkflowEngine when ACB available
+            self._engine = BasicWorkflowEngine(
+                max_concurrent_steps=3,  # Conservative concurrency
+                enable_retry=True,
+                max_retries=2,
+            )
             self._initialized = True
-
-            # Try to get ACB workflow engine
-            if acb_workflows_available and BasicWorkflowEngine:
-                with suppress(Exception):
-                    self._engine = BasicWorkflowEngine(
-                        max_concurrent_steps=3,  # Conservative concurrency
-                        enable_retry=True,
-                        max_retries=2,
-                    )
 
     @property
     def available(self) -> bool:
-        """Check if ACB Workflows is available."""
-        return acb_workflows_available and self._engine is not None
+        """Check if workflow service is available."""
+        return True  # Always available with Oneiric
 
 
 # Singleton instance
@@ -419,7 +528,7 @@ async def _warm_template_cache(
         if templates_result and hasattr(templates_result, "templates"):
             cached_count = 0
             # Pre-cache template metadata (not full rendering)
-            cache = await depends.get("cache")
+            cache = await depends.resolve("fastblocks", "cache")
             if cache:
                 for template_name in list(templates_result.templates.keys())[
                     :50
@@ -470,7 +579,7 @@ async def _cleanup_template_cache(
 ) -> dict[str, t.Any]:
     """Clean up unused template cache entries."""
     with suppress(Exception):
-        cache = await depends.get("cache")
+        cache = await depends.resolve("fastblocks", "cache")
         if cache and hasattr(cache, "clear_pattern"):
             # Clear stale template cache entries
             await cache.clear_pattern("template:*")

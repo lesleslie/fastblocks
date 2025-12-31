@@ -1,6 +1,6 @@
-"""ACB Events system integration for FastBlocks.
+"""Oneiric Events system integration for FastBlocks.
 
-This module bridges FastBlocks components with ACB's event-driven architecture,
+This module provides FastBlocks components with an event-driven architecture,
 enabling reactive updates, cache invalidation, and admin action tracking.
 
 Author: lesleslie <les@wedgwoodwebworks.com>
@@ -13,33 +13,100 @@ from contextlib import suppress
 from dataclasses import dataclass
 from uuid import UUID
 
-from acb.adapters import AdapterStatus
-from acb.depends import Inject, depends
+# Oneiric imports for dependency injection
+from oneiric.core.resolution import Resolver
 
-# Optional ACB events imports (graceful degradation if not available)
-try:
-    from acb.events import (
-        Event,
-        EventHandler,
-        EventHandlerResult,
-        EventPriority,
-        EventPublisher,
-        EventSubscription,
-        create_event,
-    )
+from adapters.oneiric_helper import register_candidate
 
-    acb_events_available = True
-except ImportError:
-    acb_events_available = False
-    from typing import Any as Event  # type: ignore[misc]
-    from typing import Any as EventHandler  # type: ignore[misc]
-    from typing import Any as EventHandlerResult  # type: ignore[misc]
-    from typing import Any as EventPriority  # type: ignore[misc]
-    from typing import Any as EventPublisher  # type: ignore[misc]
-    from typing import Any as EventSubscription  # type: ignore[misc]
+# Custom Oneiric-compatible events system
+depends = Resolver()
+_using_oneiric = True
 
-    create_event = t.cast(t.Any, None)
-    event_handler = t.cast(t.Any, None)
+# Event system availability
+acb_events_available = False  # Using Oneiric now
+
+
+# Custom Oneiric-compatible Event System
+class EventPriority:
+    """Event priority levels."""
+
+    LOW = 1
+    NORMAL = 2
+    HIGH = 3
+    CRITICAL = 4
+
+
+class EventHandlerResult:
+    """Result of event handling."""
+
+    def __init__(
+        self,
+        success: bool,
+        message: str,
+        error: str | None = None,
+        data: dict | None = None,
+    ):
+        self.success = success
+        self.message = message
+        self.error = error
+        self.data = data or {}
+
+
+class EventSubscription:
+    """Event subscription."""
+
+    def __init__(self, event_type: str, handler: t.Any):
+        self.event_type = event_type
+        self.handler = handler
+
+
+class Event:
+    """Event object."""
+
+    def __init__(
+        self, event_type: str, source: str, payload: dict, priority: EventPriority
+    ):
+        self.event_type = event_type
+        self.source = source
+        self.payload = payload
+        self.priority = priority
+
+
+class EventPublisher:
+    """Event publisher for Oneiric-compatible event system."""
+
+    def __init__(self):
+        self.subscriptions: dict[str, list[EventSubscription]] = {}
+
+    async def publish(self, event: Event) -> bool:
+        """Publish an event to all subscribers."""
+        try:
+            handlers = self.subscriptions.get(event.event_type, [])
+
+            for subscription in handlers:
+                await subscription.handler.handle(event)
+
+            return True
+        except Exception:
+            return False
+
+    async def subscribe(self, subscription: EventSubscription) -> bool:
+        """Subscribe to an event type."""
+        try:
+            if subscription.event_type not in self.subscriptions:
+                self.subscriptions[subscription.event_type] = []
+
+            self.subscriptions[subscription.event_type].append(subscription)
+            return True
+        except Exception:
+            return False
+
+
+def create_event(
+    event_type: str, source: str, payload: dict, priority: EventPriority
+) -> Event:
+    """Create an event."""
+    return Event(event_type, source, payload, priority)
 
 
 # FastBlocks Event Types
@@ -114,12 +181,10 @@ class AdminActionPayload:
     ip_address: str | None = None
 
 
-class CacheInvalidationHandler(EventHandler):  # type: ignore[misc]
+class CacheInvalidationHandler:
     """Handler for cache invalidation events."""
 
-    @depends.inject  # type: ignore[misc]  # ACB untyped decorator
-    def __init__(self, cache: Inject[t.Any]) -> None:
-        super().__init__()
+    def __init__(self, cache: t.Any | None = None) -> None:
         self.cache = cache
 
     async def handle(self, event: Event) -> t.Any:
@@ -153,11 +218,10 @@ class CacheInvalidationHandler(EventHandler):  # type: ignore[misc]
             )
 
 
-class TemplateRenderHandler(EventHandler):  # type: ignore[misc]
+class TemplateRenderHandler:
     """Handler for template render events - collects performance metrics."""
 
     def __init__(self) -> None:
-        super().__init__()
         self.metrics: dict[str, list[TemplateRenderPayload]] = {}
 
     async def handle(self, event: Event) -> t.Any:
@@ -211,11 +275,10 @@ class TemplateRenderHandler(EventHandler):  # type: ignore[misc]
         }
 
 
-class HtmxUpdateHandler(EventHandler):  # type: ignore[misc]
+class HtmxUpdateHandler:
     """Handler for HTMX update events - broadcasts to connected clients."""
 
     def __init__(self) -> None:
-        super().__init__()
         self.active_connections: set[t.Any] = set()  # WebSocket connections
 
     async def handle(self, event: Event) -> t.Any:
@@ -261,11 +324,10 @@ class HtmxUpdateHandler(EventHandler):  # type: ignore[misc]
             )
 
 
-class AdminActionHandler(EventHandler):  # type: ignore[misc]
+class AdminActionHandler:
     """Handler for admin action events - audit logging."""
 
     def __init__(self) -> None:
-        super().__init__()
         self.audit_log: list[tuple[float, AdminActionPayload]] = []
 
     async def handle(self, event: Event) -> t.Any:
@@ -328,7 +390,7 @@ class FastBlocksEventPublisher:
     """Simplified event publisher for FastBlocks components."""
 
     _instance: t.ClassVar["FastBlocksEventPublisher | None"] = None
-    _publisher: t.Any = None  # EventPublisher | None when ACB available
+    _publisher: EventPublisher | None = None
 
     def __new__(cls) -> "FastBlocksEventPublisher":
         """Singleton pattern for event publisher."""
@@ -336,16 +398,12 @@ class FastBlocksEventPublisher:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    @depends.inject  # type: ignore[misc]  # ACB untyped decorator
-    def __init__(self, config: Inject[t.Any]) -> None:
-        if not acb_events_available:
-            return
-
+    def __init__(self, config: t.Any | None = None) -> None:
         self.config = config
         self.source = "fastblocks"
 
         # Initialize publisher lazily
-        if self._publisher is None and acb_events_available:
+        if self._publisher is None:
             with suppress(Exception):
                 self._publisher = EventPublisher()
 
@@ -487,14 +545,11 @@ class FastBlocksEventPublisher:
 
 
 async def register_fastblocks_event_handlers() -> bool:
-    """Register all FastBlocks event handlers with ACB Events system.
+    """Register all FastBlocks event handlers with Oneiric event system.
 
     Returns:
-        True if registration successful, False if ACB Events unavailable
+        True if registration successful, False if event system unavailable
     """
-    if not acb_events_available:
-        return False
-
     try:
         publisher = FastBlocksEventPublisher()
 
@@ -544,8 +599,20 @@ async def register_fastblocks_event_handlers() -> bool:
         )
 
         # Store handlers in depends for retrieval
-        depends.set(template_handler, name="template_metrics")
-        depends.set(admin_handler, name="admin_audit")
+        register_candidate(
+            depends,
+            domain="fastblocks",
+            key="template_handler",
+            factory=lambda: template_handler,
+            metadata={"class": "TemplateEventHandler", "module": "fastblocks._events_integration"},
+        )
+        register_candidate(
+            depends,
+            domain="fastblocks",
+            key="admin_handler",
+            factory=lambda: admin_handler,
+            metadata={"class": "AdminEventHandler", "module": "fastblocks._events_integration"},
+        )
 
         return True
 
@@ -558,14 +625,11 @@ def get_event_publisher() -> FastBlocksEventPublisher | None:
     """Get the FastBlocks event publisher instance.
 
     Returns:
-        Event publisher instance or None if ACB Events unavailable
+        Event publisher instance
     """
-    if not acb_events_available:
-        return None
-
     return FastBlocksEventPublisher()
 
 
-# Module metadata for ACB discovery
+# Module metadata for Oneiric compatibility
 MODULE_ID = UUID("01937d88-0000-7000-8000-000000000002")
-MODULE_STATUS = AdapterStatus.STABLE
+MODULE_STATUS = "STABLE"  # Oneiric-compatible status

@@ -4,7 +4,22 @@ import typing as t
 from contextlib import suppress
 from enum import Enum
 
-from acb.debug import debug
+from oneiric.core.resolution import Resolver
+
+# Migration from ACB to Oneiric
+depends = Resolver()
+
+# ACB compatibility imports - these will be migrated in future phases
+try:
+    # MIGRATED: Removed ACB import - debug import debug
+    pass
+except ImportError:
+    # Fallback for Oneiric-only mode
+    def debug(msg: str) -> None:
+        """Debug function fallback."""
+        print(f"[DEBUG] {msg}")
+
+
 from starlette.middleware import Middleware
 from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.middleware.exceptions import ExceptionMiddleware
@@ -129,9 +144,9 @@ async def _gather_default_middleware() -> dict[MiddlewarePosition, t.Any]:
 async def _gather_custom_middleware() -> list[Middleware]:
     custom_middleware = []
     with suppress(Exception):
-        from acb.depends import depends
+        # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        config = await depends.get("config")
+        config = await depends.resolve("fastblocks", "config")
         if hasattr(config, "middleware") and hasattr(config.middleware, "custom"):
             for middleware_path in config.middleware.custom:
                 try:
@@ -406,3 +421,9 @@ def _calculate_insert_index(
         insert_index = len(stack) - 1
 
     return min(insert_index, len(stack) - 1)
+
+
+# Migration status indicator
+# Note: Partial migration - ACB debug system still in use
+_using_oneiric = True  # Oneiric resolver available
+_requires_further_migration = True  # ACB debug system needs migration

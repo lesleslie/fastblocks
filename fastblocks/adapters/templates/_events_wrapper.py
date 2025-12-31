@@ -13,7 +13,11 @@ import time
 import typing as t
 from contextlib import suppress
 
-from acb.depends import depends
+# Oneiric imports
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 def track_template_render(
@@ -293,3 +297,7 @@ def get_recent_admin_actions(limit: int = 50) -> list[dict[str, t.Any]]:
             return actions
 
     return []
+
+
+# Migration indicator
+_using_oneiric = True

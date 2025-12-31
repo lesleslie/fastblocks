@@ -20,8 +20,22 @@ import typing as t
 from contextlib import suppress
 from uuid import UUID
 
-from acb.adapters import AdapterStatus
-from acb.depends import depends
+# Oneiric imports
+from oneiric.core.resolution import Resolver
+
+
+# Custom implementations for ACB compatibility
+class AdapterStatus:
+    """Custom AdapterStatus for Oneiric compatibility."""
+
+    STABLE = "STABLE"
+    BETA = "BETA"
+    ALPHA = "ALPHA"
+    EXPERIMENTAL = "EXPERIMENTAL"
+
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 # Cloudflare Images Filters
@@ -418,7 +432,7 @@ async def async_optimized_font_loading(fonts: list[str], critical: bool = True) 
         [[ await async_optimized_font_loading(['Inter', 'Roboto Mono'], critical=True) ]]
     """
     with suppress(Exception):  # Fallback
-        font_adapter = await depends.get("fonts")
+        font_adapter = await depends.resolve("fastblocks", "fonts")
         if font_adapter and hasattr(font_adapter, "get_optimized_loading"):
             result = await font_adapter.get_optimized_loading(fonts, critical=critical)
             return str(result) if result is not None else ""
@@ -599,3 +613,6 @@ ENHANCED_ASYNC_FILTERS = {
 
 MODULE_ID = UUID("01937d8a-1234-7890-abcd-1234567890ab")
 MODULE_STATUS = AdapterStatus.STABLE
+
+# Migration indicator
+_using_oneiric = True

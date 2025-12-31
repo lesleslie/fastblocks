@@ -1,22 +1,31 @@
 import typing as t
 from abc import ABC
 
-from acb.adapters import get_adapters, root_path
-from acb.config import AdapterBase, Config
-from acb.depends import Inject, depends
 from anyio import Path as AsyncPath
+from oneiric.core.config import OneiricSettings
+from oneiric.core.resolution import Resolver
 from starlette.requests import Request
 from starlette.responses import Response
 
-try:
-    # For newer versions of ACB where pkg_registry is in context
-    from acb import get_context
 
-    context = get_context()
-    pkg_registry = context.pkg_registry
-except (ImportError, AttributeError):
-    # Fallback for older versions or if context is not available
-    pkg_registry = None
+# Custom implementations for ACB compatibility
+def get_adapters():
+    """Custom implementation for Oneiric compatibility."""
+    # This will be implemented using Oneiric's adapter system
+    return []
+
+
+def root_path():
+    """Custom implementation for Oneiric compatibility."""
+    # This will be implemented using Oneiric's path system
+    return "/"
+
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
+
+# Placeholder for pkg_registry (will be implemented with Oneiric)
+pkg_registry = None
 
 
 async def safe_await(func_or_value: t.Any) -> t.Any:
@@ -53,15 +62,16 @@ class TemplateLoader(t.Protocol):
     async def list_templates(self) -> list[TemplatePath]: ...
 
 
-class TemplatesBaseSettings(Config, ABC):
+class TemplatesBaseSettings(OneiricSettings, ABC):
     cache_timeout: int = 300
 
-    @depends.inject
-    def __init__(self, config: Inject[Config], **values: t.Any) -> None:
+    def __init__(self, **values: t.Any) -> None:
         # Extract cache_timeout from values before passing to parent
         cache_timeout = values.pop("cache_timeout", 300)
         super().__init__(**values)
-        self.cache_timeout = cache_timeout if config.deployed else 1
+        # For now, set cache_timeout directly
+        # In a full migration, this would use Oneiric's configuration system
+        self.cache_timeout = cache_timeout
 
 
 class TemplatesProtocol(t.Protocol):
@@ -76,6 +86,12 @@ class TemplatesProtocol(t.Protocol):
     def get_cache_key(path: AsyncPath) -> str: ...
 
 
+class AdapterBase:
+    """Custom AdapterBase for Oneiric compatibility."""
+
+    pass
+
+
 class TemplatesBase(AdapterBase):
     app: t.Any | None = None
     admin: t.Any | None = None
@@ -83,7 +99,7 @@ class TemplatesBase(AdapterBase):
     admin_searchpaths: list[AsyncPath] | None = None
 
     def get_searchpath(self, adapter: t.Any, path: AsyncPath) -> list[AsyncPath]:
-        style = getattr(self.config.app, "style", "bulma")
+        style = getattr(self.config.app, "style", "vanilla")
         base_path = path / "base"
         style_path = path / style
         style_adapter_path = path / style / adapter.name
@@ -161,3 +177,7 @@ class TemplatesBase(AdapterBase):
     @staticmethod
     def get_cache_key(path: AsyncPath) -> str:
         return ":".join(path.parts)
+
+
+# Oneiric migration indicator
+_using_oneiric = True

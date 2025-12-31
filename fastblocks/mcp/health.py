@@ -151,7 +151,10 @@ class HealthCheckSystem:
         warnings = []
 
         try:
-            from acb.depends import depends
+            from oneiric.core.resolution import Resolver
+
+            # Use Oneiric resolver
+            depends = Resolver()
 
             registered_adapter = depends.get_sync(adapter_name)
             if registered_adapter:

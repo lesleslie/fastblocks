@@ -18,7 +18,7 @@ The App adapter inherits from ACB's `AdapterBase` and extends `AppSettings` from
 The App adapter provides settings for your application, including:
 
 - Application name
-- UI style (e.g., Bulma, Bootstrap)
+- UI style (e.g., Kelp, Vanilla)
 - Theme (light/dark)
 
 ## Configuration
@@ -29,7 +29,7 @@ Configure the App adapter in your settings:
 # settings/app.yml
 app:
   name: "MyApp"
-  style: "bulma"
+  style: "vanilla"
   theme: "light"
 ```
 
@@ -101,18 +101,7 @@ App settings are automatically available in template context through the `app` v
 <html data-theme="[[ app.theme ]]">
   <head>
     <title>[[ app.name ]]</title>
-
-    [% if app.style == "bulma" %]
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"
-    />
-    [% elif app.style == "bootstrap" %]
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    [% endif %]
+    [[ stylesheet_links() | safe ]]
   </head>
   <body>
     <nav class="navbar">
@@ -162,7 +151,7 @@ async def toggle_theme(request, app: Inject[App]):
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `name` | `str` | `"fastblocks"` | The name of your application |
-| `style` | `str` | `"bulma"` | The UI framework/style to use |
+| `style` | `str` | `"vanilla"` | The UI framework/style to use |
 | `theme` | `str` | `"light"` | The color theme (light/dark) |
 
 ## Implementation Details
@@ -181,7 +170,7 @@ from acb.config import AppSettings as AppConfigSettings
 
 class AppBaseSettings(AppConfigSettings):
     name: str = "fastblocks"
-    style: str = "bulma"
+    style: str = "vanilla"
     theme: str = "light"
 
 

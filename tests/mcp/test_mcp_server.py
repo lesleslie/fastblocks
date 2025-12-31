@@ -132,7 +132,7 @@ class TestMCPTools:
         monkeypatch.chdir(tmp_path)
 
         await create_template(name="base_tmpl", variant="base")
-        await create_template(name="bulma_tmpl", variant="bulma")
+        await create_template(name="vanilla_tmpl", variant="vanilla")
 
         result = await list_templates(variant="base")
         assert result["success"] is True

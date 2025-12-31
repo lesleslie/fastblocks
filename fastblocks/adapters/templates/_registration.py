@@ -3,9 +3,12 @@
 from contextlib import suppress
 from typing import Any
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 
 from ._filters import FASTBLOCKS_FILTERS
+
+# Migration from ACB to Oneiric
+depends = Resolver()
 
 
 def register_fastblocks_filters(template_env: Any) -> None:
@@ -105,3 +108,7 @@ def setup_fastblocks_template_environment(
         template_env.block_start_string = "[%"
         template_env.block_end_string = "%]"
         template_env._fastblocks_delimiters_set = True
+
+
+# Migration status indicator
+_using_oneiric = True

@@ -4,9 +4,12 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 
 from ._base import IconsBase, IconsBaseSettings
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 class FontAwesomeIconsSettings(IconsBaseSettings):
@@ -157,7 +160,7 @@ class FontAwesomeIcons(IconsBase):
         super().__init__()
         self.settings = FontAwesomeIconsSettings()
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self)
 
@@ -205,6 +208,10 @@ class FontAwesomeIcons(IconsBase):
         if "class_" in attributes:
             additional_class = attributes.pop("class_")
             icon_class = f"{icon_class} {additional_class}"
+
+        # Handle aria_label parameter (use hyphen in HTML)
+        if "aria_label" in attributes:
+            attributes["aria-label"] = attributes.pop("aria_label")
 
         # Add any additional classes (in case there's a 'class' key for some reason)
         if "class" in attributes:
@@ -286,6 +293,8 @@ class FontAwesomeIcons(IconsBase):
 IconsSettings = FontAwesomeIconsSettings
 Icons = FontAwesomeIcons
 
-depends.set(Icons, "fontawesome")
+# Register with Oneiric resolver (fail gracefully if not supported)
+with suppress(Exception):
+    depends.set(Icons, "fontawesome")
 
 __all__ = ["Icons", "IconsSettings", "FontAwesomeIcons", "FontAwesomeIconsSettings"]

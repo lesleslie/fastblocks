@@ -7,7 +7,6 @@ from urllib.parse import quote
 from uuid import UUID
 
 import httpx
-from acb.depends import depends
 from pydantic import SecretStr
 
 from ._base import ImagesBase, ImagesBaseSettings
@@ -50,7 +49,7 @@ class TwicPicsImages(ImagesBase):
         self.settings: TwicPicsImagesSettings | None = None
         self._client: httpx.AsyncClient | None = None
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self)
 
@@ -295,7 +294,7 @@ def register_twicpics_filters(env: Any) -> None:
     @env.filter("twic_url")  # type: ignore[misc]
     async def twic_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for TwicPics URLs."""
-        images = await depends.get("images")
+        images = await depends.resolve("fastblocks", "images")
         if isinstance(images, TwicPicsImages):
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"
@@ -328,7 +327,7 @@ def register_twicpics_filters(env: Any) -> None:
         image_id: str, width: int = 20, quality: int = 10
     ) -> str:
         """Generate ultra-low quality placeholder URL."""
-        images = await depends.get("images")
+        images = await depends.resolve("fastblocks", "images")
         if isinstance(images, TwicPicsImages):
             return await images.get_image_url(
                 image_id, {"width": width, "quality": quality}

@@ -2,7 +2,11 @@
 
 from typing import Any
 
-from acb.depends import depends
+# Oneiric imports
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 def img_tag(image_id: str, alt: str, **attributes: Any) -> str:
@@ -573,3 +577,6 @@ FASTBLOCKS_FILTERS = {
     "htmx_error_container": htmx_error_container,
     "htmx_retry_trigger": htmx_retry_trigger,
 }
+
+# Migration indicator
+_using_oneiric = True

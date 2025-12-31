@@ -24,8 +24,22 @@ from dataclasses import dataclass, field
 from enum import Enum
 from uuid import UUID
 
-from acb.adapters import AdapterStatus
-from acb.depends import depends
+# Oneiric imports
+from oneiric.core.resolution import Resolver
+
+
+# Custom implementations for ACB compatibility
+class AdapterStatus:
+    """Custom AdapterStatus for Oneiric compatibility."""
+
+    STABLE = "STABLE"
+    BETA = "BETA"
+    ALPHA = "ALPHA"
+    EXPERIMENTAL = "EXPERIMENTAL"
+
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 from anyio import Path as AsyncPath
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response, StreamingResponse
@@ -115,14 +129,16 @@ class AsyncTemplateRenderer:
         """Initialize the async renderer."""
         if not self.base_templates:
             try:
-                self.base_templates = await depends.get("templates")
+                self.base_templates = await depends.resolve("fastblocks", "templates")
             except Exception:
                 self.base_templates = Templates()
                 await self.base_templates.init()
 
         if not self.hybrid_manager:
             try:
-                self.hybrid_manager = await depends.get("hybrid_template_manager")
+                self.hybrid_manager = await depends.resolve(
+                    "fastblocks", "hybrid_template_manager"
+                )
             except Exception:
                 self.hybrid_manager = HybridTemplatesManager()
                 await self.hybrid_manager.initialize()
@@ -313,7 +329,7 @@ class AsyncTemplateRenderer:
     ) -> RenderResult | None:
         """Check Redis cache for cached result."""
         with suppress(Exception):
-            cache = await depends.get("cache")
+            cache = await depends.resolve("fastblocks", "cache")
             if cache:
                 cached_content = await cache.get(render_context.cache_key)
                 if cached_content:
@@ -427,7 +443,7 @@ class AsyncTemplateRenderer:
 
         if self.cache_strategy in (CacheStrategy.REDIS, CacheStrategy.HYBRID):
             with suppress(Exception):
-                cache = await depends.get("cache")
+                cache = await depends.resolve("fastblocks", "cache")
                 if cache:
                     await cache.set(
                         render_context.cache_key,
@@ -644,6 +660,9 @@ class AsyncTemplateRenderer:
 
 MODULE_ID = UUID("01937d88-1234-7890-abcd-1234567890ab")
 MODULE_STATUS = AdapterStatus.STABLE
+
+# Migration indicator
+_using_oneiric = True
 
 # Register the async renderer
 with suppress(Exception):

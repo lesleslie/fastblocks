@@ -4,7 +4,10 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
@@ -100,7 +103,10 @@ class HeroiconsIcons(IconsBase):
         super().__init__()
         self.settings: HeroiconsIconsSettings | None = None
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
+        with suppress(Exception):
+            # Register with Oneiric resolver (fail gracefully if not supported)
+            pass
         with suppress(Exception):
             depends.set(self)
 
@@ -629,7 +635,9 @@ def register_heroicons_filters(env: Any) -> None:
 IconsSettings = HeroiconsIconsSettings
 Icons = HeroiconsIcons
 
-depends.set(Icons, "heroicons")
+# Register with Oneiric resolver (fail gracefully if not supported)
+with suppress(Exception):
+    depends.set(Icons, "heroicons")
 
 
 # ACB 0.19.0+ compatibility

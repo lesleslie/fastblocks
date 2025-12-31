@@ -13,8 +13,8 @@ class TestStyleBase:
     def test_style_base_abstract_methods(self, monkeypatch):
         from fastblocks.adapters.style import _base as style_base
 
-        # Allow depends.set(self) call
-        monkeypatch.setattr(style_base.depends, "set", lambda *args, **kwargs: None)
+        # Allow depends.register(self) call
+        monkeypatch.setattr(style_base.depends, "register", lambda *args, **kwargs: None)
 
         base = style_base.StyleBase()
         with pytest.raises(NotImplementedError):

@@ -5,9 +5,12 @@ from contextlib import suppress
 from pathlib import Path
 from uuid import UUID
 
-from acb.depends import depends
+from oneiric.core.resolution import Resolver
 
 from ._base import FontsBase, FontsBaseSettings
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 class FontSquirrelFontsSettings(FontsBaseSettings):
@@ -34,7 +37,7 @@ class FontSquirrelFonts(FontsBase):
         super().__init__()
         self.settings = FontSquirrelFontsSettings()
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self)
 
@@ -362,4 +365,6 @@ class FontSquirrelFonts(FontsBase):
 FontsSettings = FontSquirrelFontsSettings
 Fonts = FontSquirrelFonts
 
-depends.set(Fonts, "squirrel")
+# Register with Oneiric resolver (fail gracefully if not supported)
+with suppress(Exception):
+    depends.set(Fonts, "squirrel")

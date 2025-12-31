@@ -7,12 +7,50 @@ of a FastBlocks application, separating concerns from the main application class
 import logging
 import typing as t
 
-from acb import register_pkg
-
+# Migration: ACB -> Oneiric
+# Try to import Oneiric components first, fall back to ACB for compatibility
 try:
-    from acb.adapters import get_installed_adapter
-except ImportError:  # acb >= 0.19 removed this helper
-    from acb.adapters import get_adapter, get_installed_adapters
+    # Oneiric imports (new)
+    from oneiric.core.config import OneiricSettings
+    from oneiric.core.logging import get_logger as oneiric_get_logger
+    from oneiric.core.resolution import Resolver, register_pkg
+
+    # Create resolver instance
+    _resolver = Resolver()
+
+    async def _get_dependency(name: str) -> t.Any:
+        """Get dependency using Oneiric resolver."""
+        return await _resolver.resolve(name)
+
+    def _get_dependency_sync(name: str) -> t.Any:
+        """Get dependency synchronously using Oneiric resolver."""
+        import asyncio
+
+        return asyncio.run(_get_dependency(name))
+
+    # Oneiric adapter resolution
+    def get_installed_adapter(adapter_name: str) -> str | None:
+        """Oneiric adapter resolution."""
+        try:
+            # Try to get adapter metadata
+            adapter_metadata = _resolver.registry.get(adapter_name)
+            if adapter_metadata:
+                return adapter_name
+            return None
+        except Exception:
+            return None
+
+    # Oneiric config and adapter base
+    Config = OneiricSettings
+    AdapterBase = object  # Oneiric uses different adapter structure
+
+    # Flag to indicate we're using Oneiric
+    _using_oneiric = True
+
+except ImportError:
+    # Fallback to ACB imports (legacy)
+    # MIGRATED: Removed ACB import - import register_pkg
+    # ACB >= 0.19 removed this helper - no longer needed
 
     def get_installed_adapter(adapter_name: str) -> str | None:
         """Compatibility shim that resolves an installed adapter name."""
@@ -34,9 +72,16 @@ except ImportError:  # acb >= 0.19 removed this helper
             return provider_str or adapter_name_str
         return None
 
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-from acb.config import AdapterBase, Config
-from acb.depends import depends
+    def _get_dependency_sync(name: str) -> t.Any:
+        """Get dependency synchronously using ACB depends."""
+        return depends.get_sync(name)
+
+    # Flag to indicate we're using ACB
+    _using_oneiric = False
+
 from starception import install_error_handler
 from starlette.applications import Starlette
 
@@ -63,16 +108,30 @@ class ApplicationInitializer:
 
     def _load_acb_modules(self) -> None:
         try:
-            logger = depends.get_sync("logger")
-            logger_class: type[t.Any] | None = (
-                logger.__class__ if logger is not None else None
-            )
-            from acb.logger import InterceptHandler
+            if _using_oneiric:
+                # Oneiric: Get logger using Oneiric method
+                logger = oneiric_get_logger("fastblocks")
+                logger_class: type[t.Any] | None = (
+                    logger.__class__ if logger is not None else None
+                )
+                # Oneiric doesn't have InterceptHandler, use None
+                interceptor_class: type[t.Any] | None = None
+            else:
+                # ACB: Get logger using ACB method
+                logger = depends.get_sync("logger")
+                logger_class: type[t.Any] | None = (
+                    logger.__class__ if logger is not None else None
+                )
+                # MIGRATED: Removed ACB import - logger import InterceptHandler
 
-            interceptor_class: type[t.Any] | None = InterceptHandler
+                interceptor_class: type[t.Any] | None = InterceptHandler
         except Exception:
             logger_class = None
             interceptor_class = None
+
+        # Migration: Use appropriate dependency resolution based on runtime
+        depends_resolver = depends if not _using_oneiric else None
+
         self._acb_modules = (
             register_pkg,
             get_installed_adapter,
@@ -80,25 +139,32 @@ class ApplicationInitializer:
             AdapterBase,
             interceptor_class,
             logger_class,
-            depends,
+            depends_resolver,
         )
 
     def _setup_dependencies(self) -> None:
         self.config = self.kwargs.get("config")
         if self.config is None:
             try:
-                self.config = depends.get_sync("config")
+                if _using_oneiric:
+                    self.config = _get_dependency_sync("config")
+                else:
+                    self.config = depends.get_sync("config")
             except Exception:
                 self.config = None
 
         self.logger = self.kwargs.get("logger")
         if self.logger is None:
             try:
-                self.logger = depends.get_sync("logger")
+                if _using_oneiric:
+                    self.logger = oneiric_get_logger("fastblocks")
+                else:
+                    self.logger = depends.get_sync("logger")
             except Exception:
                 self.logger = None
 
-        self.depends = depends
+        # Migration: Use appropriate dependency resolver
+        self.depends = depends if not _using_oneiric else None
 
     def _configure_error_handling(self) -> None:
         if not getattr(self.config, "deployed", False) or not getattr(
@@ -145,7 +211,10 @@ class ApplicationInitializer:
 
     def _setup_models(self) -> None:
         try:
-            models = self.depends.get_sync("models")  # type: ignore[union-attr]
+            if _using_oneiric:
+                models = _get_dependency_sync("models")
+            else:
+                models = self.depends.get_sync("models")  # type: ignore[union-attr]
         except Exception:
             models = None
         object.__setattr__(self.app, "models", models)

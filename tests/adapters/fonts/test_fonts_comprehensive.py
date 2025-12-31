@@ -267,7 +267,7 @@ class TestFontSquirrelAdapter:
         assert "font.ttf" in import_html
         assert "format('woff2')" in import_html
         assert "format('woff')" in import_html
-        assert "format('truetype')" in import_html
+        assert "format('ttf')" in import_html
 
     def test_font_squirrel_get_font_family_configured(self):
         """Test font family retrieval for configured fonts."""
@@ -323,7 +323,7 @@ class TestFontSquirrelAdapter:
         font_config = {"path": "/fonts/test.woff2"}
         src = adapter._build_src_declaration(font_config)
 
-        assert "url('/static/fonts/test.woff2')" in src
+        assert "url('/fonts/test.woff2')" in src
         assert "format('woff2')" in src
 
     def test_font_squirrel_build_src_declaration_multiple_files(self):

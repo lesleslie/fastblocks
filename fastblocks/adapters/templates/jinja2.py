@@ -42,7 +42,15 @@ from pathlib import Path
 from uuid import UUID
 
 from oneiric.core.config import OneiricSettings
-from oneiric.core.resolution import Candidate, CandidateSource, Resolver
+from oneiric.core.resolution import Resolver
+
+# Import Oneiric registration helper
+import sys
+from pathlib import Path
+
+# Add parent directory to path for helper import
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from oneiric_helper import register_candidate
 
 # Import event tracking decorator (with fallback if unavailable)
 try:
@@ -76,34 +84,6 @@ def debug(msg: str) -> None:
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
-
-
-def _register_candidate(
-    domain: str,
-    key: str,
-    factory: t.Callable[..., t.Any],
-    metadata: dict[str, t.Any] | None = None,
-) -> None:
-    """Helper to register a Oneiric Candidate with the resolver.
-
-    Args:
-        domain: Candidate domain (e.g., "fastblocks")
-        key: Candidate key (e.g., "templates")
-        factory: Factory function that creates the object
-        metadata: Optional metadata dictionary
-    """
-    try:
-        candidate = Candidate(
-            domain=domain,
-            key=key,
-            factory=factory,
-            source=CandidateSource.LOCAL_PKG,
-            metadata=metadata or {},
-        )
-        depends.register(candidate)
-    except Exception:
-        # Graceful degradation if registration fails
-        pass
 
 
 from anyio import Path as AsyncPath
@@ -951,7 +931,8 @@ class Templates(TemplatesBase):
 
                     app_adapter = _try_resolve_sync("app") or App()
                     debug("Created app adapter by direct import")
-                    _register_candidate(
+                    register_candidate(
+                        depends,
                         domain="fastblocks",
                         key="app",
                         factory=lambda: app_adapter,
@@ -966,7 +947,8 @@ class Templates(TemplatesBase):
                     )
         self.app_searchpaths = await self.get_searchpaths(app_adapter)
         self.app = await self.init_envs(self.app_searchpaths, cache=cache)
-        _register_candidate(
+        register_candidate(
+            depends,
             domain="fastblocks",
             key="templates",
             factory=lambda: self,

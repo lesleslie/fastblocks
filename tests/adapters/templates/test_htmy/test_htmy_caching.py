@@ -312,7 +312,7 @@ async def test_caching() -> None:
 
         # Test with our component path
         component_path = MockAsyncPath(
-            "/Users/les/Projects/sites/fastest/templates/app/bulma/components"
+            "/Users/les/Projects/sites/fastest/templates/app/vanilla/components"
         )
         registry = HTMYComponentRegistry([component_path], cache=cache, storage=storage)
 

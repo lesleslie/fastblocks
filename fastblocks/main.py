@@ -2,9 +2,41 @@ import typing as t
 from contextlib import suppress
 from pathlib import Path
 
-from acb import ensure_registration, register_pkg
-from acb.adapters import register_adapters, root_path
-from acb.depends import depends
+# Migration: ACB -> Oneiric
+# Try to import Oneiric components first, fall back to ACB for compatibility
+try:
+    # Oneiric imports (new)
+    from oneiric.adapters.bootstrap import (
+        register_adapter_metadata,
+        register_builtin_adapters,
+    )
+    from oneiric.core.resolution import Resolver, register_pkg
+
+    # Create resolver instance for dependency resolution
+    _resolver = Resolver()
+
+    async def _get_dependency(name: str) -> t.Any:
+        """Get dependency using Oneiric resolver."""
+        return await _resolver.resolve(name)
+
+    # Use Path(__file__).parent.parent as root_path equivalent
+    root_path = Path(__file__).parent.parent
+
+    # Flag to indicate we're using Oneiric
+    _using_oneiric = True
+
+except ImportError:
+    # Fallback to ACB imports (legacy)
+    # MIGRATED: Removed ACB import - import ensure_registration, register_pkg
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
+
+    async def _get_dependency(name: str) -> t.Any:
+        """Get dependency using ACB depends."""
+        return await depends.get(name)
+
+    # Flag to indicate we're using ACB
+    _using_oneiric = False
 
 _app_instance = None
 _logger_instance = None
@@ -33,22 +65,42 @@ async def get_app() -> t.Any:
         except Exception as e:
             msg = f"Failed to register FastBlocks adapters: {e}"
             raise RuntimeError(msg) from e
+
+        # Migration: Handle registration based on runtime (Oneiric vs ACB)
+        if _using_oneiric:
+            # Oneiric: Register builtin adapters
+            try:
+                await register_builtin_adapters()
+            except Exception as e:
+                msg = f"Failed to register builtin adapters: {e}"
+                raise RuntimeError(msg) from e
+        else:
+            # ACB: Use legacy ensure_registration
+            try:
+                await ensure_registration()
+            except Exception as e:
+                msg = f"Failed to register packages: {e}"
+                raise RuntimeError(msg) from e
+
+        # Migration: Handle adapter registration based on runtime
+        if _using_oneiric:
+            # Oneiric: Register adapter metadata
+            with suppress(Exception):
+                await register_adapter_metadata(root_path)
+        else:
+            # ACB: Use legacy adapter registration
+            with suppress(Exception):
+                await register_adapters(root_path)
+
         try:
-            await ensure_registration()
-        except Exception as e:
-            msg = f"Failed to register packages: {e}"
-            raise RuntimeError(msg) from e
-        with suppress(Exception):
-            await register_adapters(root_path)
-        try:
-            _app_instance = await depends.get("app")
+            _app_instance = await _get_dependency("app")
         except Exception as e:
             msg = f"Failed to get app adapter: {e}. Make sure adapters are properly registered and configured."
             raise RuntimeError(
                 msg,
             ) from e
         try:
-            _logger_instance = await depends.get("logger")
+            _logger_instance = await _get_dependency("logger")
         except Exception as e:
             import logging
 

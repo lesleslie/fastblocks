@@ -4,17 +4,24 @@ from contextlib import suppress
 from typing import Any, Protocol
 from uuid import UUID
 
-from acb.config import AdapterBase, Settings
-from acb.depends import depends
+# Oneiric imports
+from oneiric.core.config import OneiricSettings
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
-class IconsBaseSettings(Settings):
-    """Base settings for icon adapters."""
+class IconsBaseSettings(OneiricSettings):
+    """Base settings for icon adapters using OneiricSettings."""
 
     cdn_url: str | None = None
     version: str = "latest"
     default_prefix: str = ""
     icon_mapping: dict[str, str] = {}
+
+    def __init__(self, **data: dict) -> None:
+        super().__init__(**data)
 
 
 class IconsProtocol(Protocol):
@@ -24,16 +31,16 @@ class IconsProtocol(Protocol):
     def get_icon_tag(self, icon_name: str, **attributes: Any) -> str: ...
 
 
-class IconsBase(AdapterBase):
-    """Base class for icon adapters."""
+class IconsBase:
+    """Base class for icon adapters using Oneiric patterns."""
 
-    # Required ACB 0.19.0+ metadata
+    # Oneiric-compatible metadata
     MODULE_ID: UUID = UUID("01937d86-4f2a-7b3c-8d9e-f3b4d3c2b1a3")  # Static UUID7
     MODULE_STATUS = "stable"
 
     def __init__(self) -> None:
         """Initialize icon adapter."""
-        # Register with ACB dependency system
+        # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self)
 

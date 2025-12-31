@@ -24,8 +24,17 @@ from collections.abc import (
 from typing import TypeVar, cast
 from urllib.parse import urljoin, urlsplit
 
-from acb.debug import debug
-from acb.depends import depends
+
+# Custom implementations for ACB compatibility
+def debug(msg: str) -> None:
+    """Custom debug function for Oneiric compatibility."""
+    print(f"[DEBUG] {msg}")
+
+
+from oneiric.core.resolution import Resolver
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 if t.TYPE_CHECKING:
     from starlette.types import Scope
@@ -268,7 +277,7 @@ def _escape_xml(value: str) -> str:
 
 async def _get_cached_sitemap(cache_key: str) -> bytes | None:
     try:
-        cache = await depends.get("cache")
+        cache = await depends.resolve("fastblocks", "cache")
         if cache and hasattr(cache, "get"):
             cached_data = await cache.get(cache_key)
             if cached_data:
@@ -286,7 +295,7 @@ async def _get_cached_sitemap(cache_key: str) -> bytes | None:
 
 async def _cache_sitemap(cache_key: str, content: bytes) -> None:
     try:
-        cache = await depends.get("cache")
+        cache = await depends.resolve("fastblocks", "cache")
         if cache and hasattr(cache, "set"):
             await cache.set(cache_key, content, ttl=3600)
             debug(f"_cache_sitemap: Cached sitemap ({len(content)} bytes)")

@@ -9,7 +9,22 @@ import typing as t
 from pathlib import Path
 
 import yaml
-from acb.debug import debug
+from oneiric.core.resolution import Resolver
+
+# Migration from ACB to Oneiric
+depends = Resolver()
+
+# ACB compatibility imports - these will be migrated in future phases
+try:
+    # MIGRATED: Removed ACB import - debug import debug
+    pass
+except ImportError:
+    # Fallback for Oneiric-only mode
+    def debug(msg: str) -> None:
+        """Debug function fallback."""
+        print(f"[DEBUG] {msg}")
+
+
 from anyio import Path as AsyncPath
 
 from .strategies import (
@@ -161,10 +176,10 @@ def _prepare_static_sync_config(
 
 async def _initialize_adapters(result: StaticSyncResult) -> dict[str, t.Any] | None:
     try:
-        from acb.depends import depends
+        # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        storage = await depends.get("storage")
-        cache = await depends.get("cache")
+        storage = await depends.resolve("fastblocks", "storage")
+        cache = await depends.resolve("fastblocks", "cache")
         if not storage:
             result.errors.append(Exception("Storage adapter not available"))
             return None
@@ -734,10 +749,10 @@ async def _cache_static_file(
 
 async def _validate_cache_dependencies() -> tuple[t.Any, t.Any, dict[str, t.Any]]:
     """Validate and return cache and storage dependencies."""
-    from acb.depends import depends
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-    cache = await depends.get("cache")
-    storage = await depends.get("storage")
+    cache = await depends.resolve("fastblocks", "cache")
+    storage = await depends.resolve("fastblocks", "storage")
     result: dict[str, t.Any] = {
         "warmed": [],
         "errors": [],
@@ -862,9 +877,9 @@ async def get_static_sync_status(
 
 async def _get_storage_adapter() -> t.Any:
     """Get the storage adapter."""
-    from acb.depends import depends
+    # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-    return depends.get("storage")
+    return depends.resolve("fastblocks", "storage")
 
 
 async def _process_static_files(
@@ -1022,3 +1037,9 @@ async def _backup_single_file(
         result["backed_up"].append(str(backup_path))
     except Exception as e:
         result["errors"].append(f"{file_path}: {e}")
+
+
+# Migration status indicator
+# Note: Partial migration - ACB debug system still in use
+_using_oneiric = True  # Oneiric resolver available
+_requires_further_migration = True  # ACB debug system needs migration
