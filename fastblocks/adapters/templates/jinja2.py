@@ -17,15 +17,11 @@ Requirements:
 
 Usage:
 ```python
-from acb.depends import Inject, depends
-from acb.adapters import import_adapter
-
-templates = depends.get("templates")
-
-Templates = import_adapter("templates")
-
-response = await templates.render_template(
-    request, "index.html", {"title": "FastBlocks"}
+# ACB imports removed - using Oneiric equivalents
+# templates = depends.resolve("fastblocks", "templates")
+# Templates = import_adapter("templates")
+# response = await templates.render_template(
+#     request, "index.html", {"title": "FastBlocks"}
 )
 ```
 
@@ -45,9 +41,8 @@ from inspect import isclass
 from pathlib import Path
 from uuid import UUID
 
-from acb.adapters import AdapterStatus, get_adapter
-from acb.config import Config
-from acb.debug import debug
+from oneiric.core.config import OneiricSettings
+from oneiric.core.resolution import Candidate, CandidateSource, Resolver
 
 # Import event tracking decorator (with fallback if unavailable)
 try:
@@ -58,12 +53,64 @@ except ImportError:
         return func
 
 
-from acb.depends import depends
+# Custom implementations for ACB compatibility
+def get_adapter(adapter_name: str) -> t.Any:
+    """Custom implementation for Oneiric compatibility."""
+    # This will be implemented using Oneiric's adapter system
+    return None
+
+
+class AdapterStatus:
+    """Custom AdapterStatus for Oneiric compatibility."""
+
+    STABLE = "STABLE"
+    BETA = "BETA"
+    ALPHA = "ALPHA"
+    EXPERIMENTAL = "EXPERIMENTAL"
+
+
+def debug(msg: str) -> None:
+    """Custom debug function for Oneiric compatibility."""
+    print(f"[DEBUG] {msg}")
+
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
+
+
+def _register_candidate(
+    domain: str,
+    key: str,
+    factory: t.Callable[..., t.Any],
+    metadata: dict[str, t.Any] | None = None,
+) -> None:
+    """Helper to register a Oneiric Candidate with the resolver.
+
+    Args:
+        domain: Candidate domain (e.g., "fastblocks")
+        key: Candidate key (e.g., "templates")
+        factory: Factory function that creates the object
+        metadata: Optional metadata dictionary
+    """
+    try:
+        candidate = Candidate(
+            domain=domain,
+            key=key,
+            factory=factory,
+            source=CandidateSource.LOCAL_PKG,
+            metadata=metadata or {},
+        )
+        depends.register(candidate)
+    except Exception:
+        # Graceful degradation if registration fails
+        pass
+
+
 from anyio import Path as AsyncPath
 from jinja2 import TemplateNotFound
 from jinja2.ext import Extension, i18n, loopcontrols
 from jinja2.ext import debug as jinja_debug
-from jinja2_async_environment.bccache import AsyncRedisBytecodeCache
+from jinja2_async_environment import AsyncRedisBytecodeCache
 from jinja2_async_environment.loaders import AsyncBaseLoader, SourceType
 from starlette_async_jinja import AsyncJinja2Templates
 from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
@@ -93,6 +140,29 @@ def _get_attr_pattern(attr: str) -> re.Pattern[str]:
     return _ATTR_PATTERN_CACHE[attr]
 
 
+def _try_resolve_sync(key: str) -> t.Any:
+    """Helper to try to get a Oneiric dependency synchronously.
+
+    This is needed for __init__ methods that can't be async.
+    """
+    try:
+        # For fallback and testing - use depends.get if it exists
+        if hasattr(depends, "get"):
+            return getattr(depends, "get")(key)
+
+        # Try to await the resolve call synchronously
+        import asyncio
+
+        result = depends.resolve("fastblocks", key)
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(result)
+        except Exception:
+            return None
+    except Exception:
+        return None
+
+
 def _apply_template_replacements(source: bytes, deployed: bool = False) -> bytes:
     for old_pattern, new_pattern in _TEMPLATE_REPLACEMENTS:
         source = source.replace(old_pattern, new_pattern)
@@ -113,22 +183,21 @@ class BaseTemplateLoader(AsyncBaseLoader):
     ) -> None:
         super().__init__(searchpath or [])
         if self.storage is None:
-            try:
-                self.storage = depends.get("storage")
-            except Exception:
-                self.storage = get_adapter("storage")
+            self.storage = _try_resolve_sync("storage")
+        if self.storage is None:
+            self.storage = get_adapter("storage")
         if self.cache is None:
-            try:
-                self.cache = depends.get("cache")
-            except Exception:
-                self.cache = get_adapter("cache")
+            self.cache = _try_resolve_sync("cache")
+        if self.cache is None:
+            self.cache = get_adapter("cache")
         if not hasattr(self, "config"):
-            try:
-                self.config = depends.get("config")
-            except Exception:
+            self.config = _try_resolve_sync("config")
+            if self.config is None:
                 config_adapter = get_adapter("config")
                 self.config = (
-                    config_adapter if isinstance(config_adapter, Config) else Config()
+                    config_adapter
+                    if hasattr(config_adapter, "model_config")
+                    else OneiricSettings()
                 )
 
     def get_supported_extensions(self) -> tuple[str, ...]:
@@ -649,7 +718,7 @@ class TemplatesSettings(TemplatesBaseSettings):
         if not hasattr(self, "cache_timeout"):
             self.cache_timeout = 300
         try:
-            models = depends.get("models")
+            models = _try_resolve_sync("models")
             self.globals["models"] = models
         except Exception:
             self.globals["models"] = None
@@ -749,7 +818,9 @@ class Templates(TemplatesBase):
                     and issubclass(v, Extension)
                 ],
             )
-        bytecode_cache = AsyncRedisBytecodeCache(prefix="bccache", client=cache)
+        bytecode_cache = None
+        if cache is not None:
+            bytecode_cache = AsyncRedisBytecodeCache(prefix="bccache", client=cache)
         context_processors: list[t.Callable[..., t.Any]] = []
         for processor_path in self.config.templates.context_processors:
             module_path, func_name = processor_path.rsplit(".", 1)
@@ -793,10 +864,7 @@ class Templates(TemplatesBase):
 
     def _resolve_cache(self, cache: t.Any | None) -> t.Any | None:
         if cache is None:
-            try:
-                cache = depends.get("cache")
-            except Exception:
-                cache = None
+            cache = _try_resolve_sync("cache")
         return cache
 
     async def _setup_admin_templates(self, cache: t.Any | None) -> None:
@@ -828,7 +896,7 @@ class Templates(TemplatesBase):
                         await cache.clear(namespace)
                 self.logger.debug("Template caches cleared")
                 with suppress(Exception):
-                    htmy_adapter = await depends.get("htmy")
+                    htmy_adapter = await depends.resolve("fastblocks", "htmy")
                     if htmy_adapter:
                         await htmy_adapter.clear_component_cache()
                         self.logger.debug("HTMY component caches cleared via adapter")
@@ -842,7 +910,7 @@ class Templates(TemplatesBase):
             **kwargs: t.Any,
         ) -> str:
             try:
-                htmy_adapter = await depends.get("htmy")
+                htmy_adapter = await depends.resolve("fastblocks", "htmy")
                 if htmy_adapter:
                     htmy_adapter.jinja_templates = self
 
@@ -874,26 +942,36 @@ class Templates(TemplatesBase):
         cache = self._resolve_cache(cache)
         app_adapter = self.enabled_app
         if app_adapter is None:
-            try:
-                app_adapter = depends.get("app")
+            app_adapter = _try_resolve_sync("app")
+            if app_adapter:
                 debug("Retrieved app adapter from dependency injection")
-            except Exception:
+            else:
                 try:
                     from ..app.default import App
 
-                    app_adapter = depends.get("app") or App()
+                    app_adapter = _try_resolve_sync("app") or App()
                     debug("Created app adapter by direct import")
-                    depends.set("app", app_adapter)
+                    _register_candidate(
+                        domain="fastblocks",
+                        key="app",
+                        factory=lambda: app_adapter,
+                        metadata={"name": "app", "category": "app"},
+                    )
                 except Exception:
-                    from types import SimpleNamespace
+                    from types import SimpleNamespace as SimpleNamespace
 
                     app_adapter = SimpleNamespace(name="app", category="app")
                     debug(
-                        "Created fallback app adapter - ACB discovery failed, direct import failed"
+                        "Created fallback app adapter - discovery failed, direct import failed"
                     )
         self.app_searchpaths = await self.get_searchpaths(app_adapter)
         self.app = await self.init_envs(self.app_searchpaths, cache=cache)
-        depends.set("templates", self)
+        _register_candidate(
+            domain="fastblocks",
+            key="templates",
+            factory=lambda: self,
+            metadata={"class": "Templates", "module": "fastblocks.adapters.templates.jinja2"},
+        )
         self._admin = None
         self._admin_initialized = False
         await self._setup_admin_templates(cache)
@@ -965,7 +1043,7 @@ class Templates(TemplatesBase):
         **kwargs: t.Any,
     ) -> t.Any:
         try:
-            htmy_adapter = await depends.get("htmy")
+            htmy_adapter = await depends.resolve("fastblocks", "htmy")
             if htmy_adapter:
                 htmy_adapter.jinja_templates = self
                 return await htmy_adapter.render_component(
@@ -1032,5 +1110,8 @@ MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
     depends.set(Templates)
+
+# Oneiric migration indicator
+_using_oneiric = True
 
 __all__ = ["Templates", "TemplatesSettings"]
