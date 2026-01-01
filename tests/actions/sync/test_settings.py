@@ -100,10 +100,10 @@ class TestSyncSettings:
     async def test_sync_settings_no_storage_adapter(self, mock_strategy):
         """Test sync_settings handles missing storage adapter."""
 
-        async def _get_none(name):
+        async def _resolve_none(domain, key):
             return None
 
-        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get_none)):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", new=_resolve_none):
             result = await sync_settings(strategy=mock_strategy)
 
             assert len(result.errors) > 0

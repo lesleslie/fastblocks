@@ -151,10 +151,10 @@ class TestSyncTemplates:
     async def test_sync_templates_no_storage_adapter(self, mock_strategy):
         """Test sync_templates handles missing storage adapter."""
 
-        async def _get_none(name):
+        async def _resolve_none(domain, key):
             return None
 
-        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get_none)):
+        with patch("fastblocks.actions.sync.templates.depends.resolve", new=_resolve_none):
             result = await sync_templates(strategy=mock_strategy)
 
             assert len(result.errors) > 0

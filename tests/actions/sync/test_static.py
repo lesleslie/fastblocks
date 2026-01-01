@@ -158,10 +158,10 @@ class TestSyncStatic:
     async def test_sync_static_no_storage_adapter(self, mock_strategy):
         """Test sync_static handles missing storage adapter."""
 
-        async def _get_none(name):
+        async def _resolve_none(domain, key):
             return None
 
-        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get_none)):
+        with patch("fastblocks.actions.sync.static.depends.resolve", new=_resolve_none):
             result = await sync_static(strategy=mock_strategy)
 
             assert len(result.errors) > 0
@@ -277,10 +277,10 @@ class TestWarmStaticCache:
     async def test_warm_cache_no_cache_adapter(self):
         """Test warm_static_cache when cache adapter not available."""
 
-        async def _get_none(name):
+        async def _resolve_none(domain, key):
             return None
 
-        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get_none)):
+        with patch("fastblocks.actions.sync.static.depends.resolve", new=_resolve_none):
             result = await warm_static_cache()
 
             assert len(result["errors"]) > 0
