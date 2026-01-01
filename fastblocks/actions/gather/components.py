@@ -115,12 +115,12 @@ class ComponentGatherStrategy(GatherStrategy):
         return gathered
 
 
-def _get_htmy_adapter(
+async def _get_htmy_adapter(
     start_time: datetime,
 ) -> tuple[Any | None, ComponentGatherResult | None]:
     """Get HTMY adapter or return error result."""
     try:
-        htmy_adapter = depends.resolve("fastblocks", "htmy")
+        htmy_adapter = await depends.resolve("fastblocks", "htmy")
         return htmy_adapter, None
     except Exception as e:
         debug(f"Could not get HTMY adapter: {e}")
@@ -221,7 +221,7 @@ async def gather_components(
         )
 
     if htmy_adapter is None:
-        htmy_adapter, error_result = _get_htmy_adapter(start_time)
+        htmy_adapter, error_result = await _get_htmy_adapter(start_time)
         if error_result:
             return error_result
 
@@ -325,7 +325,7 @@ async def gather_component_dependencies(
         Dictionary with component dependency tree
     """
     if htmy_adapter is None:
-        htmy_adapter = depends.resolve("fastblocks", "htmy")
+        htmy_adapter = await depends.resolve("fastblocks", "htmy")
 
     if htmy_adapter is None:
         return {"error": "HTMY adapter not available"}
@@ -370,7 +370,7 @@ async def analyze_component_usage(
         Dictionary with usage analysis
     """
     if htmy_adapter is None:
-        htmy_adapter = depends.resolve("fastblocks", "htmy")
+        htmy_adapter = await depends.resolve("fastblocks", "htmy")
 
     if htmy_adapter is None:
         return {"error": "HTMY adapter not available"}

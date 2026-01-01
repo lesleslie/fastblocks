@@ -216,7 +216,10 @@ class TestGatherComponents:
     async def test_gather_components_no_adapter(self):
         """Test gathering without HTMY adapter."""
         with patch("fastblocks.actions.gather.components.depends") as mock_depends:
-            mock_depends.get.side_effect = Exception("No adapter")
+            async def mock_resolve(*args, **kwargs):
+                raise Exception("No adapter")
+
+            mock_depends.resolve = mock_resolve
 
             result = await gather_components()
 
@@ -348,7 +351,10 @@ class TestGatherComponentDependencies:
     async def test_gather_dependencies_no_adapter(self):
         """Test dependency gathering without adapter."""
         with patch("fastblocks.actions.gather.components.depends") as mock_depends:
-            mock_depends.get.return_value = None
+            async def mock_resolve(*args, **kwargs):
+                return None
+
+            mock_depends.resolve = mock_resolve
 
             result = await gather_component_dependencies("test_component")
 
@@ -451,7 +457,10 @@ class TestAnalyzeComponentUsage:
     async def test_analyze_usage_no_adapter(self):
         """Test usage analysis without adapter."""
         with patch("fastblocks.actions.gather.components.depends") as mock_depends:
-            mock_depends.get.return_value = None
+            async def mock_resolve(*args, **kwargs):
+                return None
+
+            mock_depends.resolve = mock_resolve
 
             result = await analyze_component_usage()
 
