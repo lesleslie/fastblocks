@@ -166,7 +166,7 @@ class HTMYComponentRegistry:
         if self.cache is not None:
             cache_key = self.get_cache_key(component_path, "bytecode")
             result = await self.cache.get(cache_key)
-            return t.cast(Response, result)
+            return t.cast(bytes, result)
         return None
 
     async def _sync_component_file(

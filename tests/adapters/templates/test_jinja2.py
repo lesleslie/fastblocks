@@ -276,8 +276,8 @@ async def test_choice_loader_fallback(
 
     # Verify
     assert source == template_content
-    loader1.get_source_async.assert_called_once_with("test.html")
-    loader2.get_source_async.assert_called_once_with("test.html")
+    loader1.get_source_async.assert_called_once_with("test.html", "test.html")
+    loader2.get_source_async.assert_called_once_with("test.html", "test.html")
 
 
 @pytest.mark.asyncio

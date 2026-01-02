@@ -459,9 +459,17 @@ class TestFilterRegistration:
 
     def test_setup_fastblocks_template_environment_sync(self):
         """Test complete sync template environment setup."""
+        # Create a mock that doesn't have the delimiter attributes initially
         mock_env = MagicMock()
         mock_env.filters = {}
-        mock_env.globals = {}
+        mock_env.globals = MagicMock()  # Make globals a mock object so we can track update calls
+
+        # Remove the delimiter attributes so they can be set by the function
+        delattr(mock_env, 'variable_start_string')
+        delattr(mock_env, 'variable_end_string')
+        delattr(mock_env, 'block_start_string')
+        delattr(mock_env, 'block_end_string')
+        delattr(mock_env, '_fastblocks_delimiters_set')
 
         setup_fastblocks_template_environment(mock_env, async_mode=False)
 

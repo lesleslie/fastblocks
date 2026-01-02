@@ -1,4 +1,5 @@
 import typing as t
+from contextlib import suppress
 from platform import system
 
 # Migration: ACB -> Oneiric (COMPLETE)
@@ -26,8 +27,17 @@ from .middleware import MiddlewarePosition
 
 class FastBlocksSettings:
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
-        if AdapterBase not in cls.__bases__:
-            cls.__bases__ = (AdapterBase, *cls.__bases__)
+        # Skip modifying __bases__ if AdapterBase is already in the MRO
+        # or if it's the same as the current class (avoid self-reference)
+        if AdapterBase not in cls.__mro__ and AdapterBase is not cls:
+            # Only modify __bases__ if AdapterBase is not already a base
+            if AdapterBase not in cls.__bases__:
+                # Create new tuple of bases with AdapterBase included
+                new_bases = (AdapterBase,) + cls.__bases__
+                # Update the __bases__ attribute properly
+                with suppress(TypeError):
+                    # If direct assignment fails, just continue without modification
+                    cls.__bases__ = new_bases
         super().__init_subclass__(**kwargs)
 
 

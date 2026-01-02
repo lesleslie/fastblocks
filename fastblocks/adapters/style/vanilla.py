@@ -90,6 +90,8 @@ class VanillaStyle(StyleBase):
 
     def get_component_class(self, component: str) -> str:
         """Get semantic class names for components."""
+        if component is None:
+            return ""
         return self.COMPONENT_CLASSES.get(component, component)
 
     def get_css_variables(self) -> str:

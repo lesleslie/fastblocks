@@ -36,3 +36,7 @@ coverage.json
 /.envrc
 /.secrets.baseline
 /adapters.yaml
+/.oneiric_cache/
+/.pyscn/
+/.jbeval/
+/.complexipy_cache/

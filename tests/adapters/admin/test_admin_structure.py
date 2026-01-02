@@ -27,4 +27,6 @@ class TestAdminStructure:
         assert "class AdminSettings" in source_code
         assert "class Admin" in source_code
 
-        assert 'depends.set(Admin, "sqladmin")' in source_code
+        assert 'register_candidate' in source_code
+        assert 'domain="fastblocks"' in source_code
+        assert 'key="admin"' in source_code

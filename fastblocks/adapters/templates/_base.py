@@ -98,6 +98,11 @@ class TemplatesBase(AdapterBase):
     app_searchpaths: list[AsyncPath] | None = None
     admin_searchpaths: list[AsyncPath] | None = None
 
+    def __init__(self, **kwargs: t.Any) -> None:
+        # Initialize base attributes
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     def get_searchpath(self, adapter: t.Any, path: AsyncPath) -> list[AsyncPath]:
         style = getattr(self.config.app, "style", "vanilla")
         base_path = path / "base"

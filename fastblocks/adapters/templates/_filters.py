@@ -25,8 +25,10 @@ def img_tag(image_id: str, alt: str, **attributes: Any) -> str:
     # Fallback to basic img tag
     attr_parts = [f'src="{image_id}"', f'alt="{alt}"']
     for key, value in attributes.items():
-        if key in ("width", "height", "class", "id", "style"):
-            attr_parts.append(f'{key}="{value}"')
+        # Convert Python-style attribute names to HTML-style (e.g., class_ to class)
+        html_key = key.rstrip("_") if key.endswith("_") else key
+        if html_key in ("width", "height", "class", "id", "style"):
+            attr_parts.append(f'{html_key}="{value}"')
 
     return f"<img {' '.join(attr_parts)}>"
 

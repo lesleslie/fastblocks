@@ -674,7 +674,9 @@ class AdvancedHTMYComponentRegistry:
             }
 
             # Render component
-            if hasattr(component_instance, "async_htmy"):
+            if hasattr(
+                component_instance, "async_htmy"
+            ) and asyncio.iscoroutinefunction(component_instance.async_htmy):
                 rendered_content = await component_instance.async_htmy(enhanced_context)
             elif asyncio.iscoroutinefunction(component_instance.htmy):
                 rendered_content = await component_instance.htmy(enhanced_context)

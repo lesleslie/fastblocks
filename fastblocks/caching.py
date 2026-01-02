@@ -635,7 +635,13 @@ async def generate_cache_key(
 ) -> str | None:
     """Generate cache key using ACB's fast CRC32C hashing."""
     if config is None:
-        config = depends.resolve("fastblocks", "config")
+        try:
+            config = depends.resolve("fastblocks", "config")
+        except Exception:
+            # Provide a default config if resolution fails
+            from fastblocks.applications import FastBlocksSettings
+
+            config = FastBlocksSettings()
 
     if method not in cacheable_methods:
         return None
@@ -644,7 +650,9 @@ async def generate_cache_key(
     vary_hash = await _generate_vary_hash(headers, varying_headers)
     url_hash = await _generate_url_hash(url)
 
-    return f"{config.app.name}:cached:{method}.{url_hash}.{vary_hash}"
+    # Ensure config has an app attribute with a name
+    app_name = getattr(getattr(config, "app", None), "name", "fastblocks")
+    return f"{app_name}:cached:{method}.{url_hash}.{vary_hash}"
 
 
 async def _generate_vary_hash(headers: Headers, varying_headers: list[str]) -> str:

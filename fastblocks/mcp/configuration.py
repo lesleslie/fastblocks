@@ -89,8 +89,7 @@ class ConfigurationSchema(BaseModel):
         # v should already be dict[str, AdapterConfiguration] if not dict
         return v if isinstance(v, dict) else {}
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = {"arbitrary_types_allowed": True}
 
 
 @dataclass

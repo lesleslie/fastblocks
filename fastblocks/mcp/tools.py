@@ -414,6 +414,12 @@ async def validate_component(component_name: str) -> dict[str, Any]:
 
         metadata = await htmy_adapter.validate_component(component_name)
 
+        if metadata is None:
+            return {
+                "success": False,
+                "error": f"Component '{component_name}' not found",
+            }
+
         return {
             "success": metadata.status.value != "error",
             "component": component_name,

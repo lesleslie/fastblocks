@@ -62,7 +62,7 @@ class TestHTMYCommands:
         mock_htmy = AsyncMock()
         mock_htmy.scaffold_component = AsyncMock(return_value="/path/to/component.py")
 
-        with patch("acb.depends.depends.get", return_value=mock_htmy):
+        with patch("oneiric.core.resolution.Resolver.resolve", return_value=mock_htmy):
             result = runner.invoke(
                 cli_module, ["scaffold", "test_component", "--type", "dataclass"]
             )
@@ -83,7 +83,7 @@ class TestHTMYCommands:
             }
         )
 
-        with patch("acb.depends.depends.get", return_value=mock_htmy):
+        with patch("oneiric.core.resolution.Resolver.resolve", return_value=mock_htmy):
             result = runner.invoke(cli_module, ["list"])
             # Should show component info
             assert result.exit_code == 0
@@ -103,7 +103,7 @@ class TestHTMYCommands:
         )
         mock_htmy.validate_component = AsyncMock(return_value=mock_metadata)
 
-        with patch("acb.depends.depends.get", return_value=mock_htmy):
+        with patch("oneiric.core.resolution.Resolver.resolve", return_value=mock_htmy):
             result = runner.invoke(cli_module, ["validate", "test_component"])
             assert result.exit_code == 0
 
@@ -119,7 +119,7 @@ class TestHTMYCommands:
         mock_htmy.validate_component = AsyncMock(return_value=mock_metadata)
         mock_htmy.get_component_class = AsyncMock(return_value=MagicMock)
 
-        with patch("acb.depends.depends.get", return_value=mock_htmy):
+        with patch("oneiric.core.resolution.Resolver.resolve", return_value=mock_htmy):
             result = runner.invoke(cli_module, ["info", "test_component"])
             assert result.exit_code == 0
 
@@ -150,7 +150,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_scaffold_no_adapter(self, runner, cli_module, mock_console):
         """Test scaffold command when HTMY adapter not available."""
-        with patch("acb.depends.depends.get", return_value=None):
+        with patch("oneiric.core.resolution.Resolver.resolve", return_value=None):
             result = runner.invoke(cli_module, ["scaffold", "test_component"])
             # Should show error message about adapter not found
             assert result.exit_code == 0  # CLI handles gracefully
@@ -159,7 +159,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_list_no_adapter(self, runner, cli_module):
         """Test list command when HTMY adapter not available."""
-        with patch("acb.depends.depends.get", return_value=None):
+        with patch("oneiric.core.resolution.Resolver.resolve", return_value=None):
             result = runner.invoke(cli_module, ["list"])
             # Should handle missing adapter gracefully
             assert result.exit_code == 0
@@ -167,7 +167,7 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_validate_no_adapter(self, runner, cli_module):
         """Test validate command when HTMY adapter not available."""
-        with patch("acb.depends.depends.get", return_value=None):
+        with patch("oneiric.core.resolution.Resolver.resolve", return_value=None):
             result = runner.invoke(cli_module, ["validate", "test_component"])
             # Should handle missing adapter gracefully
             assert result.exit_code == 0

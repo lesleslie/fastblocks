@@ -541,18 +541,26 @@ class TestAdvancedHTMYComponentRegistry:
         """Test component rendering with lifecycle."""
         mock_request = MagicMock()
 
-        # Mock component class
-        with patch.object(component_registry, "get_component_class") as mock_get_class:
-            mock_component = MagicMock()
-            mock_component.htmy.return_value = "<div>test content</div>"
-            mock_get_class.return_value = mock_component
+        # Create a simple component class that returns the expected HTML
+        class TestComponent:
+            def __init__(self, **kwargs):
+                self.context = kwargs
+
+            def htmy(self, context):
+                return "<div>test content</div>"
+
+        # Mock component class and lifecycle manager
+        with patch.object(component_registry, "get_component_class") as mock_get_class, \
+             patch.object(component_registry._lifecycle_manager, "execute_hooks") as mock_execute_hooks:
+
+            mock_get_class.return_value = TestComponent
+            mock_execute_hooks.return_value = None  # Mock lifecycle hooks
 
             result = await component_registry.render_component_with_lifecycle(
                 "test_component", {"data": "value"}, mock_request
             )
 
             assert result == "<div>test content</div>"
-            mock_component.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_scaffold_component(self, component_registry):

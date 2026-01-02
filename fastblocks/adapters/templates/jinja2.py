@@ -160,7 +160,9 @@ class BaseTemplateLoader(AsyncBaseLoader):
         self,
         searchpath: AsyncPath | t.Sequence[AsyncPath] | None = None,
     ) -> None:
-        super().__init__(searchpath or [])
+        # Use current directory as default searchpath if none provided
+        searchpath = searchpath or [AsyncPath(".")]
+        super().__init__(searchpath)
         if self.storage is None:
             self.storage = _try_resolve_sync("storage")
         if self.storage is None:
@@ -527,7 +529,7 @@ class RedisLoader(BaseTemplateLoader):
         if not resp:
             raise TemplateNotFound(path.name)
 
-        async def uptodate() -> bool:
+        def uptodate() -> bool:
             return True
 
         return (resp.decode(), None, uptodate)

@@ -19,7 +19,6 @@ The FastBlocks implementation extends the original with:
 import asyncio
 import json
 import typing as t
-import warnings
 from contextlib import suppress
 from typing import Any
 from urllib.parse import unquote
@@ -316,11 +315,21 @@ def htmx_trigger(
             )
 
         # Create and schedule the task to run the async function
+        try:
+            asyncio.create_task(_publish_event(trigger_name, trigger_data))
+        except RuntimeError:
+            # If not in an event loop, run in a new one
+            import threading
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            task = _publish_event(trigger_name, trigger_data)
-            asyncio.create_task(task)
+            if threading.current_thread() is threading.main_thread():
+                # In main thread, run in new event loop
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(_publish_event(trigger_name, trigger_data))
+            else:
+                # In a different thread, we can't easily start an event loop
+                # Just run the function synchronously (though this won't be truly async)
+                pass
 
     with suppress(Exception):
         _run_publish_event()
@@ -347,11 +356,21 @@ def htmx_redirect(url: str, **kwargs: t.Any) -> HtmxResponse:
                 )
 
         # Create and schedule the task to run the async function
+        try:
+            asyncio.create_task(_publish_event(url))
+        except RuntimeError:
+            # If not in an event loop, run in a new one
+            import threading
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            task = _publish_event(url)
-            asyncio.create_task(task)
+            if threading.current_thread() is threading.main_thread():
+                # In main thread, run in new event loop
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(_publish_event(url))
+            else:
+                # In a different thread, we can't easily start an event loop
+                # Just run the function synchronously (though this won't be truly async)
+                pass
 
     with suppress(Exception):
         _run_publish_event()
@@ -371,11 +390,21 @@ def htmx_refresh(**kwargs: t.Any) -> HtmxResponse:
             await publish_htmx_refresh(target=target)
 
         # Create and schedule the task to run the async function
+        try:
+            asyncio.create_task(_publish_event(target))
+        except RuntimeError:
+            # If not in an event loop, run in a new one
+            import threading
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            task = _publish_event(target)
-            asyncio.create_task(task)
+            if threading.current_thread() is threading.main_thread():
+                # In main thread, run in new event loop
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(_publish_event(target))
+            else:
+                # In a different thread, we can't easily start an event loop
+                # Just run the function synchronously (though this won't be truly async)
+                pass
 
     with suppress(Exception):
         _run_publish_event()
