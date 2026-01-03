@@ -383,8 +383,9 @@ class MiddlewareStackManager:
 
     def _get_config_dependency(self) -> t.Any:
         """Get the config dependency using Oneiric."""
-        from oneiric.core.resolution import Resolver
         import asyncio
+
+        from oneiric.core.resolution import Resolver
 
         resolver = Resolver()
         try:
