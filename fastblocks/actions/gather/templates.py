@@ -5,20 +5,19 @@ from contextlib import suppress
 from importlib import import_module
 from inspect import isclass
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
-# Migration from ACB to Oneiric
-depends = Resolver()
 
-# ACB compatibility imports - these will be migrated in future phases
-try:
-    # MIGRATED: Removed ACB import - debug import debug
-    pass
-except ImportError:
-    # Fallback for Oneiric-only mode
-    def debug(msg: str) -> None:
-        """Debug function fallback."""
-        print(f"[DEBUG] {msg}")
+# Create debug function for Oneiric
+def debug(msg: str) -> None:
+    """Debug logging function."""
+    logger = get_logger("fastblocks.actions.gather.templates")
+    logger.debug(msg)
+
+
+# Create resolver instance
+depends = Resolver()
 
 
 from anyio import Path as AsyncPath
@@ -432,6 +431,34 @@ async def _gather_template_globals() -> list[dict[str, t.Any]]:
     return [globals_dict]
 
 
+def _get_filesystem_loaders(loaders: list[t.Any]) -> list[t.Any]:
+    """Get filesystem loaders from the list of loaders."""
+    return [loader for loader in loaders if "FileSystem" in str(type(loader))]
+
+
+def _get_non_filesystem_loaders(loaders: list[t.Any]) -> list[t.Any]:
+    """Get non-filesystem loaders from the list of loaders."""
+    return [loader for loader in loaders if "FileSystem" not in str(type(loader))]
+
+
+def _get_cache_loaders(loaders: list[t.Any]) -> list[t.Any]:
+    """Get cache loaders from the list of loaders."""
+    return [
+        loader
+        for loader in loaders
+        if any(x in str(type(loader)) for x in ("Redis", "Storage"))
+    ]
+
+
+def _get_non_cache_loaders(loaders: list[t.Any]) -> list[t.Any]:
+    """Get non-cache loaders from the list of loaders."""
+    return [
+        loader
+        for loader in loaders
+        if not any(x in str(type(loader)) for x in ("Redis", "Storage"))
+    ]
+
+
 async def create_choice_loader(
     loaders: list[t.Any],
     config: t.Any | None = None,
@@ -449,24 +476,12 @@ async def create_choice_loader(
     ordered_loaders = []
 
     if config and not getattr(config, "deployed", False):
-        filesystem_loaders = [
-            loader for loader in loaders if "FileSystem" in str(type(loader))
-        ]
-        other_loaders = [
-            loader for loader in loaders if "FileSystem" not in str(type(loader))
-        ]
+        filesystem_loaders = _get_filesystem_loaders(loaders)
+        other_loaders = _get_non_filesystem_loaders(loaders)
         ordered_loaders = filesystem_loaders + other_loaders
     else:
-        cache_loaders = [
-            loader
-            for loader in loaders
-            if any(x in str(type(loader)) for x in ("Redis", "Storage"))
-        ]
-        other_loaders = [
-            loader
-            for loader in loaders
-            if not any(x in str(type(loader)) for x in ("Redis", "Storage"))
-        ]
+        cache_loaders = _get_cache_loaders(loaders)
+        other_loaders = _get_non_cache_loaders(loaders)
         ordered_loaders = cache_loaders + other_loaders
 
     debug(f"Created ChoiceLoader with {len(ordered_loaders)} loaders")

@@ -23,26 +23,16 @@ from contextlib import suppress
 from typing import Any
 from urllib.parse import unquote
 
-# Migration: ACB -> Oneiric
-# Try to import Oneiric components first, fall back to ACB for compatibility
-try:
-    # Oneiric imports (new)
-    from oneiric.core.logging import get_logger
+# Oneiric imports
+from oneiric.core.logging import get_logger
 
-    # Create debug function for Oneiric (using logger)
-    def debug(msg):
-        logger = get_logger("fastblocks.htmx")
-        logger.debug(msg)
 
-    _using_oneiric = True
-except ImportError:
-    # Fallback to ACB imports (legacy)
-    # MIGRATED: Removed ACB import - debug import debug
-    # Fallback debug function if acb.debug is not available
-    import logging
+# Create debug function for Oneiric
+def debug(msg: str) -> None:
+    logger = get_logger("fastblocks.htmx")
+    logger.debug(msg)
 
-    debug = logging.debug
-    _using_oneiric = False
+
 from starlette.responses import HTMLResponse
 
 if t.TYPE_CHECKING:
@@ -427,7 +417,7 @@ def is_htmx(scope_or_request: dict[str, t.Any] | t.Any) -> bool:
     else:
         if isinstance(scope_or_request, dict):
             details = HtmxDetails(scope_or_request)
-            return getattr(details, "is_htmx", False)
+            return bool(getattr(details, "is_htmx", False))
         return False
 
 

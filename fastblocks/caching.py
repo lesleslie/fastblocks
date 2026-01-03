@@ -51,16 +51,16 @@ def get_adapter(adapter_name: str) -> t.Any:
 
     # If all else fails, return a simple mock adapter
     class MockAdapter:
-        def __init__(self):
+        def __init__(self) -> None:
             self.ttl = 3600  # default TTL
 
-        async def get(self, key):
+        async def get(self, key) -> t.Any:
             return None
 
-        async def set(self, key, value, **kwargs):
+        async def set(self, key, value, **kwargs) -> None:
             pass
 
-        async def delete(self, key):
+        async def delete(self, key) -> None:
             pass
 
     return MockAdapter()

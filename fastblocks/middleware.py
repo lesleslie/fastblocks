@@ -1,28 +1,23 @@
 import sys
 import typing as t
 from collections.abc import Mapping, Sequence
+from contextlib import suppress
 from contextvars import ContextVar
 from enum import IntEnum
 
-# Dual import strategy for Oneiric migration
-try:
-    # Oneiric imports (new)
-    from oneiric.core.logging import get_logger
-    from oneiric.core.resolution import Resolver
+# Oneiric imports
+from oneiric.core.logging import get_logger
+from oneiric.core.resolution import Resolver
 
-    # Create debug function for Oneiric (using logger)
-    def debug(msg):
-        logger = get_logger("fastblocks.middleware")
-        logger.debug(msg)
 
-    # Create depends equivalent for Oneiric
-    depends = Resolver()
-    _using_oneiric = True
-except ImportError:
-    # Fallback to ACB imports (legacy)
-    # MIGRATED: Removed ACB import - debug import debug
-    # MIGRATED: Removed ACB import - using Oneiric equivalent
-    _using_oneiric = False
+# Create debug function for Oneiric
+def debug(msg: str) -> None:
+    logger = get_logger("fastblocks.middleware")
+    logger.debug(msg)
+
+
+# Create depends equivalent for Oneiric
+depends = Resolver()
 
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
@@ -71,8 +66,7 @@ class HtmxMiddleware:
         """Process HTMX request and add HTMX details to scope."""
         htmx_details = HtmxDetails(scope)
         scope["htmx"] = htmx_details
-        if debug.enabled:
-            self._log_htmx_details(scope, htmx_details)
+        self._log_htmx_details(scope, htmx_details)
 
     def _log_htmx_details(self, scope: Scope, htmx_details: HtmxDetails) -> None:
         """Log HTMX details if debugging is enabled."""
@@ -174,7 +168,7 @@ class SecureHeadersMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
         try:
-            self.logger = depends.resolve("fastblocks", "logger")
+            self.logger = get_logger("fastblocks")
         except Exception:
             self.logger = None
 
@@ -387,15 +381,32 @@ class MiddlewareStackManager:
         self._custom_middleware: dict[MiddlewarePosition, Middleware] = {}
         self._initialized = False
 
+    def _get_config_dependency(self) -> t.Any:
+        """Get the config dependency using Oneiric."""
+        from oneiric.core.resolution import Resolver
+        import asyncio
+
+        resolver = Resolver()
+        try:
+            return asyncio.run(resolver.resolve("config"))
+        except Exception:
+            return None
+
+    def _get_logger_dependency(self) -> t.Any:
+        """Get the logger dependency using Oneiric."""
+        try:
+            from oneiric.core.logging import get_logger
+
+            return get_logger("fastblocks")
+        except Exception:
+            return None
+
     def _ensure_dependencies(self) -> None:
         if self.config is None or self.logger is None:
             if self.config is None:
-                self.config = depends.resolve("fastblocks", "config")
+                self.config = self._get_config_dependency()
             if self.logger is None:
-                try:
-                    self.logger = depends.resolve("fastblocks", "logger")
-                except Exception:
-                    self.logger = None
+                self.logger = self._get_logger_dependency()
 
     def _register_default_middleware(self) -> None:
         self._middleware_registry.update(

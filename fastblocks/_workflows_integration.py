@@ -36,10 +36,10 @@ from oneiric.core.resolution import Resolver
 
 # Custom Oneiric-compatible workflow system
 depends = Resolver()
-_using_oneiric = True
+
 
 # Workflow system availability
-acb_workflows_available = False  # Using Oneiric now
+oneiric_workflows_available = True
 
 
 # Custom Oneiric-compatible Workflow System
@@ -748,5 +748,5 @@ __all__ = [
     "execute_template_cleanup",
     "execute_performance_optimization",
     "register_fastblocks_workflows",
-    "acb_workflows_available",
+    "oneiric_workflows_available",
 ]

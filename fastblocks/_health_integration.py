@@ -11,17 +11,15 @@ import typing as t
 from contextlib import suppress
 from uuid import UUID
 
-from adapters.oneiric_helper import register_candidate
-
 # Oneiric imports for dependency injection
 from oneiric.core.resolution import Resolver
+from fastblocks.adapters.oneiric_helper import register_candidate
 
 # Custom Oneiric-compatible health system
 depends = Resolver()
-_using_oneiric = True
 
 # Health system availability
-acb_health_available = False  # Using Oneiric now
+oneiric_health_available = True
 
 
 # Custom Oneiric-compatible Health System
@@ -68,7 +66,7 @@ class HealthCheckResult:
 class HealthService:
     """Simple health service for Oneiric-compatible health monitoring."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.components: dict[str, t.Any] = {}
 
     async def register_component(self, component: t.Any) -> bool:

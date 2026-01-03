@@ -26,6 +26,7 @@ from typing import Annotated
 import nest_asyncio
 import typer
 import uvicorn
+import yaml
 from anyio import Path as AsyncPath
 from granian import Granian
 
@@ -1017,9 +1018,11 @@ def create(
 
     async def update_settings(settings: str, values: dict[str, t.Any]) -> None:
         settings_path = AsyncPath(app_path / "settings")
-        settings_dict = await load.yaml(settings_path / f"{settings}.yml")
+        content = (settings_path / f"{settings}.yml").read_text()
+        settings_dict = yaml.safe_load(content) or {}
         settings_dict.update(values)
-        await dump.yaml(settings_dict, settings_path / f"{settings}.yml")
+        output_content = yaml.safe_dump(settings_dict)
+        (settings_path / f"{settings}.yml").write_text(output_content)
 
     async def update_configs() -> None:
         await update_settings("debug", {"fastblocks": False})

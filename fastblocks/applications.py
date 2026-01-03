@@ -2,8 +2,7 @@ import typing as t
 from contextlib import suppress
 from platform import system
 
-# Migration: ACB -> Oneiric (COMPLETE)
-# Using pure Oneiric implementation
+# Oneiric imports
 from oneiric.core.resolution import Resolver
 
 # Oneiric adapter structure
@@ -11,8 +10,6 @@ AdapterBase = object
 
 # Oneiric resolver
 depends = Resolver()
-_using_oneiric = True
-_using_acb_fallback = False
 
 from starception import add_link_template, set_editor
 from starlette.applications import Starlette

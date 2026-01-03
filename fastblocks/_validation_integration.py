@@ -37,17 +37,16 @@ from contextlib import suppress
 from dataclasses import dataclass
 from enum import Enum
 
-from adapters.oneiric_helper import register_candidate
-
 # Oneiric imports for dependency injection
 from oneiric.core.resolution import Resolver
+from fastblocks.adapters.oneiric_helper import register_candidate
 
 # Custom Oneiric-compatible validation system
 depends = Resolver()
-_using_oneiric = True
+
 
 # Validation system availability
-acb_validation_available = False  # Using Oneiric now
+oneiric_validation_available = True
 
 
 # Custom Oneiric-compatible Validation System

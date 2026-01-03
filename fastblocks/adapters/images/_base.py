@@ -21,7 +21,7 @@ class ImagesBaseSettings(OneiricSettings):
     default_transformations: dict[str, Any] = {}
     lazy_loading: bool = True
 
-    def __init__(self, **data: dict) -> None:
+    def __init__(self, **data: dict[str, Any]) -> None:
         super().__init__(**data)
 
 

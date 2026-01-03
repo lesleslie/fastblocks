@@ -49,6 +49,28 @@ async def async_font_import() -> str:
     return ""
 
 
+def _build_img_attributes(
+    image_url: str, alt: str, attributes: dict[str, Any]
+) -> list[str]:
+    """Build image tag attributes."""
+    attr_parts = [f'src="{image_url}"', f'alt="{alt}"']
+    for key, value in attributes.items():
+        # Handle class_ as alias for class to avoid Python keyword conflict
+        attr_name = "class" if key == "class_" else key
+        if key in (
+            "width",
+            "height",
+            "class",
+            "class_",
+            "id",
+            "style",
+            "loading",
+            "decoding",
+        ):
+            attr_parts.append(f'{attr_name}="{value}"')
+    return attr_parts
+
+
 async def async_image_with_transformations(
     image_id: str,
     alt: str,
@@ -73,41 +95,11 @@ async def async_image_with_transformations(
         image_url = await images.get_image_url(image_id, **transform_params)
 
         # Build img tag with transformed URL
-        attr_parts = [f'src="{image_url}"', f'alt="{alt}"']
-        for key, value in attributes.items():
-            # Handle class_ as alias for class to avoid Python keyword conflict
-            attr_name = "class" if key == "class_" else key
-            if key in (
-                "width",
-                "height",
-                "class",
-                "class_",
-                "id",
-                "style",
-                "loading",
-                "decoding",
-            ):
-                attr_parts.append(f'{attr_name}="{value}"')
-
+        attr_parts = _build_img_attributes(image_url, alt, attributes)
         return f"<img {' '.join(attr_parts)}>"
 
     # Fallback to basic img tag
-    attr_parts = [f'src="{image_id}"', f'alt="{alt}"']
-    for key, value in attributes.items():
-        # Handle class_ as alias for class to avoid Python keyword conflict
-        attr_name = "class" if key == "class_" else key
-        if key in (
-            "width",
-            "height",
-            "class",
-            "class_",
-            "id",
-            "style",
-            "loading",
-            "decoding",
-        ):
-            attr_parts.append(f'{attr_name}="{value}"')
-
+    attr_parts = _build_img_attributes(image_id, alt, attributes)
     return f"<img {' '.join(attr_parts)}>"
 
 

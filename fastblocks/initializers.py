@@ -7,80 +7,43 @@ of a FastBlocks application, separating concerns from the main application class
 import logging
 import typing as t
 
-# Migration: ACB -> Oneiric
-# Try to import Oneiric components first, fall back to ACB for compatibility
-try:
-    # Oneiric imports (new)
-    from oneiric.core.config import OneiricSettings
-    from oneiric.core.logging import get_logger as oneiric_get_logger
-    from oneiric.core.resolution import Resolver, register_pkg
+# Oneiric imports
+from oneiric.core.config import OneiricSettings
+from oneiric.core.logging import get_logger as oneiric_get_logger
+from oneiric.core.resolution import Resolver, register_pkg
 
-    # Create resolver instance
-    _resolver = Resolver()
+# Create resolver instance
+_resolver = Resolver()
 
-    async def _get_dependency(name: str) -> t.Any:
-        """Get dependency using Oneiric resolver."""
-        return await _resolver.resolve(name)
 
-    def _get_dependency_sync(name: str) -> t.Any:
-        """Get dependency synchronously using Oneiric resolver."""
-        import asyncio
+async def _get_dependency(name: str) -> t.Any:
+    """Get dependency using Oneiric resolver."""
+    return await _resolver.resolve(name)
 
-        return asyncio.run(_get_dependency(name))
 
-    # Oneiric adapter resolution
-    def get_installed_adapter(adapter_name: str) -> str | None:
-        """Oneiric adapter resolution."""
-        try:
-            # Try to get adapter metadata
-            adapter_metadata = _resolver.registry.get(adapter_name)
-            if adapter_metadata:
-                return adapter_name
-            return None
-        except Exception:
-            return None
+def _get_dependency_sync(name: str) -> t.Any:
+    """Get dependency synchronously using Oneiric resolver."""
+    import asyncio
 
-    # Oneiric config and adapter base
-    Config = OneiricSettings
-    AdapterBase = object  # Oneiric uses different adapter structure
+    return asyncio.run(_get_dependency(name))
 
-    # Flag to indicate we're using Oneiric
-    _using_oneiric = True
 
-except ImportError:
-    # Fallback to ACB imports (legacy)
-    # MIGRATED: Removed ACB import - import register_pkg
-    # ACB >= 0.19 removed this helper - no longer needed
-
-    def get_installed_adapter(adapter_name: str) -> str | None:
-        """Compatibility shim that resolves an installed adapter name."""
-        for adapter in get_installed_adapters():
-            meta = getattr(adapter, "metadata", None)
-            provider = getattr(meta, "provider", None)
-            if adapter_name in (adapter.category, adapter.name, provider):
-                provider_str = str(provider) if provider is not None else None
-                adapter_name_str = (
-                    str(adapter.name) if hasattr(adapter, "name") else None
-                )
-                return provider_str or adapter_name_str
-        adapter = get_adapter(adapter_name)
-        if adapter:
-            meta = getattr(adapter, "metadata", None)
-            provider = getattr(meta, "provider", None)
-            provider_str = str(provider) if provider is not None else None
-            adapter_name_str = str(adapter.name) if hasattr(adapter, "name") else None
-            return provider_str or adapter_name_str
+# Oneiric adapter resolution
+def get_installed_adapter(adapter_name: str) -> str | None:
+    """Oneiric adapter resolution."""
+    try:
+        # Try to get adapter metadata
+        adapter_metadata = _resolver.registry.get(adapter_name)
+        if adapter_metadata:
+            return adapter_name
+        return None
+    except Exception:
         return None
 
-    # MIGRATED: Removed ACB import - using Oneiric equivalent
-    # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-    def _get_dependency_sync(name: str) -> t.Any:
-        """Get dependency synchronously using ACB depends."""
-        return depends.get_sync(name)
-
-    # Flag to indicate we're using ACB
-    _using_oneiric = False
+# Oneiric config and adapter base
+Config = OneiricSettings
+AdapterBase = object  # Oneiric uses different adapter structure
 
 from starception import install_error_handler
 from starlette.applications import Starlette
@@ -107,30 +70,21 @@ class ApplicationInitializer:
         self._register_event_handlers()
 
     def _load_acb_modules(self) -> None:
-        try:
-            if _using_oneiric:
-                # Oneiric: Get logger using Oneiric method
-                logger = oneiric_get_logger("fastblocks")
-                logger_class: type[t.Any] | None = (
-                    logger.__class__ if logger is not None else None
-                )
-                # Oneiric doesn't have InterceptHandler, use None
-                interceptor_class: type[t.Any] | None = None
-            else:
-                # ACB: Get logger using ACB method
-                logger = depends.get_sync("logger")
-                logger_class: type[t.Any] | None = (
-                    logger.__class__ if logger is not None else None
-                )
-                # MIGRATED: Removed ACB import - logger import InterceptHandler
+        # Initialize variables to default values
+        logger_class: type[t.Any] | None = None
+        interceptor_class: type[t.Any] | None = None
 
-                interceptor_class: type[t.Any] | None = InterceptHandler
+        try:
+            # Oneiric: Get logger using Oneiric method
+            logger = oneiric_get_logger("fastblocks")
+            logger_class = logger.__class__ if logger is not None else None
+            # Oneiric doesn't have InterceptHandler, use None
+            interceptor_class = None
         except Exception:
             logger_class = None
             interceptor_class = None
 
-        # Migration: Use appropriate dependency resolution based on runtime
-        depends_resolver = depends if not _using_oneiric else None
+        depends_resolver = None
 
         self._acb_modules = (
             register_pkg,
@@ -146,25 +100,18 @@ class ApplicationInitializer:
         self.config = self.kwargs.get("config")
         if self.config is None:
             try:
-                if _using_oneiric:
-                    self.config = _get_dependency_sync("config")
-                else:
-                    self.config = depends.get_sync("config")
+                self.config = _get_dependency_sync("config")
             except Exception:
                 self.config = None
 
         self.logger = self.kwargs.get("logger")
         if self.logger is None:
             try:
-                if _using_oneiric:
-                    self.logger = oneiric_get_logger("fastblocks")
-                else:
-                    self.logger = depends.get_sync("logger")
+                self.logger = oneiric_get_logger("fastblocks")
             except Exception:
                 self.logger = None
 
-        # Migration: Use appropriate dependency resolver
-        self.depends = depends if not _using_oneiric else None
+        self.depends = None
 
     def _configure_error_handling(self) -> None:
         if not getattr(self.config, "deployed", False) or not getattr(
@@ -211,10 +158,7 @@ class ApplicationInitializer:
 
     def _setup_models(self) -> None:
         try:
-            if _using_oneiric:
-                models = _get_dependency_sync("models")
-            else:
-                models = self.depends.get_sync("models")  # type: ignore[union-attr]
+            models = _get_dependency_sync("models")
         except Exception:
             models = None
         object.__setattr__(self.app, "models", models)
@@ -287,10 +231,10 @@ class ApplicationInitializer:
                 )
 
         except ImportError:
-            # ACB integrations not available - graceful degradation
+            # Integration modules not available - graceful degradation
             if self.logger:
                 self.logger.debug(
-                    "ACB integrations not available - running without enhanced features"
+                    "Integration modules not available - running without enhanced features"
                 )
         except Exception as e:
             # Log error but don't fail application startup

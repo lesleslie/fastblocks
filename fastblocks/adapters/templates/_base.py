@@ -9,13 +9,13 @@ from starlette.responses import Response
 
 
 # Custom implementations for ACB compatibility
-def get_adapters():
+def get_adapters() -> list[t.Any]:
     """Custom implementation for Oneiric compatibility."""
     # This will be implemented using Oneiric's adapter system
     return []
 
 
-def root_path():
+def root_path() -> str:
     """Custom implementation for Oneiric compatibility."""
     # This will be implemented using Oneiric's path system
     return "/"

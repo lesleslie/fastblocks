@@ -13,17 +13,15 @@ from contextlib import suppress
 from dataclasses import dataclass
 from uuid import UUID
 
-from adapters.oneiric_helper import register_candidate
-
 # Oneiric imports for dependency injection
 from oneiric.core.resolution import Resolver
+from fastblocks.adapters.oneiric_helper import register_candidate
 
 # Custom Oneiric-compatible events system
 depends = Resolver()
-_using_oneiric = True
 
 # Event system availability
-acb_events_available = False  # Using Oneiric now
+oneiric_events_available = True
 
 
 # Custom Oneiric-compatible Event System
@@ -44,7 +42,7 @@ class EventHandlerResult:
         success: bool,
         message: str,
         error: str | None = None,
-        data: dict | None = None,
+        data: dict[str, t.Any] | None = None,
     ):
         self.success = success
         self.message = message
@@ -64,7 +62,11 @@ class Event:
     """Event object."""
 
     def __init__(
-        self, event_type: str, source: str, payload: dict, priority: EventPriority
+        self,
+        event_type: str,
+        source: str,
+        payload: dict[str, t.Any],
+        priority: EventPriority,
     ):
         self.event_type = event_type
         self.source = source
@@ -75,7 +77,7 @@ class Event:
 class EventPublisher:
     """Event publisher for Oneiric-compatible event system."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.subscriptions: dict[str, list[EventSubscription]] = {}
 
     async def publish(self, event: Event) -> bool:
@@ -103,7 +105,7 @@ class EventPublisher:
 
 
 def create_event(
-    event_type: str, source: str, payload: dict, priority: EventPriority
+    event_type: str, source: str, payload: dict[str, t.Any], priority: EventPriority
 ) -> Event:
     """Create an event."""
     return Event(event_type, source, payload, priority)
