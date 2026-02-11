@@ -23,6 +23,9 @@ from mcp_common.websocket import (
 # Import EventTypes from protocol module
 from mcp_common.websocket.protocol import EventTypes
 
+# Import authentication
+from fastblocks.websocket.auth import get_authenticator
+
 logger = logging.getLogger(__name__)
 
 
@@ -52,6 +55,7 @@ class FastblocksWebSocketServer(WebSocketServer):
         port: int = 8684,
         max_connections: int = 100,
         message_rate_limit: int = 60,
+        require_auth: bool = False,
     ):
         """Initialize Fastblocks WebSocket server.
 
@@ -60,12 +64,17 @@ class FastblocksWebSocketServer(WebSocketServer):
             port: Server port number (default: 8684)
             max_connections: Maximum concurrent connections (default: 100)
             message_rate_limit: Messages per second per connection (default: 60)
+            require_auth: Require JWT authentication for connections
         """
+        authenticator = get_authenticator()
+
         super().__init__(
             host=host,
             port=port,
             max_connections=max_connections,
             message_rate_limit=message_rate_limit,
+            authenticator=authenticator,
+            require_auth=require_auth,
         )
 
         logger.info(f"FastblocksWebSocketServer initialized: {host}:{port}")
@@ -93,7 +102,10 @@ class FastblocksWebSocketServer(WebSocketServer):
             websocket: WebSocket connection object
             connection_id: Unique connection identifier
         """
-        logger.info(f"Client connected: {connection_id}")
+        user = getattr(websocket, "user", None)
+        user_id = user.get("user_id") if user else "anonymous"
+
+        logger.info(f"Client connected: {connection_id} (user: {user_id})")
 
         # Send welcome message
         welcome = WebSocketProtocol.create_event(
@@ -102,6 +114,7 @@ class FastblocksWebSocketServer(WebSocketServer):
                 "connection_id": connection_id,
                 "server": "fastblocks",
                 "message": "Connected to Fastblocks UI update stream",
+                "authenticated": user is not None,
             },
         )
         await websocket.send(WebSocketProtocol.encode(welcome))
@@ -133,9 +146,28 @@ class FastblocksWebSocketServer(WebSocketServer):
     async def _handle_request(
         self, websocket: Any, message: WebSocketMessage
     ) -> None:
-        """Handle request message (expects response)."""
+        """Handle request message (expects response).
+
+        Args:
+            websocket: WebSocket connection object
+            message: Request message
+        """
+        # Get authenticated user from connection
+        user = getattr(websocket, "user", None)
+
         if message.event == "subscribe":
             channel = message.data.get("channel")
+
+            # Check authorization for this channel
+            if user and not self._can_subscribe_to_channel(user, channel):
+                error = WebSocketProtocol.create_error(
+                    error_code="FORBIDDEN",
+                    error_message=f"Not authorized to subscribe to {channel}",
+                    correlation_id=message.correlation_id,
+                )
+                await websocket.send(WebSocketProtocol.encode(error))
+                return
+
             if channel:
                 connection_id = getattr(websocket, "id", str(uuid.uuid4()))
                 await self.join_room(channel, connection_id)
@@ -181,8 +213,42 @@ class FastblocksWebSocketServer(WebSocketServer):
             await websocket.send(WebSocketProtocol.encode(error))
 
     async def _handle_event(self, websocket: Any, message: WebSocketMessage) -> None:
-        """Handle event message (no response expected)."""
+        """Handle event message (no response expected).
+
+        Args:
+            websocket: WebSocket connection object
+            message: Event message
+        """
         logger.debug(f"Received client event: {message.event}")
+
+    def _can_subscribe_to_channel(self, user: dict[str, Any], channel: str) -> bool:
+        """Check if user can subscribe to channel.
+
+        Args:
+            user: User payload from JWT
+            channel: Channel name
+
+        Returns:
+            True if authorized, False otherwise
+        """
+        permissions = user.get("permissions", [])
+
+        # Admin can subscribe to any channel
+        if "fastblocks:admin" in permissions:
+            return True
+
+        # Check channel-specific permissions
+        if channel.startswith("ui:"):
+            return "fastblocks:read" in permissions
+
+        if channel.startswith("component:"):
+            return "fastblocks:read" in permissions
+
+        if channel.startswith("state"):
+            return "fastblocks:read" in permissions
+
+        # Default: deny
+        return False
 
     async def _get_component_status(self, component_id: str) -> dict[str, Any]:
         """Get component status.
@@ -279,6 +345,10 @@ class FastblocksWebSocketServer(WebSocketServer):
         await self.broadcast_to_room("state", event)
 
     def _get_timestamp(self) -> str:
-        """Get current ISO timestamp."""
+        """Get current ISO timestamp.
+
+        Returns:
+            ISO 8601 formatted timestamp
+        """
         from datetime import datetime, UTC
         return datetime.now(UTC).isoformat()
