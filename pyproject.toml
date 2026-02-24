@@ -63,14 +63,13 @@ dependencies = [
 ]
 
 [project.license]
-text = "BSD-3-Clause"
+text = "BSD-3-CLAUSE"
 
 [dependency-groups]
 dev = [
     "bandit>=1.9.2",
     "crackerjack>=0.44.34",
     "detect-secrets>=1.5.0",
-    "excalidraw-mcp>=0.34.0",
     "penpot-mcp>=0.1.2",
     "pytest>=9.0.1",
     "pytest-asyncio>=1.3.0",
@@ -337,7 +336,10 @@ index-url = "https://pypi.org/simple/"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"
 prerelease = "allow"
-override-dependencies = ["pyscn<1.5.1"]
+override-dependencies = [
+    "pyscn<1.5.1",
+    "onnxruntime>=1.23.0,<1.24.0",
+]
 
 [tool.vulture]
 min_confidence = 86
