@@ -37,6 +37,7 @@ import sys
 import typing as t
 from ast import literal_eval
 from contextlib import suppress
+from functools import lru_cache
 from html.parser import HTMLParser
 from importlib import import_module
 from importlib.util import find_spec
@@ -290,6 +291,32 @@ class LoaderProtocol(t.Protocol):
 
 
 class FileSystemLoader(BaseTemplateLoader):
+    @staticmethod
+    @lru_cache(maxsize=1000)
+    def _read_through(path: str, mtime: int) -> bytes:
+        """Read-through cache for template bytes, keyed by (path, mtime).
+
+        Previously every read also issued a write back to remote storage,
+        causing write amplification on hot templates. The cache hit path
+        performs only the (cached) bytes return; no I/O.
+        """
+        return Path(path).read_bytes()
+
+    @classmethod
+    def invalidate(cls, path: str | AsyncPath) -> None:
+        """Drop the cached read for a single path.
+
+        Call after any write that mutates the on-disk content (e.g. sync
+        from remote storage, admin write, or external editor save) so
+        the next read picks up the new bytes.
+        """
+        cls._read_through.cache_clear()  # path-agnostic; full clear is safe
+
+    @classmethod
+    def invalidate_all(cls) -> None:
+        """Drop all cached template reads."""
+        cls._read_through.cache_clear()
+
     async def _check_storage_exists(self, storage_path: AsyncPath) -> bool:
         if self.storage is not None:
             return t.cast(bool, await self.storage.templates.exists(storage_path))
@@ -340,10 +367,14 @@ class FileSystemLoader(BaseTemplateLoader):
         if local_mtime < storage_mtime and local_size != storage_size:
             resp = await self.storage.templates.open(storage_path)
             await path.write_bytes(resp)
+            # Local content changed — drop the cached read for this path.
+            FileSystemLoader.invalidate(path)
         else:
             resp = await path.read_bytes()
             if local_size != storage_size:
                 await self.storage.templates.write(storage_path, resp)
+                # Remote content changed — drop the cached read for this path.
+                FileSystemLoader.invalidate(path)
         return resp, local_mtime
 
     async def _read_and_store_template(
@@ -352,18 +383,26 @@ class FileSystemLoader(BaseTemplateLoader):
         storage_path: AsyncPath,
     ) -> bytes:
         try:
-            resp = await path.read_bytes()
-            if self.storage is not None:
-                try:
-                    import asyncio
-
-                    await asyncio.wait_for(
-                        self.storage.templates.write(storage_path, resp), timeout=5.0
-                    )
-                except (TimeoutError, Exception) as e:
-                    debug(
-                        f"Storage write failed for {storage_path}: {e}, continuing with local file"
-                    )
+            # Best-effort mtime for cache key; fall back to 0 if stat fails.
+            try:
+                local_stat = await path.stat()
+                mtime = int(local_stat.st_mtime)
+            except FileNotFoundError:
+                mtime = 0
+            # Read-through cache: hit path returns synchronously, no I/O.
+            # Miss path reads once, caches, and returns. The previous
+            # write-back-to-remote-storage on every read was removed to
+            # eliminate write amplification; writes now happen only via
+            # explicit sync paths, each of which calls invalidate().
+            try:
+                resp = FileSystemLoader._read_through(str(path), mtime)
+            except FileNotFoundError:
+                # Cache miss on a path that vanished — surface TemplateNotFound.
+                if mtime == 0:
+                    raise TemplateNotFound(path.name) from None
+                # mtime was non-zero but the file is gone: re-raise.
+                raise TemplateNotFound(path.name) from None
+            # No unconditional write to remote storage on every read.
             return resp
         except FileNotFoundError:
             raise TemplateNotFound(path.name)
@@ -390,8 +429,15 @@ class FileSystemLoader(BaseTemplateLoader):
 
         if storage_exists and fs_exists and (not self.config.deployed):
             resp, local_mtime = await self._sync_template_file(path, storage_path)
+            # The sync path may have mutated the file; drop the cache entry.
+            FileSystemLoader.invalidate(path)
         else:
             resp = await self._read_and_store_template(path, storage_path)
+            if not local_mtime:
+                try:
+                    local_mtime = int((await path.stat()).st_mtime)
+                except FileNotFoundError:
+                    local_mtime = 0
 
         await self._cache_template(storage_path, resp)
 
@@ -678,6 +724,53 @@ class ChoiceLoader(AsyncBaseLoader):
         return sorted(found)
 
 
+@lru_cache(maxsize=16)
+def _build_cached_loader(
+    deployed: bool,
+    production: bool,
+    template_set_id: str,
+    searchpaths: tuple[AsyncPath, ...],
+    is_admin_set: bool,
+    admin_spec: tuple[str, str, str] | None,
+) -> ChoiceLoader:
+    """Build and cache a ChoiceLoader for a given (config, template_set) key.
+
+    Previously this happened on every get_loader() call, re-instantiating
+    Redis/Storage/FileSystem loaders and re-running PackageLoader's import.
+    The cache key must be a stable representation of all inputs that affect
+    loader composition. Call reload_loader() to force a rebuild (e.g. on
+    hot-reload or config mutation).
+    """
+    searchpath_list: list[AsyncPath] = list(searchpaths)
+    loaders: list[AsyncBaseLoader] = [
+        RedisLoader(searchpath_list),
+        StorageLoader(searchpath_list),
+    ]
+    file_loaders: list[AsyncBaseLoader | LoaderProtocol] = [
+        FileSystemLoader(searchpath_list),
+    ]
+    jinja_loaders: list[AsyncBaseLoader | LoaderProtocol] = loaders + file_loaders
+    if not deployed and not production:
+        jinja_loaders = file_loaders + loaders
+    if is_admin_set and admin_spec is not None:
+        pkg_name, pkg_path, adapter = admin_spec
+        jinja_loaders.append(PackageLoader(pkg_name, pkg_path, adapter))
+    debug(jinja_loaders)
+    return ChoiceLoader(jinja_loaders)
+
+
+def reload_loader() -> None:
+    """Clear the cached loader.
+
+    Call after configuration changes, hot-reload, or any event that should
+    force a fresh ChoiceLoader build on the next get_loader() call.
+    """
+    _build_cached_loader.cache_clear()
+    # Also drop any cached template reads so the next read reflects the
+    # new loader composition immediately.
+    FileSystemLoader.invalidate_all()
+
+
 class TemplatesSettings(TemplatesBaseSettings):
     loader: str | None = None
     extensions: list[str] = []
@@ -762,22 +855,31 @@ class Templates(TemplatesBase):
         searchpaths: list[AsyncPath] = []
         for path in template_paths:
             searchpaths.extend([path, path / "blocks"])
-        loaders: list[AsyncBaseLoader] = [
-            RedisLoader(searchpaths),
-            StorageLoader(searchpaths),
-        ]
-        file_loaders: list[AsyncBaseLoader | LoaderProtocol] = [
-            FileSystemLoader(searchpaths),
-        ]
-        jinja_loaders: list[AsyncBaseLoader | LoaderProtocol] = loaders + file_loaders
-        if not self.config.deployed and (not self.config.debug.production):
-            jinja_loaders = file_loaders + loaders
-        if self.enabled_admin and template_paths == self.admin_searchpaths:
-            jinja_loaders.append(
-                PackageLoader(self.enabled_admin.name, "templates", "admin"),
+
+        # Compute cache key inputs from instance state. Changing any of these
+        # triggers a fresh loader build (via reload_loader()).
+        deployed = bool(self.config.deployed)
+        production = bool(self.config.debug.production)
+        template_set_id = ",".join(str(p) for p in template_paths)
+        is_admin_set = bool(
+            self.enabled_admin and template_paths == self.admin_searchpaths
+        )
+        admin_spec: tuple[str, str, str] | None = None
+        if is_admin_set and self.enabled_admin is not None:
+            admin_spec = (
+                getattr(self.enabled_admin, "name", "admin"),
+                "templates",
+                "admin",
             )
-        debug(jinja_loaders)
-        return ChoiceLoader(jinja_loaders)
+
+        return _build_cached_loader(
+            deployed,
+            production,
+            template_set_id,
+            tuple(searchpaths),
+            is_admin_set,
+            admin_spec,
+        )
 
     async def init_envs(
         self,

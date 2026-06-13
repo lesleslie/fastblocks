@@ -1,0 +1,44 @@
+# Prometheus Configuration for Mahavishnu
+# Scrapes metrics from OTel collector and exposes them for querying
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'mahavishnu-cluster'
+    environment: 'production'
+
+# Alerting configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - alertmanager:9093
+
+# Rule files
+# rule_files:
+#   - 'alerts/*.yml'
+
+# Scrape configurations
+scrape_configs:
+  # OTel Collector metrics
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8888']
+        labels:
+          service: 'otel-collector'
+
+  # Mahavishnu application metrics (via OTel)
+  - job_name: 'mahavishnu'
+    static_configs:
+      - targets: ['otel-collector:8889']
+        labels:
+          service: 'mahavishnu'
+          application: 'orchestrator'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'

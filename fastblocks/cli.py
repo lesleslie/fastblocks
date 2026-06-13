@@ -727,6 +727,79 @@ def format_template(
     asyncio.run(format_file())
 
 
+_GRAMMARS_DIR = Path(__file__).parent / "cli" / "grammars"
+_GRAMMAR_FILES = {"vim": "vim.vim", "emacs": "emacs.el"}
+
+
+def _generate_vscode_config(output_path: Path) -> None:
+    """Write VS Code extension, grammar, and language-server config."""
+    from fastblocks.adapters.templates._language_server import (
+        generate_textmate_grammar,
+        generate_vscode_extension,
+    )
+
+    (output_path / "package.json").write_text(
+        json.dumps(generate_vscode_extension(), indent=2)
+    )
+    syntaxes_dir = output_path / "syntaxes"
+    syntaxes_dir.mkdir(exist_ok=True)
+    (syntaxes_dir / "fastblocks.tmLanguage.json").write_text(
+        json.dumps(generate_textmate_grammar(), indent=2)
+    )
+    lang_config = {
+        "comments": {"blockComment": ["[#", "#]"]},
+        "brackets": [["[[", "]]"], ["[%", "%]"], ["[#", "#]"]],
+        "autoClosingPairs": [
+            {"open": "[[", "close": "]]"},
+            {"open": "[%", "close": "%]"},
+            {"open": "[#", "close": "#]"},
+            {"open": '"', "close": '"'},
+            {"open": "'", "close": "'"},
+        ],
+        "surroundingPairs": [
+            ["[[", "]]"],
+            ["[%", "%]"],
+            ["[#", "#]"],
+            ['"', '"'],
+            ["'", "'"],
+        ],
+    }
+    (output_path / "language-configuration.json").write_text(
+        json.dumps(lang_config, indent=2)
+    )
+    settings = {
+        "fastblocks.languageServer.enabled": True,
+        "fastblocks.languageServer.port": 7777,
+        "fastblocks.completion.enabled": True,
+        "fastblocks.diagnostics.enabled": True,
+        "files.associations": {
+            "*.fb.html": "fastblocks",
+            "*.fastblocks": "fastblocks",
+        },
+    }
+    (output_path / "settings.json").write_text(json.dumps(settings, indent=2))
+    console.print(
+        f"[green]✓ VS Code configuration generated in {output_path}[/green]"
+    )
+    console.print("  Files created:")
+    console.print("    - package.json (extension manifest)")
+    console.print("    - language-configuration.json")
+    console.print("    - syntaxes/fastblocks.tmLanguage.json")
+    console.print("    - settings.json")
+
+
+def _write_static_grammar(ide: str, output_path: Path) -> None:
+    """Write a single-file grammar by loading the packaged resource."""
+    filename = _GRAMMAR_FILES[ide]
+    grammar_text = (_GRAMMARS_DIR / filename).read_text(encoding="utf-8")
+    output_name = "fastblocks.vim" if ide == "vim" else "fastblocks-mode.el"
+    (output_path / output_name).write_text(grammar_text)
+    console.print(
+        f"[green]✓ {ide.capitalize()} file generated: "
+        f"{output_path}/{output_name}[/green]"
+    )
+
+
 @cli.command()
 def generate_ide_config(
     output_dir: Annotated[
@@ -738,166 +811,15 @@ def generate_ide_config(
     ] = "vscode",
 ) -> None:
     """Generate IDE configuration files for FastBlocks syntax support."""
-    import asyncio
-
-    async def generate_config() -> None:
-        try:
-            from pathlib import Path
-
-            output_path = Path(output_dir)
-            output_path.mkdir(exist_ok=True)
-
-            if ide == "vscode":
-                # Generate VS Code extension configuration
-                from fastblocks.adapters.templates._language_server import (
-                    generate_textmate_grammar,
-                    generate_vscode_extension,
-                )
-
-                # Package.json for extension
-                package_json = generate_vscode_extension()
-                (output_path / "package.json").write_text(
-                    json.dumps(package_json, indent=2)
-                )
-
-                # TextMate grammar
-                grammar = generate_textmate_grammar()
-                syntaxes_dir = output_path / "syntaxes"
-                syntaxes_dir.mkdir(exist_ok=True)
-                (syntaxes_dir / "fastblocks.tmLanguage.json").write_text(
-                    json.dumps(grammar, indent=2)
-                )
-
-                # Language configuration
-                lang_config = {
-                    "comments": {"blockComment": ["[#", "#]"]},
-                    "brackets": [["[[", "]]"], ["[%", "%]"], ["[#", "#]"]],
-                    "autoClosingPairs": [
-                        {"open": "[[", "close": "]]"},
-                        {"open": "[%", "close": "%]"},
-                        {"open": "[#", "close": "#]"},
-                        {"open": '"', "close": '"'},
-                        {"open": "'", "close": "'"},
-                    ],
-                    "surroundingPairs": [
-                        ["[[", "]]"],
-                        ["[%", "%]"],
-                        ["[#", "#]"],
-                        ['"', '"'],
-                        ["'", "'"],
-                    ],
-                }
-                (output_path / "language-configuration.json").write_text(
-                    json.dumps(lang_config, indent=2)
-                )
-
-                # Settings for FastBlocks language server
-                settings = {
-                    "fastblocks.languageServer.enabled": True,
-                    "fastblocks.languageServer.port": 7777,
-                    "fastblocks.completion.enabled": True,
-                    "fastblocks.diagnostics.enabled": True,
-                    "files.associations": {
-                        "*.fb.html": "fastblocks",
-                        "*.fastblocks": "fastblocks",
-                    },
-                }
-                (output_path / "settings.json").write_text(
-                    json.dumps(settings, indent=2)
-                )
-
-                console.print(
-                    f"[green]✓ VS Code configuration generated in {output_path}[/green]"
-                )
-                console.print("  Files created:")
-                console.print("    - package.json (extension manifest)")
-                console.print("    - language-configuration.json")
-                console.print("    - syntaxes/fastblocks.tmLanguage.json")
-                console.print("    - settings.json")
-
-            elif ide == "vim":
-                # Generate Vim configuration
-                vim_syntax = """
-" Vim syntax file for FastBlocks templates
-" Language: FastBlocks
-" Maintainer: FastBlocks Team
-
-if exists("b:current_syntax")
-  finish
-endif
-
-" FastBlocks delimiters
-syn region fastblocksVariable start="\\[\\[" end="\\]\\]" contains=fastblocksFilter,fastblocksString
-syn region fastblocksBlock start="\\[%" end="%\\]" contains=fastblocksKeyword,fastblocksString
-syn region fastblocksComment start="\\[#" end="#\\]"
-
-" Keywords
-syn keyword fastblocksKeyword if else elif endif for endfor block endblock extends include set macro endmacro
-
-" Filters
-syn match fastblocksFilter "|\\s*\\w\\+" contained
-
-" Strings
-syn region fastblocksString start='"' end='"' contained
-syn region fastblocksString start="'" end="'" contained
-
-" Highlighting
-hi def link fastblocksVariable Special
-hi def link fastblocksBlock Keyword
-hi def link fastblocksComment Comment
-hi def link fastblocksKeyword Statement
-hi def link fastblocksFilter Function
-hi def link fastblocksString String
-
-let b:current_syntax = "fastblocks"
-"""
-                (output_path / "fastblocks.vim").write_text(vim_syntax)
-                console.print(
-                    f"[green]✓ Vim syntax file generated: {output_path}/fastblocks.vim[/green]"
-                )
-
-            elif ide == "emacs":
-                # Generate Emacs configuration
-                emacs_mode = """
-;;; fastblocks-mode.el --- Major mode for FastBlocks templates
-
-(defvar fastblocks-mode-syntax-table
-  (let ((table (make-syntax-table)))
-    (modify-syntax-entry ?\" "\\\"" table)
-    (modify-syntax-entry ?\' "\\\"" table)
-    table)
-  "Syntax table for `fastblocks-mode'.")
-
-(defvar fastblocks-font-lock-keywords
-  '(("\\\\[\\\\[.*?\\\\]\\\\]" . font-lock-variable-name-face)
-    ("\\\\[%.*?%\\\\]" . font-lock-keyword-face)
-    ("\\\\[#.*?#\\\\]" . font-lock-comment-face)
-    ("\\\\b\\\\(if\\\\|else\\\\|elif\\\\|endif\\\\|for\\\\|endfor\\\\|block\\\\|endblock\\\\|extends\\\\|include\\\\|set\\\\|macro\\\\|endmacro\\\\)\\\\b" . font-lock-builtin-face))
-  "Font lock keywords for FastBlocks mode.")
-
-(define-derived-mode fastblocks-mode html-mode "FastBlocks"
-  "Major mode for editing FastBlocks templates."
-  (setq font-lock-defaults '(fastblocks-font-lock-keywords)))
-
-(add-to-list 'auto-mode-alist '("\\\\.fb\\\\.html\\\\'" . fastblocks-mode))
-(add-to-list 'auto-mode-alist '("\\\\.fastblocks\\\\'" . fastblocks-mode))
-
-(provide 'fastblocks-mode)
-;;; fastblocks-mode.el ends here
-"""
-                (output_path / "fastblocks-mode.el").write_text(emacs_mode)
-                console.print(
-                    f"[green]✓ Emacs mode file generated: {output_path}/fastblocks-mode.el[/green]"
-                )
-
-            else:
-                console.print(f"[red]Unsupported IDE: {ide}[/red]")
-                console.print("Supported IDEs: vscode, vim, emacs")
-
-        except Exception as e:
-            console.print(f"[red]Error generating IDE configuration: {e}[/red]")
-
-    asyncio.run(generate_config())
+    output_path = Path(output_dir)
+    output_path.mkdir(exist_ok=True)
+    if ide == "vscode":
+        _generate_vscode_config(output_path)
+    elif ide in _GRAMMAR_FILES:
+        _write_static_grammar(ide, output_path)
+    else:
+        console.print(f"[red]Unsupported IDE: {ide}[/red]")
+        console.print("Supported IDEs: vscode, vim, emacs")
 
 
 @cli.command()
@@ -956,8 +878,12 @@ def start_language_server(
     asyncio.run(start_server())
 
 
-@cli.command()
-def create(
+create = typer.Typer(help="Scaffolding commands for apps, templates, and IDE configs.")
+cli.add_typer(create, name="create")
+
+
+@create.command("app")
+def create_app(
     app_name: Annotated[
         str,
         typer.Option(prompt=True, help="Name of your application"),
@@ -966,7 +892,8 @@ def create(
         Styles,
         typer.Option(
             prompt=True,
-            help="The style (css, or web component, framework) you want to use[{','.join(Styles._member_names_)}]",
+            help="The style you want to use["
+            f"{','.join(Styles._member_names_)}]",
         ),
     ] = Styles.bulma,
     domain: Annotated[
@@ -974,14 +901,64 @@ def create(
         typer.Option(prompt=True, help="Application domain"),
     ] = "example.com",
 ) -> None:
+    """Scaffold a new FastBlocks application directory and run setup."""
     app_path = apps_path / app_name
+    _scaffold_app_tree(app_path, app_name, style)
+    _render_app_templates(app_name)
+    _update_app_configs(app_path, domain)
+    _run_setup_commands()
+    console.print(
+        f"\n[bold][white]Project is initialized. Configure [green]'adapters.yml'[/] "
+        f"and [green]'app.yml'[/] in [blue]'{app_name}/settings'[/] before running "
+        f"[magenta]`python -m fastblocks dev`[/].[/][/]"
+    )
+    raise SystemExit
+
+
+@create.command("template")
+def create_template(
+    style: Annotated[
+        Styles,
+        typer.Option(
+            prompt=True,
+            help="Style for the new template subtree",
+        ),
+    ] = Styles.bulma,
+) -> None:
+    """Create the template/blocks/theme directory structure for a style."""
+    for p in (
+        Path("templates/base/blocks"),
+        Path(f"templates/{style}/blocks"),
+        Path(f"templates/{style}/theme"),
+    ):
+        p.mkdir(parents=True, exist_ok=True)
+    console.print(
+        f"[green]✓ Template skeleton created for style: {style.value}[/green]"
+    )
+
+
+@create.command("ide-config")
+def create_ide_config(
+    output_dir: Annotated[
+        str,
+        typer.Option("--output", "-o", help="Output directory for IDE configurations"),
+    ] = ".vscode",
+    ide: Annotated[
+        str, typer.Option(help="IDE to generate config for (vscode, vim, emacs)")
+    ] = "vscode",
+) -> None:
+    """Generate IDE configuration files for FastBlocks syntax support."""
+    generate_ide_config(output_dir=output_dir, ide=ide)
+
+
+def _scaffold_app_tree(app_path: Path, app_name: str, style: Styles) -> None:
+    """Create the app directory layout, switch into it, and touch init files."""
     app_path.mkdir(exist_ok=True)
     os.chdir(app_path)
-    templates = Path("templates")
     for p in (
-        templates / "base/blocks",
-        templates / f"{style}/blocks",
-        templates / f"{style}/theme",
+        Path("templates/base/blocks"),
+        Path(f"templates/{style}/blocks"),
+        Path(f"templates/{style}/theme"),
         Path("adapters"),
         Path("actions"),
     ):
@@ -997,48 +974,88 @@ def create(
         Path("actions/__init__.py"),
     ):
         p.touch()
+
+
+def _render_app_templates(app_name: str) -> None:
+    """Render bundled *.tmpl files into the new project root."""
     for template_file in (
         "main.py.tmpl",
         ".envrc",
         "pyproject.toml.tmpl",
         "Procfile.tmpl",
     ):
-        template_path = Path(template_file)
         target_path = Path(template_file.replace(".tmpl", ""))
         target_path.write_text(
-            (fastblocks_path / template_path).read_text().replace("APP_NAME", app_name),
+            (fastblocks_path / template_file).read_text().replace("APP_NAME", app_name),
         )
-    commands = (
-        ["direnv", "allow", "."],
-        ["pdm", "install"],
-        ["python", "-m", "fastblocks", "run"],
-    )
-    for command in commands:
-        execute(command, stdout=DEVNULL, stderr=DEVNULL)
 
-    async def update_settings(settings: str, values: dict[str, t.Any]) -> None:
-        settings_path = AsyncPath(app_path / "settings")
-        content = (settings_path / f"{settings}.yml").read_text()
-        settings_dict = yaml.safe_load(content) or {}
-        settings_dict.update(values)
-        output_content = yaml.safe_dump(settings_dict)
-        (settings_path / f"{settings}.yml").write_text(output_content)
 
-    async def update_configs() -> None:
+def _update_app_configs(app_path: Path, domain: str) -> None:
+    """Patch the generated settings/*.yml files with project defaults."""
+
+    async def _update_configs() -> None:
+        async def update_settings(
+            settings: str, values: dict[str, t.Any]
+        ) -> None:
+            settings_path = AsyncPath(app_path / "settings")
+            content = (settings_path / f"{settings}.yml").read_text()
+            settings_dict = yaml.safe_load(content) or {}
+            settings_dict.update(values)
+            (settings_path / f"{settings}.yml").write_text(
+                yaml.safe_dump(settings_dict)
+            )
+
         await update_settings("debug", {"fastblocks": False})
         await update_settings("adapters", default_adapters)
         await update_settings(
             "app", {"title": "Welcome to FastBlocks", "domain": domain}
         )
 
-    asyncio.run(update_configs())
-    console.print(
-        f"\n[bold][white]Project is initialized. Please configure [green]'adapters.yml'[/] and [green]'app.yml'[/] in the [blue]'{app_name}/settings'[/] directory before running [magenta]`python -m fastblocks dev`[/] or [magenta]`python -m fastblocks run`[/] from the [blue]'{app_name}'[/] directory.[/][/]",
+    asyncio.run(_update_configs())
+
+
+async def update_configs(app_path: Path, domain: str) -> None:
+    """Backwards-compatible alias used by external tests and integrations."""
+    async def update_settings(
+        settings: str, values: dict[str, t.Any]
+    ) -> None:
+        settings_path = AsyncPath(app_path / "settings")
+        content = (settings_path / f"{settings}.yml").read_text()
+        settings_dict = yaml.safe_load(content) or {}
+        settings_dict.update(values)
+        (settings_path / f"{settings}.yml").write_text(
+            yaml.safe_dump(settings_dict)
+        )
+
+    await update_settings("debug", {"fastblocks": False})
+    await update_settings("adapters", default_adapters)
+    await update_settings(
+        "app", {"title": "Welcome to FastBlocks", "domain": domain}
     )
-    console.print(
-        "\n[dim]Use [white]`python -m fastblocks components`[/white] to see available adapters and actions.[/dim]",
-    )
-    raise SystemExit
+
+
+def _run_setup_commands() -> None:
+    """Run direnv allow + pdm install + smoke run for the new project."""
+    for command in (
+        ["direnv", "allow", "."],
+        ["pdm", "install"],
+        ["python", "-m", "fastblocks", "run"],
+    ):
+        execute(command, stdout=DEVNULL, stderr=DEVNULL)
+
+
+def create(
+    app_name: str,
+    style: Styles = Styles.bulma,
+    domain: str = "example.com",
+) -> None:
+    """Backwards-compatible shim for the original top-level ``create`` entry.
+
+    External code (and structure tests) historically introspect this
+    module attribute. The Typer group ``create`` above is the active
+    CLI surface — invoke ``create app`` for the same behavior.
+    """
+    create_app(app_name=app_name, style=style, domain=domain)
 
 
 @cli.command()

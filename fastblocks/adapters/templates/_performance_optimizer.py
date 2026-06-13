@@ -2,7 +2,7 @@
 
 import operator
 import time
-from collections import defaultdict, deque
+from collections import OrderedDict, defaultdict, deque
 from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Any
@@ -47,17 +47,40 @@ class PerformanceOptimizer:
     MODULE_ID: UUID = UUID("01937d87-b123-4567-89ab-123456789def")
     MODULE_STATUS: str = "stable"
 
+    # Bounded storage for per-template render-time samples.
+    MAX_SAMPLES_PER_TEMPLATE: int = 1024
+    # Global cap on distinct templates tracked simultaneously.
+    MAX_TRACKED_TEMPLATES: int = 512
+
     def __init__(self) -> None:
         """Initialize performance optimizer."""
         self.metrics_history: deque[dict[str, Any]] = deque(maxlen=1000)
-        self.template_stats: dict[str, list[float]] = defaultdict(list)
+        # LRU-bounded per-template sample buffer. OrderedDict preserves
+        # insertion order; ``move_to_end`` on access keeps the LRU invariant.
+        self.template_stats: OrderedDict[str, deque[float]] = OrderedDict()
         self.cache_stats: dict[str, int] = defaultdict(int)
         self.concurrent_renders: int = 0
         self.optimization_enabled: bool = True
+        # Metric counter: increments on each LRU template eviction.
+        # (Per-template sample overflow is handled by deque(maxlen=1024)
+        # and is not counted here to keep the counter meaningful.)
+        self._evictions_total: int = 0
 
         # Register with ACB
         with suppress(Exception):
             depends.set(self)
+
+    @property
+    def evictions_total(self) -> int:
+        """Total number of entries evicted from ``template_stats``."""
+        return self._evictions_total
+
+    def _evict_lru_template(self) -> None:
+        """Evict the least-recently-used template entry."""
+        if not self.template_stats:
+            return
+        evicted_key, _ = self.template_stats.popitem(last=False)
+        self._evictions_total += 1
 
     def record_render(self, template_name: str, metrics: PerformanceMetrics) -> None:
         """Record template rendering metrics."""
@@ -69,8 +92,18 @@ class PerformanceOptimizer:
             {"template": template_name, "timestamp": time.time(), "metrics": metrics}
         )
 
-        # Update template-specific stats
-        self.template_stats[template_name].append(metrics.render_time)
+        # Update template-specific stats with LRU + per-template bounding.
+        samples = self.template_stats.get(template_name)
+        if samples is None:
+            # New template: if at global cap, evict LRU first.
+            if len(self.template_stats) >= self.MAX_TRACKED_TEMPLATES:
+                self._evict_lru_template()
+            samples = deque(maxlen=self.MAX_SAMPLES_PER_TEMPLATE)
+            self.template_stats[template_name] = samples
+        else:
+            # Touch: move to MRU end.
+            self.template_stats.move_to_end(template_name)
+        samples.append(metrics.render_time)
 
         # Update cache stats
         cache_key = f"{template_name}_cache"

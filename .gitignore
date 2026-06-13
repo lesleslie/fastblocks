@@ -149,3 +149,23 @@ tests/archived/
 /.backup/
 .backups/
 .backup/
+
+# ============================================================================
+# Tooling Artifacts (added by multi-agent workflows)
+# ============================================================================
+# Claude Code session state
+.claude/
+# Local MCP config (per-developer)
+.mcp.json
+# Obsidian vault cache
+.obsidian/
+# Oneiric resolver cache
+.oneiric_cache/
+# Skylos dead-code scanner output
+.skylos/
+# Lychee link-checker cache
+.lycheecache
+# Coverage quality gate
+.cov_qual
+# Coverage data file
+.coverage
