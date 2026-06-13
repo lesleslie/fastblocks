@@ -188,6 +188,7 @@ markers = [
     "performance: mark test as a performance test (disables parallel execution)",
     "integration: marks test as an integration test",
     "slow: mark test as slow to skip with --skip-slow",
+    "websocket: marks test as needing the mcp_common.websocket stub (tests/conftest.py installs it at session scope)",
 ]
 timeout = "300"
 timeout_method = "thread"

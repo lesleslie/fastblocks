@@ -64,7 +64,7 @@ class TestSanitizedErrorResponses:
         mock_websocket.user = {"id": "user-1", "role": "user"}
         server._can_subscribe_to_channel = MagicMock(return_value=True)  # type: ignore[method-assign]
 
-        await server._handle_request(mock_websocket, message, "conn-1")
+        await server._handle_request(mock_websocket, message)
 
         decoded = _decode_last_send(mock_websocket)
         body_str = str(decoded.data)
@@ -96,7 +96,7 @@ class TestSanitizedErrorResponses:
         )
 
         try:
-            await server._handle_request(mock_websocket, message, "conn-1")
+            await server._handle_request(mock_websocket, message)
         finally:
             protocol.WebSocketProtocol.create_response = original_create_response
 

@@ -25,12 +25,19 @@ class TestJWTSecretRequired:
     ) -> None:
         """A non-test process must fail if ``FASTBLOCKS_JWT_SECRET`` is the dev fallback.
 
-        We simulate a non-test process by removing ``pytest`` from
-        ``sys.modules`` (since the production guard keys off that), then
-        re-import the auth module to trigger the module-level check.
+        We simulate a non-test process by removing both ``pytest`` from
+        ``sys.modules`` AND the ``PYTEST_CURRENT_TEST`` environment
+        variable (the production guard keys off either signal; the env
+        var is the more reliable of the two and is what the guard
+        checks first), then re-import the auth module to trigger the
+        module-level check.
         """
         # Remove JWT secret from the environment.
         monkeypatch.delenv("FASTBLOCKS_JWT_SECRET", raising=False)
+        # Also remove the PYTEST_CURRENT_TEST env var that pytest
+        # itself sets for the running test, so the guard's test-process
+        # check sees a non-test environment.
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
 
         # Simulate a non-test process: drop pytest from sys.modules.
         saved_pytest = sys.modules.pop("pytest", None)

@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, UTC
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from mcp_common.websocket import (
     MessageType,
@@ -23,9 +23,14 @@ from mcp_common.websocket import (
 
 # Import EventTypes from protocol module
 from mcp_common.websocket.protocol import EventTypes
-
 # Import authentication
 from fastblocks.websocket.auth import get_authenticator
+
+# Re-export origin-allowlist helpers so callers can ``from
+# fastblocks.websocket.server import check_origin, parse_allowed_origins``
+# (the test surface uses that import path; the implementation lives in
+# fastblocks.websocket.origin to keep the server file from growing).
+from fastblocks.websocket.origin import check_origin, parse_allowed_origins
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +207,36 @@ class FastblocksWebSocketServer(WebSocketServer):
         Args:
             websocket: WebSocket connection object
             message: Request message
+
+        Note:
+            Any exception raised in the handler is caught at this level
+            and converted to a stable INTERNAL_ERROR code. The raw
+            exception text is never echoed back to the client; the
+            original exception is logged server-side via
+            logger.exception so operators can correlate. This is
+            Phase 1.1.5's sanitization guarantee (see
+            tests/websocket/test_sanitized_errors.py).
+        """
+        try:
+            await self._dispatch_request(websocket, message)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception(
+                "WebSocket request handler raised; sending INTERNAL_ERROR to client (raw exception: %r)",
+                exc,
+            )
+            error = WebSocketProtocol.create_error(
+                error_code="INTERNAL_ERROR",
+                error_message="Internal server error",
+                correlation_id=message.correlation_id,
+            )
+            await websocket.send(WebSocketProtocol.encode(error))
+
+    async def _dispatch_request(
+        self, websocket: Any, message: WebSocketMessage
+    ) -> None:
+        """Inner handler body for _handle_request — split out so the
+        outer try/except sanitizes exceptions without swallowing
+        control-flow signals like asyncio.CancelledError.
         """
         # Get authenticated user from connection
         user = getattr(websocket, "user", None)

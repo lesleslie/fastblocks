@@ -4,6 +4,19 @@
 >
 > _Last reviewed: 2025-11-19_
 
+> **Stale-content warning:** The body of this document still describes
+> FastBlocks as built on ACB. The codebase moved to
+> [Oneiric](https://github.com/lesleslie/oneiric) in Phase 3.1 of the
+> 0.8.0 release. The four integration modules
+> (`_events_integration`, `_health_integration`,
+> `_validation_integration`, `_workflows_integration`) now share a
+> single process-wide resolver via
+> `fastblocks.core.resolver.get_resolver()`. The
+> `acb` extra is gone from `pyproject.toml`. A full rewrite of
+> this architecture guide is on the follow-up roadmap; for the
+> current architectural truth, see `CLAUDE.md` ("Big
+> Architectural Picture") and `docs/migrations/0.7-to-0.8.md`.
+
 ## Layered Overview
 
 FastBlocks sits between Starlette and application code: Starlette delivers the ASGI runtime, while FastBlocks layers on HTMX-friendly rendering, request helpers, and middleware. Underneath, [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb) provides dependency injection, configuration management, and the adapter pattern that powers FastBlocks’ pluggable components.

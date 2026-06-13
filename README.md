@@ -16,6 +16,8 @@
 
 FastBlocks is an asynchronous web application framework, inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines modern Python async capabilities with server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
 
+> **Note on this README:** The narrative below still describes FastBlocks as built on [ACB](https://github.com/lesleslie/acb). That is stale. The codebase moved to [Oneiric](https://github.com/lesleslie/oneiric) in Phase 3.1 of the 0.8.0 release; the `acb` extra was removed from `pyproject.toml` entirely. Treat the deep-dive sections below as historical reference for the ACB API; for the current dependency-injection surface, see `CLAUDE.md` ("Big Architectural Picture") and `docs/migrations/0.7-to-0.8.md` for the Oneiric migration.
+
 Unlike monolithic frameworks or micro-frameworks that require extensive configuration, FastBlocks offers a modular, component-based architecture that provides batteries-included functionality while maintaining exceptional flexibility. Built on the **[Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb)** framework, FastBlocks leverages ACB's powerful adapter pattern for seamless component swapping, cloud provider migrations, and tailored customizations without extensive code changes.
 
 FastBlocks serves as a prime example of ACB's capabilities, showcasing how ACB's dependency injection, configuration management, and pluggable adapter system can create enterprise-grade applications. All FastBlocks adapters (templates, auth, admin, routing, storage) follow ACB's standardized interfaces, ensuring consistency and interoperability.

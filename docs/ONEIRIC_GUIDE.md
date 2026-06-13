@@ -2,6 +2,16 @@
 
 **Complete guide to using Asynchronous Component Base (ACB) with FastBlocks**
 
+> **Note:** This document's title and body still describe the project as
+> ACB-based. The codebase moved to
+> [Oneiric](https://github.com/lesleslie/oneiric) in Phase 3.1 of the
+> 0.8.0 release; the `acb` extra was removed from `pyproject.toml`
+> entirely. Use the Oneiric integration patterns
+> (`fastblocks.core.resolver.get_resolver()`,
+> `fastblocks.core.patterns.SingletonMeta`) and see
+> `docs/ONEIRIC_DEPENDS_PATTERNS.md` for the current canonical surface.
+> A wholesale rewrite of this guide is on the follow-up roadmap.
+
 ## Table of Contents
 
 - [Overview](#overview)

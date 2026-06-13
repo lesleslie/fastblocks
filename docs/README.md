@@ -2,6 +2,18 @@
 
 This directory contains technical documentation, guides, and examples for FastBlocks development.
 
+> **Stale-content warning:** Several guides in this directory (notably
+> `ARCHITECTURE.md`, `ONEIRIC_GUIDE.md`, and parts of `README.md`)
+> describe the project as built on [ACB](https://github.com/lesleslie/acb).
+> The codebase moved to
+> [Oneiric](https://github.com/lesleslie/oneiric) in Phase 3.1 of the
+> 0.8.0 release; the `acb` extra was removed. For the current
+> canonical architecture and dependency-injection surface, see
+> `CLAUDE.md` (the Big Architectural Picture section) and
+> `docs/migrations/0.7-to-0.8.md` (the Oneiric migration recipe).
+> A wholesale rewrite of the stale guides is on the follow-up
+> roadmap.
+
 ## Documentation Structure
 
 ### Main Documentation (Root Level)
