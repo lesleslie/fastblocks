@@ -42,60 +42,62 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "anyio>=4.11.0",
-    "brotli-asgi>=1.5.0",
-    "granian[reload]>=2.6.0",
-    "htmy[lxml]>=0.9.0",
-    "mcp-common>=0.3.3",
-    "minify-html>=0.18.1",
-    "oneiric>=0.3.4",
-    "pydantic>=2.12.4",
-    "pyfiglet>=1.0.4",
-    "rcssmin>=1.2.2",
-    "rjsmin>=1.2.5",
-    "secure>=1.0.1",
-    "starception>=1.2.1",
-    "starlette>=0.50.0",
-    "starlette-async-jinja>=1.13.3",
-    "starlette-csrf>=3.0.0",
-    "typer>=0.20.0",
-    "uvicorn>=0.38.0",
+    "anyio~=4.11",
+    "brotli-asgi~=1.5",
+    "granian[reload]~=2.6",
+    "htmy[lxml]~=0.9",
+    "mcp-common~=0.3",
+    "minify-html~=0.18",
+    "oneiric~=0.3",
+    "pydantic~=2.12",
+    "pyfiglet~=1.0",
+    "rcssmin~=1.2",
+    "rjsmin~=1.2",
+    "secure~=1.0",
+    "starception~=1.2",
+    "starlette~=0.50",
+    "starlette-async-jinja~=1.13",
+    "starlette-csrf~=3.0",
+    "typer~=0.20",
+    "uvicorn~=0.38",
 ]
 
 [project.license]
 text = "BSD-3-CLAUSE"
 
 [dependency-groups]
+# dev = project-agnostic developer tools (install with `uv sync --group dev`).
+# admin/monitoring/images = optional feature groups (install with
+# `uv sync --group admin` etc.). `cache` group removed in phase 3.2 (acb
+# extra deleted; no production consumers).
 dev = [
-    "bandit>=1.9.2",
-    "crackerjack>=0.44.34",
-    "detect-secrets>=1.5.0",
-    "penpot-mcp>=0.1.2",
-    "pytest>=9.0.1",
-    "pytest-asyncio>=1.3.0",
-    "pytest-benchmark>=5.2.3",
-    "pytest-cov>=7.0.0",
-    "pytest-mock>=3.15.1",
-    "pytest-timeout>=2.4.0",
-    "pytest-xdist>=3.8.0",
-    "pyyaml>=6.0.3",
-    "refurb>=2.2.0",
-    "session-buddy>=0.9.4",
+    "bandit~=1.9",
+    "crackerjack~=0.44",
+    "detect-secrets~=1.5",
+    "penpot-mcp~=0.1",
+    "pytest~=9.0",
+    "pytest-asyncio~=1.3",
+    "pytest-benchmark~=5.2",
+    "pytest-cov~=7.0",
+    "pytest-mock~=3.15",
+    "pytest-timeout~=2.4",
+    "pytest-xdist~=3.8",
+    "pyyaml~=6.0",
+    "refurb~=2.2",
 ]
 admin = [
-    "sqladmin>=0.22.0",
+    "sqladmin~=0.22",
 ]
 monitoring = [
-    "logfire[starlette]>=4.15.1",
+    "logfire[starlette]~=4.15",
+    # sentry-sdk 3.0.0a7 is the only published release on the 3.x line
+    # at the time of writing; pin with >= until 3.0.0 stable ships.
     "sentry-sdk[starlette]>=3.0.0a7",
-    "urllib3>=2.5.0",
+    "urllib3~=2.5",
 ]
 images = [
-    "cloudinary>=1.44.1",
-    "imagekitio>=4.2.0",
-]
-cache = [
-    "acb>=0.31.12",
+    "cloudinary~=1.44",
+    "imagekitio~=4.2",
 ]
 
 [tool.fastblocks-mcp]
