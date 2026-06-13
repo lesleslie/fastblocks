@@ -1,538 +1,186 @@
-______________________________________________________________________
-
-## id: 01K6JZ5F5W3MRM8FR0MEMJ03FR
-
-______________________________________________________________________
-
-## id: 01K6J6B68YFHFZZ099XZXD8TN3
-
-______________________________________________________________________
-
-## id: 01K6HPXXAQBZ9KX447FK7ZPB5N
-
-______________________________________________________________________
-
-## id: 01K6HPWW2YY7VE2B5DRCQF184T
-
-______________________________________________________________________
-
-## id: 01K6HPNNQD3EDCCWRMFMZF1HCY
-
-______________________________________________________________________
-
-## id: 01K6HPKVP1WS35PHSCBBMWG6N4
-
-______________________________________________________________________
-
-## id: 01K6H6RNV6Q3BV04PX5HTG2D5X
-
-______________________________________________________________________
-
-## id: 01K6H6HJGA098Y2W6WCJY51BMN
-
-______________________________________________________________________
-
-## id: 01K6H6G7VEJV8P7TZQRVAANVZK
-
-______________________________________________________________________
-
-## id: 01K6H6FA3M6N0DFJ73R3XH0CEQ
-
-______________________________________________________________________
-
-## id: 01K6H5NVQ7DKZQVNXBGFZYRH35
-
-______________________________________________________________________
-
-## id: 01K6H57CM1M9RPN7NBZB0G010B
-
-______________________________________________________________________
-
-## id: 01K6H0YJZB2VWHBXSMMKYA8K9J
-
-______________________________________________________________________
-
-## id: 01K6GZPK90TP1NXK48GA2YYHSJ
-
-______________________________________________________________________
-
-## id: 01K6GZMHAAAAQPAT0B5QSN9BY3
-
-______________________________________________________________________
-
-## id: 01K6GZHCMZGDD2AAYV3SZ51SJF
-
-______________________________________________________________________
-
-## id: 01K6GZFT9TJVXBKTXFSKB3STRV
-
-______________________________________________________________________
-
-## id: 01K6GYFG1M00VR1YKCFNXGKK8H
-
-______________________________________________________________________
-
-## id: 01K6GYEWWPHRTH6KYAB9NRSPWX
-
-______________________________________________________________________
-
-## id: 01K6GXNSS172X9AAE6M0971XQ7
-
-______________________________________________________________________
-
-## id: 01K6GXN68ZSGBBKQPGKXT11CDJ
-
-______________________________________________________________________
-
-## id: 01K6GXHTXX0NVMBH31YSSHF1F8
-
-______________________________________________________________________
-
-## id: 01K6GX4TW7DJ8X5EHHS3YYVJPM
-
-______________________________________________________________________
-
-## id: 01K6GX3WHF92NKMDPRH71MCA1E
-
-______________________________________________________________________
-
-## id: 01K6GWCMNX3VYNAD70CEAWAX9W
-
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## What This Project Is
 
-FastBlocks is an asynchronous web application framework, inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines modern Python async capabilities with server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
+FastBlocks is an asynchronous web framework built on Starlette, designed for server-side-rendered HTMX/Jinja template blocks. It is **public, framework-level software** — it is not an end-user product. Production deployments are expected to live in consumer applications (e.g. SplashStand) that import FastBlocks as a library. The framework's MCP surface is read-only introspection of the framework itself; product operations (creating customer sites, broadcasting component updates, configuring adapters) belong in the consumer application, not here.
 
-## Key Architecture Components
+## Daily Commands
 
-- **Starlette Foundation**: FastBlocks extends Starlette's application class and middleware system
-- **ACB Integration**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), providing dependency injection, configuration management, and pluggable components
-  - **ACB Version Compatibility**: FastBlocks v0.14.0+ requires ACB v0.19.0+
-  - **See ACB CLAUDE.md**: For detailed ACB patterns, configuration, and troubleshooting
-- **Template-Focused**: Advanced asynchronous Jinja2 template system with fragments and partials support using jinja2-async-environment
-- **HTMY Integration**: Built-in support for HTMY components, enabling Python-based component creation alongside Jinja2 templates
-- **Adapters Pattern**: Pluggable components for authentication, admin interfaces, routing, templates, etc.
-- **HTMX Integration**: First-class support for HTMX to create dynamic interfaces with server-side rendering
-- **Direct ACB Imports** (v0.13.2+): Simplified dependency injection using direct ACB imports instead of wrapper system
-- **Adapter Metadata** (v0.14.0+): All adapters include static MODULE_ID and MODULE_STATUS for ACB 0.19.0 compliance
+All commands run from the repo root unless noted.
 
-## Directory Structure
+```bash
+# Install (dev extras are PEP 735 dependency-groups)
+uv sync --group dev
+
+# Run the full suite (xdist is the default — see pyproject.toml [tool.pytest])
+uv run pytest
+
+# Run a single test
+uv run pytest tests/test_htmx.py::TestHtmxDetails::test_specific -v
+uv run pytest tests/adapters/templates/ -k "test_loader"
+
+# Coverage (target 80%; floor 10% with --cov-fail-under)
+uv run pytest --cov=fastblocks --cov-report=term-missing
+uv run pytest --cov=fastblocks --cov-report=html  # htmlcov/
+
+# Quality gate (this is the CI gate — runs ruff, mypy, pyright, bandit, complexipy,
+# vulture, refurb, codespell, pyproject-fmt)
+uv run crackerjack run
+
+# Lint only (fast feedback)
+uv run ruff check fastblocks tests
+uv run ruff format fastblocks tests
+uv run mypy fastblocks
+uv run pyright fastblocks
+
+# Pre-commit hooks
+pre-commit run --all-files
+```
+
+## Project Structure (the parts that need context)
 
 ```
 fastblocks/
-├── actions/         # Utility functions (gather, sync, query, minify)
-├── adapters/        # Integration modules for external systems
-│   ├── app/         # Application configuration
-│   ├── auth/        # Authentication adapters
-│   ├── admin/       # Admin interface adapters
-│   ├── routes/      # Routing adapters
-│   ├── sitemap/     # Sitemap generation
-│   └── templates/   # Template engine adapters
-├── applications.py  # FastBlocks application class
-├── middleware.py    # ASGI middleware components
-├── caching.py       # Caching system
-├── cli.py           # Command-line interface (with uvicorn logging fixes)
-├── initializers.py  # Application initialization
-├── exceptions.py    # Custom exception classes
-└── main.py          # Lazy loading app and logger components
+├── applications.py        # FastBlocks(Starlette) — the app class
+├── main.py                # Lazy app + logger loader (entry point)
+├── cli.py                 # Typer CLI; subcommands: create_app, create_template,
+│                          #   create_ide_config. Grammar strings live under
+│                          #   fastblocks/cli/grammars/ (vim.vim, emacs.el).
+├── htmx.py                # HTMX request/response helpers; per-thread event loop
+│                          #   via _run_async_safely; do NOT create fresh loops.
+├── caching.py             # Cache rules + helpers; uses oneiric.core.logging.
+├── middleware.py          # Security headers default-on; Brotli; CSRF.
+├── exceptions.py          # ErrorSeverity(str, Enum), ErrorCategory(str, Enum)
+│                          #   — both mix in str so str(member) == member.value.
+├── _events_integration.py # These 4 underscore-prefixed files share one
+├── _health_integration.py # Oneiric resolver via
+├── _validation_integration.py  # fastblocks.core.resolver.get_resolver().
+├── _workflows_integration.py   # Do not import oneiric.core.resolution.Resolver
+│                                directly — go through the shared singleton.
+├── actions/               # Stateless utility functions: gather, sync, query,
+│                          #   minify. Used by both framework and consumers.
+├── adapters/              # Pluggable component system (see below).
+│   ├── app/  auth/  admin/  fonts/  icons/  images/  routes/  sitemap/
+│   ├── style/             # Kelp CSS adapter (memoized via lru_cache)
+│   ├── templates/
+│   │   ├── jinja2.py      # Async Jinja2 loader; @lru_cache _build_cached_loader
+│   │   │                  #   and FileSystemLoader read-through cache.
+│   │   ├── _htmy_components.py  # HTMY component loader; AST.parse class walker
+│   │   │                  #   (DO NOT reintroduce exec_module — that was an RCE).
+│   │   ├── _performance_optimizer.py  # Bounded LRU; per-template deque(maxlen=1024).
+│   │   └── htmy.py
+│   └── oneiric_helper.py  # register_candidate() used by all adapters
+├── core/
+│   ├── patterns.py        # SingletonMeta — thread-safe singleton metaclass.
+│   │                      # Use this for any new stateful integration; do not
+│   │                      # roll a fresh _instance + __new__ + hasattr guard.
+│   └── resolver.py        # get_resolver() returns the process-wide Oneiric
+│                          #   Resolver singleton. All 4 _*_integration modules
+│                          #   import this; tests should too.
+├── mcp/                   # Read-only framework MCP tools (introspection only).
+│                          #   - list_adapters, list_templates, validate_template,
+│                          #     render_template, list_components, validate_component,
+│                          #     check_adapter_health.
+│                          #   - Resources: template_syntax, template_filters,
+│                          #     htmy_component_catalog, settings_documentation,
+│                          #     best_practices, htmx_patterns.
+│                          #   The dangerous tools (create_template,
+│                          #   create_component, configure_adapter,
+│                          #   websocket_tools, config_cli) are slated for
+│                          #   removal in 0.8.0; product operations belong in
+│                          #   consumer apps.
+├── shell/                 # Admin shell adapter (Phase 1).
+├── websocket/
+│   ├── server.py          # FastblocksWebSocketServer — UI update broadcasts.
+│   ├── auth.py            # WebSocketAuthenticator (JWT). Module-level env
+│                          #   reads: FASTBLOCKS_JWT_SECRET, FASTBLOCKS_TOKEN_EXPIRY,
+│                          #   FASTBLOCKS_AUTH_ENABLED. NOTE: these are read at
+│                          #   import time, not call time — see "Known tech debt" below.
+│   ├── binding.py         # BindAddress enum (loopback / private LAN).
+│   └── tls_config.py      # TLS cert configuration for WSS.
+└── cli/grammars/          # vim.vim, emacs.el (extracted from cli.py in Phase 4).
+
+tests/
+├── conftest.py            # 3,410 LOC. The mcp_common.websocket stub installer
+│                          #   lives here at session scope. Marker-based
+│                          #   gating only (per-test stubs blocked by module-level
+│                          #   `from mcp_common.websocket import ...` at collection).
+├── mcp/test_ci_guard.py   # CI guard: greps for deleted symbol names
+│                          #   (fastblocks_start_websocket etc.); fails on hit.
+└── websocket/, adapters/auth/, mcp/ — most new test files use
+    @pytest.mark.websocket for marker-based selection.
 ```
 
-## Development Commands
+## The Big Architectural Picture
 
-### Essential Commands
+### Starlette → FastBlocks → Adapters → Oneiric (in that order)
 
-```bash
-# Quality verification (MANDATORY before task completion)
-python -m crackerjack -t --ai-fix    # AI-optimized test and quality checks
-
-# Testing
-python -m pytest                       # Run all tests
-python -m pytest --cov=fastblocks      # Run with coverage
-python -m pytest -v                    # Verbose test output
-python -m pytest -m unit               # Unit tests only
-python -m pytest -m integration        # Integration tests only
-python -m pytest tests/adapters/templates/  # Run specific test directory
-python -m pytest --timeout=300         # Set test timeout (configured in pyproject.toml)
-
-# Code quality
-ruff check --fix                       # Lint with automatic fixes
-ruff format                            # Format code
-pyright                                # Type checking
-pre-commit run --all-files             # Run all pre-commit hooks
-
-# FastBlocks CLI
-python -m fastblocks create            # Create new project
-python -m fastblocks dev               # Development server with hot reload
-python -m fastblocks dev --granian     # Development with Granian server
-python -m fastblocks run               # Production server
-python -m fastblocks run --granian     # Production with Granian server
-python -m fastblocks components        # Show available components
-python -m fastblocks version           # Show FastBlocks version
-
-# Package management (UV-based)
-uv sync                                # Sync dependencies from uv.lock
-uv add <package>                       # Add new dependency
-uv remove <package>                    # Remove dependency
-uv build                               # Build package
-uv pip install -e .                    # Development install
-```
-
-### AI-Optimized Tools
-
-FastBlocks includes specialized configurations for AI assistants:
-
-```bash
-# Pre-commit hooks (standard configuration)
-pre-commit run --all-files
-
-# Development dependencies include AI tools
-uv add crackerjack --group dev          # Comprehensive code quality
-uv add session-mgmt-mcp --group dev     # Session management
-uv add pydoll-mcp --group dev           # Python development tools
-```
-
-**Features**: Comprehensive code quality checks, session management, AI-optimized development tools.
-
-## FastBlocks Native Features
-
-### HTMX Integration (Native Implementation)
-
-FastBlocks includes **native HTMX support** built directly into the framework:
+Starlette provides the ASGI runtime. FastBlocks extends `Starlette` in `applications.py`, adds HTMX-aware request/response helpers, security middleware, and template integration. **All template engines, auth, admin, routes, etc. are pluggable adapters** registered through the Oneiric resolver. There is no `import Templates; templates = Templates()` — instead:
 
 ```python
-from fastblocks.htmx import HtmxDetails, HtmxRequest, HtmxResponse, is_htmx
-
-# Check if request is from HTMX
-if is_htmx(request):
-    return HtmxResponse(content="<div>HTMX Content</div>")
-
-# Response helpers
-return htmx_trigger("refresh-list", content="Updated")
-return htmx_redirect("/dashboard")
-return htmx_refresh()
+from fastblocks.core.resolver import get_resolver
+resolver = get_resolver()
+templates = resolver.resolve("fastblocks", "templates")
 ```
 
-**Key Features**: Native implementation, HTMX middleware, enhanced request objects, response helpers, template integration.
+The `register_candidate()` calls in each adapter module (e.g. `adapters/templates/jinja2.py`) register the adapter under a `(domain, key)` pair. The `Resolver` instance is the **single shared singleton** (one per process); do not instantiate a new `Resolver()` per module.
 
-### HTMY Component Integration
+### Templates: jinja2_async_environment + htmy
 
-FastBlocks includes dedicated HTMY template adapter alongside Jinja2:
+Two template engines, one API surface. The Jinja2 path is async-aware via `jinja2_async_environment` + `starlette-async-jinja`; fragments use the `[[ ... ]]` delimiters. The HTMY path is class-based: a component is a `@dataclass` with an `htmy(context)` method. The `_load_component_from_source` in `_htmy_components.py` is a **deliberate ast.parse class walker** — it rejects any module with `Import` / `ImportFrom` / calls to `exec` / `eval` / `compile` / `__import__`. The old `importlib.util.spec_from_file_location + exec_module` path is gone; do not reintroduce it (it was an RCE vector).
 
-```python
-# Component: templates/{variant}/components/user_card.py
-from dataclasses import dataclass
-from typing import Any
+### WebSocket auth: env-driven, no defaults
 
+`fastblocks/websocket/auth.py` reads `FASTBLOCKS_JWT_SECRET`, `FASTBLOCKS_TOKEN_EXPIRY`, `FASTBLOCKS_AUTH_ENABLED` at **import time** (module-level `os.getenv`). The server `FastblocksWebSocketServer(WebSocketServer)` in `server.py` requires a JWT secret to issue tokens; if `JWT_SECRET == "dev-secret-change-in-production"` you get a warning, not a refusal. **Known tech debt**: the plan calls for hard-fail on the dev-secret in non-test processes; that work is not yet landed. New code in this area should call `os.getenv(...)` at use-time, not module load.
 
-@dataclass
-class UserCard:
-    name: str
-    email: str
-    avatar_url: str = "/static/default-avatar.png"
+### MCP surface is read-only
 
-    def htmy(self, context: dict[str, Any]) -> str:
-        return f'''
-        <div class="user-card">
-            <img src="{self.avatar_url}" alt="{self.name}">
-            <h3>{self.name}</h3>
-            <p>{self.email}</p>
-        </div>
-        '''
+The fastblocks MCP server (in `mcp/`) is for **framework introspection** only. The 7 retained tools all read state. There is no MCP path to create a template, create a component, configure an adapter, or start a WebSocket — those operations belong in a consumer app's MCP server, not here. The `tests/mcp/test_ci_guard.py` test fails the build if any of the deleted symbol names (`fastblocks_start_websocket`, `fastblocks_create_template`, `fastblocks_create_component`, `fastblocks_configure_adapter`, or `from fastblocks.mcp.websocket_tools import ...`) reappear. Keep it that way.
 
+### Async / sync boundaries
 
-# Usage in templates
-# [[ render_component("user_card", {"name": "John", "email": "john@example.com"}) ]]
-```
+All I/O in the orchestration layer is async. The two places this gets violated:
+- `caching.py` historically had `asyncio.run(coro)` sync→async trampolines — those are gone as of Phase 3.4 (no-op for the file; the work had already been done in an earlier commit).
+- `htmx.py` used to create a fresh event loop on every call to `htmx_trigger`/`htmx_redirect`/`htmx_refresh`. Phase 4.3 collapsed this into `_run_async_safely(coro)`, which uses a per-thread cached loop via `threading.local()`. There is also `run_async_native(coro)` for callers already in an async context — prefer that.
 
-### Database Models and Query Interface
+## Project Conventions (the ones not in `pyproject.toml`)
 
-FastBlocks leverages ACB's universal model and query system:
+- **`from __future__ import annotations` as the first non-comment line of every source file** (after any module docstring).
+- Imports sorted within each section (stdlib → third-party → first-party; `known-first-party = ["fastblocks"]`).
+- `X | None` not `Optional[X]`; `list[str]` not `List[str]`; `pathlib.Path` not `os.path`.
+- Function arguments with default `None` must be typed `X | None = None` (mypy `no_implicit_optional = true`).
+- No `assert` in production code (`fastblocks/**`). Use the `fastblocks/exceptions.py` hierarchy.
+- In `except` blocks, use `logger.exception(...)`, never `logger.error(..., exc_info=True)`.
+- **Use `oneiric.core.logging.get_logger`** — not stdlib `logging`, not `print()`. The Phase 4.A migration moved 9 files off stdlib `logging`; do not roll it back.
+- `~=` (compatible release) for stable runtime dependencies; `>=` only for early-development / pre-1.0 / prerelease packages (e.g. `sentry-sdk[starlette]>=3.0.0a7`).
 
-**Supported Models**: SQLModel, SQLAlchemy, Pydantic, msgspec, attrs, Redis-OM
-**Databases**: PostgreSQL, MySQL/MariaDB, SQLite, MongoDB, Firestore, Redis
+## Test Conventions
 
-```python
-from acb.depends import depends
+- Project pytest markers (don't invent new ones): `unit`, `integration`, `e2e`, `property`, `slow`, `timeout`, `ci`, `crackerjack`, plus `@pytest.mark.websocket` (added in Phase 3.0 to document tests that need the `mcp_common.websocket` stub).
+- `asyncio_mode = "auto"` — no need for `@pytest.mark.asyncio`.
+- Per-test timeout: 300 s ceiling. Tests >10 s should be `@pytest.mark.slow` and skipped with `-m "not slow"` for fast feedback.
+- The `tests.*` namespace has relaxed typing (`disallow_untyped_defs = false`).
+- Asserts are idiomatic in tests.
 
-query = depends.get("query")
+## Reference Documentation
 
-# Simple queries (Active Record-like)
-users = await query.for_model(User).simple.all()
-user = await query.for_model(User).simple.find(1)
+- `docs/ARCHITECTURE.md` — Starlette + adapter layering (note: still describes the project as ACB-based; the codebase actually moved to Oneiric in Phase 3.1 and the doc is stale; the code is the source of truth).
+- `docs/SECURITY.md` — Security guidelines.
+- `docs/ONEIRIC_GUIDE.md` — Oneiric integration patterns (also still titled "ACB Guide"; ignore the title).
+- `docs/GETTING_STARTED.md` — Step-by-step quick start.
+- `fastblocks/adapters/README.md` — Adapters reference.
+- `fastblocks/actions/README.md` — Actions reference.
+- `tests/TESTING.md` — Test suite instructions.
 
-# Advanced query builder
-users = await (
-    query.for_model(User)
-    .advanced.where("active", True)
-    .where_gt("age", 21)
-    .order_by_desc("created_at")
-    .limit(10)
-    .all()
-)
-```
+## Known Tech Debt (don't try to "fix" without coordination)
 
-### Actions System
+1. **WebSocket auth reads env at import time, not call time** (`fastblocks/websocket/auth.py:17-24`). The plan calls for this to be moved to use-time reads, with `JWT_SECRET == "dev-secret-change-in-production"` hard-failing in non-test processes. Not yet landed.
+2. **The 4 leftover `t.cast(Coroutine, ...)` calls in `caching.py`** were partially removed in Phase 4.A but the plan-text count of 8 was based on stale state — only 4 existed at the time the agent ran. If you find more in `caching.py`, remove them; if not, leave it.
+3. **Docs lag the code.** `README.md`, `docs/ARCHITECTURE.md`, `docs/ONEIRIC_GUIDE.md` (and several others) still describe the project as ACB-based. The actual code is Oneiric-only since Phase 3.1. Don't trust those docs for the architectural truth; trust `fastblocks/core/resolver.py` and the `fastblocks.core.resolver.get_resolver()` call sites.
+4. **19→8 collection errors** in `pytest -m "not slow"` are pre-existing; most are conftest `mcp_common.websocket` stub pollution under xdist. Per-test gating was attempted in Phase 3.0 and reverted because test files do `from mcp_common.websocket import ...` at module level (collection time, before any per-test hook can run). The marker-based `pytest.mark.websocket` is the current workaround.
 
-**Gather Actions**: Unified component discovery and orchestration
+## Reminder
 
-```python
-from fastblocks.actions.gather import gather
-
-routes_result = await gather.routes()
-templates_result = await gather.templates(admin_mode=True)
-```
-
-**Query Actions**: Automatic URL query parameter to database query conversion
-
-```python
-from fastblocks.actions.query import UniversalQueryParser
-
-parser = UniversalQueryParser(request, User)
-results = await parser.parse_and_execute()
-```
-
-**Sync Actions**: Multi-layer synchronization for settings, templates, and static files
-
-```python
-from fastblocks.actions.sync import sync
-
-await sync.settings(reload_config=True)
-await sync.templates()
-await sync.static()
-```
-
-### Sitemap Generation
-
-Multiple strategies: native (routes), static (predefined), dynamic (database), cached (background refresh).
-
-Configuration: `settings/sitemap.yml`
-
-```yaml
-module: "native"
-domain: "example.com"
-change_freq: "weekly"
-cache_ttl: 3600
-```
-
-## Development Guidelines
-
-### Critical Requirements
-
-1. **Testing**: Tests must never create actual files. Use provided mocking framework (MockAsyncPath, MockAdapter, etc.)
-1. **ACB Compliance**: Always use direct ACB imports (`from acb.depends import depends`)
-1. **Python Version**: Target Python 3.13+ with modern syntax (set in pyproject.toml)
-1. **Template System**: Use `[[` and `]]` delimiters, async rendering
-1. **Error Handling**: Structured exceptions with HTMX-aware responses
-1. **Package Management**: Use UV for all dependency management (not pip or PDM)
-1. **Signal Handling**: CLI includes proper signal handlers for graceful shutdown
-
-### Code Quality Standards
-
-**Modern Python Patterns (Refurb compliance)**:
-
-- Use `pathlib.Path` instead of `os.path`
-- Use `str.removeprefix()` and `str.removesuffix()`
-- Use `|` for union types instead of `Union`
-- Use `dict1 | dict2` for merging
-- Always use context managers for file operations
-
-**Security Standards (Bandit compliance)**:
-
-- Never use `eval()`, `exec()`, `subprocess.shell=True`
-- Use `secrets` module for cryptography, never `random`
-- Never hardcode secrets in source code
-- Use parameterized queries, validate all inputs
-
-**Pre-commit hooks**: Core file structure validators, UV dependency management, security checks (detect-secrets, bandit), Python quality tools (ruff, pyright, refurb, vulture, complexipy), and project formatting (pyproject-fmt, codespell).
-
-### Type System Guidelines
-
-**Type Ignore Best Practices**:
-
-FastBlocks maintains strict type checking with Pyright. As of Phase 4 (2025-11-18), we've reduced type ignores from 223 to 110 (-50.7%). Remaining ignores are legitimate framework limitations.
-
-- **When to use `# type: ignore`**:
-
-  - External library limitations (Jinja2 untyped decorators, ACB patterns)
-  - Dynamic attribute access (union types, Jinja2 environment)
-  - Graceful degradation patterns (optional ACB module imports)
-
-- **When NOT to use `# type: ignore`**:
-
-  - Use `t.cast(TargetType, value)` for explicit type assertions
-  - Use `assert value is not None` for type narrowing after None checks
-  - Fix the underlying type annotation instead
-
-**Common Type Patterns**:
-
-```python
-# ✅ CORRECT - Type narrowing with assertions
-if not self.manager:
-    await self.initialize()
-assert self.manager is not None  # Narrows Optional[T] → T
-result = await self.manager.method()  # No type ignore needed
-
-# ✅ CORRECT - Explicit casts for known-safe conversions
-from typing import cast as t_cast, Any
-
-result = t_cast(dict[str, Any], some_dynamic_value)
-
-# ❌ WRONG - Unnecessary type ignore
-config = depends.get("config")  # type: ignore
-# Instead: config = await depends.get("config")
-
-
-# ✅ CORRECT - Legitimate ignore with explanation
-@env.filter("my_filter")  # type: ignore[misc]  # Jinja2 untyped decorator API
-def my_filter(value: str) -> str:
-    return value.upper()
-```
-
-**Type Ignore Categories** (110 remaining as of 2025-11-18):
-
-- ~57 misc (40 are Jinja2 `@env.` template filter decorators)
-- ~19 union-attr (legitimate union type patterns)
-- ~14 operator (ACB graceful degradation with `|` operator)
-- ~13 attr-defined (Jinja2 dynamic sandbox attributes)
-- ~7 no-redef (import redefinition in except blocks)
-
-**Pyright Configuration**:
-
-- Strict mode enabled in `pyproject.toml`
-- `reportUnusedFunction = false` (template filters registered via decorators)
-- Current error count: ~150 (down from 501 baseline, -70% reduction)
-- Target: \<50 errors (remaining are primarily ACB Inject[Any] type inference)
-
-### ACB Best Practices
-
-**Critical Rules**:
-
-- All adapter `__init__.py` files MUST remain empty (except docstrings)
-- Use ACB dependency injection (see patterns below)
-- Register adapters with `depends.set(MyAdapter)` in `suppress(Exception)` block
-- Include ACB 0.19.0 metadata: `MODULE_ID` (UUID7) and `MODULE_STATUS`
-
-**Dependency Injection Patterns (ACB 0.25.1+)**:
-
-```python
-# ✅ CORRECT - Function parameter injection (modern pattern with Inject[Type])
-from acb.depends import Inject, depends
-
-
-@depends.inject  # Required decorator!
-async def my_handler(request, templates: Inject[Templates]):
-    return await templates.app.render_template(request, "index.html")
-
-
-# ✅ CORRECT - Module-level access
-from acb.depends import depends
-
-templates = depends.get("templates")
-# Or with type class:
-templates = depends.get(Templates)
-
-# ❌ WRONG - Direct instantiation bypasses dependency injection
-from fastblocks.adapters.templates.jinja2 import Templates
-
-templates = Templates()  # Don't do this!
-
-
-# ❌ WRONG - Missing @depends.inject decorator
-async def my_handler(request, templates: Inject[Templates]):
-    # Won't work without @depends.inject decorator!
-    ...
-
-
-# ❌ WRONG - Using Inject() with parentheses instead of Inject[Type]
-@depends.inject
-async def my_handler(request, templates: Templates = Inject()):
-    # Wrong syntax - use Inject[Type] not Inject()!
-    ...
-```
-
-### Error Handling and Debugging
-
-FastBlocks implements structured exception hierarchy with HTMX-aware responses:
-
-```python
-from fastblocks.exceptions import FastBlocksException, ConfigurationError
-
-
-# HTMX requests get plain text, regular requests get HTML
-class CustomErrorHandler(ErrorHandler):
-    async def handle(self, exception, context, request):
-        if hasattr(request, "scope") and request.scope.get("htmx"):
-            return PlainTextResponse("Error message")
-        return HTMLResponse(template_content)
-```
-
-### Recent Changes (v0.14.0+)
-
-- **Direct ACB Imports**: Use `from acb.depends import depends` (no wrapper system)
-- **Template System**: Null safety, enhanced error handling, Redis bytecode cache fixes
-- **CLI Improvements**: Fixed uvicorn logging, signal handling, template reload exclusions, added Granian support
-- **Lazy Loading**: App and logger initialize on first use for better performance
-- **ACB 0.19.0 Compatibility**: Static adapter mappings, enhanced cache interface
-- **UV Package Management**: Full migration from PDM to UV for dependency management
-- **Middleware Management**: Enhanced position-based middleware system with caching
-
-### Deployment and Production
-
-**Server Options**: Uvicorn (default), Granian (high-performance)
-**Optimizations**: Brotli compression, template caching, static file optimization, async everything, connection pooling
-**Configuration**: `config.deployed = True/False` adjusts caching and debug features
-
-## Task Completion Requirements
-
-**MANDATORY: Before marking any task as complete, AI assistants MUST:**
-
-1. **Run crackerjack verification**: Execute `python -m crackerjack -t --ai-fix`
-1. **Fix any issues found**: Address all formatting, linting, type checking, and test failures
-1. **Re-run verification**: Ensure crackerjack passes completely
-1. **Document verification**: Mention that crackerjack verification was completed successfully
-
-**Never skip crackerjack verification** - it's the project's standard quality gate.
-
-## Development Workflow
-
-### Project Structure Requirements
-
-- **Python 3.13+**: Strictly enforced in pyproject.toml
-- **UV Package Management**: All dependency operations use UV (uv.lock, not pdm.lock)
-- **Test Configuration**: Comprehensive pytest setup with timeout, coverage, and markers
-- **Quality Gates**: Pre-commit hooks with structured validation pipeline
-- **CLI Integration**: FastBlocks CLI with Uvicorn and Granian server support
-
-### Testing Framework
-
-FastBlocks uses pytest with comprehensive configuration:
-
-```bash
-# Test markers (defined in pyproject.toml)
-pytest -m unit          # Unit tests
-pytest -m integration   # Integration tests
-pytest -m benchmark     # Performance tests
-
-# Coverage requirements
-pytest --cov=fastblocks --cov-fail-under=42
-
-# Timeout configuration
-pytest --timeout=300    # 5-minute timeout per test
-```
-
-### Documentation Audit Requirements
-
-AI assistants must regularly audit documentation for:
-
-- Package manager consistency (UV, not PDM)
-- Python 3.13+ requirement accuracy
-- ACB integration accuracy
-- Command and URL validation
-- Template syntax correctness (`[[` `]]`)
-- CLI command accuracy (dev/run with --granian option)
-- Workflow currency
-
-When completing audits, document files reviewed, issues found, changes made, ACB compliance verification, and example testing confirmation.
+Crackerjack is the quality gate. Before declaring any task done, run `uv run crackerjack run` and confirm it passes. If a single test fails, do not declare success.

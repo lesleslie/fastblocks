@@ -21,6 +21,9 @@
 - Use Python 3.13+ features with explicit type hints and small composable modules.
 - Preserve the Oneiric-driven adapter architecture; avoid adding shortcuts that bypass adapters, configuration, or dependency resolution patterns.
 - Keep modules snake_case, classes PascalCase, and public framework APIs stable and well-typed.
+- Use `from __future__ import annotations` as the first non-comment line of every source file (after any module docstring).
+- Use `~=` (compatible release) for stable runtime dependencies; use `>=` only for early-development / pre-1.0 / prerelease packages.
+- Prefer modern syntax: `X | None` over `Optional[X]`, `list[str]` over `List[str]`, `pathlib.Path` over `os.path`.
 
 ## Testing Guidelines
 
