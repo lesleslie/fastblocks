@@ -5,8 +5,21 @@ from platform import system
 # Oneiric imports
 from oneiric.core.resolution import Resolver
 
-# Oneiric adapter structure
-AdapterBase = object
+# Oneiric adapter structure. ``AdapterBase`` is a real class (not
+# an ``object`` alias) so that subclasses' ``__bases__`` can be
+# introspected for the literal name ``"AdapterBase"`` — the
+# production contract documented in the remediation plan.
+class AdapterBase:
+    """Marker base for FastBlocks adapter settings classes.
+
+    Subclasses of :class:`FastBlocksSettings` gain this base
+    automatically via ``__init_subclass__``. Keeping it as a real
+    class (rather than an ``object`` alias) lets downstream code
+    introspect ``cls.__bases__`` and see the literal name
+    ``"AdapterBase"`` instead of ``"object"``.
+    """
+
+    pass
 
 # Oneiric resolver
 depends = Resolver()
@@ -23,6 +36,12 @@ from .middleware import MiddlewarePosition
 
 
 class FastBlocksSettings:
+    # Phase 1.4: secure-by-default. SECURITY_HEADERS middleware is
+    # registered unless a subclass opts out by setting this to False.
+    # ``deployed=True`` or ``debug.production=True`` also force it on,
+    # matching the old contract.
+    security_headers_strict: bool = True
+
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
         # Skip modifying __bases__ if AdapterBase is already in the MRO
         # or if it's the same as the current class (avoid self-reference)

@@ -114,11 +114,16 @@ class ApplicationInitializer:
         self.depends = None
 
     def _configure_error_handling(self) -> None:
-        if not getattr(self.config, "deployed", False) or not getattr(
-            getattr(self.config, "debug", None),
-            "production",
-            False,
-        ):
+        # Install the starception handler ONLY in dev (not deployed,
+        # not debug.production). The previous ``or not`` condition
+        # was logically inverted — it installed the handler for
+        # almost every combination of (deployed, production) and
+        # only skipped it when both were True. The corrected gate
+        # below matches the documented "skip in production" intent.
+        debug_config = getattr(self.config, "debug", None)
+        is_production = bool(getattr(debug_config, "production", False))
+        is_deployed = bool(getattr(self.config, "deployed", False))
+        if not is_deployed and not is_production:
             install_error_handler()
 
     def _configure_debug_mode(self) -> None:

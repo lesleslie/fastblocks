@@ -219,6 +219,42 @@ class AdapterRegistry:
         """Configure an adapter with custom settings."""
         self._adapter_config[adapter_name] = config
 
+    def configure(self, adapter_name: str, **fields: Any) -> None:
+        """Typed, allowlist-enforced configuration entry point (Phase 0a).
+
+        Replaces the unsafe ``setattr(adapter, key, value)`` pattern
+        with a kwarg-only signature so callers cannot pass arbitrary
+        ``(key, value)`` pairs. Every field name must be present in
+        ``vars(adapter.settings)``; unknown fields raise ``ValueError``.
+
+        The legacy ``configure_adapter(name, dict)`` method is kept
+        for back-compat with the existing MCP wrappers. New code
+        should prefer ``configure(name, **fields)``.
+
+        Raises:
+            ValueError: ``adapter_name`` is not registered, an unknown
+                field is supplied, or the adapter has no ``settings``
+                attribute (the latter surfaces as ``AttributeError`` on
+                ``vars(adapter.settings)``).
+        """
+        if adapter_name not in self._active_adapters:
+            raise ValueError(f"unknown adapter: {adapter_name!r}")
+        adapter = self._active_adapters[adapter_name]
+        # ``vars(adapter.settings)`` will raise ``AttributeError`` if the
+        # adapter has no ``settings`` attribute; the test
+        # ``test_configure_rejects_known_adapter_with_no_settings``
+        # accepts either ValueError or AttributeError, so the natural
+        # failure mode is preserved.
+        allowed = set(vars(adapter.settings).keys())
+        unknown = set(fields) - allowed
+        if unknown:
+            joined = ", ".join(f"{name!r}" for name in sorted(unknown))
+            raise ValueError(
+                f"unknown field(s) for adapter {adapter_name!r}: {joined}"
+            )
+        for key, value in fields.items():
+            setattr(adapter.settings, key, value)
+
     def get_adapter_config(self, adapter_name: str) -> dict[str, Any]:
         """Get configuration for an adapter."""
         return self._adapter_config.get(adapter_name, {})

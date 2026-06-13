@@ -1616,6 +1616,15 @@ def mock_cache() -> AsyncMock:
     return mock
 
 
+# Alias fixture: a handful of legacy tests (notably
+# ``tests/adapters/templates/test_rendering.py``) request a ``cache``
+# parameter by name. The new name is ``mock_cache`` but the old name
+# still resolves to the same AsyncMock so those tests collect.
+@pytest.fixture
+def cache(mock_cache: AsyncMock) -> AsyncMock:
+    return mock_cache
+
+
 @pytest.fixture
 def mock_storage() -> AsyncMock:
     mock = AsyncMock()

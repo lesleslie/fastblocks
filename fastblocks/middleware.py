@@ -19,6 +19,20 @@ def debug(msg: str) -> None:
 # Create depends equivalent for Oneiric
 depends = Resolver()
 
+
+def _get_adapter_or_none(domain: str) -> t.Any:
+    """Oneiric replacement for the legacy ``oneiric.core.adapters.get_adapter``.
+
+    Resolves an adapter by domain name and returns the instance, or
+    ``None`` if no candidate is registered. The legacy module
+    ``oneiric.core.adapters`` no longer exists in Oneiric 0.13+; the
+    public Resolver API is the supported path.
+    """
+    try:
+        return depends.resolve(domain)
+    except Exception:
+        return None
+
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
 from starlette.datastructures import URL, Headers, MutableHeaders
@@ -111,7 +125,12 @@ class HtmxResponseMiddleware:
 class MiddlewareUtils:
     Cache = t.Any
 
-    secure_headers = Secure()
+    # Phase 1.4: strict secure-headers profile (CSP / XFO / XCTO). The
+    # default ``Secure()`` constructor emits no headers, which made
+    # the dev experience indistinguishable from a "no security headers"
+    # config. We bind ``with_default_headers()`` so the dev path is
+    # just as strict as production.
+    secure_headers = Secure.with_default_headers()
 
     scope_name = "__starlette_caches__"
 
@@ -423,10 +442,6 @@ class MiddlewareStackManager:
         self._ensure_dependencies()
         if not self.config:
             return
-        # Dual import for get_adapter
-        with suppress(ImportError):
-            from oneiric.core.adapters import get_adapter
-            # MIGRATED: Removed ACB import - using Oneiric equivalent
 
         self._middleware_registry[MiddlewarePosition.CSRF] = CSRFMiddleware
         self._middleware_options[MiddlewarePosition.CSRF] = {
@@ -434,14 +449,29 @@ class MiddlewareStackManager:
             "cookie_name": f"{getattr(self.config.app, 'token_id', '_fb_')}_csrf",
             "cookie_secure": self.config.deployed,
         }
-        if get_adapter("auth"):
+        if _get_adapter_or_none("auth"):
             self._middleware_registry[MiddlewarePosition.SESSION] = SessionMiddleware
             self._middleware_options[MiddlewarePosition.SESSION] = {
                 "secret_key": self.config.app.secret_key.get_secret_value(),
                 "session_cookie": f"{getattr(self.config.app, 'token_id', '_fb_')}_app",
                 "https_only": self.config.deployed,
             }
-        if self.config.deployed or getattr(self.config.debug, "production", False):
+        # Phase 1.4: SECURITY_HEADERS is default-on. The opt-out is
+        # ``FastBlocksSettings.security_headers_strict = False``; this
+        # is a HARD opt-out that overrides the ``deployed`` toggle, so
+        # subclasses can disable strict headers in production if they
+        # really need to. The default is on everywhere.
+        security_headers_strict = bool(
+            getattr(self.config.app, "security_headers_strict", True)
+        )
+        deployed_or_prod = bool(
+            self.config.deployed
+            or getattr(self.config.debug, "production", False)
+        )
+        if security_headers_strict and (
+            deployed_or_prod
+            or getattr(self.config.app, "security_headers_strict", True)
+        ):
             self._middleware_registry[MiddlewarePosition.SECURITY_HEADERS] = (
                 SecureHeadersMiddleware
             )

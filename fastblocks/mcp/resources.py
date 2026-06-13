@@ -372,39 +372,11 @@ async def get_best_practices() -> dict[str, Any]:
 # API Resources
 
 
-async def get_route_definitions() -> dict[str, Any]:
-    """Get route definitions from FastBlocks application.
-
-    Returns:
-        Dict with route information
-    """
-    try:
-        # Try to get routes from ACB registry
-        routes_adapter = await depends.resolve("fastblocks", "routes")
-        if routes_adapter is None:
-            return {
-                "success": False,
-                "error": "Routes adapter not available",
-            }
-
-        # This would need actual route introspection
-        # For now, return basic structure
-        return {
-            "name": "FastBlocks Route Definitions",
-            "routes": [
-                {
-                    "path": "/",
-                    "methods": ["GET"],
-                    "handler": "index",
-                    "description": "Home page",
-                },
-            ],
-            "note": "Route definitions depend on application configuration",
-        }
-
-    except Exception as e:
-        logger.error(f"Error getting route definitions: {e}")
-        return {"success": False, "error": str(e)}
+# Phase 0b: the ``route_definitions`` MCP resource was removed in
+# 0.8.0 because it returned a hard-coded stub and admitted it did
+# not introspect actual routes. Real route introspection belongs in
+# the consumer project (SplashStand), not in the framework's
+# read-only MCP surface. The function and its registration are gone.
 
 
 async def get_htmx_patterns() -> dict[str, Any]:
@@ -481,7 +453,6 @@ async def register_fastblocks_resources(server: Any) -> None:
             "settings_docs": get_settings_documentation,
             "best_practices": get_best_practices,
             # API resources
-            "route_definitions": get_route_definitions,
             "htmx_patterns": get_htmx_patterns,
         }
 

@@ -8,7 +8,6 @@ from pathlib import Path
 import click
 
 from .config_audit import ConfigurationAuditor
-from .config_cli import config_cli
 from .config_health import ConfigurationHealthChecker
 from .config_migration import ConfigurationMigrationManager
 from .configuration import ConfigurationManager
@@ -196,8 +195,13 @@ def cli() -> None:
     pass
 
 
-# Add configuration management commands
-cli.add_command(config_cli, name="config")
+# Phase 0b: the ``config`` Click subcommand group from the deleted
+# 0.8.0 wizard module was an interactive wizard that mixed operator
+# concerns into the framework MCP server. The underlying Python APIs
+# (ConfigurationManager, ConfigurationAuditor, EnvironmentManager,
+# ConfigurationMigrationManager, ConfigurationHealthChecker) remain
+# importable from their original modules for SplashStand and other
+# consumers.
 
 
 @cli.command()
