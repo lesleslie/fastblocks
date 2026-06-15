@@ -2,7 +2,7 @@ import typing as t
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, StrEnum
 from operator import itemgetter
 
 from oneiric.core.resolution import Resolver
@@ -17,14 +17,14 @@ depends = Resolver()
 _templates_cache = None
 
 
-class ErrorSeverity(Enum):
+class ErrorSeverity(StrEnum):
     CRITICAL = "critical"
     ERROR = "error"
     WARNING = "warning"
     INFO = "info"
 
 
-class ErrorCategory(Enum):
+class ErrorCategory(StrEnum):
     CONFIGURATION = "configuration"
     DEPENDENCY = "dependency"
     AUTHENTICATION = "authentication"

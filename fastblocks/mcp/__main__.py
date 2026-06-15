@@ -6,16 +6,14 @@ Run the FastBlocks MCP protocol server:
 This enables IDE/AI assistant integration for FastBlocks development.
 """
 
+from __future__ import annotations
+
 import asyncio
-import logging
 import sys
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-logger = logging.getLogger(__name__)
+from oneiric.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 async def main() -> int:
@@ -38,8 +36,8 @@ async def main() -> int:
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
         return 0
-    except Exception as e:
-        logger.error(f"Server error: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Server error")
         return 1
 
 

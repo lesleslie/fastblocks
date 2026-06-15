@@ -1,11 +1,13 @@
 """MCP resources for FastBlocks schemas, documentation, and patterns."""
 
-import logging
+from __future__ import annotations
+
 from typing import Any
 
 from oneiric.core.resolution import Resolver
+from oneiric.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -229,7 +231,7 @@ async def get_htmy_component_catalog() -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error getting component catalog: {e}")
+        logger.exception("Error getting component catalog")
         return {"success": False, "error": str(e)}
 
 
@@ -268,7 +270,7 @@ async def get_adapter_schemas() -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error getting adapter schemas: {e}")
+        logger.exception("Error getting adapter schemas")
         return {"success": False, "error": str(e)}
 
 
@@ -461,6 +463,6 @@ async def register_fastblocks_resources(server: Any) -> None:
 
         logger.info(f"Registered {len(resources)} FastBlocks MCP resources")
 
-    except Exception as e:
-        logger.error(f"Failed to register MCP resources: {e}")
+    except Exception:
+        logger.exception("Failed to register MCP resources")
         raise

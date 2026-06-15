@@ -1,16 +1,22 @@
 {
   "baseline": 30.087302606239568,
-  "current_minimum": 30.087302606239568,
+  "current_minimum": 40.0,
   "history": [
     {
       "commit": "baseline",
       "coverage": 30.087302606239568,
       "date": "2025-10-09T04:47:46.548273",
       "milestone": false
+    },
+    {
+      "commit": "phase-2.2-cli-coverage",
+      "coverage": 50.21,
+      "date": "2026-06-14T00:00:00.000000",
+      "milestone": true
     }
   ],
-  "last_updated": "2025-10-09T04:47:46.548230",
-  "milestones_achieved": [],
-  "next_milestone": 40,
+  "last_updated": "2026-06-14T00:00:00.000000",
+  "milestones_achieved": [40],
+  "next_milestone": 50,
   "target": 100.0
 }

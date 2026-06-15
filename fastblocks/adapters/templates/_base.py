@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from abc import ABC
 
@@ -7,25 +9,8 @@ from oneiric.core.resolution import Resolver
 from starlette.requests import Request
 from starlette.responses import Response
 
-
-# Custom implementations for ACB compatibility
-def get_adapters() -> list[t.Any]:
-    """Custom implementation for Oneiric compatibility."""
-    # This will be implemented using Oneiric's adapter system
-    return []
-
-
-def root_path() -> str:
-    """Custom implementation for Oneiric compatibility."""
-    # This will be implemented using Oneiric's path system
-    return "/"
-
-
 # Oneiric resolver for dependency injection
 depends = Resolver()
-
-# Placeholder for pkg_registry (will be implemented with Oneiric)
-pkg_registry = None
 
 
 async def safe_await(func_or_value: t.Any) -> t.Any:
@@ -69,8 +54,6 @@ class TemplatesBaseSettings(OneiricSettings, ABC):
         # Extract cache_timeout from values before passing to parent
         cache_timeout = values.pop("cache_timeout", 300)
         super().__init__(**values)
-        # For now, set cache_timeout directly
-        # In a full migration, this would use Oneiric's configuration system
         self.cache_timeout = cache_timeout
 
 
@@ -86,20 +69,13 @@ class TemplatesProtocol(t.Protocol):
     def get_cache_key(path: AsyncPath) -> str: ...
 
 
-class AdapterBase:
-    """Custom AdapterBase for Oneiric compatibility."""
-
-    pass
-
-
-class TemplatesBase(AdapterBase):
+class TemplatesBase:
     app: t.Any | None = None
     admin: t.Any | None = None
     app_searchpaths: list[AsyncPath] | None = None
     admin_searchpaths: list[AsyncPath] | None = None
 
     def __init__(self, **kwargs: t.Any) -> None:
-        # Initialize base attributes
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -112,8 +88,8 @@ class TemplatesBase(AdapterBase):
         return [theme_adapter_path, style_adapter_path, style_path, base_path]
 
     async def get_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
-        searchpaths = []
-        base_root = self._get_base_root()
+        searchpaths: list[AsyncPath] = []
+        base_root = AsyncPath(depends.root_path) if hasattr(depends, "root_path") else AsyncPath("/")
 
         if adapter and hasattr(adapter, "category"):
             searchpaths.extend(
@@ -122,49 +98,6 @@ class TemplatesBase(AdapterBase):
                 ),
             )
 
-        if adapter and hasattr(adapter, "category") and adapter.category == "app":
-            searchpaths.extend(await self._get_app_searchpaths(adapter))
-
-        # Only use pkg_registry if it's available
-        if pkg_registry:
-            searchpaths.extend(await self._get_pkg_registry_searchpaths(adapter))
-
-        return searchpaths
-
-    def _get_base_root(self) -> AsyncPath:
-        if callable(root_path):
-            return AsyncPath(root_path())
-        return AsyncPath(root_path)
-
-    async def _get_app_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
-        searchpaths = []
-        for a in (
-            a
-            for a in get_adapters()
-            if a
-            and hasattr(a, "category")
-            and a.category not in ("app", "admin", "secret")
-        ):
-            exists_result = await safe_await((a.path / "_templates").exists)
-            if exists_result:
-                searchpaths.append(a.path / "_templates")
-        return searchpaths
-
-    async def _get_pkg_registry_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
-        searchpaths = []
-        for pkg in pkg_registry.get():
-            if (
-                pkg
-                and hasattr(pkg, "path")
-                and adapter
-                and hasattr(adapter, "category")
-            ):
-                searchpaths.extend(
-                    self.get_searchpath(
-                        adapter,
-                        pkg.path / "adapters" / adapter.category / "_templates",
-                    ),
-                )
         return searchpaths
 
     @staticmethod
@@ -182,7 +115,3 @@ class TemplatesBase(AdapterBase):
     @staticmethod
     def get_cache_key(path: AsyncPath) -> str:
         return ":".join(path.parts)
-
-
-# Oneiric migration indicator
-_using_oneiric = True

@@ -7,16 +7,18 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-10-01
 """
 
+from __future__ import annotations
+
 import typing as t
 from contextlib import suppress
 from uuid import UUID
 
 # Oneiric imports for dependency injection
-from oneiric.core.resolution import Resolver
 from fastblocks.adapters.oneiric_helper import register_candidate
+from fastblocks.core.resolver import get_resolver
 
 # Custom Oneiric-compatible health system
-depends = Resolver()
+depends = get_resolver()
 
 # Health system availability
 oneiric_health_available = True

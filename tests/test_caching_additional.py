@@ -239,37 +239,29 @@ class TestCacheKeyFunctions:
         assert "accept-encoding" in varying_headers
         assert "user-agent" in varying_headers
 
-    def test_generate_varying_headers_cache_key(self) -> None:
+    async def test_generate_varying_headers_cache_key(self) -> None:
         """Test generating a cache key for varying headers."""
-        # Create a URL
         url = URL("http://example.com/test")
 
-        # Generate the cache key
-        cache_key = generate_varying_headers_cache_key(url)
+        cache_key = await generate_varying_headers_cache_key(url)
 
-        # Verify the cache key
         assert isinstance(cache_key, str)
         assert cache_key.startswith("varying_headers.")
 
-        # Generate another key with a different path
         url2 = URL("http://example.com/other")
-        cache_key2 = generate_varying_headers_cache_key(url2)
+        cache_key2 = await generate_varying_headers_cache_key(url2)
 
-        # Verify the keys are different
         assert cache_key != cache_key2
 
-    def test_generate_cache_key(self, mock_depends: MagicMock) -> None:
+    async def test_generate_cache_key(self, mock_depends: MagicMock) -> None:
         """Test generating a cache key."""
-        # Create a mock config
         mock_config = MagicMock()
         mock_config.app.name = "testapp"
 
-        # Create a URL and headers
         url = URL("http://example.com/test")
         headers = Headers({"Accept-Encoding": "gzip"})
 
-        # Call generate_cache_key
-        cache_key = generate_cache_key(
+        cache_key = await generate_cache_key(
             url,
             method="GET",
             headers=headers,
@@ -277,12 +269,10 @@ class TestCacheKeyFunctions:
             config=mock_config,
         )
 
-        # Verify the cache key
         assert isinstance(cache_key, str)
         assert cache_key.startswith("testapp:cached:GET.")
 
-        # Test with a non-cachable method
-        cache_key = generate_cache_key(
+        cache_key = await generate_cache_key(
             url,
             method="POST",
             headers=headers,
@@ -290,7 +280,6 @@ class TestCacheKeyFunctions:
             config=mock_config,
         )
 
-        # Verify the cache key is None
         assert cache_key is None
 
 

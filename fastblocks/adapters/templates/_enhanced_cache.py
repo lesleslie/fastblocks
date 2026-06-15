@@ -270,8 +270,8 @@ class EnhancedCacheManager:
                 if await self.delete(key):
                     invalidated.append(key)
 
-            # Clean up dependency graph
-            del self.dependency_graph[dependency]
+            # Clean up dependency graph (may already be removed by _remove_entry)
+            self.dependency_graph.pop(dependency, None)
 
         self.metrics.invalidations += len(invalidated)
         return invalidated

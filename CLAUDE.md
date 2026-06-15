@@ -135,9 +135,25 @@ Two template engines, one API surface. The Jinja2 path is async-aware via `jinja
 
 `fastblocks/websocket/auth.py` reads `FASTBLOCKS_JWT_SECRET`, `FASTBLOCKS_TOKEN_EXPIRY`, `FASTBLOCKS_AUTH_ENABLED` at **import time** (module-level `os.getenv`). The server `FastblocksWebSocketServer(WebSocketServer)` in `server.py` requires a JWT secret to issue tokens; if `JWT_SECRET == "dev-secret-change-in-production"` you get a warning, not a refusal. **Known tech debt**: the plan calls for hard-fail on the dev-secret in non-test processes; that work is not yet landed. New code in this area should call `os.getenv(...)` at use-time, not module load.
 
-### MCP surface is read-only
+### MCP surface is read-only for framework introspection
 
-The fastblocks MCP server (in `mcp/`) is for **framework introspection** only. The 7 retained tools all read state. There is no MCP path to create a template, create a component, configure an adapter, or start a WebSocket — those operations belong in a consumer app's MCP server, not here. The `tests/mcp/test_ci_guard.py` test fails the build if any of the deleted symbol names (`fastblocks_start_websocket`, `fastblocks_create_template`, `fastblocks_create_component`, `fastblocks_configure_adapter`, or `from fastblocks.mcp.websocket_tools import ...`) reappear. Keep it that way.
+MCP is **read-only for framework introspection** (7 tools: `list_adapters`,
+`list_templates`, `validate_template`, `render_template`, `list_components`,
+`validate_component`, `check_adapter_health`). Product operations (WebSocket
+lifecycle, adapter configuration, site buildout) belong in consumer projects
+such as SplashStand.
+
+There is no MCP path to create a template, create a component, configure an
+adapter, or start a WebSocket — those operations belong in a consumer app's MCP
+server, not here. The `tests/mcp/test_ci_guard.py` test fails the build if any
+of the deleted symbol names (`fastblocks_start_websocket`,
+`fastblocks_create_template`, `fastblocks_create_component`,
+`fastblocks_configure_adapter`, or `from fastblocks.mcp.websocket_tools import
+...`) reappear. Keep it that way.
+
+To configure an adapter from Python, use the typed API:
+`AdapterRegistry.configure(adapter_name: str, **fields: Any)`, which validates
+field names against the per-adapter settings schema and rejects unknown keys.
 
 ### Async / sync boundaries
 

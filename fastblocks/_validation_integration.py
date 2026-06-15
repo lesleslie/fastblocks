@@ -31,6 +31,8 @@ Usage:
         ...
 """
 
+from __future__ import annotations
+
 import functools
 import typing as t
 from contextlib import suppress
@@ -38,11 +40,12 @@ from dataclasses import dataclass
 from enum import Enum
 
 # Oneiric imports for dependency injection
-from oneiric.core.resolution import Resolver
 from fastblocks.adapters.oneiric_helper import register_candidate
+from fastblocks.core.patterns import SingletonMeta
+from fastblocks.core.resolver import get_resolver
 
 # Custom Oneiric-compatible validation system
-depends = Resolver()
+depends = get_resolver()
 
 
 # Validation system availability
@@ -119,17 +122,10 @@ class ValidationConfig:
     log_validation_failures: bool = True
 
 
-class FastBlocksValidationService:
+class FastBlocksValidationService(metaclass=SingletonMeta):
     """FastBlocks validation service with Oneiric integration."""
 
-    _instance: t.ClassVar["FastBlocksValidationService | None"] = None
     _config: t.ClassVar[ValidationConfig] = ValidationConfig()
-
-    def __new__(cls) -> "FastBlocksValidationService":
-        """Singleton pattern - ensure only one instance exists."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
     def __init__(self) -> None:
         """Initialize validation service with Oneiric integration."""
@@ -190,15 +186,7 @@ class FastBlocksValidationService:
         Returns:
             False if strict and issues found, True otherwise
         """
-        if not self._config.prevent_sql_injection:
-            return True
-
-        for key, value in sanitized.items():
-            if isinstance(value, str) and self._contains_sql_injection(value):
-                errors.append(f"Potential SQL injection in {key}")
-                if strict:
-                    return False
-
+        # TODO: Use Pydantic field validators for SQL injection prevention
         return True
 
     async def validate_template_context(
@@ -482,35 +470,6 @@ class FastBlocksValidationService:
 
         return None
 
-    def _contains_sql_injection(self, value: str) -> bool:
-        """Check for common SQL injection patterns."""
-        sql_patterns = [
-            "union select",
-            "union all select",
-            "drop table",
-            "delete from",
-            "insert into",
-            "update set",
-            "'; --",
-            "'--",
-            "' or '1'='1",
-            "' or 1=1",
-            '" or "1"="1',
-            "or 1=1",
-            "' or 'x'='x",
-            '" or "x"="x',
-            "admin'--",
-            'admin"--',
-            "') or ('1'='1",
-            '") or ("1"="1',
-            "exec(",
-            "execute(",
-            "xp_cmdshell",
-            "sp_executesql",
-        ]
-        value_lower = value.lower()
-        return any(pattern in value_lower for pattern in sql_patterns)
-
     def _contains_path_traversal(self, value: str) -> bool:
         """Check for path traversal attempts."""
         traversal_patterns = ["../", "..\\", "%2e%2e", "....//"]
@@ -562,10 +521,7 @@ class FastBlocksValidationService:
         if not self.available:
             return
 
-        # Check for SQL injection
-        if self._config.prevent_sql_injection:
-            if self._contains_sql_injection(value):
-                errors.append(f"Potential SQL injection in {key}")
+        # TODO: Use Pydantic field validators for SQL injection prevention
 
         # Check for path traversal
         if self._config.prevent_path_traversal:

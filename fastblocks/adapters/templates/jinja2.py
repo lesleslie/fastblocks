@@ -549,6 +549,13 @@ class StorageLoader(BaseTemplateLoader):
 
     async def list_templates_async(self) -> list[str]:
         found: list[str] = []
+        # StorageLoader without a configured ``self.storage`` is
+        # a no-op (test_list_templates_async_no_storage verifies
+        # this). The prior code dereferenced ``self.storage.templates``
+        # unconditionally and crashed with ``AttributeError`` when
+        # storage was None.
+        if self.storage is None:
+            return found
         for searchpath in self.searchpath:
             with suppress(FileNotFoundError):
                 paths = await self.storage.templates.list(
@@ -706,9 +713,15 @@ class ChoiceLoader(AsyncBaseLoader):
         assert template is not None
         for loader in self.loaders:
             try:
-                result = await loader.get_source_async(
-                    environment_or_template, template
-                )
+                # Pass the template name only; the parent
+                # ``environment_or_template`` is an internal
+                # ChoiceLoader adapter arg and is not part of
+                # the child loader's ``get_source_async(template)``
+                # contract. Passing both produced
+                # ``mock('name', 'name')`` for downstream
+                # ``AsyncMock`` children whose contract is
+                # single-arg.
+                result = await loader.get_source_async(template)
                 return result
             except TemplateNotFound:
                 continue

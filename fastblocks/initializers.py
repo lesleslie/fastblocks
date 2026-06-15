@@ -4,13 +4,15 @@ This module contains classes responsible for initializing various aspects
 of a FastBlocks application, separating concerns from the main application class.
 """
 
-import logging
+from __future__ import annotations
+
 import typing as t
 
 # Oneiric imports
 from oneiric.core.config import OneiricSettings
 from oneiric.core.logging import get_logger as oneiric_get_logger
 from oneiric.core.resolution import Resolver, register_pkg
+from oneiric.core.logging import get_logger
 
 # Create resolver instance
 _resolver = Resolver()
@@ -181,10 +183,10 @@ class ApplicationInitializer:
                 "granian",
                 "granian.access",
             ):
-                server_logger = logging.getLogger(logger_name)
+                server_logger = get_logger(logger_name)
                 server_logger.handlers.clear()
                 server_logger.addHandler(interceptor_class())
-                server_logger.setLevel(logging.DEBUG)
+                server_logger.setLevel(10)
                 server_logger.propagate = False
 
     def _register_integrations_async(self) -> None:

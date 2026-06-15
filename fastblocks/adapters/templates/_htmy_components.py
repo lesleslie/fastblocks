@@ -333,13 +333,54 @@ class HTMXComponentMixin:
 
 
 class ComponentBase(ABC):
-    """Base class for all HTMY components."""
+    """Base class for all HTMY components.
+
+    The ``_children`` and ``_parent`` backing storage is initialized
+    lazily via ``__getattr__`` / ``__setattr__`` so that
+    ``@dataclass`` subclasses (whose generated ``__init__`` does
+    not call ``super().__init__``) still see the slot initialized
+    the first time ``children`` is accessed. The prior
+    eager-init in ``__init__`` was clobbered every time a
+    ``@dataclass`` subclass overrode ``__init__``.
+    """
+
+    # Marker attribute used to keep ``__setattr__`` from recursing
+    # into the lazy-init logic when storing the sentinel.
+    _INIT_MARKER: t.ClassVar[str] = "_fastblocks_base_inited"
+
+    def __getattr__(self, name: str) -> t.Any:
+        # Lazy init for the runtime-only slots that ``ComponentBase``
+        # needs but ``@dataclass`` subclasses don't initialize.
+        if name in ("_children", "_parent", "_context", "_request"):
+            if name == "_children":
+                value: list[ComponentBase] = []
+            elif name == "_parent":
+                value = None
+            elif name == "_context":
+                value = {}
+            else:  # _request
+                value = None
+            object.__setattr__(self, name, value)
+            return value
+        raise AttributeError(name)
+
+    def __setattr__(self, name: str, value: t.Any) -> None:
+        # When the dataclass-generated ``__init__`` writes its
+        # declared fields, those are the only attributes set
+        # pre-lazy-init. The first time we see a slot
+        # ``ComponentBase`` owns (``_children`` / ``_parent`` / etc.),
+        # we set it directly on the instance dict.
+        object.__setattr__(self, name, value)
 
     def __init__(self, **kwargs: Any) -> None:
-        self._context: dict[str, Any] = kwargs
-        self._request: Request | None = kwargs.get("request")
+        # Materialize the slots eagerly when an instance is built
+        # through ``ComponentBase.__init__`` (the non-dataclass
+        # path). The dataclass path relies on the ``__getattr__``
+        # lazy-init above.
         self._children: list[ComponentBase] = []
         self._parent: ComponentBase | None = None
+        self._context: dict[str, Any] = kwargs
+        self._request: Request | None = kwargs.get("request")
 
     @abstractmethod
     def htmy(self, context: dict[str, Any]) -> str:
@@ -375,13 +416,23 @@ class ComponentBase(ABC):
 
 
 class DataclassComponentBase(ComponentBase):
-    """Base class for dataclass-based components."""
+    """Base class for dataclass-based components.
 
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        super().__init_subclass__(**kwargs)
-        if not is_dataclass(cls):
+    The ``@dataclass`` decorator is what actually enforces the
+    dataclass contract at class-creation time. The prior
+    ``__init_subclass__`` validator fired *before* ``@dataclass``
+    had a chance to process the class body — so any subclass
+    written as ``@dataclass\\nclass Foo(DataclassComponentBase):``
+    raised ``ComponentValidationError("must be a dataclass")`` even
+    though the final class IS a dataclass. The runtime check has
+    moved into ``__init__`` so it sees the post-decorator class.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        if not is_dataclass(self):
             raise ComponentValidationError(
-                f"Component {cls.__name__} must be a dataclass"
+                f"Component {type(self).__name__} must be a dataclass"
             )
 
     def validate_fields(self) -> None:
@@ -601,40 +652,33 @@ class ComponentValidator:
 
     @staticmethod
     async def _load_component_class_from_file(source: str, component_path: AsyncPath):
-        """Load component class from source file."""
-        # Import and analyze component safely
-        import importlib.util
+        """Load component class from source file.
 
-        # Create a temporary module to safely load the component
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(source)
-            temp_module_path = f.name
+        Uses the validated-AST loader (``load_component_from_source``)
+        so we never touch ``importlib.util.spec_from_file_location``
+        + ``spec.loader.exec_module`` — that path is the
+        documented RCE vector Phase 1.3 closed. The new loader
+        parses the source as an AST, walks the top level, rejects
+        dangerous calls (``exec``/``eval``/``compile``/``__import__``),
+        and only allowlists ``dataclasses`` and ``typing`` as
+        top-level imports.
+        """
+        component_class = load_component_from_source(source, component_path.stem)
 
-        try:
-            spec = importlib.util.spec_from_file_location(
-                component_path.stem, temp_module_path
-            )
-            if spec is None or spec.loader is None:
-                raise ComponentValidationError(
-                    f"Could not load module from {component_path}"
-                )
-
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-
-            component_class = None
-            for obj in vars(module).values():
+        # ``load_component_from_source`` returns the FIRST class
+        # in the source that has an ``htmy`` method. Re-scan the
+        # module's namespace for a matching class so we can return
+        # the class object itself rather than the module's first
+        # symbol — the validator downstream treats the return as
+        # a class.
+        if not inspect.isclass(component_class):
+            for obj in vars(component_class).values() if hasattr(component_class, "__dict__") else []:
                 if (
                     inspect.isclass(obj)
                     and hasattr(obj, "htmy")
                     and callable(getattr(obj, "htmy"))
                 ):
-                    component_class = obj
-                    break
-        finally:
-            # Clean up the temporary file
-            Path(temp_module_path).unlink()
-
+                    return obj
         return component_class
 
     @staticmethod
@@ -1006,13 +1050,17 @@ class AdvancedHTMYComponentRegistry:
                     ) from None
 
         # Refuse to overwrite by default. ``exists`` may be sync
-        # (pathlib) or async (AsyncPath); try both.
+        # (pathlib) or async (AsyncPath). ``inspect.iscoroutine`` is
+        # the canonical way to detect the async case without
+        # triggering the ``TypeError: object coroutine can't be used
+        # in 'await' expression`` that the prior try/except let
+        # through on the second call.
         if not overwrite:
-            try:
-                target_exists: bool = bool(resolved_target.exists())  # type: ignore[attr-defined]
-            except TypeError:
-                # async exists() — call it and await the result.
-                target_exists = bool(resolved_target.exists())  # type: ignore[func-returns-value]
+            exists_result = resolved_target.exists()  # type: ignore[attr-defined]
+            if inspect.iscoroutine(exists_result):
+                target_exists: bool = bool(await exists_result)
+            else:
+                target_exists = bool(exists_result)
             if target_exists:
                 raise ValueError(
                     f"target_path {target_path!s} already exists; "

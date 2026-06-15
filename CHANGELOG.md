@@ -50,6 +50,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is the typed Python API `AdapterRegistry.configure(adapter_name: str, **fields: Any)`,
   which rejects unknown field names against the per-adapter settings schema.
 
+#### WebSocket Auth (Phase 1.1)
+
+- `FASTBLOCKS_JWT_SECRET` is now required at startup in non-test processes. A
+  missing or default (`"dev-secret-change-in-production"`) secret raises at
+  server startup instead of silently accepting connections.
+- `FASTBLOCKS_AUTH_ENABLED` defaults to `true`. Explicitly set to `false` only
+  in local development; the old default of `false` was removed.
+- WebSocket server requires explicit allowed origins via
+  `FASTBLOCKS_WS_ALLOWED_ORIGINS` (comma-separated). An empty value means no
+  external origin is permitted.
+
 ### Added
 
 - **`fastblocks.core.resolver.get_resolver()`** — the canonical shared Oneiric
@@ -163,6 +174,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Coverage ratchet +1.47%** (88.93% → 90.40%) on the targeted modules
   that received new tests in Phases 1-4.
+
+- **Security test consolidation (Phase 2.4).** XSS, SQL injection, and
+  path-traversal payload sets are now the single source of truth in
+  `tests/security/test_input_validation.py`. Duplicate checks in
+  `tests/test_validation_integration.py` (`TestSecurityFeatures`,
+  `TestTemplateContextValidation`, `TestFormInputValidation`,
+  `TestAPIValidation`) are annotated with `# TODO: Duplicate of
+  tests/security/test_input_validation.py` and will be removed in the
+  next consolidation pass.
 
 ### Removed
 

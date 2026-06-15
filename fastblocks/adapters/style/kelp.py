@@ -1,6 +1,9 @@
 """Kelp styles adapter for FastBlocks with component system."""
 
+from __future__ import annotations
+
 from contextlib import suppress
+from functools import lru_cache
 from typing import Any
 from uuid import UUID
 
@@ -87,58 +90,155 @@ class KelpStyleSettings(StyleBaseSettings):
     enable_animations: bool = True
 
 
-class KelpStyle(StyleBase):
-    """Kelp styles adapter with modern component system."""
+def _hsl_colors(hue: int, prefix: str) -> str:
+    """Generate HSL color scale for a given hue and prefix."""
+    return f"""
+    --kelp-{prefix}-50: hsl({hue}, 100%, 97%);
+    --kelp-{prefix}-100: hsl({hue}, 100%, 94%);
+    --kelp-{prefix}-200: hsl({hue}, 100%, 87%);
+    --kelp-{prefix}-300: hsl({hue}, 100%, 80%);
+    --kelp-{prefix}-400: hsl({hue}, 100%, 66%);
+    --kelp-{prefix}-500: hsl({hue}, 100%, 50%);
+    --kelp-{prefix}-600: hsl({hue}, 100%, 45%);
+    --kelp-{prefix}-700: hsl({hue}, 100%, 35%);
+    --kelp-{prefix}-800: hsl({hue}, 100%, 25%);
+    --kelp-{prefix}-900: hsl({hue}, 100%, 15%);"""
 
-    # Required ACB 0.19.0+ metadata
-    MODULE_ID: UUID = UUID("01937d86-8b6d-a07e-c9fa-e8f9a0b1c2d3")  # Static UUID7
-    MODULE_STATUS: str = "stable"
 
-    def __init__(self) -> None:
-        """Initialize Kelp adapter."""
-        super().__init__()
-        self.settings: KelpStyleSettings | None = None
+@lru_cache(maxsize=8)
+def _build_kelp_css(
+    theme: str,
+    primary_hue: int,
+    secondary_hue: int,
+    accent_hue: int,
+    neutral_hue: int,
+    spacing_scale: tuple[str, ...],
+    font_family_sans: str,
+    font_family_mono: str,
+    font_scale: tuple[tuple[str, str], ...],
+    radius_scale: tuple[tuple[str, str], ...],
+    enable_animations: bool,
+) -> str:
+    """Build the Kelp CSS string from hashable config parameters.
 
-        # Register with Oneiric resolver (fail gracefully if not supported)
-        with suppress(Exception):
-            depends.set(self)
+    Cached with lru_cache — identical parameter sets reuse the cached string
+    instead of regenerating multiple kilobytes of CSS on every request.
+    """
+    # Color variables
+    color_vars = f"""
+:root {{
+    /* Color System */
+    {_hsl_colors(primary_hue, "primary")}
+    {_hsl_colors(secondary_hue, "secondary")}
+    {_hsl_colors(accent_hue, "accent")}
 
-    def get_stylesheet_links(self) -> list[str]:
-        """Get Kelp stylesheet links."""
-        if not self.settings:
-            self.settings = KelpStyleSettings()
+    /* Neutral Colors */
+    --kelp-gray-50: hsl({neutral_hue}, 20%, 98%);
+    --kelp-gray-100: hsl({neutral_hue}, 20%, 95%);
+    --kelp-gray-200: hsl({neutral_hue}, 15%, 89%);
+    --kelp-gray-300: hsl({neutral_hue}, 10%, 78%);
+    --kelp-gray-400: hsl({neutral_hue}, 8%, 56%);
+    --kelp-gray-500: hsl({neutral_hue}, 6%, 45%);
+    --kelp-gray-600: hsl({neutral_hue}, 5%, 35%);
+    --kelp-gray-700: hsl({neutral_hue}, 5%, 25%);
+    --kelp-gray-800: hsl({neutral_hue}, 5%, 15%);
+    --kelp-gray-900: hsl({neutral_hue}, 5%, 9%);
 
-        links = []
+    /* Shadow System */
+    --kelp-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --kelp-shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --kelp-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --kelp-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --kelp-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}}"""
 
-        # Kelp base CSS (if available from CDN)
-        # Note: Kelp might be a custom framework, so we generate it inline
-        kelp_css = self._generate_kelp_css()
-        links.append(f"<style>{kelp_css}</style>")
+    # Spacing variables
+    spacing_lines = "".join(
+        f"    --kelp-space-{i}: {v}rem;\n" for i, v in enumerate(spacing_scale)
+    )
+    spacing_vars = f"\n    /* Spacing System */\n{spacing_lines}"
 
-        # Inter font for better typography
-        links.extend(
-            (
-                '<link rel="preconnect" href="https://fonts.googleapis.com">',
-                '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-                '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">',
-                '<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">',
-            )
-        )
+    # Typography variables
+    font_scale_lines = "".join(
+        f"    --kelp-text-{name}: {size};\n" for name, size in font_scale
+    )
+    typography_vars = (
+        f"\n    /* Typography System */\n"
+        f"    --kelp-font-sans: {font_family_sans};\n"
+        f"    --kelp-font-mono: {font_family_mono};\n"
+        f"{font_scale_lines}"
+    )
 
-        return links
+    # Border radius variables
+    radius_lines = "".join(
+        f"    --kelp-radius-{name}: {value};\n" for name, value in radius_scale
+    )
+    radius_vars = f"    /* Border Radius System */\n{radius_lines}"
 
-    def _generate_kelp_css(self) -> str:
-        """Generate Kelp CSS framework."""
-        if not self.settings:
-            self.settings = KelpStyleSettings()
+    # Animation block
+    animations = (
+        """
+/* Animation System */
+@keyframes kelp-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(0.5rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
-        # Generate color variables based on HSL
-        color_vars = self._generate_color_variables()
-        spacing_vars = self._generate_spacing_variables()
-        typography_vars = self._generate_typography_variables()
-        radius_vars = self._generate_radius_variables()
+@keyframes kelp-slide-up {
+    from {
+        transform: translateY(1rem);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
 
-        css = f"""
+@keyframes kelp-scale-in {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.kelp-animate-fade-in {
+    animation: kelp-fade-in 0.3s ease-out;
+}
+
+.kelp-animate-slide-up {
+    animation: kelp-slide-up 0.4s ease-out;
+}
+
+.kelp-animate-scale-in {
+    animation: kelp-scale-in 0.2s ease-out;
+}
+
+.kelp-transition {
+    transition: all 0.2s ease;
+}
+
+.kelp-transition-colors {
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}"""
+        if enable_animations
+        else ""
+    )
+
+    utility_classes = _generate_utility_classes()
+    responsive_classes = _generate_responsive_classes()
+
+    return f"""
 /* Kelp CSS Framework for FastBlocks */
 {color_vars}
 {spacing_vars}
@@ -467,106 +567,19 @@ body {{
 }}
 
 /* Utility Classes */
-{self._generate_utility_classes()}
+{utility_classes}
 
 /* Responsive Design */
-{self._generate_responsive_classes()}
+{responsive_classes}
 
 /* Animation System */
-{self._generate_animations()}
-"""
-        return css
-
-    def _generate_color_variables(self) -> str:
-        """Generate CSS color variables based on HSL."""
-        if not self.settings:
-            self.settings = KelpStyleSettings()
-
-        def hsl_colors(hue: int, prefix: str) -> str:
-            """Generate HSL color scale."""
-            return f"""
-    --kelp-{prefix}-50: hsl({hue}, 100%, 97%);
-    --kelp-{prefix}-100: hsl({hue}, 100%, 94%);
-    --kelp-{prefix}-200: hsl({hue}, 100%, 87%);
-    --kelp-{prefix}-300: hsl({hue}, 100%, 80%);
-    --kelp-{prefix}-400: hsl({hue}, 100%, 66%);
-    --kelp-{prefix}-500: hsl({hue}, 100%, 50%);
-    --kelp-{prefix}-600: hsl({hue}, 100%, 45%);
-    --kelp-{prefix}-700: hsl({hue}, 100%, 35%);
-    --kelp-{prefix}-800: hsl({hue}, 100%, 25%);
-    --kelp-{prefix}-900: hsl({hue}, 100%, 15%);"""
-
-        return f"""
-:root {{
-    /* Color System */
-    {hsl_colors(self.settings.primary_hue, "primary")}
-    {hsl_colors(self.settings.secondary_hue, "secondary")}
-    {hsl_colors(self.settings.accent_hue, "accent")}
-
-    /* Neutral Colors */
-    --kelp-gray-50: hsl({self.settings.neutral_hue}, 20%, 98%);
-    --kelp-gray-100: hsl({self.settings.neutral_hue}, 20%, 95%);
-    --kelp-gray-200: hsl({self.settings.neutral_hue}, 15%, 89%);
-    --kelp-gray-300: hsl({self.settings.neutral_hue}, 10%, 78%);
-    --kelp-gray-400: hsl({self.settings.neutral_hue}, 8%, 56%);
-    --kelp-gray-500: hsl({self.settings.neutral_hue}, 6%, 45%);
-    --kelp-gray-600: hsl({self.settings.neutral_hue}, 5%, 35%);
-    --kelp-gray-700: hsl({self.settings.neutral_hue}, 5%, 25%);
-    --kelp-gray-800: hsl({self.settings.neutral_hue}, 5%, 15%);
-    --kelp-gray-900: hsl({self.settings.neutral_hue}, 5%, 9%);
-
-    /* Shadow System */
-    --kelp-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --kelp-shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --kelp-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --kelp-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --kelp-shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-}}"""
-
-    def _generate_spacing_variables(self) -> str:
-        """Generate spacing variables."""
-        if not self.settings:
-            self.settings = KelpStyleSettings()
-
-        vars_css = ""
-        for i, value in enumerate(self.settings.spacing_scale):
-            vars_css += f"    --kelp-space-{i}: {value}rem;\n"
-
-        return f"""
-    /* Spacing System */
-{vars_css}"""
-
-    def _generate_typography_variables(self) -> str:
-        """Generate typography variables."""
-        if not self.settings:
-            self.settings = KelpStyleSettings()
-
-        font_vars = f"""
-    /* Typography System */
-    --kelp-font-sans: {self.settings.font_family_sans};
-    --kelp-font-mono: {self.settings.font_family_mono};
+{animations}
 """
 
-        for name, size in self.settings.font_scale.items():
-            font_vars += f"    --kelp-text-{name}: {size};\n"
 
-        return font_vars
-
-    def _generate_radius_variables(self) -> str:
-        """Generate border radius variables."""
-        if not self.settings:
-            self.settings = KelpStyleSettings()
-
-        radius_vars = "    /* Border Radius System */\n"
-        for name, value in self.settings.radius_scale.items():
-            radius_vars += f"    --kelp-radius-{name}: {value};\n"
-
-        return radius_vars
-
-    @staticmethod
-    def _generate_utility_classes() -> str:
-        """Generate utility classes."""
-        return """
+def _generate_utility_classes() -> str:
+    """Generate utility classes."""
+    return """
 /* Text Utilities */
 .kelp-text-left { text-align: left; }
 .kelp-text-center { text-align: center; }
@@ -638,10 +651,10 @@ body {{
 .kelp-shadow-lg { box-shadow: var(--kelp-shadow-lg); }
 .kelp-shadow-none { box-shadow: none; }"""
 
-    @staticmethod
-    def _generate_responsive_classes() -> str:
-        """Generate responsive design classes."""
-        return """
+
+def _generate_responsive_classes() -> str:
+    """Generate responsive design classes."""
+    return """
 /* Responsive Design */
 @media (max-width: 640px) {
     .kelp-container {
@@ -675,65 +688,62 @@ body {{
     }
 }"""
 
-    def _generate_animations(self) -> str:
-        """Generate animation system."""
-        if not self.settings or not self.settings.enable_animations:
-            return ""
 
-        return """
-/* Animation System */
-@keyframes kelp-fade-in {
-    from {
-        opacity: 0;
-        transform: translateY(0.5rem);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+class KelpStyle(StyleBase):
+    """Kelp styles adapter with modern component system."""
 
-@keyframes kelp-slide-up {
-    from {
-        transform: translateY(1rem);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
+    # Required ACB 0.19.0+ metadata
+    MODULE_ID: UUID = UUID("01937d86-8b6d-a07e-c9fa-e8f9a0b1c2d3")  # Static UUID7
+    MODULE_STATUS: str = "stable"
 
-@keyframes kelp-scale-in {
-    from {
-        transform: scale(0.95);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
+    def __init__(self) -> None:
+        """Initialize Kelp adapter."""
+        super().__init__()
+        self.settings: KelpStyleSettings | None = None
 
-.kelp-animate-fade-in {
-    animation: kelp-fade-in 0.3s ease-out;
-}
+        # Register with Oneiric resolver (fail gracefully if not supported)
+        with suppress(Exception):
+            depends.set(self)
 
-.kelp-animate-slide-up {
-    animation: kelp-slide-up 0.4s ease-out;
-}
+    def get_stylesheet_links(self) -> list[str]:
+        """Get Kelp stylesheet links."""
+        if not self.settings:
+            self.settings = KelpStyleSettings()
 
-.kelp-animate-scale-in {
-    animation: kelp-scale-in 0.2s ease-out;
-}
+        kelp_css = self._generate_kelp_css()
+        links = [f"<style>{kelp_css}</style>"]
 
-.kelp-transition {
-    transition: all 0.2s ease;
-}
+        # Inter font for better typography
+        links.extend(
+            (
+                '<link rel="preconnect" href="https://fonts.googleapis.com">',
+                '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
+                '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">',
+                '<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">',
+            )
+        )
 
-.kelp-transition-colors {
-    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
-}"""
+        return links
+
+    def _generate_kelp_css(self) -> str:
+        """Generate Kelp CSS framework (delegates to cached module-level function)."""
+        if not self.settings:
+            self.settings = KelpStyleSettings()
+
+        s = self.settings
+        return _build_kelp_css(
+            theme=s.theme,
+            primary_hue=s.primary_hue,
+            secondary_hue=s.secondary_hue,
+            accent_hue=s.accent_hue,
+            neutral_hue=s.neutral_hue,
+            spacing_scale=tuple(s.spacing_scale),
+            font_family_sans=s.font_family_sans,
+            font_family_mono=s.font_family_mono,
+            font_scale=tuple(s.font_scale.items()),
+            radius_scale=tuple(s.radius_scale.items()),
+            enable_animations=s.enable_animations,
+        )
 
     def get_component_class(self, component: str) -> str:
         """Get Kelp-specific classes."""

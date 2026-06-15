@@ -87,9 +87,11 @@ async def test_templates_initialization(config: Config) -> None:
             MagicMock(return_value=MagicMock()),
         ) as mock_get_loader,
     ):
-        # Mock external dependencies that init_envs uses
+        # Patch where the name is used (not where it's defined) so the mock
+        # applies even when fastblocks.adapters.templates.jinja2 was pre-cached
+        # with the real starlette_async_jinja class (xdist worker reuse).
         with patch(
-            "starlette_async_jinja.AsyncJinja2Templates",
+            "fastblocks.adapters.templates.jinja2.AsyncJinja2Templates",
         ) as mock_async_jinja:
             with patch("jinja2_async_environment.bccache.AsyncRedisBytecodeCache"):
                 mock_env = MagicMock()
@@ -276,8 +278,13 @@ async def test_choice_loader_fallback(
 
     # Verify
     assert source == template_content
-    loader1.get_source_async.assert_called_once_with("test.html", "test.html")
-    loader2.get_source_async.assert_called_once_with("test.html", "test.html")
+    # ``ChoiceLoader.get_source_async`` calls child loaders with
+    # just the template name. The prior production code passed
+    # two positional args (``environment_or_template, template``)
+    # because the ChoiceLoader adapter signature has a
+    # two-arg form; that was a bug.
+    loader1.get_source_async.assert_called_once_with("test.html")
+    loader2.get_source_async.assert_called_once_with("test.html")
 
 
 @pytest.mark.asyncio

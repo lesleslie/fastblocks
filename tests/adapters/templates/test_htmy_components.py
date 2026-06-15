@@ -97,14 +97,22 @@ def create_mock_composite_component():
         """Mock composite component for testing."""
 
         title: str = "Composite"
-        children: list[str] = field(default_factory=lambda: ["user_card", "button"])
+        # NOTE: field is ``child_names`` (a list of *names*) rather
+        # than ``children`` because ``ComponentBase.children`` is
+        # already a read-only property exposing the runtime
+        # parent/child tree. The dataclass-generated ``__init__``
+        # would try to do ``self.children = [...]`` and collide
+        # with the no-setter property.
+        child_names: list[str] = field(
+            default_factory=lambda: ["user_card", "button"]
+        )
 
         def htmy(self, context: dict[str, Any]) -> str:
             render_component = context.get("render_component")
             children_html = ""
 
             if render_component:
-                for child in self.children:
+                for child in self.child_names:
                     children_html += f"<!-- Child: {child} -->"
 
             return f"""
@@ -138,7 +146,20 @@ class MockAsyncPath:
         return MockAsyncPath(f"{self.path}/{other}")
 
     async def exists(self) -> bool:
-        return True
+        # The conftest-installed anyio.Path replacement delegates
+        # to real pathlib, which is the right call for tests that
+        # create real temp dirs. The tests in this file use
+        # synthetic ``/test/components`` paths that don't exist
+        # on disk, so the only way the discovery loop ever finds
+        # the components is to declare the SEARCH ROOT exists.
+        # For any ``.py`` leaf under the synthetic root, return
+        # ``False`` so the "refuse to overwrite" guard on
+        # ``scaffold_component`` doesn't reject new-file scaffolds.
+        from pathlib import Path
+
+        if self.path.startswith("/test/") and not self.path.endswith(".py"):
+            return True
+        return Path(self.path).exists()
 
     async def read_text(self) -> str:
         # Return mock component source based on stem

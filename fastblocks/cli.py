@@ -23,7 +23,6 @@ from subprocess import DEVNULL
 from subprocess import run as execute
 from typing import Annotated
 
-import nest_asyncio
 import typer
 import uvicorn
 import yaml
@@ -35,7 +34,6 @@ from rich.console import Console
 
 console = Console()
 
-nest_asyncio.apply()
 __all__ = ("cli", "components", "create", "dev", "run")
 default_adapters = {
     "routes": "default",

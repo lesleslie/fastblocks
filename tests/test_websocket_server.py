@@ -35,6 +35,7 @@ def mock_websocket():
     ws = MagicMock()
     ws.send = AsyncMock()
     ws.id = "test-connection-123"
+    ws.user = None
     return ws
 
 

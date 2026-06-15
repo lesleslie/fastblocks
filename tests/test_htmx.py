@@ -486,11 +486,7 @@ class TestIsHtmx:
         # Mock debug.enabled to avoid AttributeError
         with patch("fastblocks.htmx.debug") as mock_debug:
             mock_debug.enabled = False
-            # The current implementation of is_htmx for scope dicts creates HtmxDetails
-            # and checks for getattr(details, "is_htmx", False) which doesn't exist
-            # So it will return False, but that's likely a bug in the implementation
-            # For now, let's test what it actually does
-            assert is_htmx(scope) is False
+            assert is_htmx(scope) is True
 
     def test_is_htmx_with_scope_dict_no_htmx(self) -> None:
         """Test is_htmx with scope dict without HTMX header."""

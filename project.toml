@@ -1,0 +1,241 @@
+# Buildpacks configuration for FastBlocks web framework
+# https://github.com/buildpacks/spec
+
+# ==============================================================================
+# Project Metadata
+# ==============================================================================
+[project]
+id = "fastblocks.framework"
+name = "FastBlocks"
+version = "0.1.0"
+
+# ==============================================================================
+# Build Configuration
+# ==============================================================================
+[[build.buildpacks]]
+uri = "heroku/python"
+
+[[build.buildpacks]]
+uri = "heroku/procfile-explorer"
+
+# ==============================================================================
+# Python Environment
+# ==============================================================================
+[[build.env]]
+name = "BP_PYTHON_VERSION"
+value = "3.13"
+
+[[build.env]]
+name = "BP_PYTHON_INSTALL_NODE"
+value = "false"
+
+[[build.env]]
+name = "BP_PYTHON_ENABLE_SYM_LINK"
+value = "true"
+
+# ==============================================================================
+# OpenTelemetry Configuration
+# ==============================================================================
+[[build.env]]
+name = "BP_OTEL_VERSION"
+value = "latest"
+
+[[build.env]]
+name = "OTEL_SERVICE_NAME"
+value = "fastblocks"
+
+[[build.env]]
+name = "OTEL_SERVICE_VERSION"
+value = "0.1.0"
+
+[[build.env]]
+name = "OTEL_EXPORTER_OTLP_PROTOCOL"
+value = "grpc"
+
+[[build.env]]
+name = "OTEL_EXPORTER_OTLP_ENDPOINT"
+value = "http://otel-collector:4317"
+
+[[build.env]]
+name = "OTEL_RESOURCE_ATTRIBUTES"
+value = "service.name=fastblocks,service.version=0.1.0,deployment.environment=production"
+
+# Enable auto-instrumentation for web frameworks
+[[build.env]]
+name = "OTEL_PYTHON_AUTO_INSTRUMENTATION_ENABLED"
+value = "true"
+
+# FastAPI/Starlette auto-instrumentation
+[[build.env]]
+name = "OTEL_PYTHON_FASTAPI_INSTRUMENTATION_ENABLED"
+value = "true"
+
+[[build.env]]
+name = "OTEL_PYTHON_STARLETTE_INSTRUMENTATION_ENABLED"
+value = "true"
+
+# ==============================================================================
+# Template System Configuration
+# ==============================================================================
+[[build.env]]
+name = "BP_JINJA2_ENABLED"
+value = "true"
+
+[[build.env]]
+name = "BP_JINJA2_ASYNC_ENABLED"
+value = "true"
+
+[[build.env]]
+name = "BP_HTMX_ENABLED"
+value = "true"
+
+# ==============================================================================
+# Dependencies Optimization
+# ==============================================================================
+[[build.env]]
+name = "BP_KEEP_FILES_AT_BUILD"
+value = "*.whl"
+
+[[build.env]]
+name = "BP_PIP_VERSION"
+value = "latest"
+
+# Oneiric integration
+[[build.env]]
+name = "BP_ONEIRIC_ENABLED"
+value = "true"
+
+# ==============================================================================
+# Runtime Configuration
+# ==============================================================================
+[[build.env]]
+name = "BP_LIVE_RELOAD_ENABLED"
+value = "false"
+
+[[build.env]]
+name = "BP_DEBUG"
+value = "false"
+
+# ==============================================================================
+# Web Server Configuration
+# ==============================================================================
+[[build.env]]
+name = "BP_WEB_SERVER"
+value = "uvicorn"
+
+[[build.env]]
+name = "BP_WEB_SERVER_MODULE"
+value = "fastblocks.app:app"
+
+[[build.env]]
+name = "BP_WEB_SERVER_CMD"
+value = "fastblocks serve"
+
+# Uvicorn optimizations
+[[build.env]]
+name = "BP_WEB_SERVER_WORKERS"
+value = "4"
+
+[[build.env]]
+name = "BP_WEB_SERVER_THREADS"
+value = "8"
+
+[[build.env]]
+name = "BP_WEB_SERVER_WORKER_CLASS"
+value = "uvicorn.workers.UvicornWorker"
+
+# ==============================================================================
+# Health Checks
+# ==============================================================================
+[[build.env]]
+name = "BP_HEALTHCHECK"
+value = "curl -f http://localhost:8000/health || exit 1"
+
+[[build.env]]
+name = "BP_HEALTHCHECK_INTERVAL"
+value = "30"
+
+[[build.env]]
+name = "BP_HEALTHCHECK_TIMEOUT"
+value = "5"
+
+[[build.env]]
+name = "BP_HEALTHCHECK_RETRIES"
+value = "3"
+
+[[build.env]]
+name = "BP_HEALTHCHECK_START_PERIOD"
+value = "10"
+
+# ==============================================================================
+# Process Types
+# ==============================================================================
+[[processes]]
+type = "web"
+command = "fastblocks serve"
+default = true
+
+[[processes]]
+type = "worker"
+command = "fastblocks worker"
+
+[[processes]]
+type = "migrate"
+command = "fastblocks migrate"
+
+# ==============================================================================
+# Developer Experience
+# ==============================================================================
+[[build.env]]
+name = "BP_LAUNCH_DEBUG"
+value = "true"
+
+[[build.env]]
+name = "BP_LOG_LEVEL"
+value = "INFO"
+
+# ==============================================================================
+# Security Hardening
+# ==============================================================================
+[[build.env]]
+name = "BP_RUN_IMAGE"
+value = "full"
+
+# Set non-root user
+[[build.env]]
+name = "BP_IMAGE_USERS"
+value = "nonroot"
+
+# Read-only root filesystem
+[[build.env]]
+name = "BP_READ_ONLY_ROOT_FILESYSTEM"
+value = "true"
+
+# ==============================================================================
+# Metadata
+# ==============================================================================
+[metadata]
+"description" = "Async web framework for HTMX/Starlette applications"
+"org.opencontainers.image.title" = "FastBlocks Framework"
+"org.opencontainers.image.description" = "Server-side rendering framework built on Starlette and Oneiric"
+"org.opencontainers.image.version" = "0.1.0"
+"org.opencontainers.image.authors" = "Your Name <your.email@example.com>"
+"org.opencontainers.image.documentation" = "https://github.com/yourusername/fastblocks"
+"org.opencontainers.image.source" = "https://github.com/yourusername/fastblocks"
+
+# ==============================================================================
+# Development Configuration (Optional)
+# ==============================================================================
+# Uncomment for local development
+
+# [[build.env]]
+# name = "BP_DEBUG"
+# value = "true"
+
+# [[build.env]]
+# name = "BP_LIVE_RELOAD_ENABLED"
+# value = "true"
+
+# [[build.env]]
+# name = "BP_LOG_LEVEL"
+# value = "DEBUG"

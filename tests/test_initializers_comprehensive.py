@@ -47,20 +47,18 @@ class TestDependencyResolution:
     """Test dependency resolution functions."""
 
     def test_get_dependency_sync_basic(self) -> None:
-        """Test _get_dependency_sync with basic case."""
-        from fastblocks.initializers import _get_dependency_sync
-
-        # Should return None for non-existent dependency
-        result = _get_dependency_sync("nonexistent")
-        # Result should be None or not raise an exception
-        assert result is None or isinstance(result, object)
-
-    def test_get_dependency_sync_with_resolver(self) -> None:
-        """Test _get_dependency_sync with resolver."""
+        """Test _get_dependency_sync returns None for unknown dependency."""
         from fastblocks.initializers import _get_dependency_sync, _resolver
 
-        # Test with the actual resolver
-        with patch.object(_resolver, "get_sync", return_value="test_value"):
+        with patch.object(_resolver, "resolve", new_callable=AsyncMock, return_value=None):
+            result = _get_dependency_sync("nonexistent")
+        assert result is None
+
+    def test_get_dependency_sync_with_resolver(self) -> None:
+        """Test _get_dependency_sync forwards to resolver."""
+        from fastblocks.initializers import _get_dependency_sync, _resolver
+
+        with patch.object(_resolver, "resolve", new_callable=AsyncMock, return_value="test_value"):
             result = _get_dependency_sync("test_dependency")
             assert result == "test_value"
 
@@ -181,6 +179,7 @@ class TestConfigureDebugMode:
         mock_config.debug = mock_debug
 
         initializer = ApplicationInitializer(app, config=mock_config, logger=None)
+        initializer.config = mock_config
 
         initializer._configure_debug_mode()
 
@@ -432,8 +431,8 @@ class TestEdgeCases:
 
         app = FastBlocks()
         initializer = ApplicationInitializer(app, logger=None)
+        initializer._acb_modules = (None, None, None, None, None)
 
-        # Mock get_installed_adapter to return None
         with patch("fastblocks.initializers.get_installed_adapter", return_value=None):
             initializer._configure_logging()
 

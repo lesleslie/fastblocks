@@ -489,7 +489,8 @@ class TestSafeDependsGet:
         # Mock the resolver
         from unittest.mock import patch
 
-        with patch("fastblocks.exceptions.depends.resolve", return_value="resolved_value"):
+        from unittest.mock import AsyncMock as _AsyncMock
+        with patch("fastblocks.exceptions.depends.resolve", new_callable=_AsyncMock, return_value="resolved_value"):
             result = await safe_depends_get("test_key", cache)
             assert result == "resolved_value"
             assert cache["test_key"] == "resolved_value"

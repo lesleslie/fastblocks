@@ -128,8 +128,8 @@ class TestHtmxDetailsProperties:
         """Test that HtmxRequest detection works correctly."""
         details = HtmxDetails(scope)
 
-        # If header is set to "true", is_htmx should be True
-        if any(h[0].lower() == b"hx-request" and h[1] == b"true" for h in scope["headers"]):
+        # If header is set to "true" (any casing), is_htmx should be True
+        if any(h[0].lower() == b"hx-request" and h[1].lower() == b"true" for h in scope["headers"]):
             assert details.__bool__() is True
         else:
             # If no "true" header, should be False
@@ -197,8 +197,8 @@ class TestHtmxResponseProperties:
         st.text(min_size=0, max_size=100),
         st.integers(min_value=100, max_value=599),
         st.dictionaries(
-            keys=text(min_size=1, max_size=20),
-            values=text(min_size=0, max_size=100),
+            keys=text(min_size=1, max_size=20, alphabet=st.characters(min_codepoint=0x21, max_codepoint=0x7E)),
+            values=text(min_size=0, max_size=100, alphabet=st.characters(max_codepoint=0xFF)),
             min_size=0,
             max_size=5,
         ),
@@ -255,7 +255,7 @@ class TestHtmxResponseProperties:
         assert response.headers["HX-Push-Url"] == url
 
     @given(
-        st.text(min_size=1, max_size=50),
+        st.text(min_size=1, max_size=50, alphabet=st.characters(max_codepoint=0xFF)),
         st.text(min_size=0, max_size=100),
     )
     @settings(max_examples=30)
@@ -347,7 +347,7 @@ class TestHtmxHelperFunctions:
         assert "HX-Push-Url" in response.headers
 
     @given(
-        st.text(min_size=1, max_size=50),
+        st.text(min_size=1, max_size=50, alphabet=st.characters(max_codepoint=0xFF)),
         st.text(min_size=0, max_size=100),
     )
     @settings(max_examples=30)
@@ -373,11 +373,12 @@ class TestIsHtmx:
         """Test is_htmx with scope dict."""
         result = is_htmx(scope)
 
-        # If hx-request header is "true", should return True
-        has_htmx_header = any(
-            h[0].lower() == b"hx-request" and h[1].lower() == b"true"
-            for h in scope.get("headers", [])
+        # First occurrence of hx-request header wins (HTTP single-value header)
+        first_value = next(
+            (h[1] for h in scope.get("headers", []) if h[0].lower() == b"hx-request"),
+            None,
         )
+        has_htmx_header = first_value is not None and first_value.lower() == b"true"
         assert result == has_htmx_header
 
     @given(
@@ -407,7 +408,7 @@ class TestGetHeader:
         st.lists(
             st.tuples(
                 st.text(min_size=1, max_size=20).map(lambda x: x.encode()),
-                st.text(min_size=0, max_size=100).map(lambda x: x.encode("latin-1")),
+                st.text(min_size=0, max_size=100, alphabet=st.characters(max_codepoint=0xFF)).map(lambda x: x.encode("latin-1")),
             ),
             min_size=0,
             max_size=20,
@@ -430,7 +431,7 @@ class TestGetHeader:
         st.lists(
             st.tuples(
                 st.just(b"test-header"),
-                st.text(min_size=0, max_size=50).map(lambda x: x.encode("latin-1")),
+                st.text(min_size=0, max_size=50, alphabet=st.characters(max_codepoint=0xFF)).map(lambda x: x.encode("latin-1")),
             ),
             min_size=0,
             max_size=10,
@@ -458,9 +459,9 @@ class TestHtmxResponseHeaders:
     @given(
         st.text(min_size=0, max_size=100, alphabet=""),
         st.integers(min_value=200, max_value=599),
-        st.none() | st.text(min_size=0, max_size=50),
-        st.none() | st.text(min_size=0, max_size=50),
-        st.none() | st.text(min_size=0, max_size=50),
+        st.none() | st.text(min_size=0, max_size=50, alphabet=st.characters(max_codepoint=0xFF)),
+        st.none() | st.text(min_size=0, max_size=50, alphabet=st.characters(max_codepoint=0xFF)),
+        st.none() | st.text(min_size=0, max_size=50, alphabet=st.characters(max_codepoint=0xFF)),
     )
     @settings(max_examples=30)
     def test_multiple_trigger_headers(
@@ -490,8 +491,8 @@ class TestHtmxResponseHeaders:
 
     @given(
         st.none() | st.just(True) | st.just(False),
-        st.none() | st.text(min_size=1, max_size=100),
-        st.none() | st.text(min_size=1, max_size=100),
+        st.none() | st.text(min_size=1, max_size=100, alphabet=st.characters(max_codepoint=0xFF)),
+        st.none() | st.text(min_size=1, max_size=100, alphabet=st.characters(max_codepoint=0xFF)),
     )
     @settings(max_examples=30)
     def test_url_and_refresh_headers(

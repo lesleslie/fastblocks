@@ -1,16 +1,18 @@
 """MCP tools for FastBlocks template, component, and adapter management."""
 
-import logging
+from __future__ import annotations
+
 import operator
 from pathlib import Path
 from typing import Any
 
 from oneiric.core.resolution import Resolver
+from oneiric.core.logging import get_logger
 
 from .discovery import AdapterDiscoveryServer
 from .health import HealthCheckSystem
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -91,7 +93,7 @@ class {name.title().replace("_", "")}:
         }
 
     except Exception as e:
-        logger.error(f"Error creating template: {e}")
+        logger.exception(f"Error creating template: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -142,7 +144,7 @@ async def validate_template(template_path: str) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error validating template: {e}")
+        logger.exception(f"Error validating template: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -251,7 +253,7 @@ async def list_templates(variant: str | None = None) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error listing templates: {e}")
+        logger.exception(f"Error listing templates: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -291,7 +293,7 @@ async def render_template(
         }
 
     except Exception as e:
-        logger.error(f"Error rendering template: {e}")
+        logger.exception(f"Error rendering template: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -354,7 +356,7 @@ async def create_component(
         }
 
     except Exception as e:
-        logger.error(f"Error creating component: {e}")
+        logger.exception(f"Error creating component: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -391,7 +393,7 @@ async def list_components() -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error listing components: {e}")
+        logger.exception(f"Error listing components: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -432,7 +434,7 @@ async def validate_component(component_name: str) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error validating component: {e}")
+        logger.exception(f"Error validating component: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -472,7 +474,7 @@ async def configure_adapter(
         }
 
     except Exception as e:
-        logger.error(f"Error configuring adapter: {e}")
+        logger.exception(f"Error configuring adapter: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -505,7 +507,7 @@ async def list_adapters(category: str | None = None) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.error(f"Error listing adapters: {e}")
+        logger.exception(f"Error listing adapters: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -545,7 +547,7 @@ async def check_adapter_health(adapter_name: str | None = None) -> dict[str, Any
         }
 
     except Exception as e:
-        logger.error(f"Error checking adapter health: {e}")
+        logger.exception(f"Error checking adapter health: {e}")
         return {"success": False, "error": str(e)}
 
 
@@ -564,16 +566,13 @@ async def register_fastblocks_tools(server: Any) -> None:
         # Define tool registry
         tools = {
             # Template tools
-            "create_template": create_template,
             "validate_template": validate_template,
             "list_templates": list_templates,
             "render_template": render_template,
             # Component tools
-            "create_component": create_component,
             "list_components": list_components,
             "validate_component": validate_component,
             # Adapter tools
-            "configure_adapter": configure_adapter,
             "list_adapters": list_adapters,
             "check_adapter_health": check_adapter_health,
         }
@@ -584,5 +583,5 @@ async def register_fastblocks_tools(server: Any) -> None:
         logger.info(f"Registered {len(tools)} FastBlocks MCP tools")
 
     except Exception as e:
-        logger.error(f"Failed to register MCP tools: {e}")
+        logger.exception(f"Failed to register MCP tools: {e}")
         raise

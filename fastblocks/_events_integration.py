@@ -7,6 +7,8 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-10-01
 """
 
+from __future__ import annotations
+
 import operator
 import typing as t
 from contextlib import suppress
@@ -14,11 +16,12 @@ from dataclasses import dataclass
 from uuid import UUID
 
 # Oneiric imports for dependency injection
-from oneiric.core.resolution import Resolver
 from fastblocks.adapters.oneiric_helper import register_candidate
+from fastblocks.core.patterns import SingletonMeta
+from fastblocks.core.resolver import get_resolver
 
 # Custom Oneiric-compatible events system
-depends = Resolver()
+depends = get_resolver()
 
 # Event system availability
 oneiric_events_available = True
@@ -388,17 +391,10 @@ class AdminActionHandler:
         ]
 
 
-class FastBlocksEventPublisher:
+class FastBlocksEventPublisher(metaclass=SingletonMeta):
     """Simplified event publisher for FastBlocks components."""
 
-    _instance: t.ClassVar["FastBlocksEventPublisher | None"] = None
     _publisher: EventPublisher | None = None
-
-    def __new__(cls) -> "FastBlocksEventPublisher":
-        """Singleton pattern for event publisher."""
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
     def __init__(self, config: t.Any | None = None) -> None:
         self.config = config

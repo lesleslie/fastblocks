@@ -23,13 +23,13 @@ Migration: see ``docs/migrations/0.7-to-0.8.md`` section 8.
 """
 from __future__ import annotations
 
-import logging
 import os
 import sys
 
 from mcp_common.websocket.auth import WebSocketAuthenticator
+from oneiric.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Default secret used when the env var is not set. This is the value

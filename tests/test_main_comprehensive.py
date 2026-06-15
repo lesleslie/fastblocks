@@ -49,19 +49,18 @@ class TestLazyApp:
         """Test LazyApp async call interface."""
 
         async def run_test() -> None:
-            # Mock the get_app function
-            mock_app = mock.MagicMock()
+            mock_app = mock.AsyncMock()
 
             async def mock_asgi_app(scope, receive, send):
                 await send({"type": "http.response.start"})
 
             mock_app.side_effect = mock_asgi_app
 
-            with mock.patch.object(main, "get_app", return_value=mock_app):
+            with mock.patch.object(main, "get_app", new_callable=mock.AsyncMock, return_value=mock_app):
                 lazy_app = main.LazyApp()
                 scope = {"type": "http"}
                 receive = mock.MagicMock()
-                send = mock.MagicMock()
+                send = mock.AsyncMock()
 
                 await lazy_app(scope, receive, send)
                 mock_app.assert_called_once_with(scope, receive, send)
@@ -111,8 +110,7 @@ class TestLazyLogger:
 
     def test_lazylogger_call_non_callable(self) -> None:
         """Test LazyLogger when logger is not callable."""
-        # Create a non-callable logger
-        mock_logger = mock.MagicMock()
+        mock_logger = mock.NonCallableMagicMock()
         mock_logger.test_attr = "value"
 
         main._logger_instance = mock_logger
@@ -191,7 +189,7 @@ class TestGetApp:
                 with mock.patch.object(
                     main, "_handle_registration", side_effect=mock_handle_registration
                 ):
-                    with pytest.raises(RuntimeError, match="Failed to register"):
+                    with pytest.raises(RuntimeError, match="Registration failed"):
                         await main.get_app()
 
     @pytest.mark.asyncio
@@ -358,7 +356,7 @@ class TestGetDependency:
         """Test successful dependency resolution."""
         mock_value = mock.MagicMock()
 
-        with mock.patch.object(main._resolver, "resolve", return_value=mock_value):
+        with mock.patch.object(main._resolver, "resolve", new_callable=mock.AsyncMock, return_value=mock_value):
             result = await main._get_dependency("test_dependency")
             assert result == mock_value
 

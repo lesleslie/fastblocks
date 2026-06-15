@@ -6,11 +6,14 @@ Provides IDE/AI assistant integration for FastBlocks capabilities including:
 - Adapter configuration and health checks
 """
 
-import logging
+from __future__ import annotations
+
 from contextlib import suppress
 from typing import Any
 
-logger = logging.getLogger(__name__)
+from oneiric.core.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class FastBlocksMCPServer:
@@ -55,8 +58,8 @@ class FastBlocksMCPServer:
             logger.debug(
                 "Oneiric MCP dependencies not available - graceful degradation"
             )
-        except Exception as e:
-            logger.error(f"Failed to initialize MCP server: {e}")
+        except Exception:
+            logger.exception("Failed to initialize MCP server")
 
     async def _register_tools(self) -> None:
         """Register FastBlocks MCP tools.
@@ -92,8 +95,8 @@ class FastBlocksMCPServer:
         try:
             logger.info("Starting FastBlocks MCP server...")
             await self._server.run()
-        except Exception as e:
-            logger.error(f"MCP server error: {e}")
+        except Exception:
+            logger.exception("MCP server error")
             raise
 
     async def stop(self) -> None:
@@ -105,8 +108,8 @@ class FastBlocksMCPServer:
             logger.info("Stopping FastBlocks MCP server...")
             # Server shutdown will be handled by Oneiric
             await self._server.stop()
-        except Exception as e:
-            logger.error(f"Error stopping MCP server: {e}")
+        except Exception:
+            logger.exception("Error stopping MCP server")
 
 
 async def create_fastblocks_mcp_server() -> FastBlocksMCPServer:
@@ -153,8 +156,8 @@ def _get_http_app() -> Any:
 
         return mcp_instance.http_app
 
-    except Exception as e:
-        logger.error(f"Failed to create http_app: {e}")
+    except Exception:
+        logger.exception("Failed to create http_app")
         return None
 
 

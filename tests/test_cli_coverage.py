@@ -13,8 +13,12 @@ import pytest
 @pytest.fixture(autouse=True)
 def ensure_cli_module():
     """Ensure the CLI module is importable for tests."""
-    # Create a placeholder cli module if it doesn't exist
-    if "fastblocks.cli" not in sys.modules:
+    # Save originals so we can restore after test
+    _saved_cli = sys.modules.get("fastblocks.cli")
+    _saved_fb = sys.modules.get("fastblocks")
+
+    # Always install the mock (tests rely on mock API, not the real CLI)
+    if True:
         # Create mock modules
         fastblocks_module = types.ModuleType("fastblocks")
         fastblocks_module.__version__ = "0.1.0"
@@ -112,9 +116,14 @@ def ensure_cli_module():
     # Cleanup after test
     yield
 
-    # Remove the module after test if we created it
-    with patch.dict("sys.modules"):
+    # Restore original modules (don't just pop — other tests may need the real ones)
+    if _saved_cli is not None:
+        sys.modules["fastblocks.cli"] = _saved_cli
+    else:
         sys.modules.pop("fastblocks.cli", None)
+    if _saved_fb is not None:
+        sys.modules["fastblocks"] = _saved_fb
+    else:
         sys.modules.pop("fastblocks", None)
 
 

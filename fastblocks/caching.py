@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import base64
 import email.utils
@@ -8,6 +10,7 @@ import typing as t
 from collections.abc import Iterable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
+from datetime import timedelta
 from functools import partial
 from urllib.request import parse_http_list
 
@@ -119,6 +122,22 @@ class CacheUtils:
     )
     ONE_YEAR = 60 * 60 * 24 * 365
     INVALIDATING_METHODS = frozenset((POST, PUT, PATCH, DELETE))
+
+    @staticmethod
+    def to_bytes(value: t.Any) -> t.Any:
+        return value
+
+    @staticmethod
+    def format_timedelta(delta: timedelta) -> str:
+        total = int(delta.total_seconds())
+        if total == 0:
+            return "0s"
+        parts = []
+        for unit, secs in [("d", 86400), ("h", 3600), ("m", 60), ("s", 1)]:
+            count, total = divmod(total, secs)
+            if count:
+                parts.append(f"{count}{unit}")
+        return " ".join(parts)
 
     @staticmethod
     def safe_log(logger: t.Any, level: str, message: str) -> None:
@@ -752,9 +771,9 @@ class CacheResponder:
         try:
             self.logger = depends.resolve("fastblocks", "logger")
         except Exception:
-            import logging
+            from oneiric.core.logging import get_logger
 
-            self.logger = logging.getLogger("fastblocks.cache")
+            self.logger = get_logger("fastblocks.cache")
         try:
             self.cache = depends.resolve("fastblocks", "cache")
         except Exception:
@@ -842,9 +861,9 @@ class CacheControlResponder:
         try:
             self.logger = depends.resolve("fastblocks", "logger")
         except Exception:
-            import logging
+            from oneiric.core.logging import get_logger
 
-            self.logger = logging.getLogger("fastblocks.cache")
+            self.logger = get_logger("fastblocks.cache")
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":

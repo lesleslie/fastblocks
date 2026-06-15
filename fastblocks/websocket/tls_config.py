@@ -6,14 +6,13 @@ and helper functions for secure WebSocket connections.
 
 from __future__ import annotations
 
-import logging
-
 from mcp_common.websocket.tls import (
     create_ssl_context,
     get_tls_config_from_env,
 )
+from oneiric.core.logging import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def get_websocket_tls_config() -> dict[str, str | bool | None]:
@@ -69,8 +68,8 @@ def load_ssl_context(
                 verify_client=verify_client,
             )
             logger.info(f"Loaded TLS certificate: {cert_file}")
-        except Exception as e:
-            logger.error(f"Failed to load SSL context: {e}")
+        except Exception:
+            logger.exception("Failed to load SSL context")
             raise
 
     return {

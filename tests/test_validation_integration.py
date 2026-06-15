@@ -101,6 +101,7 @@ class TestTemplateContextValidation:
         assert isinstance(errors, list)
 
     @pytest.mark.asyncio
+    # TODO: Duplicate of tests/security/test_input_validation.py — consolidate in next pass
     async def test_xss_prevention_in_context(self, validation_service):
         """Test XSS prevention in template context."""
         context = {
@@ -123,6 +124,7 @@ class TestTemplateContextValidation:
             assert "<script>" not in str(sanitized.get("content", ""))
 
     @pytest.mark.asyncio
+    # TODO: Duplicate of tests/security/test_input_validation.py — consolidate in next pass
     async def test_sql_injection_detection_in_context(self, validation_service):
         """Test SQL injection detection in template context."""
         context = {
@@ -189,6 +191,7 @@ class TestFormInputValidation:
         assert isinstance(errors, list)
 
     @pytest.mark.asyncio
+    # TODO: Duplicate of tests/security/test_input_validation.py — consolidate in next pass
     async def test_form_xss_prevention(self, validation_service):
         """Test XSS prevention in form inputs."""
         form_data = {
@@ -206,6 +209,7 @@ class TestFormInputValidation:
             assert "<script>" not in str(sanitized.get("comment", ""))
 
     @pytest.mark.asyncio
+    # TODO: Duplicate of tests/security/test_input_validation.py — consolidate in next pass
     async def test_form_sql_injection_detection(self, validation_service):
         """Test SQL injection detection in form inputs."""
         form_data = {
@@ -226,6 +230,7 @@ class TestFormInputValidation:
             assert any("SQL injection" in error for error in errors)
 
     @pytest.mark.asyncio
+    # TODO: Duplicate of tests/security/test_input_validation.py — consolidate in next pass
     async def test_form_path_traversal_detection(self, validation_service):
         """Test path traversal detection in form inputs."""
         form_data = {
@@ -362,6 +367,7 @@ class TestAPIValidation:
         assert isinstance(errors, list)
 
     @pytest.mark.asyncio
+    # TODO: Duplicate of tests/security/test_input_validation.py — consolidate in next pass
     async def test_api_request_xss_sanitization(self, validation_service):
         """Test XSS sanitization in API requests."""
         request_data = {
@@ -497,6 +503,7 @@ class TestValidationDecorators:
 class TestSecurityFeatures:
     """Test security features in detail."""
 
+    # TODO: Duplicate of tests/security/test_input_validation.py — consolidate in next pass
     def test_sql_injection_patterns(self, validation_service):
         """Test detection of various SQL injection patterns."""
         patterns = [
@@ -514,6 +521,7 @@ class TestSecurityFeatures:
                 f"Failed to detect: {pattern}"
             )
 
+    # TODO: Duplicate of tests/security/test_input_validation.py — consolidate in next pass
     def test_path_traversal_patterns(self, validation_service):
         """Test detection of various path traversal patterns."""
         patterns = [
@@ -528,6 +536,7 @@ class TestSecurityFeatures:
                 f"Failed to detect: {pattern}"
             )
 
+    # TODO: Duplicate of tests/security/test_input_validation.py — consolidate in next pass
     def test_safe_inputs(self, validation_service):
         """Test that safe inputs are not flagged."""
         safe_inputs = [

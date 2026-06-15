@@ -7,13 +7,13 @@ from unittest.mock import AsyncMock
 import pytest
 from acb.config import Config
 from anyio import Path as AsyncPath
-from tests.conftest import (
+from tests._mocks import (
     MockFileSystemLoader as FilesystemLoader,
 )
-from tests.conftest import (
+from tests._mocks import (
     MockStorageLoader,
 )
-from tests.conftest import (
+from tests._mocks import (
     MockTemplateNotFound as TemplateNotFound,
 )
 

@@ -49,34 +49,23 @@ class TestRule:
 
     def test_rule_creation_basic(self) -> None:
         """Test basic Rule creation."""
-        rule = Rule(
-            path_regex="/api/.*",
-            methods=["GET", "POST"],
-        )
-        assert rule.path_regex == "/api/.*"
-        assert rule.methods == ["GET", "POST"]
+        rule = Rule(match="/api/.*")
+        assert rule.match == "/api/.*"
+        assert rule.ttl is None
 
     @given(
         path=st.from_regex(r'[a-zA-Z0-9/_-]*'),
-        methods=st.lists(
-            st.sampled_from(["GET", "POST", "PUT", "DELETE", "PATCH"]),
-            min_size=1,
-            max_size=3,
-            unique=True,
-        ),
+        ttl=st.one_of(st.none(), st.floats(min_value=0, max_value=3600, allow_nan=False)),
     )
     @settings(max_examples=30)
-    def test_rule_with_various_inputs(self, path: str, methods: list[str]) -> None:
-        """Test Rule with various path and method combinations."""
+    def test_rule_with_various_inputs(self, path: str, ttl: float | None) -> None:
+        """Test Rule with various path and ttl combinations."""
         if not path:
             path = "/.*"
 
-        rule = Rule(
-            path_regex=path,
-            methods=methods,
-        )
-        assert rule.path_regex == path
-        assert rule.methods == methods
+        rule = Rule(match=path, ttl=ttl)
+        assert rule.match == path
+        assert rule.ttl == ttl
 
 
 class TestCacheUtils:

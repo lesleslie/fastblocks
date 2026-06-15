@@ -5,10 +5,10 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from acb.config import Config
-from tests.conftest import (
+from tests._mocks import (
     MockPackageLoader as PackageLoader,
 )
-from tests.conftest import (
+from tests._mocks import (
     MockRedisLoader as RedisLoader,
 )
 

@@ -7,9 +7,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from typer.testing import CliRunner
 
-if "fastblocks.cli" in sys.modules:
-    del sys.modules["fastblocks.cli"]
-
 
 @pytest.fixture
 def cli_module():

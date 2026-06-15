@@ -25,4 +25,3 @@ class TestCLIStructure:
         assert "signal.signal(" in source_code
 
         assert "import asyncio" in source_code
-        assert "nest_asyncio.apply()" in source_code

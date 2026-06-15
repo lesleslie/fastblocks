@@ -65,7 +65,7 @@ class HtmxDetails:
         return value
 
     def __bool__(self) -> bool:
-        is_htmx = self._get_header(b"HX-Request") == "true"
+        is_htmx = (self._get_header(b"HX-Request") or "").lower() == "true"
         debug(f"HtmxDetails: Is HTMX request: {is_htmx}")
         return is_htmx
 
@@ -104,6 +104,8 @@ class HtmxDetails:
             return None
         try:
             event_data = json.loads(value)
+            if not isinstance(event_data, dict):
+                return None
             debug(f"HtmxDetails: Parsed triggering event: {event_data}")
             return event_data
         except json.JSONDecodeError as e:
@@ -133,10 +135,10 @@ def _get_header(scope: "Scope", key: bytes) -> str | None:
     value: str | None = None
     should_unquote = False
 
-    # Extract header value and autoencoding flag
+    # Extract header value and autoencoding flag; first match wins for the value
     try:
         for k, v in scope["headers"]:
-            if k.lower() == key_lower:
+            if k.lower() == key_lower and value is None:
                 value = v.decode("latin-1")
             if k.lower() == b"%s-uri-autoencoded" % key_lower and v == b"true":
                 should_unquote = True
@@ -369,8 +371,12 @@ def htmx_redirect(url: str, **kwargs: t.Any) -> HtmxResponse:
 
 
 def htmx_refresh(**kwargs: t.Any) -> HtmxResponse:
-    # Get target from kwargs if provided
-    target = kwargs.get("target", "#body")
+    # Get target from kwargs if provided. The htmx response protocol
+    # uses ``HX-Retarget`` (mapped to HtmxResponse.retarget), but the
+    # friendly call site name is ``target=`` — accept either.
+    target = kwargs.pop("target", None)
+    if target is None:
+        target = "#body"
 
     # Schedule event publishing in background
     def _run_publish_event() -> None:
@@ -399,7 +405,12 @@ def htmx_refresh(**kwargs: t.Any) -> HtmxResponse:
     with suppress(Exception):
         _run_publish_event()
 
-    return HtmxResponse(refresh=True, **kwargs)
+    # Pass target through to HtmxResponse as retarget, so the
+    # ``HX-Retarget`` response header is set in addition to ``HX-Refresh``.
+    # An explicit ``retarget=`` in kwargs takes precedence over the
+    # ``target=`` shorthand.
+    retarget = kwargs.pop("retarget", None) or target
+    return HtmxResponse(refresh=True, retarget=retarget, **kwargs)
 
 
 def htmx_push_url(url: str, content: str = "", **kwargs: t.Any) -> HtmxResponse:
@@ -417,7 +428,7 @@ def is_htmx(scope_or_request: dict[str, t.Any] | t.Any) -> bool:
     else:
         if isinstance(scope_or_request, dict):
             details = HtmxDetails(scope_or_request)
-            return bool(getattr(details, "is_htmx", False))
+            return bool(details)
         return False
 
 

@@ -9,10 +9,11 @@ Broadcasts real-time events for:
 
 from __future__ import annotations
 
-import logging
 import uuid
 from datetime import UTC, datetime
 from typing import Any
+
+from oneiric.core.logging import get_logger
 
 from mcp_common.websocket import (
     MessageType,
@@ -32,7 +33,7 @@ from fastblocks.websocket.auth import get_authenticator
 # fastblocks.websocket.origin to keep the server file from growing).
 from fastblocks.websocket.origin import check_origin, parse_allowed_origins
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class FastblocksWebSocketServer(WebSocketServer):

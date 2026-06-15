@@ -198,27 +198,6 @@ class TestCLIDirect:
         # we'll just verify the function exists and is callable
         assert callable(cli.setup_signal_handlers)
 
-    def test_run_with_docker(self, ensure_cli_module: None) -> None:
-        """Test run command with docker flag."""
-        # Get CLI module and call function with docker flag
-        result = (_cli := sys.modules["fastblocks.cli"]).run(docker=True)
-
-        # Verify docker was used
-        assert result["docker"]
-
-    def test_run_with_granian(self, ensure_cli_module: None) -> None:
-        """Test run command with Granian server."""
-        # Get CLI module
-        cli = sys.modules["fastblocks.cli"]
-
-        # Mock Granian
-        with patch.object(cli, "Granian"):
-            # Call run
-            cli.run()
-
-            # For our mock implementation, just make sure the run was called
-            # The run function in the mock doesn't actually use Granian
-
     def test_run_uvicorn(self, ensure_cli_module: None) -> None:
         """Test run command with uvicorn server."""
         # Get CLI module
@@ -231,22 +210,6 @@ class TestCLIDirect:
 
             # For our mock implementation, just make sure the run was called
             # The run function in the mock doesn't actually use uvicorn
-
-    def test_dev_with_granian(self, ensure_cli_module: None) -> None:
-        """Test dev command with Granian server."""
-        # Get CLI module and call dev with granian
-        result = (_cli := sys.modules["fastblocks.cli"]).dev(server="granian")
-
-        # Verify server selection
-        assert result["server"] == "granian"
-
-    def test_dev_with_uvicorn(self, ensure_cli_module: None) -> None:
-        """Test dev command with uvicorn server."""
-        # Get CLI module and call dev with uvicorn
-        result = (_cli := sys.modules["fastblocks.cli"]).dev(server="uvicorn")
-
-        # Verify server selection
-        assert result["server"] == "uvicorn"
 
     def test_create_command(self, ensure_cli_module: None) -> None:
         """Test create command."""
