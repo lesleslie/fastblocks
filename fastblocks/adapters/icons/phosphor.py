@@ -1,5 +1,7 @@
 """Phosphor icons adapter for FastBlocks with multiple variants."""
 
+from __future__ import annotations
+
 from contextlib import suppress
 from typing import Any
 from uuid import UUID
@@ -476,7 +478,7 @@ class PhosphorIcons(IconsBase):
 def _register_ph_basic_filters(env: Any) -> None:
     """Register basic Phosphor filters."""
 
-    @env.filter("ph_icon")  # type: ignore[misc]
+    @env.filter("ph_icon")
     def ph_icon_filter(
         icon_name: str,
         variant: str = "regular",
@@ -489,7 +491,7 @@ def _register_ph_basic_filters(env: Any) -> None:
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
 
-    @env.filter("ph_class")  # type: ignore[misc]
+    @env.filter("ph_class")
     def ph_class_filter(icon_name: str, variant: str = "regular") -> str:
         """Template filter for Phosphor icon classes."""
         icons = depends.get_sync("icons")
@@ -497,7 +499,7 @@ def _register_ph_basic_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, variant)
         return f"ph-{icon_name}"
 
-    @env.global_("phosphor_stylesheet_links")  # type: ignore[misc]
+    @env.global_("phosphor_stylesheet_links")
     def phosphor_stylesheet_links() -> str:
         """Global function for Phosphor stylesheet links."""
         icons = depends.get_sync("icons")
@@ -509,7 +511,7 @@ def _register_ph_basic_filters(env: Any) -> None:
 def _register_ph_duotone_functions(env: Any) -> None:
     """Register Phosphor duotone functions."""
 
-    @env.global_("ph_duotone")  # type: ignore[misc]
+    @env.global_("ph_duotone")  # type: ignore
     def ph_duotone(
         icon_name: str,
         primary_color: str | None = None,
@@ -528,7 +530,7 @@ def _register_ph_duotone_functions(env: Any) -> None:
 def _register_ph_interactive_functions(env: Any) -> None:
     """Register Phosphor interactive functions."""
 
-    @env.global_("ph_interactive")  # type: ignore[misc]
+    @env.global_("ph_interactive")  # type: ignore
     def ph_interactive(
         icon_name: str,
         variant: str = "regular",
@@ -547,7 +549,7 @@ def _register_ph_interactive_functions(env: Any) -> None:
 
         return icons.get_icon_tag(icon_name, variant, **attributes)
 
-    @env.global_("ph_button_icon")  # type: ignore[misc]
+    @env.global_("ph_button_icon")  # type: ignore
     def ph_button_icon(
         icon_name: str,
         text: str | None = None,

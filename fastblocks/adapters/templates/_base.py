@@ -89,7 +89,11 @@ class TemplatesBase:
 
     async def get_searchpaths(self, adapter: t.Any) -> list[AsyncPath]:
         searchpaths: list[AsyncPath] = []
-        base_root = AsyncPath(depends.root_path) if hasattr(depends, "root_path") else AsyncPath("/")
+        base_root = (
+            AsyncPath(depends.root_path)
+            if hasattr(depends, "root_path")
+            else AsyncPath("/")
+        )
 
         if adapter and hasattr(adapter, "category"):
             searchpaths.extend(

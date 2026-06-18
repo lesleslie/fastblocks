@@ -231,7 +231,7 @@ class TemplateRenderHandler:
 
     async def handle(self, event: Event) -> t.Any:
         """Handle template render event."""
-        if not acb_events_available:
+        if not acb_events_available:  # type: ignore
             return None
 
         try:
@@ -288,7 +288,7 @@ class HtmxUpdateHandler:
 
     async def handle(self, event: Event) -> t.Any:
         """Handle HTMX update event."""
-        if not acb_events_available:
+        if not acb_events_available:  # type: ignore
             return None
 
         try:
@@ -517,7 +517,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
         ip_address: str | None = None,
     ) -> bool:
         """Publish admin action event."""
-        if not acb_events_available or self._publisher is None:
+        if not acb_events_available or self._publisher is None: # type: ignore
             return False
 
         try:
@@ -532,7 +532,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
                     "changes": changes,
                     "ip_address": ip_address,
                 },
-                priority=EventPriority.CRITICAL,
+                priority=EventPriority.CRITICAL,  # type: ignore
             )
 
             await self._publisher.publish(event)

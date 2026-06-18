@@ -5,7 +5,7 @@ import os
 from contextlib import suppress
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -17,7 +17,7 @@ from .discovery import AdapterInfo
 from .registry import AdapterRegistry
 
 
-class ConfigurationProfile(str, Enum):
+class ConfigurationProfile(StrEnum):
     """Configuration deployment profiles."""
 
     DEVELOPMENT = "development"
@@ -25,7 +25,7 @@ class ConfigurationProfile(str, Enum):
     PRODUCTION = "production"
 
 
-class ConfigurationStatus(str, Enum):
+class ConfigurationStatus(StrEnum):
     """Configuration validation status."""
 
     VALID = "valid"

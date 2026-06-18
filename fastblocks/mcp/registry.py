@@ -249,9 +249,7 @@ class AdapterRegistry:
         unknown = set(fields) - allowed
         if unknown:
             joined = ", ".join(f"{name!r}" for name in sorted(unknown))
-            raise ValueError(
-                f"unknown field(s) for adapter {adapter_name!r}: {joined}"
-            )
+            raise ValueError(f"unknown field(s) for adapter {adapter_name!r}: {joined}")
         for key, value in fields.items():
             setattr(adapter.settings, key, value)
 

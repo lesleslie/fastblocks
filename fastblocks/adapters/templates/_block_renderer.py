@@ -221,7 +221,7 @@ class BlockRenderer:
     ) -> None:
         """Analyze template and register its blocks."""
         with suppress(Exception):
-            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore[union-attr,misc]
+            source, _, _ = env.loader.get_source(env, template_name)
             parsed = env.parse(source, template_name)
 
             # Find all block nodes
@@ -248,7 +248,7 @@ class BlockRenderer:
             for node in t.cast(t.Any, parsed.find_all((Extends, Include))):
                 # Template attribute value extraction at runtime
                 if hasattr(node, "template") and hasattr(node.template, "value"):
-                    parent_template = node.template.value  # type: ignore[attr-defined]
+                    parent_template = node.template.value
                     # Register dependency relationship
                     for block_def in self.registry.get_blocks_for_template(
                         template_name

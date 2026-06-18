@@ -4,6 +4,8 @@ Database-driven sitemap generation for content management systems
 and applications with dynamic URL structures.
 """
 
+from __future__ import annotations
+
 import datetime as dt
 import typing as t
 from contextlib import suppress
@@ -81,7 +83,7 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
         return item.get("lastmod")
 
     def changefreq(self, item: dict[str, t.Any]) -> str:
-        return t.cast(str, item.get("changefreq", self.config.change_freq))
+        return t.cast(str, item.get("changefreq", self.config.change_freq))  # type: ignore[attr-defined]
 
     def priority(self, item: dict[str, t.Any]) -> float:
         return t.cast(float, item.get("priority", 0.5))
@@ -93,9 +95,11 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
         self.sitemap = SitemapApp(
             self,
             domain=self.config.domain,
-            cache_ttl=self.config.cache_ttl,
+            cache_ttl=self.config.cache_ttl, # type: ignore[attr-defined]
         )
-        debug(f"DynamicSitemap: Initialized with domain={self.config.domain}")
+
+
+
 
 
 Sitemap = DynamicSitemap

@@ -148,8 +148,7 @@ adapter, or start a WebSocket — those operations belong in a consumer app's MC
 server, not here. The `tests/mcp/test_ci_guard.py` test fails the build if any
 of the deleted symbol names (`fastblocks_start_websocket`,
 `fastblocks_create_template`, `fastblocks_create_component`,
-`fastblocks_configure_adapter`, or `from fastblocks.mcp.websocket_tools import
-...`) reappear. Keep it that way.
+`fastblocks_configure_adapter`, or `from fastblocks.mcp.websocket_tools import ...`) reappear. Keep it that way.
 
 To configure an adapter from Python, use the typed API:
 `AdapterRegistry.configure(adapter_name: str, **fields: Any)`, which validates
@@ -158,6 +157,7 @@ field names against the per-adapter settings schema and rejects unknown keys.
 ### Async / sync boundaries
 
 All I/O in the orchestration layer is async. The two places this gets violated:
+
 - `caching.py` historically had `asyncio.run(coro)` sync→async trampolines — those are gone as of Phase 3.4 (no-op for the file; the work had already been done in an earlier commit).
 - `htmx.py` used to create a fresh event loop on every call to `htmx_trigger`/`htmx_redirect`/`htmx_refresh`. Phase 4.3 collapsed this into `_run_async_safely(coro)`, which uses a per-thread cached loop via `threading.local()`. There is also `run_async_native(coro)` for callers already in an async context — prefer that.
 
@@ -193,9 +193,9 @@ All I/O in the orchestration layer is async. The two places this gets violated:
 ## Known Tech Debt (don't try to "fix" without coordination)
 
 1. **WebSocket auth reads env at import time, not call time** (`fastblocks/websocket/auth.py:17-24`). The plan calls for this to be moved to use-time reads, with `JWT_SECRET == "dev-secret-change-in-production"` hard-failing in non-test processes. Not yet landed.
-2. **The 4 leftover `t.cast(Coroutine, ...)` calls in `caching.py`** were partially removed in Phase 4.A but the plan-text count of 8 was based on stale state — only 4 existed at the time the agent ran. If you find more in `caching.py`, remove them; if not, leave it.
-3. **Docs lag the code.** `README.md`, `docs/ARCHITECTURE.md`, `docs/ONEIRIC_GUIDE.md` (and several others) still describe the project as ACB-based. The actual code is Oneiric-only since Phase 3.1. Don't trust those docs for the architectural truth; trust `fastblocks/core/resolver.py` and the `fastblocks.core.resolver.get_resolver()` call sites.
-4. **19→8 collection errors** in `pytest -m "not slow"` are pre-existing; most are conftest `mcp_common.websocket` stub pollution under xdist. Per-test gating was attempted in Phase 3.0 and reverted because test files do `from mcp_common.websocket import ...` at module level (collection time, before any per-test hook can run). The marker-based `pytest.mark.websocket` is the current workaround.
+1. **The 4 leftover `t.cast(Coroutine, ...)` calls in `caching.py`** were partially removed in Phase 4.A but the plan-text count of 8 was based on stale state — only 4 existed at the time the agent ran. If you find more in `caching.py`, remove them; if not, leave it.
+1. **Docs lag the code.** `README.md`, `docs/ARCHITECTURE.md`, `docs/ONEIRIC_GUIDE.md` (and several others) still describe the project as ACB-based. The actual code is Oneiric-only since Phase 3.1. Don't trust those docs for the architectural truth; trust `fastblocks/core/resolver.py` and the `fastblocks.core.resolver.get_resolver()` call sites.
+1. **19→8 collection errors** in `pytest -m "not slow"` are pre-existing; most are conftest `mcp_common.websocket` stub pollution under xdist. Per-test gating was attempted in Phase 3.0 and reverted because test files do `from mcp_common.websocket import ...` at module level (collection time, before any per-test hook can run). The marker-based `pytest.mark.websocket` is the current workaround.
 
 ## Reminder
 

@@ -1,7 +1,6 @@
 import sys
 import typing as t
 from collections.abc import Mapping, Sequence
-from contextlib import suppress
 from contextvars import ContextVar
 from enum import IntEnum
 
@@ -32,6 +31,7 @@ def _get_adapter_or_none(domain: str) -> t.Any:
         return depends.resolve(domain)
     except Exception:
         return None
+
 
 from brotli_asgi import BrotliMiddleware
 from secure import Secure
@@ -214,7 +214,7 @@ class CacheValidator:
         if not hasattr(app, "middleware"):
             return
 
-        middleware_attr = app.middleware  # type: ignore[attr-defined]
+        middleware_attr = app.middleware
         if callable(middleware_attr):
             return
 
@@ -465,8 +465,7 @@ class MiddlewareStackManager:
             getattr(self.config.app, "security_headers_strict", True)
         )
         deployed_or_prod = bool(
-            self.config.deployed
-            or getattr(self.config.debug, "production", False)
+            self.config.deployed or getattr(self.config.debug, "production", False)
         )
         if security_headers_strict and (
             deployed_or_prod

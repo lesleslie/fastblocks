@@ -2,7 +2,7 @@ import typing as t
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from dataclasses import dataclass
-from enum import Enum, StrEnum
+from enum import StrEnum
 from operator import itemgetter
 
 from oneiric.core.resolution import Resolver

@@ -228,7 +228,7 @@ async def _ensure_async_iterator[T](items: ItemsTypes[T]) -> AsyncIterator[T]:
         debug(f"_ensure_async_iterator: Error processing items: {e}")
 
 
-def get_fields(
+def get_fields[T](
     sitemap: BaseSitemap[T], item: T, *, scope: "Scope", domain: str
 ) -> dict[str, str]:
     if sitemap.protocol == "auto":

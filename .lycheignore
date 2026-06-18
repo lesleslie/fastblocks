@@ -1,0 +1,5 @@
+# Exclude binary/generated directories from link scanning
+.venv/
+node_modules/
+__pycache__/
+.git/

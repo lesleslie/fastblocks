@@ -121,9 +121,11 @@ class FontSquirrelFonts(FontsBase):
         # Sort files by format priority
         sorted_files = sorted(
             files,
-            key=lambda f: self.FORMAT_PRIORITIES.index(f.get("format", "ttf"))
-            if f.get("format") in self.FORMAT_PRIORITIES
-            else 999,
+            key=lambda f: (
+                self.FORMAT_PRIORITIES.index(f.get("format", "ttf"))
+                if f.get("format") in self.FORMAT_PRIORITIES
+                else 999
+            ),
         )
 
         for file_info in sorted_files:

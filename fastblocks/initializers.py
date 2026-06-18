@@ -10,9 +10,9 @@ import typing as t
 
 # Oneiric imports
 from oneiric.core.config import OneiricSettings
+from oneiric.core.logging import get_logger
 from oneiric.core.logging import get_logger as oneiric_get_logger
 from oneiric.core.resolution import Resolver, register_pkg
-from oneiric.core.logging import get_logger
 
 # Create resolver instance
 _resolver = Resolver()
@@ -172,7 +172,7 @@ class ApplicationInitializer:
 
     def _configure_logging(self) -> None:
         if get_installed_adapter("logfire"):
-            from logfire import instrument_starlette  # type: ignore[import-untyped]
+            from logfire import instrument_starlette
 
             instrument_starlette(self.app)
         interceptor_class = self._acb_modules[4]

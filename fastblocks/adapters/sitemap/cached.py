@@ -4,6 +4,8 @@ Heavy caching wrapper for sitemap generation with background refresh
 and persistent storage for high-performance sitemap serving.
 """
 
+from __future__ import annotations
+
 import asyncio
 import typing as t
 from contextlib import suppress
@@ -104,13 +106,13 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
         extended_ttl = self.config.cache_ttl * 2
         self.sitemap = SitemapApp(
             self,
-            domain=self.config.domain,
+            domain=self.config.domain, # type: ignore[attr-defined]
             cache_ttl=extended_ttl,
         )
-        strategy_options = self.config.strategy_options
+        strategy_options = self.config.strategy_options  # type: ignore[attr-defined]
         if strategy_options.get("background_refresh", True):
             self._background_task = asyncio.create_task(self._background_refresh())
-        debug(f"CachedSitemap: Initialized with domain={self.config.domain}")
+        debug(f"CachedSitemap: Initialized with domain={self.config.domain}")  # type: ignore[attr-defined]
 
     async def cleanup(self) -> None:
         if self._background_task:

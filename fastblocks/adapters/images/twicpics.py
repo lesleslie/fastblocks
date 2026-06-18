@@ -1,5 +1,7 @@
 """TwicPics adapter for FastBlocks with real-time image optimization."""
 
+from __future__ import annotations
+
 import asyncio
 from contextlib import suppress
 from typing import Any
@@ -291,7 +293,7 @@ class TwicPicsImages(ImagesBase):
 def register_twicpics_filters(env: Any) -> None:
     """Register TwicPics filters for Jinja2 templates."""
 
-    @env.filter("twic_url")  # type: ignore[misc]
+    @env.filter("twic_url")  # type: ignore
     async def twic_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for TwicPics URLs."""
         images = await depends.resolve("fastblocks", "images")
@@ -299,7 +301,7 @@ def register_twicpics_filters(env: Any) -> None:
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"
 
-    @env.filter("twic_img")  # type: ignore[misc]
+    @env.filter("twic_img")  # type: ignore
     def twic_img_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for TwicPics img tags."""
         images = depends.get_sync("images")
@@ -307,7 +309,7 @@ def register_twicpics_filters(env: Any) -> None:
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'
 
-    @env.global_("twicpics_responsive")  # type: ignore[misc]
+    @env.global_("twicpics_responsive")
     def twicpics_responsive(
         image_id: str,
         alt: str,
@@ -322,7 +324,7 @@ def register_twicpics_filters(env: Any) -> None:
             )
         return f'<img src="#{image_id}" alt="{alt}">'
 
-    @env.filter("twic_placeholder")  # type: ignore[misc]
+    @env.filter("twic_placeholder")
     async def twic_placeholder_filter(
         image_id: str, width: int = 20, quality: int = 10
     ) -> str:
@@ -338,7 +340,7 @@ def register_twicpics_filters(env: Any) -> None:
 ImagesSettings = TwicPicsImagesSettings
 Images = TwicPicsImages
 
-depends.set(Images, "twicpics")
+depends.set(Images, "twicpics") # type: ignore
 
 # ACB 0.19.0+ compatibility
 __all__ = [

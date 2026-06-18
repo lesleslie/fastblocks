@@ -33,8 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   seven WebSocket control tools (`fastblocks_start_websocket`,
   `fastbands_stop_websocket`, `fastblocks_broadcast_ui`, etc.) are product
   operations and belong in a consumer app's MCP server, not in the framework.
-  Use the underlying Python API (`from fastblocks.websocket import
-  FastblocksWebSocketServer`) directly until the 0.8.0 deletion.
+  Use the underlying Python API (`from fastblocks.websocket import FastblocksWebSocketServer`) directly until the 0.8.0 deletion.
 
 - **`fastblocks.mcp.config_cli` Click wizard is being removed** (slated for
   0.8.0). The wizard is interactive, wrong-shaped for an MCP server, and the
@@ -72,8 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   new `_instance` + `__new__` + `hasattr` guard.
 
 - **`tests/mcp/test_ci_guard.py`** — CI guard that fails the build if any
-  deleted symbol name reappears (e.g. `from fastblocks.mcp.websocket_tools
-  import ...`, `@mcp.tool()` named `fastblocks_start_websocket`).
+  deleted symbol name reappears (e.g. `from fastblocks.mcp.websocket_tools import ...`, `@mcp.tool()` named `fastblocks_start_websocket`).
 
 - **`fastblocks/websocket/binding.py`** — `BindAddress` enum (loopback /
   private-LAN) for the WebSocket host allowlist. WebSocket startup that binds
@@ -154,8 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Workflow executor dedup.** `execute_cache_warming`,
   `execute_template_cleanup`, `execute_performance_optimization` are folded
-  into a single `execute_optimization(target: Literal["cache", "templates",
-  "performance"], flags: dict[str, bool])` plus three thin wrappers. Seven
+  into a single `execute_optimization(target: Literal["cache", "templates", "performance"], flags: dict[str, bool])` plus three thin wrappers. Seven
   placeholder action handlers now raise `NotImplementedError` so the workflow
   reports failure rather than silently returning `{"status": "skipped"}`.
 
@@ -167,8 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stubs to fail). Total test count: `1201 → 1218 passing`,
   `85 → 79 failing`. Net: +17 passing, -6 failing, -11 collection errors.
 
-- **Mypy no-implicit-optional** in module headers. `from __future__ import
-  annotations` added to `_validation_integration.py`,
+- **Mypy no-implicit-optional** in module headers. `from __future__ import annotations` added to `_validation_integration.py`,
   `_workflows_integration.py`, `caching.py`, `cli.py`. `Optional[X]` →
   `X | None` in `_htmy_components.py:165`.
 
@@ -180,8 +176,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `tests/security/test_input_validation.py`. Duplicate checks in
   `tests/test_validation_integration.py` (`TestSecurityFeatures`,
   `TestTemplateContextValidation`, `TestFormInputValidation`,
-  `TestAPIValidation`) are annotated with `# TODO: Duplicate of
-  tests/security/test_input_validation.py` and will be removed in the
+  `TestAPIValidation`) are annotated with `# TODO: Duplicate of tests/security/test_input_validation.py` and will be removed in the
   next consolidation pass.
 
 ### Removed
@@ -331,7 +326,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All feature groups (admin, monitoring, sitemap) now use dependency groups
   - Zero self-references - eliminates circular dependency errors
   - Full UV compatibility with modern dependency group standards
-  - See [MIGRATION-0.17.0.md](./docs/migrations/MIGRATION-0.17.0.md) for upgrade instructions
+  - See MIGRATION-0.17.0.md for upgrade instructions
 
 ### Changed
 

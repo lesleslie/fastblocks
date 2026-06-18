@@ -6,6 +6,8 @@ instead of the external asgi-sitemaps dependency.
 For new projects, consider using the native adapter directly.
 """
 
+from __future__ import annotations
+
 import typing as t
 from contextlib import suppress
 from uuid import UUID
@@ -65,12 +67,12 @@ class AsgiSitemap(NativeSitemap[str], SitemapBase):
         return t.cast(str, self.config.change_freq)
 
     async def init(self) -> None:
-        if not self.config.app.domain:
+        if not self.config.app.domain:  # type: ignore[attr-defined]
             msg = "`domain` must be set in AppSettings"
             raise ValueError(msg)
         self.sitemap = SitemapApp(
             self,
-            domain=self.config.app.domain,
+            domain=self.config.app.domain, # type: ignore[attr-defined]
             cache_ttl=getattr(self.config, "cache_ttl", 3600),
         )
 

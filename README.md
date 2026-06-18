@@ -140,7 +140,7 @@ FastBlocks uses **PEP 735 dependency groups** for optional features. Install the
 | Multiple Groups | Install multiple features at once | `uv add --group admin --group monitoring --group sitemap` |
 | Development | Development tools | `uv add --group dev` |
 
-**Note**: Version 0.17.0+ uses dependency groups instead of extras. See [MIGRATION-0.17.0.md](./docs/migrations/MIGRATION-0.17.0.md) for details.
+**Note**: Version 0.17.0+ uses dependency groups instead of extras. See MIGRATION-0.17.0.md for details.
 
 You can also install FastBlocks using pip:
 
@@ -1397,7 +1397,7 @@ Special thanks to the following open-source projects that power FastBlocks:
 ### Frontend & Templates
 
 - [HTMX](https://htmx.org/) - The lightweight JavaScript library for dynamic interfaces
-- [Jinja2](https://jinja.palletsprojects.com/) - The template engine
+- Jinja2 - The template engine
 - [jinja2-async-environment](https://github.com/lesleslie/jinja2-async-environment) - Asynchronous Jinja2 environment
 - [starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja) - Starlette integration for async Jinja2
 - [Kelp](https://kelp.com/) - Lightweight UI library for HTML-first development, powered by modern CSS and Web Components
@@ -1424,7 +1424,7 @@ Special thanks to the following open-source projects that power FastBlocks:
 
 ### Development Tools
 
-- [Uvicorn](https://www.uvicorn.org/) - Lightning-fast ASGI server implementation
+- Uvicorn - Lightning-fast ASGI server implementation
 - [Granian](https://github.com/emmett-framework/granian) - Alternative high-performance ASGI server
 - [Typer](https://typer.tiangolo.com/) - Modern CLI framework for building command-line interfaces
 - [icecream](https://github.com/gruns/icecream) - Enhanced debugging utilities

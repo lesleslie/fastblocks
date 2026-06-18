@@ -205,7 +205,7 @@ def _build_cache_steps(
     steps = []
     if warm_templates:
         steps.append(
-            WorkflowStep(  # type: ignore[operator]
+            WorkflowStep(
                 step_id="warm_templates",
                 name="Warm Template Cache",
                 action="warm_template_cache",
@@ -216,7 +216,7 @@ def _build_cache_steps(
         )
     if warm_static:
         steps.append(
-            WorkflowStep(  # type: ignore[operator]
+            WorkflowStep(
                 step_id="warm_static",
                 name="Warm Static File Cache",
                 action="warm_static_cache",
@@ -227,7 +227,7 @@ def _build_cache_steps(
         )
     if warm_routes:
         steps.append(
-            WorkflowStep(  # type: ignore[operator]
+            WorkflowStep(
                 step_id="warm_routes",
                 name="Warm Route Cache",
                 action="warm_route_cache",
@@ -246,7 +246,7 @@ def _build_templates_steps(
     steps = []
     if cleanup_cache:
         steps.append(
-            WorkflowStep(  # type: ignore[operator]
+            WorkflowStep(
                 step_id="cleanup_cache",
                 name="Cleanup Template Cache",
                 action="cleanup_template_cache",
@@ -256,7 +256,7 @@ def _build_templates_steps(
         )
     if remove_stale:
         steps.append(
-            WorkflowStep(  # type: ignore[operator]
+            WorkflowStep(
                 step_id="remove_stale",
                 name="Remove Stale Templates",
                 action="remove_stale_templates",
@@ -267,7 +267,7 @@ def _build_templates_steps(
         )
     if optimize_storage:
         steps.append(
-            WorkflowStep(  # type: ignore[operator]
+            WorkflowStep(
                 step_id="optimize_storage",
                 name="Optimize Template Storage",
                 action="optimize_template_storage",
@@ -287,7 +287,7 @@ def _build_performance_steps(
     steps = []
     if cleanup_sessions:
         steps.append(
-            WorkflowStep(  # type: ignore[operator]
+            WorkflowStep(
                 step_id="cleanup_sessions",
                 name="Cleanup Expired Sessions",
                 action="cleanup_expired_sessions",
@@ -297,7 +297,7 @@ def _build_performance_steps(
         )
     if optimize_queries:
         steps.append(
-            WorkflowStep(  # type: ignore[operator]
+            WorkflowStep(
                 step_id="optimize_queries",
                 name="Optimize Database Queries",
                 action="optimize_database_queries",
@@ -308,7 +308,7 @@ def _build_performance_steps(
         )
     if rebuild_indexes:
         steps.append(
-            WorkflowStep(  # type: ignore[operator]
+            WorkflowStep(
                 step_id="rebuild_indexes",
                 name="Rebuild Database Indexes",
                 action="rebuild_database_indexes",
@@ -380,7 +380,7 @@ async def execute_optimization(
         if not service.available:
             return await _manual_cache_warming(warm_templates, warm_static, warm_routes)
         steps = _build_cache_steps(warm_templates, warm_static, warm_routes)
-        workflow = WorkflowDefinition(  # type: ignore[operator]
+        workflow = WorkflowDefinition(
             workflow_id="cache-warming",
             name="Cache Warming Workflow",
             description="Pre-load frequently accessed resources into cache",
@@ -407,7 +407,7 @@ async def execute_optimization(
                 remove_stale, optimize_storage, cleanup_cache
             )
         steps = _build_templates_steps(cleanup_cache, remove_stale, optimize_storage)
-        workflow = WorkflowDefinition(  # type: ignore[operator]
+        workflow = WorkflowDefinition(
             workflow_id="template-cleanup",
             name="Template Cleanup Workflow",
             description="Remove stale templates and optimize storage",
@@ -436,7 +436,7 @@ async def execute_optimization(
         steps = _build_performance_steps(
             cleanup_sessions, optimize_queries, rebuild_indexes
         )
-        workflow = WorkflowDefinition(  # type: ignore[operator]
+        workflow = WorkflowDefinition(
             workflow_id="performance-optimization",
             name="Performance Optimization Workflow",
             description="Optimize database and application performance",
@@ -465,6 +465,7 @@ async def execute_optimization(
 
 
 # Convenience shims kept for backward compatibility — delegate to execute_optimization.
+
 
 async def execute_cache_warming(
     warm_templates: bool = True,
@@ -549,7 +550,9 @@ async def _warm_static_cache(
     context: dict[str, t.Any], params: dict[str, t.Any]
 ) -> dict[str, t.Any]:
     """Warm static file cache by pre-loading metadata."""
-    raise NotImplementedError("Static file cache warming requires a static file adapter")
+    raise NotImplementedError(
+        "Static file cache warming requires a static file adapter"
+    )
 
 
 async def _warm_route_cache(

@@ -21,6 +21,7 @@ Phase 1.1 hardening:
 
 Migration: see ``docs/migrations/0.7-to-0.8.md`` section 8.
 """
+
 from __future__ import annotations
 
 import os
@@ -46,10 +47,7 @@ def _is_test_process() -> bool:
     WebSocket auth check stays consistent with the rest of the
     framework.
     """
-    return (
-        os.getenv("PYTEST_CURRENT_TEST") is not None
-        or "pytest" in sys.modules
-    )
+    return os.getenv("PYTEST_CURRENT_TEST") is not None or "pytest" in sys.modules
 
 
 def _read_jwt_secret() -> str:
@@ -153,10 +151,12 @@ def generate_token(user_id: str, permissions: list[str] | None = None) -> str:
             token_expiry=TOKEN_EXPIRY,
         )
 
-    return authenticator.create_token({
-        "user_id": user_id,
-        "permissions": permissions or ["fastblocks:read"],
-    })
+    return authenticator.create_token(
+        {
+            "user_id": user_id,
+            "permissions": permissions or ["fastblocks:read"],
+        }
+    )
 
 
 def verify_token(token: str) -> dict[str, object] | None:

@@ -1,5 +1,7 @@
 """Cloudflare Images adapter for FastBlocks."""
 
+from __future__ import annotations
+
 import asyncio
 from contextlib import suppress
 from typing import Any
@@ -243,7 +245,7 @@ class CloudflareImages(ImagesBase):
 def register_cloudflare_filters(env: Any) -> None:
     """Register Cloudflare Images filters for Jinja2 templates."""
 
-    @env.filter("cf_image_url")  # type: ignore[misc]
+    @env.filter("cf_image_url")
     async def cf_image_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for Cloudflare Images URLs."""
         images = await depends.resolve("fastblocks", "images")
@@ -251,15 +253,15 @@ def register_cloudflare_filters(env: Any) -> None:
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"  # Fallback
 
-    @env.filter("cf_img_tag")  # type: ignore[misc]
+    @env.filter("cf_img_tag")
     def cf_img_tag_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for complete Cloudflare img tags."""
-        images = depends.get_sync("images")
+        images = depends.get_sync("images") # type: ignore
         if isinstance(images, CloudflareImages):
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'  # Fallback
 
-    @env.global_("cloudflare_responsive_img")  # type: ignore[misc]
+    @env.global_("cloudflare_responsive_img")  # type: ignore
     def cloudflare_responsive_img(
         image_id: str,
         alt: str,
@@ -267,7 +269,7 @@ def register_cloudflare_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate responsive image with multiple sizes."""
-        images = depends.get_sync("images")
+        images = depends.get_sync("images")  # type: ignore
         if not isinstance(images, CloudflareImages):
             return f'<img src="#{image_id}" alt="{alt}">'
 

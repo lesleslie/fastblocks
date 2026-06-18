@@ -16,7 +16,9 @@
     }
   ],
   "last_updated": "2026-06-14T00:00:00.000000",
-  "milestones_achieved": [40],
+  "milestones_achieved": [
+    40
+  ],
   "next_milestone": 50,
   "target": 100.0
 }

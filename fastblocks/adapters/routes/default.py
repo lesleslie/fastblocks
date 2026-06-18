@@ -28,6 +28,8 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-12
 """
 
+from __future__ import annotations
+
 import typing as t
 from contextlib import suppress
 from importlib import import_module
@@ -63,9 +65,9 @@ class AdapterStatus:
     EXPERIMENTAL = "EXPERIMENTAL"
 
 
-def root_path():
+def root_path() -> None:
     """Custom implementation for Oneiric compatibility."""
-    return "/"
+    return "/"  # type: ignore
 
 
 # Oneiric resolver for dependency injection
@@ -82,7 +84,7 @@ base_routes_path = AsyncPath(root_path()) / "routes.py"
 class RoutesSettings(RoutesBaseSettings):
     """Routes settings using OneiricSettings."""
 
-    def __init__(self, **data: dict) -> None:
+    def __init__(self, **data: dict) -> None:  # type: ignore
         super().__init__(**data)
 
 
@@ -193,7 +195,7 @@ class Routes(RoutesBase):
         if "adapters" in path.parts:
             depth = -4
         module_path = ".".join(path.parts[depth:]).removesuffix(".py")
-        debug(path, depth, module_path)
+        debug(path, depth, module_path) # type: ignore
         with suppress(ModuleNotFoundError):
             module = import_module(module_path)
             module_routes = getattr(module, "routes", None)

@@ -29,6 +29,8 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-12
 """
 
+from __future__ import annotations
+
 import asyncio
 import re
 
@@ -421,7 +423,7 @@ class FileSystemLoader(BaseTemplateLoader):
         if path is None:
             raise TemplateNotFound(str(template))
         storage_path = Templates.get_storage_path(path)
-        debug(path)
+        debug(path)  # type: ignore
 
         fs_exists = await path.exists()
         storage_exists = await self._check_storage_exists(storage_path)
@@ -512,7 +514,7 @@ class StorageLoader(BaseTemplateLoader):
         if result is None:
             raise TemplateNotFound(str(template))
         _, storage_path = result
-        debug(storage_path)
+        debug(storage_path)  # type: ignore
 
         try:
             fs_path = await self._check_filesystem_sync_opportunity(
@@ -801,7 +803,7 @@ class TemplatesSettings(TemplatesBaseSettings):
     def __init__(self, **data: t.Any) -> None:
         from pydantic import BaseModel
 
-        BaseModel.__init__(self, **data)  # type: ignore[arg-type]
+        BaseModel.__init__(self, **data)
         if not hasattr(self, "cache_timeout"):
             self.cache_timeout = 300
         try:
@@ -935,16 +937,16 @@ class Templates(TemplatesBase):
             templates.env.loader = loader
         elif self.config.templates.loader:
             templates.env.loader = literal_eval(self.config.templates.loader)
-        for delimiter, value in self.config.templates.delimiters.items():
+        for delimiter, value in self.config.templates.delimiters.items(): # type: ignore[attr-defined]
             setattr(templates.env, delimiter, value)
         # Type cast globals dict to avoid assignment type errors
-        globals_dict: dict[str, t.Any] = templates.env.globals  # type: ignore[assignment]
+        globals_dict: dict[str, t.Any] = templates.env.globals
         globals_dict["config"] = self.config
         globals_dict["render_block"] = templates.render_block
         globals_dict["render_component"] = self._get_htmy_component_renderer()
         if admin:
             try:
-                from sqladmin.helpers import (  # type: ignore[import-not-found,import-untyped]
+                from sqladmin.helpers import (
                     get_object_identifier,
                 )
             except ImportError:

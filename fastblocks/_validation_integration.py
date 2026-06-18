@@ -37,7 +37,7 @@ import functools
 import typing as t
 from contextlib import suppress
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 # Oneiric imports for dependency injection
 from fastblocks.adapters.oneiric_helper import register_candidate
@@ -88,7 +88,7 @@ class ValidationService:
         self.validator = OutputValidator()
 
 
-class ValidationType(str, Enum):
+class ValidationType(StrEnum):
     """Types of validation performed by FastBlocks."""
 
     TEMPLATE_CONTEXT = "template_context"

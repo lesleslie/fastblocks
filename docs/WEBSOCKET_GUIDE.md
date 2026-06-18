@@ -127,6 +127,7 @@ await server.broadcast_ui_updated(
 ```
 
 **Event Data**:
+
 ```json
 {
   "event": "fastblocks.ui_updated",
@@ -155,6 +156,7 @@ await server.broadcast_component_rendered(
 ```
 
 **Event Data**:
+
 ```json
 {
   "event": "fastblocks.component_rendered",
@@ -184,6 +186,7 @@ await server.broadcast_state_changed(
 ```
 
 **Event Data**:
+
 ```json
 {
   "event": "fastblocks.state_changed",
@@ -571,8 +574,8 @@ See `examples/websocket_client_examples.py` for complete client examples:
 
 ## Related Documentation
 
-- [mcp-common WebSocket Protocol](https://github.com/your-org/mcp-common/blob/main/docs/WEBSOCKET_PROTOCOL.md)
-- [Mahavishnu WebSocket Integration](https://github.com/your-org/mahavishnu/blob/main/docs/WEBSOCKET_INTEGRATION.md)
+- mcp-common WebSocket Protocol
+- Mahavishnu WebSocket Integration
 - [Fastblocks Architecture](./ARCHITECTURE.md)
 
 ## License

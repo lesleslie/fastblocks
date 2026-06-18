@@ -7,6 +7,8 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-13
 """
 
+from __future__ import annotations
+
 import typing as t
 from contextlib import suppress
 
@@ -18,7 +20,7 @@ from oneiric.core.resolution import Resolver
 
 
 # Create debug function for Oneiric (using logger)
-def debug(msg):
+def debug(msg) -> None:
     logger = get_logger("fastblocks.actions.query.parser")
     logger.debug(msg)
 

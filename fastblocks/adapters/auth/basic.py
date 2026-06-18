@@ -29,6 +29,8 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-12
 """
 
+from __future__ import annotations
+
 import base64
 import binascii
 import re
@@ -156,14 +158,14 @@ class Auth(AuthBase):
         # needs a sensible default. Production code goes through the
         # registry and gets a real config; this fallback is for tests
         # and minimal standalone use.
-        if not hasattr(self, "config") or self.config is None:
+        if getattr(self, "config", None) is None:
             self.config = _MinimalAuthConfig(self.secret_key)
         self.middlewares = [
             Middleware(
                 SessionMiddleware,
                 secret_key=self.secret_key.get_secret_value(),
                 session_cookie=f"{self.token_id}_admin",
-                https_only=bool(self.config.deployed),
+                https_only=self.config.deployed,
             ),
         ]
 

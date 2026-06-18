@@ -381,7 +381,7 @@ class AsyncTemplateRenderer:
             render_context.template_name
         )
         # render_block exists in Jinja2 runtime but not in type stubs
-        rendered = template.render_block(  # type: ignore[attr-defined]
+        rendered = template.render_block(
             render_context.block_name, render_context.context
         )
         return t.cast(str, rendered)

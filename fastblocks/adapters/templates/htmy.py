@@ -25,6 +25,8 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-13
 """
 
+from __future__ import annotations
+
 import asyncio
 import typing as t
 from contextlib import suppress
@@ -92,7 +94,7 @@ Cache, Storage, Models = None, None, None
 
 
 # Custom root_path implementation for Oneiric compatibility
-def root_path():
+def root_path() -> None:
     """Custom implementation for Oneiric compatibility."""
     # This will be implemented using Oneiric's path system
     return "/"
@@ -304,7 +306,7 @@ class HTMYComponentRegistry:
             debug(f"Failed to load cached bytecode for {component_name}: {e}")
             return None
 
-    async def _load_from_source(self, source, component_path, component_name):
+    async def _load_from_source(self, source, component_path, component_name):  # type: ignore
         """Load component class from source file."""
         try:
             # Import and analyze component safely
@@ -345,7 +347,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
-class HTMYTemplatesSettings(OneiricSettings):
+class HTMYTemplatesSettings(OneiricSettings):  # type: ignore
     searchpaths: list[str] = []
     cache_timeout: int = 300
     enable_bidirectional: bool = True
@@ -379,7 +381,7 @@ class HTMYTemplates(TemplatesBase):
     async def get_component_searchpaths(self, app_adapter: t.Any) -> list[AsyncPath]:
         searchpaths = []
         # Use Oneiric root_path
-        base_root = AsyncPath(root_path())
+        base_root = AsyncPath(root_path()) # type: ignore
         debug(f"get_component_searchpaths: app_adapter={app_adapter}")
         if app_adapter:
             category = getattr(app_adapter, "category", "app")

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from oneiric.core.resolution import Resolver
 from oneiric.core.logging import get_logger
+from oneiric.core.resolution import Resolver
 
 logger = get_logger(__name__)
 
@@ -459,7 +459,7 @@ async def register_fastblocks_resources(server: Any) -> None:
         }
 
         # Register resources with MCP server
-        await register_resources(server, resources)  # type: ignore[misc]
+        await register_resources(server, resources)
 
         logger.info(f"Registered {len(resources)} FastBlocks MCP resources")
 

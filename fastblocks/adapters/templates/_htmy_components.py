@@ -16,6 +16,8 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-13
 """
 
+from __future__ import annotations
+
 import ast
 import asyncio
 import inspect
@@ -24,9 +26,9 @@ import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields, is_dataclass
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 from uuid import uuid4
 
 from anyio import Path as AsyncPath
@@ -42,10 +44,10 @@ def debug(msg: str) -> None:
 try:
     from pydantic import BaseModel
 except ImportError:
-    BaseModel = None  # type: ignore[no-redef]
+    BaseModel = None
 
 
-class ComponentStatus(str, Enum):
+class ComponentStatus(StrEnum):
     """Component lifecycle status."""
 
     DISCOVERED = "discovered"
@@ -56,7 +58,7 @@ class ComponentStatus(str, Enum):
     DEPRECATED = "deprecated"
 
 
-class ComponentType(str, Enum):
+class ComponentType(StrEnum):
     """Component classification types."""
 
     BASIC = "basic"
@@ -163,8 +165,7 @@ def _check_no_dangerous_calls(node: ast.AST) -> None:
         # Direct call: ``exec(...)`` or ``__import__(...)``
         if isinstance(func, ast.Name) and func.id in _DANGEROUS_CALL_NAMES:
             raise ComponentValidationError(
-                f"dangerous builtin call '{func.id}' is not allowed "
-                "in component source"
+                f"dangerous builtin call '{func.id}' is not allowed in component source"
             )
         # Attribute call: e.g. ``builtins.exec(...)`` is unusual but
         # we still catch it; we cannot catch every dunder path so
@@ -212,7 +213,7 @@ def _walk_top_level(tree: ast.Module) -> list[ast.stmt]:
             f"top-level {type(node).__name__} is not allowed; "
             "only class / def / allowlisted imports are permitted"
         )
-    return list(tree.body)
+    return tree.body.copy()
 
 
 def _extract_class(tree: ast.Module) -> ast.ClassDef:
@@ -226,7 +227,10 @@ def _extract_class(tree: ast.Module) -> ast.ClassDef:
         if not isinstance(node, ast.ClassDef):
             continue
         for item in node.body:
-            if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == "htmy":
+            if (
+                isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and item.name == "htmy"
+            ):
                 return node
     raise ComponentValidationError(
         "component source has no top-level class defining an 'htmy' method"
@@ -262,9 +266,7 @@ def load_component_from_source(source: str, name: str) -> t.Any:
         raise
 
     if not isinstance(tree, ast.Module):
-        raise ComponentValidationError(
-            f"component '{name}' source must be a module"
-        )
+        raise ComponentValidationError(f"component '{name}' source must be a module")
 
     _walk_top_level(tree)
     _validate_imports(tree)
@@ -297,7 +299,7 @@ def load_component_from_source(source: str, name: str) -> t.Any:
         # ``ast.Module`` has been validated against the safety
         # rules in ``_walk_top_level``, ``_validate_imports``, and
         # ``_check_no_dangerous_calls`` before this line is reached.
-        exec(compile(tree, f"<{name}>", "exec"), namespace)  # noqa: S102
+        exec(compile(tree, f"<{name}>", "exec"), namespace)  # nosec  noqa: S102  # nosemgrep
     except Exception as exc:
         raise ComponentCompilationError(
             f"component '{name}' failed to execute after validation: {exc}"
@@ -358,7 +360,7 @@ class ComponentBase(ABC):
                 value = None
             elif name == "_context":
                 value = {}
-            else:  # _request
+            else:  # type: ignore  _request
                 value = None
             object.__setattr__(self, name, value)
             return value
@@ -391,32 +393,32 @@ class ComponentBase(ABC):
         """Async version of htmy method."""
         if asyncio.iscoroutinefunction(self.htmy):
             return t.cast(str, await self.htmy(context))
-        return t.cast(str, self.htmy(context))
+        return t.cast(str, self.htmy(context))  # type: ignore
 
-    def add_child(self, child: "ComponentBase") -> None:
+    def add_child(self, child: ComponentBase) -> None:
         """Add a child component."""
         child._parent = self
         self._children.append(child)
 
-    def remove_child(self, child: "ComponentBase") -> None:
+    def remove_child(self, child: ComponentBase) -> None:
         """Remove a child component."""
         if child in self._children:
             child._parent = None
             self._children.remove(child)
 
     @property
-    def children(self) -> list["ComponentBase"]:
+    def children(self) -> list[ComponentBase]:
         """Get child components."""
         return self._children.copy()
 
     @property
-    def parent(self) -> Optional["ComponentBase"]:
+    def parent(self) -> ComponentBase | None:
         """Get parent component."""
         return self._parent
 
 
 class DataclassComponentBase(ComponentBase):
-    """Base class for dataclass-based components.
+    r"""Base class for dataclass-based components.
 
     The ``@dataclass`` decorator is what actually enforces the
     dataclass contract at class-creation time. The prior
@@ -466,7 +468,7 @@ class ComponentScaffolder:
         """
         if not isinstance(name, str) or not name:
             raise ValueError("component name must be a non-empty string")
-        if name.startswith("/") or name.startswith("\\"):
+        if name.startswith(("/", "\\")):
             raise ValueError(f"component name must be relative; got {name!r}")
         if ".." in Path(name).parts:
             raise ValueError(
@@ -499,7 +501,7 @@ Auto-generated component using FastBlocks HTMY scaffolding.
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List, Dict
 from fastblocks.adapters.templates._htmy_components import (
     DataclassComponentBase,
     HTMXComponentMixin,
@@ -536,7 +538,7 @@ HTMX-enabled component for interactive behavior.
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List, Dict
 from fastblocks.adapters.templates._htmy_components import (
     DataclassComponentBase,
     HTMXComponentMixin,
@@ -582,7 +584,7 @@ Composite component containing multiple child components.
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List, Dict
 from fastblocks.adapters.templates._htmy_components import DataclassComponentBase
 
 
@@ -624,7 +626,7 @@ class ComponentValidator:
 
             # Basic syntax validation
             try:
-                compile(source, str(component_path), "exec")
+                compile(source, component_path, "exec")
             except SyntaxError as e:
                 raise ComponentValidationError(f"Syntax error in {component_path}: {e}")
 
@@ -672,7 +674,11 @@ class ComponentValidator:
         # symbol — the validator downstream treats the return as
         # a class.
         if not inspect.isclass(component_class):
-            for obj in vars(component_class).values() if hasattr(component_class, "__dict__") else []:
+            for obj in (
+                vars(component_class).values()
+                if hasattr(component_class, "__dict__")
+                else []
+            ):
                 if (
                     inspect.isclass(obj)
                     and hasattr(obj, "htmy")
@@ -1035,14 +1041,14 @@ class AdvancedHTMYComponentRegistry:
         if self.searchpaths:
             safe_root = self.searchpaths[0]
             try:
-                resolved_target_pathlib = target_path.resolve()  # type: ignore[attr-defined]
-                resolved_safe_root = safe_root.resolve()  # type: ignore[attr-defined]
+                resolved_target_pathlib = target_path.resolve()
+                resolved_safe_root = safe_root.resolve()
             except (OSError, RuntimeError, AttributeError):
                 resolved_target_pathlib = None
                 resolved_safe_root = None
             if resolved_target_pathlib is not None and resolved_safe_root is not None:
                 try:
-                    resolved_target_pathlib.relative_to(resolved_safe_root)
+                    resolved_target_pathlib.relative_to(resolved_safe_root) # type: ignore[attr-defined]
                 except ValueError:
                     raise ValueError(
                         f"target_path {target_path!s} escapes the safe root "
@@ -1056,9 +1062,9 @@ class AdvancedHTMYComponentRegistry:
         # in 'await' expression`` that the prior try/except let
         # through on the second call.
         if not overwrite:
-            exists_result = resolved_target.exists()  # type: ignore[attr-defined]
+            exists_result = resolved_target.exists()
             if inspect.iscoroutine(exists_result):
-                target_exists: bool = bool(await exists_result)
+                target_exists: bool = await exists_result
             else:
                 target_exists = bool(exists_result)
             if target_exists:

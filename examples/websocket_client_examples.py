@@ -16,10 +16,13 @@ logger = logging.getLogger(__name__)
 
 try:
     import websockets
+
     WEBSOCKETS_AVAILABLE = True
 except ImportError:
     WEBSOCKETS_AVAILABLE = False
-    logger.warning("websockets package not installed. Install with: pip install websockets")
+    logger.warning(
+        "websockets package not installed. Install with: pip install websockets"
+    )
 
 
 class FastblocksWebSocketClient:
@@ -171,9 +174,13 @@ async def example_ui_updates():
             payload = data.get("data", {})
 
             if event == "ui.updated":
-                logger.info(f"UI Update: {payload.get('component_id')} - {payload.get('timestamp')}")
+                logger.info(
+                    f"UI Update: {payload.get('component_id')} - {payload.get('timestamp')}"
+                )
             elif event == "state.changed":
-                logger.info(f"State Change: {payload.get('state_path')} = {payload.get('new_value')}")
+                logger.info(
+                    f"State Change: {payload.get('state_path')} = {payload.get('new_value')}"
+                )
             elif event == "session.created":
                 logger.info(f"Session: {payload.get('message')}")
 
@@ -217,11 +224,14 @@ async def example_multi_channel():
 
         # Listen with timeout
         try:
+
             async def handle_all(data: dict[str, Any]) -> None:
-                logger.info(f"[{data.get('event')}] {json.dumps(data.get('data', {}), indent=2)}")
+                logger.info(
+                    f"[{data.get('event')}] {json.dumps(data.get('data', {}), indent=2)}"
+                )
 
             await asyncio.wait_for(client.listen(handle_all), timeout=30.0)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.info("Listening complete (timeout)")
         finally:
             await client.disconnect()
@@ -272,7 +282,9 @@ async def main():
 
     for i, (name, example_func) in enumerate(examples, 1):
         print(f"{i}. {name}")
-        print(f"   python -c 'import asyncio; from examples.websocket_client_examples import {name_example.replace(' ', '_')}; asyncio.run({name_example.replace(' ', '_')}())'")
+        print(
+            f"   python -c 'import asyncio; from examples.websocket_client_examples import {name_example.replace(' ', '_')}; asyncio.run({name_example.replace(' ', '_')}())'"
+        )
         print()
 
     print("To run a specific example, use the function name directly.")

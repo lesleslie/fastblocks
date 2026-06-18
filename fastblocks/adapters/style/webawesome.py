@@ -1,5 +1,7 @@
 """WebAwesome styles adapter for FastBlocks with integrated icon system."""
 
+from __future__ import annotations
+
 from contextlib import suppress
 from typing import Any
 from uuid import UUID
@@ -523,7 +525,7 @@ body {{
 def _register_wa_basic_filters(env: Any) -> None:
     """Register basic WebAwesome filters."""
 
-    @env.global_("wa_stylesheet_links")  # type: ignore[misc]
+    @env.global_("wa_stylesheet_links")
     def wa_stylesheet_links() -> str:
         """Global function for WebAwesome stylesheet links."""
         styles = depends.get_sync("styles")
@@ -531,7 +533,7 @@ def _register_wa_basic_filters(env: Any) -> None:
             return "\n".join(styles.get_stylesheet_links())
         return ""
 
-    @env.filter("wa_class")  # type: ignore[misc]
+    @env.filter("wa_class")
     def wa_class_filter(component: str) -> str:
         """Filter for getting WebAwesome component classes."""
         styles = depends.get_sync("styles")
@@ -539,7 +541,7 @@ def _register_wa_basic_filters(env: Any) -> None:
             return styles.get_component_class(component)
         return component
 
-    @env.filter("wa_icon")  # type: ignore[misc]
+    @env.filter("wa_icon")
     def wa_icon_filter(icon_name: str, style: str = "solid") -> str:
         """Filter for WebAwesome icon classes."""
         styles = depends.get_sync("styles")
@@ -551,7 +553,7 @@ def _register_wa_basic_filters(env: Any) -> None:
 def _register_wa_button_functions(env: Any) -> None:
     """Register WebAwesome button component functions."""
 
-    @env.global_("wa_button")  # type: ignore[misc]
+    @env.global_("wa_button")
     def wa_button(
         text: str, variant: str = "primary", icon: str | None = None, **attributes: Any
     ) -> str:
@@ -576,7 +578,7 @@ def _register_wa_button_functions(env: Any) -> None:
 def _register_wa_card_functions(env: Any) -> None:
     """Register WebAwesome card component functions."""
 
-    @env.global_("wa_card")  # type: ignore[misc]
+    @env.global_("wa_card")  # type: ignore
     def wa_card(
         title: str | None = None,
         content: str = "",

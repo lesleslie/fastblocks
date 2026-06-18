@@ -4,6 +4,8 @@ Pre-configured URL list sitemap generation for simple sites
 with known, static URL structures.
 """
 
+from __future__ import annotations
+
 import typing as t
 from contextlib import suppress
 from uuid import UUID
@@ -47,7 +49,7 @@ class StaticSitemap(BaseSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
 
     def items(self) -> list[str]:
-        strategy_options = self.config.strategy_options
+        strategy_options = self.config.strategy_options # type: ignore[attr-defined]
         static_urls = t.cast(list[str], strategy_options.get("static_urls", []))
         debug(f"StaticSitemap: Using {len(static_urls)} static URLs")
         return static_urls
@@ -74,10 +76,12 @@ class StaticSitemap(BaseSitemap[str], SitemapBase):
             raise ValueError(msg)
         self.sitemap = SitemapApp(
             self,
-            domain=self.config.domain,
+            domain=self.config.domain,  # type: ignore[attr-defined]
             cache_ttl=self.config.cache_ttl,
         )
-        debug(f"StaticSitemap: Initialized with domain={self.config.domain}")
+
+
+
 
 
 Sitemap = StaticSitemap

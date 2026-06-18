@@ -1,5 +1,7 @@
 """Remix Icon adapter for FastBlocks with extensive icon library."""
 
+from __future__ import annotations
+
 from contextlib import suppress
 from typing import Any
 from uuid import UUID
@@ -632,7 +634,7 @@ class RemixIcon(IconsBase):
 def _register_ri_basic_filters(env: Any) -> None:
     """Register basic Remix Icon filters."""
 
-    @env.filter("ri")  # type: ignore[misc]
+    @env.filter("ri")
     def ri_filter(
         icon_name: str,
         variant: str | None = None,
@@ -645,7 +647,7 @@ def _register_ri_basic_filters(env: Any) -> None:
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
 
-    @env.filter("ri_class")  # type: ignore[misc]
+    @env.filter("ri_class")
     def ri_class_filter(icon_name: str, variant: str | None = None) -> str:
         """Template filter for Remix Icon classes."""
         icons = depends.get_sync("icons")
@@ -653,7 +655,7 @@ def _register_ri_basic_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, variant)
         return f"ri-{icon_name}"
 
-    @env.global_("remixicon_stylesheet_links")  # type: ignore[misc]
+    @env.global_("remixicon_stylesheet_links")
     def remixicon_stylesheet_links() -> str:
         """Global function for Remix Icon stylesheet links."""
         icons = depends.get_sync("icons")
@@ -665,7 +667,7 @@ def _register_ri_basic_filters(env: Any) -> None:
 def _register_ri_advanced_functions(env: Any) -> None:
     """Register advanced Remix Icon functions."""
 
-    @env.global_("ri_stacked")  # type: ignore[misc]
+    @env.global_("ri_stacked")  # type: ignore
     def ri_stacked(
         background_icon: str,
         foreground_icon: str,
@@ -685,7 +687,7 @@ def _register_ri_advanced_functions(env: Any) -> None:
             )
         return f"<!-- {background_icon} + {foreground_icon} -->"
 
-    @env.global_("ri_gradient")  # type: ignore[misc]
+    @env.global_("ri_gradient")  # type: ignore
     def ri_gradient(
         icon_name: str,
         gradient_type: str = "primary",
@@ -703,7 +705,7 @@ def _register_ri_advanced_functions(env: Any) -> None:
 def _register_ri_button_functions(env: Any) -> None:
     """Register Remix Icon button functions."""
 
-    @env.global_("ri_button")  # type: ignore[misc]  # Jinja2 decorator preserves signature
+    @env.global_("ri_button")  # type: ignore # Jinja2 decorator preserves signature
     def ri_button(
         text: str,
         icon: str | None = None,

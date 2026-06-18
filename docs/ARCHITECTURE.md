@@ -48,7 +48,7 @@ ACB supplies the infrastructure glue that keeps adapters swappable and dependenc
 
 - Use `import_adapter("templates")` (or similar) to obtain adapter classes.
 - Annotate dependencies with `Inject[MyAdapter]` inside `@depends.inject` endpoints for type safety.
-- When migrating from legacy patterns, see [`docs/migrations/MIGRATION-0.17.0.md`](./migrations/MIGRATION-0.17.0.md) for modern DI examples and dependency-group notes.
+- When migrating from legacy patterns, see `docs/migrations/MIGRATION-0.17.0.md` for modern DI examples and dependency-group notes.
 
 ## Server-Side Rendering with HTMX
 

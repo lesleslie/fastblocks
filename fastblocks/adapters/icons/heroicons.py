@@ -1,5 +1,7 @@
 """Heroicons adapter for FastBlocks with outline/solid variants."""
 
+from __future__ import annotations
+
 from contextlib import suppress
 from typing import Any
 from uuid import UUID
@@ -575,7 +577,7 @@ def _create_hero_badge(
 def register_heroicons_filters(env: Any) -> None:
     """Register Heroicons filters for Jinja2 templates."""
 
-    @env.filter("heroicon")  # type: ignore[misc]  # Jinja2 decorator preserves signature
+    @env.filter("heroicon")  # Jinja2 decorator preserves signature
     def heroicon_filter(
         icon_name: str,
         variant: str = "outline",
@@ -588,7 +590,7 @@ def register_heroicons_filters(env: Any) -> None:
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
 
-    @env.filter("heroicon_class")  # type: ignore[misc]  # Jinja2 decorator preserves signature
+    @env.filter("heroicon_class")  # Jinja2 decorator preserves signature
     def heroicon_class_filter(icon_name: str, variant: str = "outline") -> str:
         """Template filter for Heroicons classes."""
         icons = depends.get_sync("icons")
@@ -596,7 +598,7 @@ def register_heroicons_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, variant)
         return f"heroicon-{icon_name}"
 
-    @env.global_("heroicons_stylesheet_links")  # type: ignore[misc]  # Jinja2 decorator preserves signature
+    @env.global_("heroicons_stylesheet_links")  # type: ignore # Jinja2 decorator preserves signature
     def heroicons_stylesheet_links() -> str:
         """Global function for Heroicons stylesheet links."""
         icons = depends.get_sync("icons")
@@ -604,7 +606,7 @@ def register_heroicons_filters(env: Any) -> None:
             return "\n".join(icons.get_stylesheet_links())
         return ""
 
-    @env.global_("hero_button")  # type: ignore[misc]  # Jinja2 decorator preserves signature
+    @env.global_("hero_button")  # type: ignore # Jinja2 decorator preserves signature
     def hero_button(
         text: str,
         icon: str | None = None,
@@ -620,7 +622,7 @@ def register_heroicons_filters(env: Any) -> None:
             )
         return f"<button>{text}</button>"
 
-    @env.global_("hero_badge")  # type: ignore[misc]  # Jinja2 decorator preserves signature
+    @env.global_("hero_badge")  # type: ignore # Jinja2 decorator preserves signature
     def hero_badge(
         text: str, icon: str | None = None, variant: str = "outline", **attributes: Any
     ) -> str:

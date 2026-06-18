@@ -56,7 +56,7 @@ try:
     from jinja2.sandbox import SandboxedEnvironment
 except ImportError:
     # Fallback for older Jinja2 versions
-    SandboxedEnvironment = Environment  # type: ignore[no-redef]
+    SandboxedEnvironment = Environment
 from jinja2.runtime import StrictUndefined as RuntimeStrictUndefined
 
 from .jinja2 import Templates, TemplatesSettings
@@ -651,7 +651,7 @@ class HybridTemplatesManager:
         """Analyze a template fragment and extract metadata."""
         with suppress(Exception):
             env = self._get_template_environment()
-            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore[union-attr,misc]
+            source, _, _ = env.loader.get_source(env, template_name)
 
             # Parse template to find blocks
             parsed = env.parse(source, template_name)
@@ -660,11 +660,11 @@ class HybridTemplatesManager:
 
             # Extract block information
             for node in parsed.body:
-                if hasattr(node, "name") and node.name:  # type: ignore[attr-defined]
+                if hasattr(node, "name") and node.name:
                     fragment = FragmentInfo(
-                        name=node.name,  # type: ignore[attr-defined]
+                        name=node.name,
                         template_path=template_name,
-                        block_name=node.name,  # type: ignore[attr-defined]
+                        block_name=node.name,
                         start_line=getattr(node, "lineno", None),
                     )
 
@@ -976,7 +976,7 @@ class HybridTemplatesManager:
         env = self._get_template_environment()
 
         with suppress(Exception):
-            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore[union-attr,misc]
+            source, _, _ = env.loader.get_source(env, template_name)
             parsed = env.parse(source, template_name)
 
             # Find extends, includes, and imports

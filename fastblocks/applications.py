@@ -5,6 +5,7 @@ from platform import system
 # Oneiric imports
 from oneiric.core.resolution import Resolver
 
+
 # Oneiric adapter structure. ``AdapterBase`` is a real class (not
 # an ``object`` alias) so that subclasses' ``__bases__`` can be
 # introspected for the literal name ``"AdapterBase"`` — the
@@ -20,6 +21,7 @@ class AdapterBase:
     """
 
     pass
+
 
 # Oneiric resolver
 depends = Resolver()

@@ -1,5 +1,7 @@
 """Model gathering functionality to discover and collect SQLModel and Pydantic models."""
 
+from __future__ import annotations
+
 import inspect
 import typing as t
 from contextlib import suppress
@@ -22,7 +24,7 @@ except ImportError:
         """Debug function fallback."""
         print(f"[DEBUG] {msg}")
 
-    def get_adapters():
+    def get_adapters() -> None:
         """Adapter fallback - returns empty list."""
         return []
 
@@ -127,11 +129,11 @@ def _prepare_model_gather_config(
 def _get_default_model_base_classes() -> list[type]:
     base_classes = []
     with suppress(ImportError):
-        from sqlmodel import SQLModel  # type: ignore[import-untyped]
+        from sqlmodel import SQLModel
 
         base_classes.append(SQLModel)
     with suppress(ImportError):
-        from pydantic import BaseModel  # type: ignore[import-untyped]
+        from pydantic import BaseModel
 
         base_classes.append(t.cast(t.Any, BaseModel))
 
@@ -218,7 +220,7 @@ async def _gather_base_models(
         "metadata": {},
     }
 
-    models_file_path = Path(root_path) / "models.py"
+    models_file_path = Path(root_path) / "models.py"  # type: ignore
     await _process_base_models_file(models_file_path, base_classes, base_models)
 
     await _process_base_models_directory(
@@ -504,7 +506,7 @@ async def _extract_models_from_file(
 
 def _get_module_path_from_file(file_path: Path) -> str:
     try:
-        relative_path = file_path.relative_to(root_path)
+        relative_path = file_path.relative_to(root_path) # type: ignore
         return str(relative_path).replace("/", ".").removesuffix(".py")
     except ValueError:
         return file_path.stem

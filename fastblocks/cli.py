@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 
 # Replace ACB actions with standard Python alternatives
@@ -16,7 +18,7 @@ import signal
 #         logger.propagate = False
 import sys
 import typing as t
-from enum import Enum
+from enum import StrEnum
 from importlib.metadata import version as get_version
 from pathlib import Path
 from subprocess import DEVNULL
@@ -56,7 +58,7 @@ if Path.cwd() == fastblocks_path and not is_testing:
 cli = typer.Typer(rich_markup_mode="rich")
 
 
-class Styles(str, Enum):
+class Styles(StrEnum):
     bulma = "bulma"
     webawesome = "webawesome"
     custom = "custom"
@@ -776,9 +778,7 @@ def _generate_vscode_config(output_path: Path) -> None:
         },
     }
     (output_path / "settings.json").write_text(json.dumps(settings, indent=2))
-    console.print(
-        f"[green]✓ VS Code configuration generated in {output_path}[/green]"
-    )
+    console.print(f"[green]✓ VS Code configuration generated in {output_path}[/green]")
     console.print("  Files created:")
     console.print("    - package.json (extension manifest)")
     console.print("    - language-configuration.json")
@@ -890,8 +890,7 @@ def create_app(
         Styles,
         typer.Option(
             prompt=True,
-            help="The style you want to use["
-            f"{','.join(Styles._member_names_)}]",
+            help=f"The style you want to use[{','.join(Styles._member_names_)}]",
         ),
     ] = Styles.bulma,
     domain: Annotated[
@@ -992,14 +991,12 @@ def _update_app_configs(app_path: Path, domain: str) -> None:
     """Patch the generated settings/*.yml files with project defaults."""
 
     async def _update_configs() -> None:
-        async def update_settings(
-            settings: str, values: dict[str, t.Any]
-        ) -> None:
+        async def update_settings(settings: str, values: dict[str, t.Any]) -> None:
             settings_path = AsyncPath(app_path / "settings")
             content = (settings_path / f"{settings}.yml").read_text()
-            settings_dict = yaml.safe_load(content) or {}
+            settings_dict: dict[str, object] = yaml.safe_load(content) or {}
             settings_dict.update(values)
-            (settings_path / f"{settings}.yml").write_text(
+            (settings_path / f"{settings}.yml").write_text(  # type: ignore
                 yaml.safe_dump(settings_dict)
             )
 
@@ -1014,22 +1011,17 @@ def _update_app_configs(app_path: Path, domain: str) -> None:
 
 async def update_configs(app_path: Path, domain: str) -> None:
     """Backwards-compatible alias used by external tests and integrations."""
-    async def update_settings(
-        settings: str, values: dict[str, t.Any]
-    ) -> None:
+
+    async def update_settings(settings: str, values: dict[str, t.Any]) -> None:
         settings_path = AsyncPath(app_path / "settings")
         content = (settings_path / f"{settings}.yml").read_text()
-        settings_dict = yaml.safe_load(content) or {}
+        settings_dict: dict[str, object] = yaml.safe_load(content) or {}
         settings_dict.update(values)
-        (settings_path / f"{settings}.yml").write_text(
-            yaml.safe_dump(settings_dict)
-        )
+        (settings_path / f"{settings}.yml").write_text(yaml.safe_dump(settings_dict))  # type: ignore
 
     await update_settings("debug", {"fastblocks": False})
     await update_settings("adapters", default_adapters)
-    await update_settings(
-        "app", {"title": "Welcome to FastBlocks", "domain": domain}
-    )
+    await update_settings("app", {"title": "Welcome to FastBlocks", "domain": domain})
 
 
 def _run_setup_commands() -> None:

@@ -40,7 +40,7 @@ def htmx_scope_strategy(draw) -> dict[str, Any]:
         min_size=0,
         max_size=100
     )
-    
+
     headers = draw(
         st.lists(
             st.tuples(

@@ -1,5 +1,6 @@
 """Application component gathering and initialization orchestration."""
 
+from __future__ import annotations
 import typing as t
 from importlib import import_module
 
@@ -16,7 +17,7 @@ def debug(msg: str) -> None:
     print(f"[DEBUG] {msg}")
 
 
-def get_adapters():
+def get_adapters() -> None:
     """Adapter fallback - returns empty list for Oneiric mode."""
     return []
 
@@ -468,7 +469,7 @@ async def create_application_manager(
 ) -> t.Any:
     try:
         from fastblocks.applications import (
-            ApplicationManager,  # type: ignore[attr-defined]
+            ApplicationManager,
         )
     except ImportError:
 

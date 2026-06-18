@@ -7,7 +7,7 @@ import typing as t
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +17,7 @@ from .health import HealthCheckSystem
 from .registry import AdapterRegistry
 
 
-class ConfigurationTestType(str, Enum):
+class ConfigurationTestType(StrEnum):
     """Types of configuration tests."""
 
     VALIDATION = "validation"
@@ -29,7 +29,7 @@ class ConfigurationTestType(str, Enum):
     INTEGRATION = "integration"
 
 
-class TestSeverity(str, Enum):
+class TestSeverity(StrEnum):
     """Test result severity levels."""
 
     CRITICAL = "critical"

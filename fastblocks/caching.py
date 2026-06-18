@@ -32,7 +32,9 @@ depends = Resolver()
 def get_adapter(adapter_name: str) -> t.Any:
     """Simple adapter getter for Oneiric (replaces ACB's get_adapter)."""
     with suppress(Exception):
-        from oneiric.adapters.bootstrap import Resolver as AdapterResolver
+        from oneiric.adapters.bootstrap import (
+            Resolver as AdapterResolver,
+        )
 
         resolver = AdapterResolver()
         # Try to resolve the adapter using Oneiric's resolver
@@ -133,7 +135,7 @@ class CacheUtils:
         if total == 0:
             return "0s"
         parts = []
-        for unit, secs in [("d", 86400), ("h", 3600), ("m", 60), ("s", 1)]:
+        for unit, secs in (("d", 86400), ("h", 3600), ("m", 60), ("s", 1)):
             count, total = divmod(total, secs)
             if count:
                 parts.append(f"{count}{unit}")
@@ -184,7 +186,7 @@ class CacheRules:
         match = (
             [rule.match]
             if isinstance(rule.match, str | re.Pattern)
-            else list(rule.match)
+            else rule.match.copy() # type: ignore
         )
         return _check_rule_match(match, request.url.path)
 
@@ -532,7 +534,7 @@ def serialize_response(response: Response) -> dict[str, t.Any]:
     return {
         "content": _base64_encodebytes(response.body).decode("ascii"),
         "status_code": response.status_code,
-        "headers": dict(response.headers),
+        "headers": response.headers.copy(),  # type: ignore[attr-defined]
     }
 
 

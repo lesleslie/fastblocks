@@ -1,0 +1,6 @@
+exclude = [
+    "\\[\\[",
+    "http://localhost",
+    "readthedocs\\.io",
+    "docs\\.pytest\\.org",
+]

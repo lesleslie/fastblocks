@@ -42,7 +42,7 @@ For current documentation, see:
 
 - **[CLAUDE.md](../../CLAUDE.md)** - Main AI agent guide and development guidelines
 - **[CONTRIBUTING.md](../../CONTRIBUTING.md)** - Repository contribution guidelines
-- **[docs/ACB_GUIDE.md](../ACB_GUIDE.md)** - Comprehensive ACB integration guide
+- **docs/ACB_GUIDE.md** - Comprehensive ACB integration guide
 - **[docs/JINJA2_ASYNC_ENVIRONMENT_USAGE.md](../JINJA2_ASYNC_ENVIRONMENT_USAGE.md)** - Technical implementation guide
 - **[docs/migrations/](../migrations/)** - Version migration guides
 - **[docs/examples/](../examples/)** - Code examples and templates

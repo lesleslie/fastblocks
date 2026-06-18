@@ -10,6 +10,7 @@ The default-deny policy is deliberate: an empty allowlist refuses
 every connection. Operators who want "any origin" must opt in
 explicitly by setting the env var to ``*``.
 """
+
 from __future__ import annotations
 
 import os

@@ -1,5 +1,7 @@
 """Route gathering functionality to replace scattered route discovery."""
 
+from __future__ import annotations
+
 import typing as t
 from contextlib import suppress
 from importlib import import_module
@@ -14,7 +16,7 @@ try:
     from oneiric.core.resolution import Resolver
 
     # Create debug function for Oneiric (using logger)
-    def debug(msg):
+    def debug(msg) -> None:
         logger = get_logger("fastblocks.actions.gather.routes")
         logger.debug(msg)
 

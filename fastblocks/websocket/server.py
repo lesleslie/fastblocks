@@ -13,8 +13,6 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from oneiric.core.logging import get_logger
-
 from mcp_common.websocket import (
     MessageType,
     WebSocketMessage,
@@ -24,6 +22,8 @@ from mcp_common.websocket import (
 
 # Import EventTypes from protocol module
 from mcp_common.websocket.protocol import EventTypes
+from oneiric.core.logging import get_logger
+
 # Import authentication
 from fastblocks.websocket.auth import get_authenticator
 
@@ -31,7 +31,6 @@ from fastblocks.websocket.auth import get_authenticator
 # fastblocks.websocket.server import check_origin, parse_allowed_origins``
 # (the test surface uses that import path; the implementation lives in
 # fastblocks.websocket.origin to keep the server file from growing).
-from fastblocks.websocket.origin import check_origin, parse_allowed_origins
 
 logger = get_logger(__name__)
 
@@ -63,8 +62,7 @@ class FastblocksWebSocketServer(WebSocketServer):
 
     With TLS:
         >>> server = FastblocksWebSocketServer(
-        ...     cert_file="/path/to/cert.pem",
-        ...     key_file="/path/to/key.pem"
+        ...     cert_file="/path/to/cert.pem", key_file="/path/to/key.pem"
         ... )
         >>> await server.start()
     """
@@ -200,9 +198,7 @@ class FastblocksWebSocketServer(WebSocketServer):
         else:
             logger.warning(f"Unhandled message type: {message.type}")
 
-    async def _handle_request(
-        self, websocket: Any, message: WebSocketMessage
-    ) -> None:
+    async def _handle_request(self, websocket: Any, message: WebSocketMessage) -> None:
         """Handle request message (expects response).
 
         Args:
@@ -235,9 +231,10 @@ class FastblocksWebSocketServer(WebSocketServer):
     async def _dispatch_request(
         self, websocket: Any, message: WebSocketMessage
     ) -> None:
-        """Inner handler body for _handle_request — split out so the
-        outer try/except sanitizes exceptions without swallowing
-        control-flow signals like asyncio.CancelledError.
+        """Inner handler body for _handle_request.
+
+        Split out so the outer try/except sanitizes exceptions without
+        swallowing control-flow signals like asyncio.CancelledError.
         """
         # Get authenticated user from connection
         user = getattr(websocket, "user", None)
@@ -246,7 +243,7 @@ class FastblocksWebSocketServer(WebSocketServer):
             channel = message.data.get("channel")
 
             # Check authorization for this channel
-            if user and not self._can_subscribe_to_channel(user, channel):
+            if user and not self._can_subscribe_to_channel(user, channel):  # type: ignore
                 error = WebSocketProtocol.create_error(
                     error_code="FORBIDDEN",
                     error_message=f"Not authorized to subscribe to {channel}",
@@ -260,8 +257,7 @@ class FastblocksWebSocketServer(WebSocketServer):
                 await self.join_room(channel, connection_id)
 
                 response = WebSocketProtocol.create_response(
-                    message,
-                    {"status": "subscribed", "channel": channel}
+                    message, {"status": "subscribed", "channel": channel}
                 )
                 await websocket.send(WebSocketProtocol.encode(response))
 
@@ -272,8 +268,7 @@ class FastblocksWebSocketServer(WebSocketServer):
                 await self.leave_room(channel, connection_id)
 
                 response = WebSocketProtocol.create_response(
-                    message,
-                    {"status": "unsubscribed", "channel": channel}
+                    message, {"status": "unsubscribed", "channel": channel}
                 )
                 await websocket.send(WebSocketProtocol.encode(response))
 
@@ -382,12 +377,9 @@ class FastblocksWebSocketServer(WebSocketServer):
         """
         event = WebSocketProtocol.create_event(
             "ui.updated",
-            {
-                "component_id": component_id,
-                "timestamp": self._get_timestamp(),
-                **metadata
-            },
-            room=f"ui:{component_id}"
+            {"component_id": component_id, "timestamp": self._get_timestamp()}
+            | metadata,
+            room=f"ui:{component_id}",
         )
         await self.broadcast_to_room(f"ui:{component_id}", event)
 
@@ -402,18 +394,13 @@ class FastblocksWebSocketServer(WebSocketServer):
         """
         event = WebSocketProtocol.create_event(
             "component.rendered",
-            {
-                "component_id": component_id,
-                "timestamp": self._get_timestamp(),
-                **render_info
-            },
-            room=f"component:{component_id}"
+            {"component_id": component_id, "timestamp": self._get_timestamp()}
+            | render_info,
+            room=f"component:{component_id}",
         )
         await self.broadcast_to_room(f"component:{component_id}", event)
 
-    async def broadcast_state_changed(
-        self, state_path: str, new_value: Any
-    ) -> None:
+    async def broadcast_state_changed(self, state_path: str, new_value: Any) -> None:
         """Broadcast state change event.
 
         Args:
@@ -427,7 +414,7 @@ class FastblocksWebSocketServer(WebSocketServer):
                 "new_value": new_value,
                 "timestamp": self._get_timestamp(),
             },
-            room="state"
+            room="state",
         )
         await self.broadcast_to_room("state", event)
 

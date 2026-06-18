@@ -4,14 +4,14 @@ import re
 import typing as t
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from .configuration import ConfigurationSchema
 from .env_manager import EnvironmentManager
 
 
-class AuditSeverity(str, Enum):
+class AuditSeverity(StrEnum):
     """Audit finding severity levels."""
 
     CRITICAL = "critical"
@@ -21,7 +21,7 @@ class AuditSeverity(str, Enum):
     INFO = "info"
 
 
-class AuditCategory(str, Enum):
+class AuditCategory(StrEnum):
     """Audit categories."""
 
     SECURITY = "security"
@@ -606,10 +606,9 @@ class ConfigurationAuditor:
                 "recommendation": "Use environment variables for sensitive data",
                 "severity": "critical",
                 "reference": "A3 - Sensitive Data Exposure",
-                "check_function": lambda config: len(
-                    self._find_hardcoded_secrets(config)
-                )
-                == 0,
+                "check_function": lambda config: (
+                    len(self._find_hardcoded_secrets(config)) == 0
+                ),
             },
         ]
 

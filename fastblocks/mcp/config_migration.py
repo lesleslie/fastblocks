@@ -4,7 +4,7 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, cast
 
@@ -17,7 +17,7 @@ _DEFAULT_ADAPTER_METADATA = {
 }
 
 
-class MigrationDirection(str, Enum):
+class MigrationDirection(StrEnum):
     """Migration direction."""
 
     UPGRADE = "upgrade"

@@ -1,5 +1,6 @@
 """FastBlocks syntax support and autocomplete system."""
 
+from __future__ import annotations
 import re
 from contextlib import suppress
 from dataclasses import dataclass, field
@@ -692,7 +693,7 @@ class FastBlocksSyntaxSupport:
 def register_syntax_filters(env: Any) -> None:
     """Register syntax support filters for Jinja2 templates."""
 
-    @env.filter("format_template")  # type: ignore[misc]
+    @env.filter("format_template")
     def format_template_filter(content: str) -> str:
         """Template filter for formatting FastBlocks templates."""
         syntax_support = depends.get_sync("syntax_support")
@@ -700,7 +701,7 @@ def register_syntax_filters(env: Any) -> None:
             return syntax_support.format_template(content)
         return content
 
-    @env.global_("syntax_check")  # type: ignore[misc]
+    @env.global_("syntax_check")
     def syntax_check_global(content: str) -> list[dict[str, Any]]:
         """Global function for syntax checking."""
         syntax_support = depends.get_sync("syntax_support")

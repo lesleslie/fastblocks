@@ -4,6 +4,8 @@ Automatic route-based sitemap generation using FastBlocks routing system
 with enhanced caching, filtering, and debugging capabilities.
 """
 
+from __future__ import annotations
+
 import re
 import typing as t
 from contextlib import suppress
@@ -111,15 +113,15 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
         return 0.4
 
     async def init(self) -> None:
-        if not self.config.domain:
+        if not self.config.domain:  # type: ignore[attr-defined]
             msg = "domain must be set in sitemap settings"
             raise ValueError(msg)
         self.sitemap = SitemapApp(
             self,
             domain=self.config.domain,
-            cache_ttl=self.config.cache_ttl,
+            cache_ttl=self.config.cache_ttl, # type: ignore[attr-defined]
         )
-        debug(f"NativeSitemap: Initialized with domain={self.config.domain}")
+        debug(f"NativeSitemap: Initialized with domain={self.config.domain}")  # type: ignore[attr-defined]
 
 
 Sitemap = NativeSitemap

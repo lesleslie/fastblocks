@@ -4,6 +4,7 @@ Phase 3.1 of the ACB→Oneiric migration: collapse the 4 per-module
 Resolver() instances into one process-wide singleton so dependencies
 resolved in `_events_integration` are visible to `_workflows_integration`.
 """
+
 from __future__ import annotations
 
 from oneiric.core.resolution import Resolver

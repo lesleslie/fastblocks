@@ -6,8 +6,8 @@ import operator
 from pathlib import Path
 from typing import Any
 
-from oneiric.core.resolution import Resolver
 from oneiric.core.logging import get_logger
+from oneiric.core.resolution import Resolver
 
 from .discovery import AdapterDiscoveryServer
 from .health import HealthCheckSystem
@@ -578,7 +578,7 @@ async def register_fastblocks_tools(server: Any) -> None:
         }
 
         # Register tools with MCP server
-        await register_tools(server, tools)  # type: ignore[misc]
+        await register_tools(server, tools)
 
         logger.info(f"Registered {len(tools)} FastBlocks MCP tools")
 
