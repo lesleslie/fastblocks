@@ -324,7 +324,7 @@ def register_twicpics_filters(env: Any) -> None:
             )
         return f'<img src="#{image_id}" alt="{alt}">'
 
-    @env.filter("twic_placeholder")
+    @env.filter("twic_placeholder") # type: ignore
     async def twic_placeholder_filter(
         image_id: str, width: int = 20, quality: int = 10
     ) -> str:
@@ -340,7 +340,7 @@ def register_twicpics_filters(env: Any) -> None:
 ImagesSettings = TwicPicsImagesSettings
 Images = TwicPicsImages
 
-depends.set(Images, "twicpics") # type: ignore
+depends.set(Images, "twicpics")  # type: ignore
 
 # ACB 0.19.0+ compatibility
 __all__ = [

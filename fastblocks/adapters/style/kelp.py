@@ -847,7 +847,7 @@ def register_kelp_functions(env: Any) -> None:
             return styles.get_component_class(component)
         return component
 
-    @env.global_("kelp_component")
+    @env.global_("kelp_component") # type: ignore
     def kelp_component(
         component_type: str, content: str = "", **attributes: Any
     ) -> str:

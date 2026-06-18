@@ -817,7 +817,7 @@ def _register_material_basic_filters(env: Any) -> None:
 def _register_material_fab_functions(env: Any) -> None:
     """Register Material Design FAB functions."""
 
-    @env.global_("material_fab")
+    @env.global_("material_fab") # type: ignore
     def material_fab(
         icon_name: str,
         variant: str = "regular",

@@ -72,7 +72,7 @@ class AsgiSitemap(NativeSitemap[str], SitemapBase):
             raise ValueError(msg)
         self.sitemap = SitemapApp(
             self,
-            domain=self.config.app.domain, # type: ignore[attr-defined]
+            domain=self.config.app.domain,  # type: ignore[attr-defined]
             cache_ttl=getattr(self.config, "cache_ttl", 3600),
         )
 

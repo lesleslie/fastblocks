@@ -100,13 +100,13 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
                 await asyncio.sleep(300)
 
     async def init(self) -> None:
-        if not self.config.domain:
+        if not self.config.domain: # type: ignore[attr-defined]
             msg = "domain must be set in sitemap settings"
             raise ValueError(msg)
         extended_ttl = self.config.cache_ttl * 2
         self.sitemap = SitemapApp(
             self,
-            domain=self.config.domain, # type: ignore[attr-defined]
+            domain=self.config.domain,  # type: ignore[attr-defined]
             cache_ttl=extended_ttl,
         )
         strategy_options = self.config.strategy_options  # type: ignore[attr-defined]

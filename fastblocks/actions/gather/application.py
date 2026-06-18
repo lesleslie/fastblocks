@@ -1,6 +1,7 @@
 """Application component gathering and initialization orchestration."""
 
 from __future__ import annotations
+
 import typing as t
 from importlib import import_module
 
@@ -322,7 +323,7 @@ async def _gather_standard_initializers(
 async def _gather_adapter_initializers(
     initializers: list[t.Callable[..., t.Any]],
 ) -> None:
-    for adapter in get_adapters():
+    for adapter in get_adapters(): # type: ignore
         try:
             adapter_init_path = f"acb.adapters.{adapter.name}.init"
             module = import_module(adapter_init_path)

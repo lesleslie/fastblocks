@@ -62,7 +62,7 @@ def get_adapter(adapter_name: str) -> t.Any:
         async def get(self, key) -> t.Any:
             return None
 
-        async def set(self, key, value, **kwargs) -> None:
+        async def set(self, key, value, **kwargs) -> None: # type: ignore
             pass
 
         async def delete(self, key) -> None:
@@ -186,7 +186,7 @@ class CacheRules:
         match = (
             [rule.match]
             if isinstance(rule.match, str | re.Pattern)
-            else rule.match.copy() # type: ignore
+            else rule.match.copy()  # type: ignore
         )
         return _check_rule_match(match, request.url.path)
 

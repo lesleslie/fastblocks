@@ -441,7 +441,7 @@ async def _gather_custom_models(
 
     custom_paths = [
         Path(root_path) / "app" / "models.py",
-        Path(root_path) / "src" / "models.py",
+        Path(root_path) / "src" / "models.py", # type: ignore
         Path(root_path) / "custom" / "models.py",
     ]
 
@@ -506,7 +506,7 @@ async def _extract_models_from_file(
 
 def _get_module_path_from_file(file_path: Path) -> str:
     try:
-        relative_path = file_path.relative_to(root_path) # type: ignore
+        relative_path = file_path.relative_to(root_path)  # type: ignore
         return str(relative_path).replace("/", ".").removesuffix(".py")
     except ValueError:
         return file_path.stem

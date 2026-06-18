@@ -119,7 +119,7 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
         self.sitemap = SitemapApp(
             self,
             domain=self.config.domain,
-            cache_ttl=self.config.cache_ttl, # type: ignore[attr-defined]
+            cache_ttl=self.config.cache_ttl,  # type: ignore[attr-defined]
         )
         debug(f"NativeSitemap: Initialized with domain={self.config.domain}")  # type: ignore[attr-defined]
 

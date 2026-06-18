@@ -499,7 +499,7 @@ def _register_ph_basic_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, variant)
         return f"ph-{icon_name}"
 
-    @env.global_("phosphor_stylesheet_links")
+    @env.global_("phosphor_stylesheet_links") # type: ignore
     def phosphor_stylesheet_links() -> str:
         """Global function for Phosphor stylesheet links."""
         icons = depends.get_sync("icons")

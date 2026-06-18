@@ -553,7 +553,7 @@ def _register_wa_basic_filters(env: Any) -> None:
 def _register_wa_button_functions(env: Any) -> None:
     """Register WebAwesome button component functions."""
 
-    @env.global_("wa_button")
+    @env.global_("wa_button") # type: ignore
     def wa_button(
         text: str, variant: str = "primary", icon: str | None = None, **attributes: Any
     ) -> str:

@@ -49,7 +49,7 @@ class StaticSitemap(BaseSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
 
     def items(self) -> list[str]:
-        strategy_options = self.config.strategy_options # type: ignore[attr-defined]
+        strategy_options = self.config.strategy_options  # type: ignore[attr-defined]
         static_urls = t.cast(list[str], strategy_options.get("static_urls", []))
         debug(f"StaticSitemap: Using {len(static_urls)} static URLs")
         return static_urls
@@ -79,9 +79,6 @@ class StaticSitemap(BaseSitemap[str], SitemapBase):
             domain=self.config.domain,  # type: ignore[attr-defined]
             cache_ttl=self.config.cache_ttl,
         )
-
-
-
 
 
 Sitemap = StaticSitemap

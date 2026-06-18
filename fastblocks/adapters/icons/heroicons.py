@@ -577,7 +577,7 @@ def _create_hero_badge(
 def register_heroicons_filters(env: Any) -> None:
     """Register Heroicons filters for Jinja2 templates."""
 
-    @env.filter("heroicon")  # Jinja2 decorator preserves signature
+    @env.filter("heroicon") # type: ignore  Jinja2 decorator preserves signature
     def heroicon_filter(
         icon_name: str,
         variant: str = "outline",

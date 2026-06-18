@@ -252,7 +252,7 @@ class HTMYComponentRegistry:
 
         # Try to load from cached bytecode first
         if cached_bytecode:
-            component_class = await self._load_from_cached_bytecode(
+            component_class = await self._load_from_cached_bytecode( # type: ignore
                 cached_bytecode, source, component_path, component_name
             )
             if component_class:
@@ -381,7 +381,7 @@ class HTMYTemplates(TemplatesBase):
     async def get_component_searchpaths(self, app_adapter: t.Any) -> list[AsyncPath]:
         searchpaths = []
         # Use Oneiric root_path
-        base_root = AsyncPath(root_path()) # type: ignore
+        base_root = AsyncPath(root_path())  # type: ignore
         debug(f"get_component_searchpaths: app_adapter={app_adapter}")
         if app_adapter:
             category = getattr(app_adapter, "category", "app")

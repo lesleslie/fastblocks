@@ -1,6 +1,7 @@
 """Cloudinary image adapter implementation."""
 
 from __future__ import annotations
+
 from typing import Any
 from uuid import UUID
 
@@ -74,7 +75,7 @@ class CloudinaryImages(ImagesBase):
                 resource_type="image",
                 public_id=filename.rsplit(".", 1)[0],
             )
-            return result # type: ignore
+            return result  # type: ignore
         except ImportError:
             # Mock implementation if cloudinary is not available
             public_id = filename.rsplit(".", 1)[0]

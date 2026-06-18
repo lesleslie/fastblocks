@@ -655,7 +655,7 @@ def _register_ri_basic_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, variant)
         return f"ri-{icon_name}"
 
-    @env.global_("remixicon_stylesheet_links")
+    @env.global_("remixicon_stylesheet_links") # type: ignore
     def remixicon_stylesheet_links() -> str:
         """Global function for Remix Icon stylesheet links."""
         icons = depends.get_sync("icons")

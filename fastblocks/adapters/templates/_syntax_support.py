@@ -1,6 +1,7 @@
 """FastBlocks syntax support and autocomplete system."""
 
 from __future__ import annotations
+
 import re
 from contextlib import suppress
 from dataclasses import dataclass, field

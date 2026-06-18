@@ -1,5 +1,6 @@
 """Advanced Template Management System for FastBlocks Week 7-8.
 
+from __future__ import annotations
 This module provides advanced Jinja2 template management with enhanced features:
 - Template syntax checking and validation with line-by-line error reporting
 - Fragment and partial template support for HTMX
@@ -976,7 +977,7 @@ class HybridTemplatesManager:
         env = self._get_template_environment()
 
         with suppress(Exception):
-            source, _, _ = env.loader.get_source(env, template_name)
+            source, _, _ = env.loader.get_source(env, template_name) # type: ignore
             parsed = env.parse(source, template_name)
 
             # Find extends, includes, and imports

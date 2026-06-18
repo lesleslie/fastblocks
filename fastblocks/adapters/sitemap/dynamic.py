@@ -95,11 +95,8 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
         self.sitemap = SitemapApp(
             self,
             domain=self.config.domain,
-            cache_ttl=self.config.cache_ttl, # type: ignore[attr-defined]
+            cache_ttl=self.config.cache_ttl,  # type: ignore[attr-defined]
         )
-
-
-
 
 
 Sitemap = DynamicSitemap

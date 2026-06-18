@@ -54,7 +54,7 @@ def load_ssl_context(
         if config["tls_enabled"]:
             cert_file = config["cert_file"]
             key_file = config["key_file"]
-            ca_file = config["ca_file"] # type: ignore
+            ca_file = config["ca_file"]  # type: ignore
             verify_client = config.get("verify_client", False)
 
     # Create SSL context if files provided

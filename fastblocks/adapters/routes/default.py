@@ -115,7 +115,7 @@ class Index(FastBlocksEndpoint):
             debug(htmx)
             template = f"{page.lstrip('/')}.html"
             headers["hx-push-url"] = "/" if page == "home" else page
-        debug(page, template)
+        debug(page, template) # type: ignore
         context = await create_query_context(
             request, base_context={"page": page.lstrip("/")}
         )
@@ -195,7 +195,7 @@ class Routes(RoutesBase):
         if "adapters" in path.parts:
             depth = -4
         module_path = ".".join(path.parts[depth:]).removesuffix(".py")
-        debug(path, depth, module_path) # type: ignore
+        debug(path, depth, module_path)  # type: ignore
         with suppress(ModuleNotFoundError):
             module = import_module(module_path)
             module_routes = getattr(module, "routes", None)

@@ -498,7 +498,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
                     "trigger_name": trigger_name,
                     "trigger_data": trigger_data,
                 },
-                priority=EventPriority.HIGH,
+                priority=EventPriority.HIGH, # type: ignore
             )
 
             await self._publisher.publish(event)
@@ -517,7 +517,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
         ip_address: str | None = None,
     ) -> bool:
         """Publish admin action event."""
-        if not acb_events_available or self._publisher is None: # type: ignore
+        if not acb_events_available or self._publisher is None:  # type: ignore
             return False
 
         try:

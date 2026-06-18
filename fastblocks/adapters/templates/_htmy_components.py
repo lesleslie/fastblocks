@@ -361,7 +361,7 @@ class ComponentBase(ABC):
             elif name == "_context":
                 value = {}
             else:  # type: ignore  _request
-                value = None
+                value = None  # type: ignore
             object.__setattr__(self, name, value)
             return value
         raise AttributeError(name)
@@ -653,7 +653,9 @@ class ComponentValidator:
             )
 
     @staticmethod
-    async def _load_component_class_from_file(source: str, component_path: AsyncPath):
+    async def _load_component_class_from_file(
+        source: str, component_path: AsyncPath
+    ) -> None:
         """Load component class from source file.
 
         Uses the validated-AST loader (``load_component_from_source``)
@@ -1048,7 +1050,7 @@ class AdvancedHTMYComponentRegistry:
                 resolved_safe_root = None
             if resolved_target_pathlib is not None and resolved_safe_root is not None:
                 try:
-                    resolved_target_pathlib.relative_to(resolved_safe_root) # type: ignore[attr-defined]
+                    resolved_target_pathlib.relative_to(resolved_safe_root)  # type: ignore[attr-defined]
                 except ValueError:
                     raise ValueError(
                         f"target_path {target_path!s} escapes the safe root "

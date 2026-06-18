@@ -937,7 +937,7 @@ class Templates(TemplatesBase):
             templates.env.loader = loader
         elif self.config.templates.loader:
             templates.env.loader = literal_eval(self.config.templates.loader)
-        for delimiter, value in self.config.templates.delimiters.items(): # type: ignore[attr-defined]
+        for delimiter, value in self.config.templates.delimiters.items():  # type: ignore[attr-defined]
             setattr(templates.env, delimiter, value)
         # Type cast globals dict to avoid assignment type errors
         globals_dict: dict[str, t.Any] = templates.env.globals
@@ -956,7 +956,7 @@ class Templates(TemplatesBase):
             globals_dict["admin"] = self
             globals_dict["is_list"] = lambda x: isinstance(x, list)
             globals_dict["get_object_identifier"] = get_object_identifier
-        for k, v in self.config.templates.globals.items():
+        for k, v in self.config.templates.globals.items(): # type: ignore[attr-defined]
             globals_dict[k] = v
         return templates
 
