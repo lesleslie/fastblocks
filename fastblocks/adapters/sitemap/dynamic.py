@@ -50,7 +50,7 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
     sitemap: SitemapApp | None = None
 
     async def items(self) -> list[dict[str, t.Any]]:
-        strategy_options = self.config.strategy_options
+        strategy_options = self.config.strategy_options  # type: ignore[attr-defined]
         model_configs = strategy_options.get("model_configs", [])
         all_items = []
         for model_config in model_configs:
@@ -89,12 +89,12 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
         return t.cast(float, item.get("priority", 0.5))
 
     async def init(self) -> None:
-        if not self.config.domain:
+        if not self.config.domain:  # type: ignore[attr-defined]
             msg = "domain must be set in sitemap settings"
             raise ValueError(msg)
         self.sitemap = SitemapApp(
             self,
-            domain=self.config.domain,
+            domain=self.config.domain,  # type: ignore[attr-defined]
             cache_ttl=self.config.cache_ttl,  # type: ignore[attr-defined]
         )
 

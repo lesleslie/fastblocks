@@ -2,7 +2,7 @@
 from oneiric.core.config import OneiricSettings
 
 
-class AdminBaseSettings(OneiricSettings):
+class AdminBaseSettings(OneiricSettings):  # type: ignore[misc]
     """Admin base settings using OneiricSettings."""
 
     style: str = "bootstrap"

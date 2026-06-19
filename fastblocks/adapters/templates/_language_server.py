@@ -15,7 +15,7 @@ depends = Resolver()
 from ._syntax_support import FastBlocksSyntaxSupport
 
 
-class LanguageServerSettings(OneiricSettings):
+class LanguageServerSettings(OneiricSettings):  # type: ignore[misc]
     """Settings for FastBlocks Language Server."""
 
     # Required ACB 0.19.0+ metadata

@@ -578,7 +578,7 @@ async def register_fastblocks_tools(server: Any) -> None:
         }
 
         # Register tools with MCP server
-        await register_tools(server, tools)
+        await register_tools(server, tools)  # type: ignore[name-defined]
 
         logger.info(f"Registered {len(tools)} FastBlocks MCP tools")
 

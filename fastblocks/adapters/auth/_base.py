@@ -8,7 +8,7 @@ from starlette.authentication import UnauthenticatedUser
 from fastblocks.htmx import HtmxRequest
 
 
-class AuthBaseSettings(OneiricSettings):
+class AuthBaseSettings(OneiricSettings):  # type: ignore[misc]
     """Auth base settings using OneiricSettings."""
 
     token_id: str | None = None

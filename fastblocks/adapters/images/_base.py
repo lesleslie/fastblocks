@@ -13,7 +13,7 @@ from ..oneiric_helper import register_candidate
 depends = Resolver()
 
 
-class ImagesBaseSettings(OneiricSettings):
+class ImagesBaseSettings(OneiricSettings):  # type: ignore[misc]
     """Base settings for image adapters using OneiricSettings."""
 
     cdn_url: str | None = None

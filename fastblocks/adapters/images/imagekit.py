@@ -46,7 +46,7 @@ class ImageKitImages(ImagesBase):
             },
         )
 
-    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:
+    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:  # type: ignore[override]
         """Upload image to ImageKit and return result dict."""
         try:
             import imagekit
@@ -57,7 +57,7 @@ class ImageKitImages(ImagesBase):
                 file_name=filename,
                 folder=self.settings.upload_folder,
             )
-            return result
+            return result  # type: ignore[no-any-return]
         except ImportError:
             # Mock implementation if imagekit is not available
             file_id = filename.rsplit(".", 1)[0]

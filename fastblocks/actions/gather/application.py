@@ -18,7 +18,7 @@ def debug(msg: str) -> None:
     print(f"[DEBUG] {msg}")
 
 
-def get_adapters() -> None:
+def get_adapters() -> list[t.Any]:
     """Adapter fallback - returns empty list for Oneiric mode."""
     return []
 
@@ -323,7 +323,7 @@ async def _gather_standard_initializers(
 async def _gather_adapter_initializers(
     initializers: list[t.Callable[..., t.Any]],
 ) -> None:
-    for adapter in get_adapters(): # type: ignore
+    for adapter in get_adapters():
         try:
             adapter_init_path = f"acb.adapters.{adapter.name}.init"
             module = import_module(adapter_init_path)
@@ -361,7 +361,7 @@ async def _gather_config() -> t.Any:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
         debug("Gathered application config directly")
-        return Config()
+        return Config()  # type: ignore
     except Exception as e:
         debug(f"Error importing config directly: {e}")
         raise

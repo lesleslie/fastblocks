@@ -70,7 +70,7 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
         return item
 
     def changefreq(self, item: str) -> str:
-        return t.cast(str, self.config.change_freq)
+        return t.cast(str, self.config.change_freq)  # type: ignore[attr-defined]
 
     def priority(self, item: str) -> float:
         if item == "/":
@@ -83,14 +83,14 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
         return 0.4
 
     async def _background_refresh(self) -> None:
-        strategy_options = self.config.strategy_options
+        strategy_options = self.config.strategy_options  # type: ignore[attr-defined]
         background_refresh = strategy_options.get("background_refresh", True)
         if not background_refresh:
             return
         debug("CachedSitemap: Starting background refresh task")
         while True:
             try:
-                await asyncio.sleep(self.config.cache_ttl)
+                await asyncio.sleep(self.config.cache_ttl)  # type: ignore[attr-defined]
                 debug("CachedSitemap: Refreshing sitemap cache")
             except asyncio.CancelledError:
                 debug("CachedSitemap: Background refresh cancelled")
@@ -100,10 +100,10 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
                 await asyncio.sleep(300)
 
     async def init(self) -> None:
-        if not self.config.domain: # type: ignore[attr-defined]
+        if not self.config.domain:  # type: ignore[attr-defined]
             msg = "domain must be set in sitemap settings"
             raise ValueError(msg)
-        extended_ttl = self.config.cache_ttl * 2
+        extended_ttl = self.config.cache_ttl * 2  # type: ignore[attr-defined]
         self.sitemap = SitemapApp(
             self,
             domain=self.config.domain,  # type: ignore[attr-defined]

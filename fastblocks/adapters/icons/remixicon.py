@@ -381,7 +381,7 @@ class RemixIcon(IconsBase):
 
         return f"ri {resolved_name}"
 
-    def get_icon_tag(
+    def get_icon_tag(  # type: ignore[override]
         self,
         icon_name: str,
         variant: str | None = None,
@@ -634,7 +634,7 @@ class RemixIcon(IconsBase):
 def _register_ri_basic_filters(env: Any) -> None:
     """Register basic Remix Icon filters."""
 
-    @env.filter("ri")
+    @env.filter("ri")  # type: ignore[untyped-decorator]
     def ri_filter(
         icon_name: str,
         variant: str | None = None,
@@ -647,7 +647,7 @@ def _register_ri_basic_filters(env: Any) -> None:
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
 
-    @env.filter("ri_class")
+    @env.filter("ri_class")  # type: ignore
     def ri_class_filter(icon_name: str, variant: str | None = None) -> str:
         """Template filter for Remix Icon classes."""
         icons = depends.get_sync("icons")
@@ -655,7 +655,7 @@ def _register_ri_basic_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, variant)
         return f"ri-{icon_name}"
 
-    @env.global_("remixicon_stylesheet_links") # type: ignore
+    @env.global_("remixicon_stylesheet_links")  # type: ignore[untyped-decorator]
     def remixicon_stylesheet_links() -> str:
         """Global function for Remix Icon stylesheet links."""
         icons = depends.get_sync("icons")

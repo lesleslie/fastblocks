@@ -121,7 +121,7 @@ class BasicWorkflowEngine:
         self,
         workflow: WorkflowDefinition,
         context: dict[str, t.Any],
-        action_handlers: dict[str, t.Callable],
+        action_handlers: dict[str, t.Callable[..., t.Any]],
     ) -> WorkflowResult:
         """Execute a workflow."""
         step_results = {}
@@ -726,7 +726,7 @@ async def register_fastblocks_workflows() -> bool:
     Returns:
         True if registration successful, False otherwise
     """
-    if not acb_workflows_available:
+    if not oneiric_workflows_available:
         return False
 
     try:

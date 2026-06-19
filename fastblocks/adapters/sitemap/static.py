@@ -58,7 +58,7 @@ class StaticSitemap(BaseSitemap[str], SitemapBase):
         return item
 
     def changefreq(self, item: str) -> str:
-        return t.cast(str, self.config.change_freq)
+        return t.cast(str, self.config.change_freq)  # type: ignore[attr-defined]
 
     def priority(self, item: str) -> float:
         if item == "/":
@@ -71,13 +71,13 @@ class StaticSitemap(BaseSitemap[str], SitemapBase):
         return 0.4
 
     async def init(self) -> None:
-        if not self.config.domain:
+        if not self.config.domain:  # type: ignore[attr-defined]
             msg = "domain must be set in sitemap settings"
             raise ValueError(msg)
         self.sitemap = SitemapApp(
             self,
             domain=self.config.domain,  # type: ignore[attr-defined]
-            cache_ttl=self.config.cache_ttl,
+            cache_ttl=self.config.cache_ttl,  # type: ignore[attr-defined]
         )
 
 

@@ -33,7 +33,7 @@ def get_adapter(adapter_name: str) -> t.Any:
     """Simple adapter getter for Oneiric (replaces ACB's get_adapter)."""
     with suppress(Exception):
         from oneiric.adapters.bootstrap import (
-            Resolver as AdapterResolver,
+            Resolver as AdapterResolver,  # type: ignore[attr-defined]
         )
 
         resolver = AdapterResolver()
@@ -59,13 +59,13 @@ def get_adapter(adapter_name: str) -> t.Any:
         def __init__(self) -> None:
             self.ttl = 3600  # default TTL
 
-        async def get(self, key) -> t.Any:
+        async def get(self, key: t.Any) -> t.Any:
             return None
 
-        async def set(self, key, value, **kwargs) -> None: # type: ignore
+        async def set(self, key: t.Any, value: t.Any, **kwargs: t.Any) -> None:
             pass
 
-        async def delete(self, key) -> None:
+        async def delete(self, key: t.Any) -> None:
             pass
 
     return MockAdapter()

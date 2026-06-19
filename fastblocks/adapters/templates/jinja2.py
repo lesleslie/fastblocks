@@ -59,7 +59,7 @@ try:
     from ._events_wrapper import track_template_render
 except ImportError:
     # Fallback no-op decorator if events integration unavailable
-    def track_template_render(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    def track_template_render(func: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:  # type: ignore[misc]
         return func
 
 
@@ -154,7 +154,7 @@ def _apply_template_replacements(source: bytes, deployed: bool = False) -> bytes
     return source
 
 
-class BaseTemplateLoader(AsyncBaseLoader):
+class BaseTemplateLoader(AsyncBaseLoader):  # type: ignore
     config: t.Any = None
     cache: t.Any = None
     storage: t.Any = None
@@ -573,7 +573,9 @@ class RedisLoader(BaseTemplateLoader):
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
-    ) -> tuple[str, str | None, t.Callable[[], t.Awaitable[bool]]]:
+    ) -> tuple[
+        str, str | None, t.Callable[[], bool] | t.Callable[[], t.Awaitable[bool]]
+    ]:
         template = self._normalize_template(environment_or_template, template)
         result = await self._find_cache_path_parallel(template)
         if result is None:
@@ -666,7 +668,7 @@ class PackageLoader(BaseTemplateLoader):
         assert template is not None
         template_path: AsyncPath = AsyncPath(template)
         path = self._template_root / template_path
-        debug(path)
+        debug(str(path))
         if not await path.is_file():
             raise TemplateNotFound(template_path.name)
         source = await path.read_bytes()
@@ -694,7 +696,7 @@ class PackageLoader(BaseTemplateLoader):
         return sorted(found)
 
 
-class ChoiceLoader(AsyncBaseLoader):
+class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
     loaders: list[AsyncBaseLoader | LoaderProtocol]
 
     def __init__(
@@ -770,7 +772,7 @@ def _build_cached_loader(
     if is_admin_set and admin_spec is not None:
         pkg_name, pkg_path, adapter = admin_spec
         jinja_loaders.append(PackageLoader(pkg_name, pkg_path, adapter))
-    debug(jinja_loaders)
+    debug(str(jinja_loaders))
     return ChoiceLoader(jinja_loaders)
 
 
@@ -873,8 +875,8 @@ class Templates(TemplatesBase):
 
         # Compute cache key inputs from instance state. Changing any of these
         # triggers a fresh loader build (via reload_loader()).
-        deployed = bool(self.config.deployed)
-        production = bool(self.config.debug.production)
+        deployed = bool(self.config.deployed)  # type: ignore[attr-defined]
+        production = bool(self.config.debug.production)  # type: ignore[attr-defined]
         template_set_id = ",".join(str(p) for p in template_paths)
         is_admin_set = bool(
             self.enabled_admin and template_paths == self.admin_searchpaths
@@ -904,7 +906,8 @@ class Templates(TemplatesBase):
     ) -> AsyncJinja2Templates:
         _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
         _imported_extensions = [
-            import_module(e) for e in self.config.templates.extensions
+            import_module(e)
+            for e in self.config.templates.extensions  # type: ignore[attr-defined]
         ]
         for e in _imported_extensions:
             _extensions.extend(
@@ -920,7 +923,7 @@ class Templates(TemplatesBase):
         if cache is not None:
             bytecode_cache = AsyncRedisBytecodeCache(prefix="bccache", client=cache)
         context_processors: list[t.Callable[..., t.Any]] = []
-        for processor_path in self.config.templates.context_processors:
+        for processor_path in self.config.templates.context_processors:  # type: ignore[attr-defined]
             module_path, func_name = processor_path.rsplit(".", 1)
             module = import_module(module_path)
             processor = getattr(module, func_name)
@@ -935,13 +938,13 @@ class Templates(TemplatesBase):
         loader = self.get_loader(template_paths)
         if loader:
             templates.env.loader = loader
-        elif self.config.templates.loader:
-            templates.env.loader = literal_eval(self.config.templates.loader)
+        elif self.config.templates.loader:  # type: ignore[attr-defined]
+            templates.env.loader = literal_eval(self.config.templates.loader)  # type: ignore[attr-defined]
         for delimiter, value in self.config.templates.delimiters.items():  # type: ignore[attr-defined]
             setattr(templates.env, delimiter, value)
         # Type cast globals dict to avoid assignment type errors
         globals_dict: dict[str, t.Any] = templates.env.globals
-        globals_dict["config"] = self.config
+        globals_dict["config"] = self.config  # type: ignore[attr-defined]
         globals_dict["render_block"] = templates.render_block
         globals_dict["render_component"] = self._get_htmy_component_renderer()
         if admin:
@@ -950,13 +953,13 @@ class Templates(TemplatesBase):
                     get_object_identifier,
                 )
             except ImportError:
-                get_object_identifier = str
+                get_object_identifier = str  # type: ignore[assignment]
             globals_dict["min"] = min
             globals_dict["zip"] = zip
             globals_dict["admin"] = self
             globals_dict["is_list"] = lambda x: isinstance(x, list)
             globals_dict["get_object_identifier"] = get_object_identifier
-        for k, v in self.config.templates.globals.items(): # type: ignore[attr-defined]
+        for k, v in self.config.templates.globals.items():  # type: ignore[attr-defined]
             globals_dict[k] = v
         return templates
 
@@ -973,15 +976,15 @@ class Templates(TemplatesBase):
     def _log_loader_info(self) -> None:
         if self.app and self.app.env.loader and hasattr(self.app.env.loader, "loaders"):
             for loader in self.app.env.loader.loaders:
-                self.logger.debug(f"{loader.__class__.__name__} initialized")
+                self.logger.debug(f"{loader.__class__.__name__} initialized")  # type: ignore[attr-defined]
 
     def _log_extension_info(self) -> None:
         if self.app and hasattr(self.app.env, "extensions"):
             for ext in self.app.env.extensions:
-                self.logger.debug(f"{ext.split('.')[-1]} loaded")
+                self.logger.debug(f"{ext.split('.')[-1]} loaded")  # type: ignore[attr-defined]
 
     async def _clear_debug_cache(self, cache: t.Any | None) -> None:
-        if getattr(self.config.debug, "templates", False):
+        if getattr(self.config.debug, "templates", False):  # type: ignore[attr-defined]
             try:
                 for namespace in (
                     "templates",
@@ -992,14 +995,14 @@ class Templates(TemplatesBase):
                 ):
                     if cache is not None:
                         await cache.clear(namespace)
-                self.logger.debug("Template caches cleared")
+                self.logger.debug("Template caches cleared")  # type: ignore[attr-defined]
                 with suppress(Exception):
                     htmy_adapter = await depends.resolve("fastblocks", "htmy")
                     if htmy_adapter:
                         await htmy_adapter.clear_component_cache()
-                        self.logger.debug("HTMY component caches cleared via adapter")
+                        self.logger.debug("HTMY component caches cleared via adapter")  # type: ignore[attr-defined]
             except (NotImplementedError, AttributeError) as e:
-                self.logger.debug(f"Cache clear not supported: {e}")
+                self.logger.debug(f"Cache clear not supported: {e}")  # type: ignore[attr-defined]
 
     def _get_htmy_component_renderer(self) -> t.Callable[..., t.Any]:
         async def render_component(
@@ -1192,9 +1195,9 @@ class Templates(TemplatesBase):
         extensions_list = getattr(
             getattr(self, "settings", None),
             "extensions",
-            self.config.templates.extensions,
+            self.config.templates.extensions,  # type: ignore[attr-defined]
         )
-        _imported_extensions = [import_module(e) for e in extensions_list]
+        _imported_extensions = [import_module(e) for e in extensions_list]  # type: ignore[union-attr]
         for e in _imported_extensions:
             _extensions.extend(
                 [

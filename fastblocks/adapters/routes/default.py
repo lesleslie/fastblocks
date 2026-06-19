@@ -65,9 +65,9 @@ class AdapterStatus:
     EXPERIMENTAL = "EXPERIMENTAL"
 
 
-def root_path() -> None:
+def root_path() -> str:
     """Custom implementation for Oneiric compatibility."""
-    return "/"  # type: ignore
+    return "/"
 
 
 # Oneiric resolver for dependency injection
@@ -105,17 +105,17 @@ class FastBlocksEndpoint(HTTPEndpoint):
 
 class Index(FastBlocksEndpoint):
     async def get(self, request: HtmxRequest | Request) -> Response:
-        debug(request)
+        debug(str(request))
         path_params = getattr(request, "path_params", {})
         page = path_params.get("page") or "home"
         template = "index.html"
         headers = {"vary": "hx-request"}
         scope = getattr(request, "scope", {})
         if htmx := scope.get("htmx"):
-            debug(htmx)
+            debug(str(htmx))
             template = f"{page.lstrip('/')}.html"
             headers["hx-push-url"] = "/" if page == "home" else page
-        debug(page, template) # type: ignore
+        debug(f"{page} {template}")
         context = await create_query_context(
             request, base_context={"page": page.lstrip("/")}
         )
@@ -140,7 +140,7 @@ class Index(FastBlocksEndpoint):
 
 class Block(FastBlocksEndpoint):
     async def get(self, request: HtmxRequest | Request) -> Response:
-        debug(request)
+        debug(str(request))
         path_params = getattr(request, "path_params", {})
         block = f"blocks/{path_params.get('block', 'default')}.html"
         context = await create_query_context(request)
@@ -162,7 +162,7 @@ class Block(FastBlocksEndpoint):
 
 class Component(FastBlocksEndpoint):
     async def get(self, request: HtmxRequest | Request) -> Response:
-        debug(request)
+        debug(request)  # type: ignore
         component_name = getattr(request, "path_params", {}).get("component", "default")
         query_params = getattr(request, "query_params", {})
         context = await create_query_context(request, base_context=dict(query_params))
@@ -248,7 +248,7 @@ class Routes(RoutesBase):
                     name="static",
                 ),
             )
-        debug(self.routes)
+        debug(str(self.routes))
 
 
 MODULE_ID = UUID("01937d86-6f4c-7d5e-a01f-3456789012cd")

@@ -1,11 +1,13 @@
+from typing import Any
+
 # Oneiric imports
 from oneiric.core.config import OneiricSettings
 
 
-class RoutesBaseSettings(OneiricSettings):
+class RoutesBaseSettings(OneiricSettings):  # type: ignore[misc]
     """Routes base settings using OneiricSettings."""
 
-    def __init__(self, **data: dict) -> None:
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
 
 

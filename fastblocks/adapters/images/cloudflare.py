@@ -8,9 +8,12 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import httpx
+from oneiric.core.resolution import Resolver
 from pydantic import SecretStr
 
 from ._base import ImagesBase, ImagesBaseSettings
+
+depends = Resolver()
 
 
 class CloudflareImagesSettings(ImagesBaseSettings):
@@ -245,7 +248,7 @@ class CloudflareImages(ImagesBase):
 def register_cloudflare_filters(env: Any) -> None:
     """Register Cloudflare Images filters for Jinja2 templates."""
 
-    @env.filter("cf_image_url")
+    @env.filter("cf_image_url")  # type: ignore[untyped-decorator]
     async def cf_image_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for Cloudflare Images URLs."""
         images = await depends.resolve("fastblocks", "images")
@@ -253,7 +256,7 @@ def register_cloudflare_filters(env: Any) -> None:
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"  # Fallback
 
-    @env.filter("cf_img_tag") # type: ignore
+    @env.filter("cf_img_tag")  # type: ignore
     def cf_img_tag_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for complete Cloudflare img tags."""
         images = depends.get_sync("images")  # type: ignore

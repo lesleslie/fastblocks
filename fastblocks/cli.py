@@ -993,7 +993,7 @@ def _update_app_configs(app_path: Path, domain: str) -> None:
     async def _update_configs() -> None:
         async def update_settings(settings: str, values: dict[str, t.Any]) -> None:
             settings_path = AsyncPath(app_path / "settings")
-            content = (settings_path / f"{settings}.yml").read_text()
+            content = await (settings_path / f"{settings}.yml").read_text()
             settings_dict: dict[str, object] = yaml.safe_load(content) or {}
             settings_dict.update(values)
             (settings_path / f"{settings}.yml").write_text(  # type: ignore
@@ -1014,7 +1014,7 @@ async def update_configs(app_path: Path, domain: str) -> None:
 
     async def update_settings(settings: str, values: dict[str, t.Any]) -> None:
         settings_path = AsyncPath(app_path / "settings")
-        content = (settings_path / f"{settings}.yml").read_text()
+        content = await (settings_path / f"{settings}.yml").read_text()
         settings_dict: dict[str, object] = yaml.safe_load(content) or {}
         settings_dict.update(values)
         (settings_path / f"{settings}.yml").write_text(yaml.safe_dump(settings_dict))  # type: ignore
@@ -1034,7 +1034,7 @@ def _run_setup_commands() -> None:
         execute(command, stdout=DEVNULL, stderr=DEVNULL)
 
 
-def create(
+def create_compat(
     app_name: str,
     style: Styles = Styles.bulma,
     domain: str = "example.com",

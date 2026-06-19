@@ -9,9 +9,13 @@ from urllib.parse import quote
 from uuid import UUID
 
 import httpx
+from oneiric.core.resolution import Resolver
 from pydantic import SecretStr
 
 from ._base import ImagesBase, ImagesBaseSettings
+
+# Oneiric resolver for dependency injection
+depends = Resolver()
 
 
 class TwicPicsImagesSettings(ImagesBaseSettings):
@@ -309,7 +313,7 @@ def register_twicpics_filters(env: Any) -> None:
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'
 
-    @env.global_("twicpics_responsive")
+    @env.global_("twicpics_responsive")  # type: ignore[untyped-decorator]
     def twicpics_responsive(
         image_id: str,
         alt: str,
@@ -324,7 +328,7 @@ def register_twicpics_filters(env: Any) -> None:
             )
         return f'<img src="#{image_id}" alt="{alt}">'
 
-    @env.filter("twic_placeholder") # type: ignore
+    @env.filter("twic_placeholder")  # type: ignore
     async def twic_placeholder_filter(
         image_id: str, width: int = 20, quality: int = 10
     ) -> str:
@@ -340,7 +344,7 @@ def register_twicpics_filters(env: Any) -> None:
 ImagesSettings = TwicPicsImagesSettings
 Images = TwicPicsImages
 
-depends.set(Images, "twicpics")  # type: ignore
+depends.set(Images, "twicpics")
 
 # ACB 0.19.0+ compatibility
 __all__ = [

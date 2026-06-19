@@ -49,11 +49,11 @@ class CloudinaryImages(ImagesBase):
             },
         )
 
-    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:
+    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:  # type: ignore[override]
         """Upload image to Cloudinary and return result dict."""
         try:
             import cloudinary.api
-            import cloudinary.uploader
+            import cloudinary.uploader  # type: ignore[no-redef]
 
             # Configure cloudinary if credentials are set
             if (
@@ -61,7 +61,7 @@ class CloudinaryImages(ImagesBase):
                 and self.settings.api_key
                 and self.settings.api_secret
             ):
-                import cloudinary.config
+                import cloudinary.config  # type: ignore[no-redef]
 
                 cloudinary.config(
                     cloud_name=self.settings.cloud_name,

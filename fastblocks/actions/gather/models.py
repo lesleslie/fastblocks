@@ -24,7 +24,7 @@ except ImportError:
         """Debug function fallback."""
         print(f"[DEBUG] {msg}")
 
-    def get_adapters() -> None:
+    def get_adapters() -> list[t.Any]:
         """Adapter fallback - returns empty list."""
         return []
 
@@ -144,7 +144,7 @@ def _build_model_gather_tasks(
     config: dict[str, t.Any],
     include_base: bool,
     include_adapters: bool,
-) -> list[t.Coroutine[t.Any, t.Any, t.Any]]:
+) -> list[t.Coroutine[t.Any, t.Any, dict[str, t.Any]]]:
     tasks = []
     sources = config["sources"]
     patterns = config["patterns"]
@@ -159,7 +159,7 @@ def _build_model_gather_tasks(
     if "custom" in sources:
         tasks.append(_gather_custom_models(patterns, base_classes))
 
-    return tasks
+    return tasks  # type: ignore[return-value]
 
 
 def _process_model_gather_results(
@@ -220,11 +220,11 @@ async def _gather_base_models(
         "metadata": {},
     }
 
-    models_file_path = Path(root_path) / "models.py"  # type: ignore
+    models_file_path = Path(root_path()) / "models.py"
     await _process_base_models_file(models_file_path, base_classes, base_models)
 
     await _process_base_models_directory(
-        Path(root_path) / "models",
+        Path(root_path()) / "models",
         base_classes,
         base_models,
     )
@@ -268,7 +268,7 @@ async def _process_base_models_directory(
 
             if models:
                 debug(
-                    f"Found {len(models)} models in {file_path.relative_to(root_path)}",
+                    f"Found {len(models)} models in {file_path.relative_to(root_path())}",
                 )
         except Exception as e:
             debug(f"Error gathering models from {file_path}: {e}")
@@ -440,9 +440,9 @@ async def _gather_custom_models(
     }
 
     custom_paths = [
-        Path(root_path) / "app" / "models.py",
-        Path(root_path) / "src" / "models.py", # type: ignore
-        Path(root_path) / "custom" / "models.py",
+        Path(root_path()) / "app" / "models.py",
+        Path(root_path()) / "src" / "models.py",
+        Path(root_path()) / "custom" / "models.py",
     ]
 
     for custom_path in custom_paths:

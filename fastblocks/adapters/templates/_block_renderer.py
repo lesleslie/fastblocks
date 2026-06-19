@@ -221,7 +221,7 @@ class BlockRenderer:
     ) -> None:
         """Analyze template and register its blocks."""
         with suppress(Exception):
-            source, _, _ = env.loader.get_source(env, template_name)
+            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore[union-attr]
             parsed = env.parse(source, template_name)
 
             # Find all block nodes

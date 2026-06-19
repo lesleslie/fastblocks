@@ -831,7 +831,7 @@ def _build_kelp_component_html(
 def register_kelp_functions(env: Any) -> None:
     """Register Kelp functions for Jinja2 templates."""
 
-    @env.global_("kelp_stylesheet_links")
+    @env.global_("kelp_stylesheet_links")  # type: ignore[untyped-decorator]
     def kelp_stylesheet_links() -> str:
         """Global function for Kelp stylesheet links."""
         styles = depends.get_sync("styles")
@@ -839,7 +839,7 @@ def register_kelp_functions(env: Any) -> None:
             return "\n".join(styles.get_stylesheet_links())
         return ""
 
-    @env.filter("kelp_class")
+    @env.filter("kelp_class")  # type: ignore[untyped-decorator]
     def kelp_class_filter(component: str) -> str:
         """Filter for getting Kelp component classes."""
         styles = depends.get_sync("styles")
@@ -847,7 +847,7 @@ def register_kelp_functions(env: Any) -> None:
             return styles.get_component_class(component)
         return component
 
-    @env.global_("kelp_component") # type: ignore
+    @env.global_("kelp_component")  # type: ignore
     def kelp_component(
         component_type: str, content: str = "", **attributes: Any
     ) -> str:

@@ -459,7 +459,7 @@ async def register_fastblocks_resources(server: Any) -> None:
         }
 
         # Register resources with MCP server
-        await register_resources(server, resources)
+        await register_resources(server, resources)  # type: ignore[name-defined]
 
         logger.info(f"Registered {len(resources)} FastBlocks MCP resources")
 

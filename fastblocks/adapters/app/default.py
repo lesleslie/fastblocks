@@ -190,7 +190,7 @@ class App(AppBase):
     def logger(self) -> t.Any:
         if hasattr(super(), "logger"):
             with suppress(Exception):
-                return super().logger
+                return super().logger  # type: ignore[misc]
         # For Oneiric, we'll use a simpler approach
         # In practice, this would be replaced with actual logger resolution
         import logging

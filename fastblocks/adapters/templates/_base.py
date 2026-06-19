@@ -47,7 +47,7 @@ class TemplateLoader(t.Protocol):
     async def list_templates(self) -> list[TemplatePath]: ...
 
 
-class TemplatesBaseSettings(OneiricSettings, ABC):
+class TemplatesBaseSettings(OneiricSettings, ABC):  # type: ignore[misc]
     cache_timeout: int = 300
 
     def __init__(self, **values: t.Any) -> None:
@@ -80,7 +80,7 @@ class TemplatesBase:
             setattr(self, key, value)
 
     def get_searchpath(self, adapter: t.Any, path: AsyncPath) -> list[AsyncPath]:
-        style = getattr(self.config.app, "style", "vanilla")
+        style = getattr(self.config.app, "style", "vanilla")  # type: ignore[attr-defined]
         base_path = path / "base"
         style_path = path / style
         style_adapter_path = path / style / adapter.name

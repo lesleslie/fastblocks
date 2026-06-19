@@ -127,7 +127,7 @@ def _prepare_template_gather_config(
 
 def _build_template_gather_tasks(
     config: dict[str, t.Any],
-) -> list[t.Coroutine[t.Any, t.Any, t.Any]]:
+) -> list[t.Coroutine[t.Any, t.Any, list[t.Any]]]:
     tasks = []
 
     tasks.append(
@@ -155,7 +155,7 @@ def _build_template_gather_tasks(
 
     tasks.append(_gather_template_globals())
 
-    return tasks
+    return tasks  # type: ignore[return-value]
 
 
 def _process_template_gather_results(
@@ -219,7 +219,7 @@ async def _gather_loaders(
         try:
             # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-            enabled_admin = get_adapter("admin")
+            enabled_admin = get_adapter("admin")  # type: ignore[name-defined]  # TODO: import get_adapter from oneiric once available
             if enabled_admin:
                 loaders.append(PackageLoader(enabled_admin.name, "templates", "admin"))
         except Exception as e:

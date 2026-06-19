@@ -46,6 +46,7 @@ def _is_in_private_lan(host: str) -> bool:
         addr = ip_address(host)
     except AddressValueError:
         return False
+    networks: tuple[str, ...]
     if isinstance(addr, IPv4Address):
         networks = _PRIVATE_IPV4_NETWORKS
     elif isinstance(addr, IPv6Address):

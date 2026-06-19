@@ -17,7 +17,7 @@ class SitemapURL:
     priority: float | None = None
 
 
-class SitemapBaseSettings(OneiricSettings):
+class SitemapBaseSettings(OneiricSettings):  # type: ignore[misc]
     module: str = "native"
     domain: str = ""
     change_freq: t.Literal[
@@ -40,7 +40,7 @@ class SitemapBaseSettings(OneiricSettings):
         "cache_warmup": False,
     }
 
-    def __init__(self, **data: dict) -> None:
+    def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)
 
 

@@ -97,7 +97,7 @@ Cache, Storage, Models = None, None, None
 def root_path() -> None:
     """Custom implementation for Oneiric compatibility."""
     # This will be implemented using Oneiric's path system
-    return "/"
+    return "/"  # type: ignore
 
 
 class ComponentNotFound(Exception):
@@ -252,18 +252,22 @@ class HTMYComponentRegistry:
 
         # Try to load from cached bytecode first
         if cached_bytecode:
-            component_class = await self._load_from_cached_bytecode( # type: ignore
+            component_class = await self._load_from_cached_bytecode(  # type: ignore[no-untyped-call]
                 cached_bytecode, source, component_path, component_name
             )
             if component_class:
                 return component_class
 
         # Otherwise, load from source
-        return await self._load_from_source(source, component_path, component_name)
+        return await self._load_from_source(source, component_path, component_name)  # type: ignore[no-untyped-call]
 
-    async def _load_from_cached_bytecode(
-        self, cached_bytecode, source, component_path, component_name
-    ):
+    async def _load_from_cached_bytecode(  # type: ignore[no-untyped-def]
+        self,
+        cached_bytecode: t.Any,
+        source: str,
+        component_path: t.Any,
+        component_name: str,
+    ) -> t.Any:
         """Attempt to load component class from cached bytecode."""
         try:
             # Instead of using pickle, we'll compile the source directly

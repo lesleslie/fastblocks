@@ -57,7 +57,7 @@ try:
     from jinja2.sandbox import SandboxedEnvironment
 except ImportError:
     # Fallback for older Jinja2 versions
-    SandboxedEnvironment = Environment
+    SandboxedEnvironment = Environment  # type: ignore[assignment,misc]
 from jinja2.runtime import StrictUndefined as RuntimeStrictUndefined
 
 from .jinja2 import Templates, TemplatesSettings
@@ -652,7 +652,7 @@ class HybridTemplatesManager:
         """Analyze a template fragment and extract metadata."""
         with suppress(Exception):
             env = self._get_template_environment()
-            source, _, _ = env.loader.get_source(env, template_name)
+            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore[union-attr]
 
             # Parse template to find blocks
             parsed = env.parse(source, template_name)
@@ -977,7 +977,7 @@ class HybridTemplatesManager:
         env = self._get_template_environment()
 
         with suppress(Exception):
-            source, _, _ = env.loader.get_source(env, template_name) # type: ignore
+            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore
             parsed = env.parse(source, template_name)
 
             # Find extends, includes, and imports

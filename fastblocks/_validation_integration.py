@@ -83,7 +83,7 @@ class OutputValidator:
 class ValidationService:
     """Simple validation service for Oneiric-compatible validation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.sanitizer = InputSanitizer()
         self.validator = OutputValidator()
 

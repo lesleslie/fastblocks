@@ -5,6 +5,41 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-06-18
+
+### Added
+
+- Add JWT authentication to FastBlocks WebSocket
+- Add TLS configuration module for WebSocket
+- Add WebSocket server for UI update streams
+- Integrate TLS/WSS support and Prometheus metrics into Fastblocks WebSocket server
+- rem: Phases 1-4 — security hardening, ACB→Oneiric, perf bounds, mechanical refactors
+- security: Phase 1.1 — strict WebSocket auth + origin allowlist + sanitized errors
+
+### Changed
+
+- Fastblocks (quality: 71/100) - 2026-06-18 12:32:36
+- Fastblocks (quality: 72/100) - 2026-06-15 00:34:33
+
+### Fixed
+
+- types: AI-fix pass 2 — 175 mypy errors (↓14 from 189)
+
+### Documentation
+
+- Phase 6 — regen CLAUDE.md, CHANGELOG, AGENTS additions, 0.7→0.8 migration
+
+### Testing
+
+- Fix 36 pre-existing failures (98→64, +53 passing)
+
+### Internal
+
+- deps: Phase 5 — ~= pins, drop unused session-buddy
+- gitignore: Add backup file patterns to silence checkpoint tool artifacts
+- Untrack and delete 1 historical *.backup/*.bak files
+- Update LICENSE copyright to 2026, standardize license field
+
 ## [Unreleased]
 
 ### BREAKING CHANGES

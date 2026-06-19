@@ -784,7 +784,7 @@ class MaterialIcons(IconsBase):
 def _register_material_basic_filters(env: Any) -> None:
     """Register basic Material Icons filters."""
 
-    @env.filter("material_icon")
+    @env.filter("material_icon")  # type: ignore[untyped-decorator]
     def material_icon_filter(
         icon_name: str,
         theme: str | None = None,
@@ -797,7 +797,7 @@ def _register_material_basic_filters(env: Any) -> None:
             return icons.get_icon_tag(icon_name, theme=theme, size=size, **attributes)
         return f"<!-- {icon_name} -->"
 
-    @env.filter("material_class")
+    @env.filter("material_class")  # type: ignore[untyped-decorator]
     def material_class_filter(icon_name: str, theme: str | None = None) -> str:
         """Template filter for Material Icons classes."""
         icons = depends.get_sync("icons")
@@ -805,7 +805,7 @@ def _register_material_basic_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, theme)
         return "material-icons"
 
-    @env.global_("materialicons_stylesheet_links")
+    @env.global_("materialicons_stylesheet_links")  # type: ignore
     def materialicons_stylesheet_links() -> str:
         """Global function for Material Icons stylesheet links."""
         icons = depends.get_sync("icons")
@@ -817,7 +817,7 @@ def _register_material_basic_filters(env: Any) -> None:
 def _register_material_fab_functions(env: Any) -> None:
     """Register Material Design FAB functions."""
 
-    @env.global_("material_fab") # type: ignore
+    @env.global_("material_fab")  # type: ignore[untyped-decorator]
     def material_fab(
         icon_name: str,
         variant: str = "regular",

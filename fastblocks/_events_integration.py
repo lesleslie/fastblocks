@@ -194,7 +194,7 @@ class CacheInvalidationHandler:
 
     async def handle(self, event: Event) -> t.Any:
         """Handle cache invalidation event."""
-        if not acb_events_available:
+        if not oneiric_events_available:  # type: ignore
             return None
 
         try:
@@ -231,7 +231,7 @@ class TemplateRenderHandler:
 
     async def handle(self, event: Event) -> t.Any:
         """Handle template render event."""
-        if not acb_events_available:  # type: ignore
+        if not oneiric_events_available:  # type: ignore
             return None
 
         try:
@@ -288,7 +288,7 @@ class HtmxUpdateHandler:
 
     async def handle(self, event: Event) -> t.Any:
         """Handle HTMX update event."""
-        if not acb_events_available:  # type: ignore
+        if not oneiric_events_available:  # type: ignore
             return None
 
         try:
@@ -337,7 +337,7 @@ class AdminActionHandler:
 
     async def handle(self, event: Event) -> t.Any:
         """Handle admin action event."""
-        if not acb_events_available:
+        if not oneiric_events_available:
             return None
 
         try:
@@ -413,7 +413,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
         affected_templates: list[str] | None = None,
     ) -> bool:
         """Publish cache invalidation event."""
-        if not acb_events_available or self._publisher is None:
+        if not oneiric_events_available or self._publisher is None:
             return False
 
         try:
@@ -426,7 +426,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
                     "invalidated_by": invalidated_by,
                     "affected_templates": affected_templates,
                 },
-                priority=EventPriority.HIGH,
+                priority=EventPriority.HIGH,  # type: ignore[arg-type]
             )
 
             await self._publisher.publish(event)
@@ -445,7 +445,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
         error: str | None = None,
     ) -> bool:
         """Publish template render event."""
-        if not acb_events_available or self._publisher is None:
+        if not oneiric_events_available or self._publisher is None:
             return False
 
         try:
@@ -466,7 +466,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
                     "fragment_count": fragment_count,
                     "error": error,
                 },
-                priority=EventPriority.NORMAL,
+                priority=EventPriority.NORMAL,  # type: ignore[arg-type]
             )
 
             await self._publisher.publish(event)
@@ -484,7 +484,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
         trigger_data: dict[str, t.Any] | None = None,
     ) -> bool:
         """Publish HTMX update event."""
-        if not acb_events_available or self._publisher is None:
+        if not oneiric_events_available or self._publisher is None:
             return False
 
         try:
@@ -498,7 +498,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
                     "trigger_name": trigger_name,
                     "trigger_data": trigger_data,
                 },
-                priority=EventPriority.HIGH, # type: ignore
+                priority=EventPriority.HIGH,  # type: ignore[arg-type]
             )
 
             await self._publisher.publish(event)
@@ -517,7 +517,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
         ip_address: str | None = None,
     ) -> bool:
         """Publish admin action event."""
-        if not acb_events_available or self._publisher is None:  # type: ignore
+        if not oneiric_events_available or self._publisher is None:  # type: ignore
             return False
 
         try:

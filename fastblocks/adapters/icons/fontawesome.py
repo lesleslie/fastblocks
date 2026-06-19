@@ -22,7 +22,7 @@ class FontAwesomeIconsSettings(IconsBaseSettings):
     )
     kit_url: str | None = None  # For FontAwesome kit users
 
-    def __init__(self, **data):
+    def __init__(self, **data: object) -> None:
         """Initialize settings with support for cdn property."""
         super().__init__(**data)
         # Store cdn override if passed in, otherwise calculate from kit_url
@@ -59,7 +59,7 @@ class FontAwesomeIconsSettings(IconsBaseSettings):
         """Check if using CDN (True if kit_url is not provided)."""
         # If cdn was explicitly set, return that value
         if hasattr(self, "_cdn") and self._cdn is not None:
-            return self._cdn
+            return bool(self._cdn)
         # Otherwise calculate from kit_url
         return self.kit_url is None
 

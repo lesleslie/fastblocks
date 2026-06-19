@@ -271,7 +271,7 @@ async def gather_files(
     if base_path is None:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        base_path = Path(root_path)
+        base_path = Path(root_path)  # type: ignore[name-defined]
 
     tasks: list[t.Coroutine[t.Any, t.Any, t.Any]] = [
         _find_files_safe(pattern, base_path) for pattern in file_patterns

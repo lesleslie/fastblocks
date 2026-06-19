@@ -85,7 +85,8 @@ class HealthService:
             component = self.components.get(component_id)
             if component and hasattr(component, "_perform_health_check"):
                 # Use a simple check type for now
-                return await component._perform_health_check("standard")
+                result = await component._perform_health_check("standard")
+                return t.cast("HealthCheckResult | None", result)
         return None
 
 
@@ -117,7 +118,7 @@ class FastBlocksHealthCheck:
         check_type: t.Any,  # HealthCheckType when available
     ) -> t.Any:  # HealthCheckResult when available
         """Default health check - override in subclasses."""
-        if not acb_health_available:
+        if not oneiric_health_available:
             return None
 
         return HealthCheckResult(

@@ -42,7 +42,7 @@ class FastBlocksMCPServer:
 
             # Create server using Oneiric infrastructure
             # Oneiric provides the MCP server with rate limiting already configured
-            self._server = MCPServerCLIFactory.create_server()
+            self._server = MCPServerCLIFactory.create_server()  # type: ignore[attr-defined]
 
             # Register FastBlocks tools and resources
             await self._register_tools()
@@ -142,7 +142,7 @@ def _get_http_app() -> Any:
         from mcp_common.cli import MCPServerCLIFactory
 
         # Create the MCP server (Oneiric returns ASGI app)
-        mcp_instance = MCPServerCLIFactory.create_server()
+        mcp_instance = MCPServerCLIFactory.create_server()  # type: ignore[attr-defined]
 
         # Register tools synchronously
         with suppress(Exception):

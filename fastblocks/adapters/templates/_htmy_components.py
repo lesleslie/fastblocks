@@ -44,7 +44,7 @@ def debug(msg: str) -> None:
 try:
     from pydantic import BaseModel
 except ImportError:
-    BaseModel = None
+    BaseModel = None  # type: ignore[assignment,misc]
 
 
 class ComponentStatus(StrEnum):
@@ -357,11 +357,11 @@ class ComponentBase(ABC):
             if name == "_children":
                 value: list[ComponentBase] = []
             elif name == "_parent":
-                value = None
-            elif name == "_context":
-                value = {}
-            else:  # type: ignore  _request
                 value = None  # type: ignore
+            elif name == "_context":
+                value = {}  # type: ignore[assignment]
+            else:  # type: ignore[misc]  _request
+                value = None  # type: ignore[assignment]
             object.__setattr__(self, name, value)
             return value
         raise AttributeError(name)
@@ -655,7 +655,7 @@ class ComponentValidator:
     @staticmethod
     async def _load_component_class_from_file(
         source: str, component_path: AsyncPath
-    ) -> None:
+    ) -> t.Any:
         """Load component class from source file.
 
         Uses the validated-AST loader (``load_component_from_source``)
@@ -811,7 +811,7 @@ class AdvancedHTMYComponentRegistry:
             if not await search_path.exists():
                 continue
 
-            for component_file in search_path.rglob("*.py"):
+            async for component_file in search_path.rglob("*.py"):
                 if component_file.name == "__init__.py":
                     continue
 

@@ -5,7 +5,7 @@ from oneiric.core.config import OneiricSettings
 from starlette.routing import Router
 
 
-class AppBaseSettings(OneiricSettings):
+class AppBaseSettings(OneiricSettings):  # type: ignore[misc]
     """App base settings using OneiricSettings."""
 
     name: str = "fastblocks"

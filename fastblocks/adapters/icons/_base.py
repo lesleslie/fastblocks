@@ -12,7 +12,7 @@ from oneiric.core.resolution import Resolver
 depends = Resolver()
 
 
-class IconsBaseSettings(OneiricSettings):
+class IconsBaseSettings(OneiricSettings):  # type: ignore[misc]
     """Base settings for icon adapters using OneiricSettings."""
 
     cdn_url: str | None = None
@@ -20,7 +20,7 @@ class IconsBaseSettings(OneiricSettings):
     default_prefix: str = ""
     icon_mapping: dict[str, str] = {}
 
-    def __init__(self, **data: dict) -> None:
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
 
 

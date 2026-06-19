@@ -47,7 +47,7 @@ class FastBlocksSettings:
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
         # Skip modifying __bases__ if AdapterBase is already in the MRO
         # or if it's the same as the current class (avoid self-reference)
-        if AdapterBase not in cls.__mro__ and AdapterBase is not cls:
+        if AdapterBase not in cls.__mro__ and AdapterBase is not cls:  # type: ignore[comparison-overlap]
             # Only modify __bases__ if AdapterBase is not already a base
             if AdapterBase not in cls.__bases__:
                 # Create new tuple of bases with AdapterBase included

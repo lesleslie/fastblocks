@@ -20,7 +20,7 @@ from oneiric.core.resolution import Resolver
 
 
 # Create debug function for Oneiric (using logger)
-def debug(msg) -> None:
+def debug(msg: str) -> None:
     logger = get_logger("fastblocks.actions.query.parser")
     logger.debug(msg)
 

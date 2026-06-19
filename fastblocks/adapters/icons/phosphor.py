@@ -297,7 +297,7 @@ class PhosphorIcons(IconsBase):
 
         return icon_class
 
-    def get_icon_tag(
+    def get_icon_tag(  # type: ignore[override]
         self,
         icon_name: str,
         variant: str | None = None,
@@ -478,7 +478,7 @@ class PhosphorIcons(IconsBase):
 def _register_ph_basic_filters(env: Any) -> None:
     """Register basic Phosphor filters."""
 
-    @env.filter("ph_icon")
+    @env.filter("ph_icon")  # type: ignore[untyped-decorator]
     def ph_icon_filter(
         icon_name: str,
         variant: str = "regular",
@@ -491,7 +491,7 @@ def _register_ph_basic_filters(env: Any) -> None:
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
 
-    @env.filter("ph_class")
+    @env.filter("ph_class")  # type: ignore
     def ph_class_filter(icon_name: str, variant: str = "regular") -> str:
         """Template filter for Phosphor icon classes."""
         icons = depends.get_sync("icons")
@@ -499,7 +499,7 @@ def _register_ph_basic_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, variant)
         return f"ph-{icon_name}"
 
-    @env.global_("phosphor_stylesheet_links") # type: ignore
+    @env.global_("phosphor_stylesheet_links")  # type: ignore[untyped-decorator]
     def phosphor_stylesheet_links() -> str:
         """Global function for Phosphor stylesheet links."""
         icons = depends.get_sync("icons")

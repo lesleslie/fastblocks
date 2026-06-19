@@ -16,7 +16,7 @@ from oneiric.core.resolution import Resolver
 depends = Resolver()
 
 
-class Settings(OneiricSettings):
+class Settings(OneiricSettings):  # type: ignore[misc]
     """Base settings class for Oneiric compatibility."""
 
     pass
@@ -694,7 +694,7 @@ class FastBlocksSyntaxSupport:
 def register_syntax_filters(env: Any) -> None:
     """Register syntax support filters for Jinja2 templates."""
 
-    @env.filter("format_template")
+    @env.filter("format_template")  # type: ignore
     def format_template_filter(content: str) -> str:
         """Template filter for formatting FastBlocks templates."""
         syntax_support = depends.get_sync("syntax_support")
@@ -702,7 +702,7 @@ def register_syntax_filters(env: Any) -> None:
             return syntax_support.format_template(content)
         return content
 
-    @env.global_("syntax_check")
+    @env.global_("syntax_check")  # type: ignore[untyped-decorator]
     def syntax_check_global(content: str) -> list[dict[str, Any]]:
         """Global function for syntax checking."""
         syntax_support = depends.get_sync("syntax_support")

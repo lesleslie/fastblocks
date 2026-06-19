@@ -64,7 +64,7 @@ class AsgiSitemap(NativeSitemap[str], SitemapBase):
         return item
 
     def changefreq(self, item: str) -> str:
-        return t.cast(str, self.config.change_freq)
+        return t.cast(str, self.config.change_freq)  # type: ignore[attr-defined]
 
     async def init(self) -> None:
         if not self.config.app.domain:  # type: ignore[attr-defined]
@@ -73,7 +73,7 @@ class AsgiSitemap(NativeSitemap[str], SitemapBase):
         self.sitemap = SitemapApp(
             self,
             domain=self.config.app.domain,  # type: ignore[attr-defined]
-            cache_ttl=getattr(self.config, "cache_ttl", 3600),
+            cache_ttl=getattr(self.config, "cache_ttl", 3600),  # type: ignore[attr-defined]
         )
 
 

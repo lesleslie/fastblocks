@@ -656,7 +656,7 @@ async def _reload_configuration(adapter_names: list[str]) -> None:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        config = await reload_config()
+        config = await reload_config()  # type: ignore[name-defined]
         depends.set("config", config)
         debug(f"Reloaded configuration for adapters: {adapter_names}")
     except Exception as e:
