@@ -324,14 +324,6 @@ exclude_dirs = [
     "*_test.py",
 ]
 
-[tool.uv.sources]
-# fastblocks-ui 0.6.0 is not on PyPI yet (newest published is 0.5.0), so the
-# `fastblocks-ui>=0.6,<0.7` pin in the `fastblocks_ui` dependency-group is
-# unsatisfiable from the index and `uv sync` fails outright. This points local
-# development at the sibling checkout. It is dev-only metadata -- uv strips
-# `tool.uv.sources` when building a distribution, so a published wheel still
-# carries the plain `>=0.6,<0.7` requirement. REMOVE THIS once 0.6.0 ships.
-fastblocks-ui = { path = "../fastblocks-ui", editable = true }
 
 [tool.uv]
 keyring-provider = "subprocess"

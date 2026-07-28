@@ -1097,7 +1097,7 @@ wheels = [
 
 [[package]]
 name = "fastblocks"
-version = "0.19.0"
+version = "0.20.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
@@ -1138,6 +1138,9 @@ dev = [
     { name = "pytest-xdist" },
     { name = "pyyaml" },
     { name = "refurb" },
+]
+fastblocks-ui = [
+    { name = "fastblocks-ui" },
 ]
 images = [
     { name = "cloudinary" },
@@ -1188,6 +1191,7 @@ dev = [
     { name = "pyyaml", specifier = "~=6.0" },
     { name = "refurb", specifier = "~=2.2" },
 ]
+fastblocks-ui = [{ name = "fastblocks-ui", specifier = ">=0.7,<0.8" }]
 images = [
     { name = "cloudinary", specifier = "~=1.44" },
     { name = "imagekitio", specifier = "~=4.2" },
@@ -1196,6 +1200,15 @@ monitoring = [
     { name = "logfire", extras = ["starlette"], specifier = "~=4.15" },
     { name = "sentry-sdk", extras = ["starlette"], specifier = ">=3.0.0a7" },
     { name = "urllib3", specifier = "~=2.5" },
+]
+
+[[package]]
+name = "fastblocks-ui"
+version = "0.7.1"
+source = { registry = "https://pypi.org/simple/" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/9f/3ceaad2569a547b5469ba87da5fd29da0dc004cb97d79eef2ccaffa71858/fastblocks_ui-0.7.1.tar.gz", hash = "sha256:4972cbe9775bed0f30b67fe654671926fda78bc18862d689514d624b8453ab39", size = 59127, upload-time = "2026-07-28T12:02:50.936Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/c1/08633d6ed6e5de0f3fc020627bcf941df661384a519ce6a5132ba6281fc4/fastblocks_ui-0.7.1-py3-none-any.whl", hash = "sha256:fafd46d219508a6a26fda44fc58d897db616a33cb86e0e93ffe4b57dbf5eea75", size = 63648, upload-time = "2026-07-28T12:02:49.878Z" },
 ]
 
 [[package]]
