@@ -172,21 +172,28 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
 
     def _check_sql_injection_in_context(
         self,
-        sanitized: dict[str, t.Any],
+        context: dict[str, t.Any],
         errors: list[str],
         strict: bool,
     ) -> bool:
-        """Check for SQL injection patterns in sanitized context.
+        """Check for SQL injection patterns in raw (pre-sanitize) context.
+
+        Security checks MUST run on the raw user input, not on the
+        HTML-escaped form. The standard sanitizer (e.g. ``html.escape``)
+        rewrites single quotes and equals signs to entities
+        (``&amp;#x27;`` / ``&amp;#x61;``), which masks every
+        quote-based SQLi pattern. Compare against the sanitized form
+        and the payload detection becomes silently false-negative.
 
         Args:
-            sanitized: Sanitized context data
+            context: Raw template context (before any HTML escaping)
             errors: Error list to append to
             strict: If True, return False immediately on finding issues
 
         Returns:
             False if strict and issues found, True otherwise
         """
-        for key, value in sanitized.items():
+        for key, value in context.items():
             if isinstance(value, str) and self._contains_sql_injection(value):
                 errors.append(f"Potential SQL injection in {key}")
         return len(errors) == 0
