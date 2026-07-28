@@ -126,6 +126,35 @@ def create_mock_composite_component():
 
 
 # Mock AsyncPath for testing
+class _AsyncList:
+    """Minimal async-iterable wrapper used by ``MockAsyncPath.rglob``.
+
+    Production code does ``async for p in path.rglob(...)``; a plain
+    ``list`` lacks ``__aiter__`` and crashes the loop.
+    """
+
+    def __init__(self, items: list) -> None:
+        self._items = list(items)
+
+    def __aiter__(self) -> "_AsyncIter":
+        return _AsyncIter(self._items)
+
+
+class _AsyncIter:
+    """Async iterator backing ``_AsyncList``."""
+
+    def __init__(self, items: list) -> None:
+        self._items = items
+        self._i = 0
+
+    async def __anext__(self):
+        if self._i >= len(self._items):
+            raise StopAsyncIteration
+        value = self._items[self._i]
+        self._i += 1
+        return value
+
+
 class MockAsyncPath:
     def __init__(self, path: str) -> None:
         self.path = path
@@ -198,14 +227,19 @@ class TestComponent:
         pass
 
     def rglob(self, pattern: str):
-        """Mock rglob for component discovery."""
+        """Mock rglob for component discovery. Returns an async-iterable
+        because production code does ``async for p in path.rglob(...)``.
+        A plain ``list`` lacks ``__aiter__`` and crashes the loop.
+        """
         if pattern == "*.py":
-            return [
-                MockAsyncPath("/test/components/user_card.py"),
-                MockAsyncPath("/test/components/button.py"),
-                MockAsyncPath("/test/components/broken_component.py"),
-            ]
-        return []
+            return _AsyncList(
+                [
+                    MockAsyncPath("/test/components/user_card.py"),
+                    MockAsyncPath("/test/components/button.py"),
+                    MockAsyncPath("/test/components/broken_component.py"),
+                ]
+            )
+        return _AsyncList([])
 
 
 @pytest.fixture

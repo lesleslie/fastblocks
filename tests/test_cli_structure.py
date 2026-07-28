@@ -14,7 +14,15 @@ class TestCLIStructure:
         source_code = Path(cli_file_path).read_text()
 
         assert "def run(" in source_code
-        assert "def create(" in source_code
+        # ``create`` was refactored from ``def create(...)`` to a
+        # ``typer.Typer`` sub-app. The current form is
+        # ``create = typer.Typer(...)``; the legacy ``def create(`` form
+        # would also satisfy the original assertion, so accept either
+        # to keep this test stable across the refactor.
+        assert (
+            "def create(" in source_code
+            or "create = typer.Typer(" in source_code
+        )
         assert "def dev(" in source_code
         assert "def setup_signal_handlers(" in source_code
 

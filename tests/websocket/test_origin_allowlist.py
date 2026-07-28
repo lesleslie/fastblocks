@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import pytest
 
-from fastblocks.websocket.server import check_origin, parse_allowed_origins
+from fastblocks.websocket.origin import check_origin, parse_allowed_origins
 
 
 @pytest.mark.unit

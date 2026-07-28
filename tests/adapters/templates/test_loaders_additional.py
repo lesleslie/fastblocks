@@ -4,7 +4,10 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from acb.config import Config
+# acb replaced by oneiric; Config is now a sentinel for the type-only annotation used in pytest parametrize
+class Config:
+    """Sentinel type used as a type hint for pytest fixtures."""
+    pass
 from tests._mocks import (
     MockPackageLoader as PackageLoader,
 )

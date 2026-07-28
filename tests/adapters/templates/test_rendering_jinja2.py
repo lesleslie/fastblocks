@@ -29,7 +29,11 @@ sys.modules["jinja2_async_environment"].loaders = types.ModuleType(
 )
 sys.modules["jinja2_async_environment"].loaders.AsyncBaseLoader = MagicMock
 sys.modules["jinja2_async_environment"].loaders.SourceType = tuple
-from acb.config import Config  # noqa: E402
+class Config:
+    """Sentinel type used as a type hint for pytest fixtures (acb replaced by oneiric)."""
+    pass
+
+
 from jinja2 import TemplateNotFound  # noqa: E402
 from starlette.requests import Request  # noqa: E402
 from starlette.responses import HTMLResponse, Response  # noqa: E402

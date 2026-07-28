@@ -71,7 +71,7 @@ def mock_sql_adapter():
 @pytest.mark.integration
 async def test_templates_health_check_healthy(mock_templates_adapter):
     """Test templates health check when system is healthy."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     with patch("fastblocks._health_integration.depends.get") as mock_depends:
         mock_depends.side_effect = lambda name: (
@@ -94,7 +94,7 @@ async def test_templates_health_check_healthy(mock_templates_adapter):
 @pytest.mark.integration
 async def test_templates_health_check_degraded():
     """Test templates health check when adapter not initialized."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     with patch("fastblocks._health_integration.depends.get") as mock_depends:
         mock_depends.return_value = None  # Templates adapter not available
@@ -111,7 +111,7 @@ async def test_templates_health_check_degraded():
 @pytest.mark.integration
 async def test_cache_health_check_healthy(mock_cache_adapter):
     """Test cache health check when system is healthy."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     with patch("fastblocks._health_integration.depends.get") as mock_depends:
         mock_depends.return_value = mock_cache_adapter
@@ -137,7 +137,7 @@ async def test_cache_health_check_healthy(mock_cache_adapter):
 @pytest.mark.integration
 async def test_cache_health_check_degraded():
     """Test cache health check when cache not available."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     with patch("fastblocks._health_integration.depends.get") as mock_depends:
         mock_depends.return_value = None  # Cache adapter not available
@@ -155,7 +155,7 @@ async def test_cache_health_check_degraded():
 @pytest.mark.integration
 async def test_routes_health_check_healthy(mock_routes_adapter):
     """Test routes health check when system is healthy."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     with patch("fastblocks._health_integration.depends.get") as mock_depends:
         mock_depends.return_value = mock_routes_adapter
@@ -175,7 +175,7 @@ async def test_routes_health_check_healthy(mock_routes_adapter):
 @pytest.mark.integration
 async def test_routes_health_check_degraded_no_routes():
     """Test routes health check when no routes registered."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     mock_routes = MagicMock()
     mock_routes.routes = []
@@ -196,7 +196,7 @@ async def test_routes_health_check_degraded_no_routes():
 @pytest.mark.integration
 async def test_database_health_check_healthy(mock_sql_adapter):
     """Test database health check when system is healthy."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     with patch("fastblocks._health_integration.depends.get") as mock_depends:
         mock_depends.return_value = mock_sql_adapter
@@ -219,7 +219,7 @@ async def test_database_health_check_healthy(mock_sql_adapter):
 @pytest.mark.integration
 async def test_database_health_check_degraded():
     """Test database health check when adapter not configured."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     with patch("fastblocks._health_integration.depends.get") as mock_depends:
         mock_depends.return_value = None  # SQL adapter not available
@@ -349,7 +349,7 @@ async def test_health_checks_without_acb():
 @pytest.mark.integration
 async def test_base_health_check():
     """Test FastBlocksHealthCheck base class."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     check = FastBlocksHealthCheck(component_id="test", component_name="Test Component")
 
@@ -369,7 +369,7 @@ async def test_base_health_check():
 @pytest.mark.integration
 async def test_cache_health_check_with_stats(mock_cache_adapter):
     """Test cache health check includes stats when available."""
-    from acb.services.health import HealthCheckType
+    from fastblocks._health_integration import HealthStatus
 
     stats = MagicMock()
     stats.hit_ratio = 0.85
@@ -389,7 +389,7 @@ async def test_cache_health_check_with_stats(mock_cache_adapter):
 @pytest.mark.integration
 async def test_cache_health_check_operation_failure(mock_cache_adapter):
     """Test cache health check when operations fail."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     # Make cache operations fail
     mock_cache_adapter.set = AsyncMock(side_effect=Exception("Cache error"))
@@ -410,7 +410,7 @@ async def test_cache_health_check_operation_failure(mock_cache_adapter):
 @pytest.mark.integration
 async def test_database_health_check_query_failure(mock_sql_adapter):
     """Test database health check when query fails."""
-    from acb.services.health import HealthCheckType, HealthStatus
+    from fastblocks._health_integration import HealthStatus
 
     # Make database query fail
     mock_sql_adapter.execute = AsyncMock(side_effect=Exception("Connection error"))

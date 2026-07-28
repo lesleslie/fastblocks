@@ -55,7 +55,11 @@ mock_bccache.AsyncRedisBytecodeCache = MagicMock
 # Also add AsyncRedisBytecodeCache directly to the main module level
 mock_jinja2_async_env.AsyncRedisBytecodeCache = MagicMock
 
-from acb.config import Config  # noqa: E402
+class Config:
+    """Sentinel type used as a type hint for pytest fixtures (acb replaced by oneiric)."""
+    pass
+
+
 from anyio import Path as AsyncPath  # noqa: E402
 from jinja2 import TemplateNotFound  # noqa: E402
 from fastblocks.adapters.templates.jinja2 import (  # noqa: E402
