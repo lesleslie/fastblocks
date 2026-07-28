@@ -112,7 +112,7 @@ class TestSyncSettings:
     @pytest.mark.asyncio
     async def test_sync_settings_no_files_found(self, mock_depends_get, mock_strategy):
         """Test sync_settings with no settings files."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -128,7 +128,7 @@ class TestSyncSettings:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_settings with specific adapter names."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -145,7 +145,7 @@ class TestSyncSettings:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_settings with config reload disabled."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -163,7 +163,7 @@ class TestSyncSettings:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_settings with custom storage bucket."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -180,7 +180,7 @@ class TestSyncSettings:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_settings with custom settings path."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             custom_path = AsyncPath("custom/settings")
 
             with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
@@ -200,7 +200,7 @@ class TestSyncSettings:
                 return mock_storage
             return None
 
-        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get)):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", AsyncMock(side_effect=_get)):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)

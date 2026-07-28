@@ -9,15 +9,11 @@ from oneiric.core.resolution import Resolver
 # Migration from ACB to Oneiric
 depends = Resolver()
 
-# ACB compatibility imports - these will be migrated in future phases
-try:
-    # MIGRATED: Removed ACB import - debug import debug
-    pass
-except ImportError:
-    # Fallback for Oneiric-only mode
-    def debug(msg: str) -> None:
-        """Debug function fallback."""
-        print(f"[DEBUG] {msg}")
+# Debug function: Oneiric-backed replacement for the legacy acb.debug symbol
+def debug(msg: str) -> None:
+    """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
+    from oneiric.core.logging import get_logger
+    get_logger("actions.sync.templates").debug(msg)
 
 
 from anyio import Path as AsyncPath

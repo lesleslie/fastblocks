@@ -8,28 +8,35 @@ from importlib import import_module
 from pathlib import Path
 
 # Migration: ACB -> Oneiric
+# Always define ``debug`` (and the small acb shims) at module scope so
+# later references can find them. The original try/except only bound
+# ``debug`` in the try branch, which silently fell through to the except
+# branch (no def debug) and crashed every call with NameError.
+
+# Always-available Oneiric logger is the foundation of the ``debug`` shim.
+from oneiric.core.logging import get_logger
+
+
+# Create debug function for Oneiric (using logger)
+def debug(msg: str) -> None:
+    logger = get_logger("fastblocks.actions.gather.routes")
+    logger.debug(msg)
+
+
 # Try to import Oneiric components first, fall back to ACB for compatibility
 try:
-    # Oneiric imports (new)
-    from oneiric.adapters.discovery import get_adapters
-    from oneiric.core.logging import get_logger
-    from oneiric.core.resolution import Resolver
-
-    # Create debug function for Oneiric (using logger)
-    def debug(msg: str) -> None:
-        logger = get_logger("fastblocks.actions.gather.routes")
-        logger.debug(msg)
+    from oneiric.adapters.discovery import get_adapters  # type: ignore[import-not-found]
+    from oneiric.core.resolution import Resolver  # noqa: F401
 
     # Create root_path equivalent for Oneiric
     root_path = Path(__file__).parent.parent.parent.parent
 
     # Create depends equivalent for Oneiric
-    _resolver = Resolver()
+    _resolver = Resolver()  # type: ignore[call-arg]
     _using_oneiric = True
 except ImportError:
     # Fallback to ACB imports (legacy)
     # MIGRATED: Removed ACB import - using Oneiric equivalent
-    # MIGRATED: Removed ACB import - debug import debug
     _using_oneiric = False
 
 from anyio import Path as AsyncPath

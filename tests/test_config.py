@@ -9,6 +9,15 @@ from anyio import Path as AsyncPath
 
 
 @pytest.mark.unit
+@pytest.mark.skip(
+    reason=(
+        "Tests the legacy acb.config.Settings surface; acb was replaced by "
+        "oneiric and is no longer installed. The mock targets "
+        "(acb.config.Settings) do not exist, so patch() raises "
+        "ModuleNotFoundError at collection. Re-enable when these tests are "
+        "rewritten against the oneiric config surface."
+    )
+)
 class TestConfig:
     @pytest.fixture
     def temp_dir(self, monkeypatch: pytest.MonkeyPatch):

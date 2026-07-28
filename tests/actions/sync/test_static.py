@@ -170,7 +170,7 @@ class TestSyncStatic:
     @pytest.mark.asyncio
     async def test_sync_static_no_files_found(self, mock_depends_get, mock_strategy):
         """Test sync_static with no static files."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -186,7 +186,7 @@ class TestSyncStatic:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_static with custom file patterns."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -203,7 +203,7 @@ class TestSyncStatic:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_static with exclude patterns."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -220,7 +220,7 @@ class TestSyncStatic:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_static with custom storage bucket."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -235,7 +235,7 @@ class TestSyncStatic:
     @pytest.mark.asyncio
     async def test_sync_static_with_custom_path(self, mock_depends_get, mock_strategy):
         """Test sync_static with custom static path."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             custom_path = AsyncPath("custom/static")
 
             with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
@@ -259,7 +259,7 @@ class TestSyncStatic:
                 return mock_cache
             return None
 
-        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get)):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", AsyncMock(side_effect=_get)):
             with patch("fastblocks.actions.sync.static.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -288,7 +288,7 @@ class TestWarmStaticCache:
     @pytest.mark.asyncio
     async def test_warm_cache_with_default_paths(self, mock_depends_get):
         """Test warm_static_cache with default static paths."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             result = await warm_static_cache()
 
             assert "warmed" in result
@@ -300,7 +300,7 @@ class TestWarmStaticCache:
         """Test warm_static_cache with custom paths."""
         custom_paths = ["custom/style.css", "custom/script.js"]
 
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             result = await warm_static_cache(static_paths=custom_paths)
 
             assert "warmed" in result
@@ -308,7 +308,7 @@ class TestWarmStaticCache:
     @pytest.mark.asyncio
     async def test_warm_cache_with_custom_namespace(self, mock_depends_get):
         """Test warm_static_cache with custom cache namespace."""
-        with patch("acb.depends.depends.get", mock_depends_get):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
             result = await warm_static_cache(cache_namespace="custom_static")
 
             assert "warmed" in result
@@ -325,7 +325,7 @@ class TestWarmStaticCache:
                 return mock_cache
             return None
 
-        with patch("acb.depends.depends.get", AsyncMock(side_effect=_get)):
+        with patch("fastblocks.actions.sync.settings.depends.resolve", AsyncMock(side_effect=_get)):
             result = await warm_static_cache(static_paths=["test.css"])
 
             assert "errors" in result

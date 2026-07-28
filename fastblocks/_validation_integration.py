@@ -186,8 +186,10 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
         Returns:
             False if strict and issues found, True otherwise
         """
-        # TODO: Use Pydantic field validators for SQL injection prevention
-        return True
+        for key, value in sanitized.items():
+            if isinstance(value, str) and self._contains_sql_injection(value):
+                errors.append(f"Potential SQL injection in {key}")
+        return len(errors) == 0
 
     async def validate_template_context(
         self,
@@ -212,15 +214,19 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
         errors: list[str] = []
 
         try:
+            # Check for SQL injection patterns on the *original* (pre-sanitize)
+            # values — the HTML sanitizer escapes quotes (``'`` -> ``&#x27;``),
+            # which would mask the very injection markers the SQLi check is
+            # looking for. Sanitization still runs after this pass; rejecting
+            # the value as SQLi skips the sanitize step entirely.
+            if not self._check_sql_injection_in_context(context, errors, strict):
+                return False, context, errors
+
             # Sanitize each context value
             sanitized = {
                 key: self._sanitize_context_value(key, value, errors)
                 for key, value in context.items()
             }
-
-            # Check for SQL injection patterns
-            if not self._check_sql_injection_in_context(sanitized, errors, strict):
-                return False, context, errors
 
             # Validation passed (or warnings only)
             return len(errors) == 0 or not strict, sanitized, errors
@@ -471,9 +477,37 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
         return None
 
     def _contains_path_traversal(self, value: str) -> bool:
-        """Check for path traversal attempts."""
-        traversal_patterns = ["../", "..\\", "%2e%2e", "....//"]
-        return any(pattern in value.lower() for pattern in traversal_patterns)
+        """Check for path traversal attempts (including URL-encoded)."""
+        patterns = (
+            "../",
+            "..\\",
+            "%2e%2e",
+            "....//",
+            "..%2f",
+            "..%5c",
+            "%2e%2e%2f",
+            "%252e%252e",  # double-encoded
+        )
+        v = value.lower()
+        return any(p in v for p in patterns) or any(p in value for p in patterns)
+
+    def _contains_sql_injection(self, value: str) -> bool:
+        """Detect common SQL injection patterns."""
+        if not isinstance(value, str):
+            return False
+        import re
+
+        patterns = (
+            r"'\s*OR\s+",
+            r"\bUNION\s+SELECT\b",
+            r"\bDROP\s+TABLE\b",
+            r"\bDELETE\s+FROM\b",
+            r"(--\s*$|#\s*$)",
+            r"\b1\s*=\s*1\b",
+            r"['\"]\s*or\s*['\"][^=]*=",
+            r"['\"];?\s*(drop|delete|union|insert|update)\s+",
+        )
+        return any(re.search(p, value, re.IGNORECASE) for p in patterns)
 
     def _sanitize_field(
         self,
@@ -521,7 +555,10 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
         if not self.available:
             return
 
-        # TODO: Use Pydantic field validators for SQL injection prevention
+        # Check for SQL injection
+        if self._config.prevent_sql_injection:
+            if self._contains_sql_injection(value):
+                errors.append(f"SQL injection detected in {key}")
 
         # Check for path traversal
         if self._config.prevent_path_traversal:

@@ -95,6 +95,42 @@ def setup_signal_handlers() -> None:
     signal.signal(signal.SIGTERM, signal_handler)
 
 
+def _run_async(coro: t.Coroutine[t.Any, t.Any, t.Any]) -> t.Any:
+    """Run a coroutine, deferring to the current loop when one is running.
+
+    ``asyncio.run()`` raises ``RuntimeError`` when called from inside an
+    already-running event loop (pytest-asyncio fixtures, CliRunner
+    invoked via ``async def`` callers, etc.).  This helper detects that
+    case and uses the *already running* loop via a small thread to drive
+    the coroutine, so the same Typer command works in both sync and
+    async contexts.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    # Already inside a running loop (pytest-asyncio test fixture, etc.).
+    # Run the coroutine in a worker thread so we can ``run_until_complete``
+    # on a *fresh* loop without conflicting with the caller's loop.
+    import threading
+
+    result: list[t.Any] = []
+    exc: list[BaseException] = []
+
+    def _runner() -> None:
+        try:
+            result.append(asyncio.run(coro))
+        except BaseException as e:  # noqa: BLE001
+            exc.append(e)
+
+    thread = threading.Thread(target=_runner, daemon=True)
+    thread.start()
+    thread.join()
+    if exc:
+        raise exc[0]
+    return result[0] if result else None
+
+
 @cli.command()
 def run(docker: bool = False, granian: bool = False, host: str = "127.0.0.1") -> None:
     if docker:
@@ -332,7 +368,6 @@ def scaffold(
     path: Annotated[str, typer.Option("--path", help="Custom component path")] = "",
 ) -> None:
     """Scaffold a new HTMY component."""
-    import asyncio
     from pathlib import Path
 
     async def scaffold_component() -> None:
@@ -382,7 +417,7 @@ def scaffold(
         except Exception as e:
             console.print(f"[red]Error scaffolding component: {e}[/red]")
 
-    asyncio.run(scaffold_component())
+    _run_async(scaffold_component())
 
 
 def _get_component_status_color(status_value: str) -> str:
@@ -418,7 +453,6 @@ def _display_component_entry(name: str, metadata: t.Any) -> None:
 @cli.command(name="list")
 def list_components() -> None:
     """List all discovered HTMY components."""
-    import asyncio
 
     async def list_all_components() -> None:
         try:
@@ -449,7 +483,7 @@ def list_components() -> None:
         except Exception as e:
             console.print(f"[red]Error listing components: {e}[/red]")
 
-    asyncio.run(list_all_components())
+    _run_async(list_all_components())
 
 
 def _display_basic_metadata(component: str, metadata: t.Any) -> None:
@@ -498,7 +532,6 @@ def validate(
     component: Annotated[str, typer.Argument(help="Component name to validate")],
 ) -> None:
     """Validate a specific HTMY component."""
-    import asyncio
 
     async def validate_component() -> None:
         try:
@@ -524,7 +557,7 @@ def validate(
         except Exception as e:
             console.print(f"[red]Error validating component '{component}': {e}[/red]")
 
-    asyncio.run(validate_component())
+    _run_async(validate_component())
 
 
 @cli.command()
@@ -532,7 +565,6 @@ def info(
     component: Annotated[str, typer.Argument(help="Component name to get info for")],
 ) -> None:
     """Get detailed information about an HTMY component."""
-    import asyncio
 
     def _display_component_class_info(
         component_class: type, component_name: str
@@ -593,7 +625,7 @@ def info(
                 f"[red]Error getting info for component '{component}': {e}[/red]"
             )
 
-    asyncio.run(get_component_info())
+    _run_async(get_component_info())
 
 
 def _get_severity_color(severity: str) -> str:
@@ -639,7 +671,6 @@ def syntax_check(
     ] = False,
 ) -> None:
     """Check FastBlocks template syntax for errors and warnings."""
-    import asyncio
 
     async def check_syntax() -> None:
         try:
@@ -673,7 +704,7 @@ def syntax_check(
         except Exception as e:
             console.print(f"[red]Error checking syntax: {e}[/red]")
 
-    asyncio.run(check_syntax())
+    _run_async(check_syntax())
 
 
 @cli.command()
@@ -686,7 +717,6 @@ def format_template(
     ] = False,
 ) -> None:
     """Format a FastBlocks template file."""
-    import asyncio
 
     async def format_file() -> None:
         try:
@@ -724,7 +754,7 @@ def format_template(
         except Exception as e:
             console.print(f"[red]Error formatting template: {e}[/red]")
 
-    asyncio.run(format_file())
+    _run_async(format_file())
 
 
 _GRAMMARS_DIR = Path(__file__).parent / "cli" / "grammars"
@@ -833,7 +863,6 @@ def start_language_server(
     ] = False,
 ) -> None:
     """Start the FastBlocks Language Server."""
-    import asyncio
 
     async def start_server() -> None:
         try:
@@ -873,7 +902,7 @@ def start_language_server(
         except Exception as e:
             console.print(f"[red]Error starting language server: {e}[/red]")
 
-    asyncio.run(start_server())
+    _run_async(start_server())
 
 
 create = typer.Typer(help="Scaffolding commands for apps, templates, and IDE configs.")
@@ -1006,7 +1035,7 @@ def _update_app_configs(app_path: Path, domain: str) -> None:
             "app", {"title": "Welcome to FastBlocks", "domain": domain}
         )
 
-    asyncio.run(_update_configs())
+    _run_async(_update_configs())
 
 
 async def update_configs(app_path: Path, domain: str) -> None:
@@ -1045,7 +1074,7 @@ def create_compat(
     module attribute. The Typer group ``create`` above is the active
     CLI surface — invoke ``create app`` for the same behavior.
     """
-    create_app(app_name=app_name, style=style, domain=domain)
+    _run_async(create_app(app_name=app_name, style=style, domain=domain))
 
 
 @cli.command()
@@ -1072,7 +1101,6 @@ def mcp(
     Enables IDE/AI assistant integration for FastBlocks development
     including template management, component creation, and adapter configuration.
     """
-    import asyncio
 
     async def start_mcp_server() -> None:
         try:
@@ -1104,4 +1132,4 @@ def mcp(
         except Exception as e:
             console.print(f"[red]Error starting MCP server: {e}[/red]")
 
-    asyncio.run(start_mcp_server())
+    _run_async(start_mcp_server())

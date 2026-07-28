@@ -656,9 +656,12 @@ class ComponentValidator:
         try:
             source = await component_path.read_text()
 
-            # Basic syntax validation
+            # Basic syntax validation. ``component_path`` may be a
+            # ``MockAsyncPath`` in tests, which is not a ``str | bytes |
+            # os.PathLike`` — ``compile()`` rejects those with TypeError.
+            # Coerce to ``str`` so real paths and test mocks both work.
             try:
-                compile(source, component_path, "exec")
+                compile(source, str(component_path), "exec")
             except SyntaxError as e:
                 raise ComponentValidationError(f"Syntax error in {component_path}: {e}")
 

@@ -199,7 +199,7 @@ class TestGatherApplication:
     @pytest.mark.asyncio
     async def test_gather_application_error_handling(self) -> None:
         """Test application gathering error handling."""
-        with patch("acb.depends.depends.get") as mock_get:
+        with patch("fastblocks.actions.sync.settings.depends.resolve") as mock_get:
             mock_get.side_effect = Exception("Dependency resolution failed")
             app_info = await gather.application()
             assert hasattr(app_info, "errors")
