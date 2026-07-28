@@ -114,12 +114,25 @@ class HTMYComponentRegistry:
         searchpaths: list[AsyncPath] | None = None,
         cache: t.Any = None,
         storage: t.Any = None,
+        trusted_components: dict[str, t.Any] | None = None,
     ) -> None:
         self.searchpaths = searchpaths or []
         self.cache = cache
         self.storage = storage
         self._component_cache: dict[str, t.Any] = {}
         self._source_cache: dict[str, str] = {}
+        # See `AdvancedHTMYComponentRegistry.register_trusted_component` in
+        # `_htmy_components.py` for the trust-tier rationale — mirrored here
+        # for the legacy (non-advanced) registry path.
+        self._trusted_components: dict[str, t.Any] = dict(trusted_components or {})
+
+    def register_trusted_component(self, name: str, component_class: t.Any) -> None:
+        self._trusted_components[name] = component_class
+        self._component_cache.pop(name, None)
+
+    def register_trusted_components(self, components: dict[str, t.Any]) -> None:
+        for name, component_class in components.items():
+            self.register_trusted_component(name, component_class)
 
     @staticmethod
     def get_cache_key(component_path: AsyncPath, cache_type: str = "source") -> str:
@@ -244,6 +257,9 @@ class HTMYComponentRegistry:
         return source, component_path
 
     async def get_component_class(self, component_name: str) -> t.Any:
+        if component_name in self._trusted_components:
+            return self._trusted_components[component_name]
+
         if component_name in self._component_cache:
             return self._component_cache[component_name]
 
@@ -377,10 +393,37 @@ class HTMYTemplates(TemplatesBase):
         self.component_searchpaths: list[AsyncPath] = []
         self.jinja_templates: t.Any = None
         self.settings = HTMYTemplatesSettings(**kwargs)
+        # Pending trusted-component registrations, applied to whichever
+        # registry/registries get constructed in `_init_htmy_registry` — see
+        # `register_trusted_components` below. Kept here (not just on the
+        # registry instances) so registration works whether it happens
+        # before or after the registries exist.
+        self._trusted_components: dict[str, t.Any] = {}
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
             depends.set(self, "htmy")
+
+    async def register_trusted_components(self, components: dict[str, t.Any]) -> None:
+        """Register pre-imported, trusted component classes for use in
+        ``[[ render_component("name", context) ]]`` template calls.
+
+        This is the integration point for design-system adapter packages
+        (e.g. ``fastblocks-htmy``) that ship typed, already-imported
+        component classes: those classes bypass file discovery and the
+        AST-sandboxed source loader entirely (see
+        ``AdvancedHTMYComponentRegistry.register_trusted_component`` for the
+        trust-tier rationale). Safe to call before or after the underlying
+        registries have been created — registrations are re-applied to any
+        registry created later.
+        """
+        self._trusted_components.update(components)
+        if self.htmy_registry is None and self.advanced_registry is None:
+            await self._init_htmy_registry()
+        if self.advanced_registry is not None:
+            self.advanced_registry.register_trusted_components(components)
+        if self.htmy_registry is not None:
+            self.htmy_registry.register_trusted_components(components)
 
     async def get_component_searchpaths(self, app_adapter: t.Any) -> list[AsyncPath]:
         searchpaths = []
@@ -423,6 +466,7 @@ class HTMYTemplates(TemplatesBase):
                 searchpaths=self.component_searchpaths,
                 cache=self.cache,
                 storage=self.storage,
+                trusted_components=self._trusted_components,
             )
 
             # Configure hot reload
@@ -434,6 +478,7 @@ class HTMYTemplates(TemplatesBase):
             searchpaths=self.component_searchpaths,
             cache=self.cache,
             storage=self.storage,
+            trusted_components=self._trusted_components,
         )
 
     async def clear_component_cache(self, component_name: str | None = None) -> None:

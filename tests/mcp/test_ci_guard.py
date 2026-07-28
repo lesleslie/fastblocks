@@ -192,3 +192,63 @@ def test_config_cli_module_file_deleted() -> None:
         "ConfigurationHealthChecker) remain importable from their original "
         "modules — do not bring back the Click wrapper."
     )
+
+
+# ---------------------------------------------------------------------------
+# Audit regression (2026-07-27): tool registration was a NameError.
+# ---------------------------------------------------------------------------
+
+
+class _RecordingServer:
+    """Stand-in for an ``mcp_common`` server profile.
+
+    Mirrors the registration contract of the real
+    ``MinimalServer``/``StandardServer``/``FullServer``, which was verified
+    directly against the installed package: ``tool(name)`` returns a decorator
+    that registers the function, and ``list_tools()`` returns the registered
+    names. A double is used because ``tests/conftest.py`` installs an
+    ``mcp_common`` stub at session scope, which makes the real package's
+    submodules unimportable inside the suite.
+    """
+
+    def __init__(self) -> None:
+        self._tools: dict[str, t.Any] = {}
+
+    def tool(self, name: str | None = None) -> t.Any:
+        def decorator(fn: t.Any) -> t.Any:
+            self._tools[name or getattr(fn, "__name__", repr(fn))] = fn
+            return fn
+
+        return decorator
+
+    def list_tools(self) -> list[str]:
+        return sorted(self._tools)
+
+
+@pytest.mark.unit
+async def test_register_fastblocks_tools_registers_the_documented_surface() -> None:
+    """All 7 read-only tools must land on the server.
+
+    `register_fastblocks_tools` called an undefined `register_tools(...)`
+    (carrying `# type: ignore[name-defined]`), so it raised `NameError` --
+    and `MCPServerBase._register_tools` wraps the call in
+    `with suppress(Exception)`, so the failure was silent and *zero* MCP
+    tools were ever registered.
+    """
+    from fastblocks.mcp.tools import register_fastblocks_tools
+
+    server = _RecordingServer()
+    await register_fastblocks_tools(server)
+
+    expected = {
+        "validate_template",
+        "list_templates",
+        "render_template",
+        "list_components",
+        "validate_component",
+        "list_adapters",
+        "check_adapter_health",
+    }
+    assert expected <= set(server.list_tools()), (
+        f"missing tools: {sorted(expected - set(server.list_tools()))}"
+    )

@@ -577,8 +577,26 @@ async def register_fastblocks_tools(server: Any) -> None:
             "check_adapter_health": check_adapter_health,
         }
 
-        # Register tools with MCP server
-        await register_tools(server, tools)  # type: ignore[name-defined]
+        # Register tools with the MCP server.
+        #
+        # This previously called an undefined `register_tools(server, tools)`
+        # (silenced with `# type: ignore[name-defined]`), so it raised
+        # `NameError` every time -- and `MCPServerBase._register_tools` wraps
+        # the call in `with suppress(Exception)`, so nothing surfaced and the
+        # entire documented MCP tool surface was never registered.
+        #
+        # `server.tool(name)` returning a decorator is the registration API
+        # exposed by every `mcp_common` server profile (Minimal/Standard/Full).
+        register = getattr(server, "tool", None)
+        if register is None:
+            msg = (
+                f"MCP server {type(server).__name__!r} exposes no `tool()` "
+                "registration method; cannot register FastBlocks tools"
+            )
+            raise AttributeError(msg)
+
+        for tool_name, tool_fn in tools.items():
+            register(tool_name)(tool_fn)
 
         logger.info(f"Registered {len(tools)} FastBlocks MCP tools")
 

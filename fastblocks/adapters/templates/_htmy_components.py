@@ -21,6 +21,7 @@ from __future__ import annotations
 import ast
 import asyncio
 import inspect
+import sys
 import tempfile
 import typing as t
 from abc import ABC, abstractmethod
@@ -28,6 +29,7 @@ from dataclasses import dataclass, field, fields, is_dataclass
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 from uuid import uuid4
 
@@ -71,10 +73,17 @@ class ComponentType(StrEnum):
 
 @dataclass
 class ComponentMetadata:
-    """Component metadata for discovery and management."""
+    """Component metadata for discovery and management.
+
+    ``path`` is ``None`` for *trusted* components (see
+    ``AdvancedHTMYComponentRegistry.register_trusted_component``) — those are
+    already-imported Python classes shipped by a pip-installed library, not
+    files discovered on disk, so there is no filesystem path or mtime to
+    track for them.
+    """
 
     name: str
-    path: AsyncPath
+    path: AsyncPath | None
     type: ComponentType
     status: ComponentStatus = ComponentStatus.DISCOVERED
     dependencies: list[str] = field(default_factory=list)
@@ -86,7 +95,8 @@ class ComponentMetadata:
 
     def __post_init__(self) -> None:
         if self.cache_key is None:
-            self.cache_key = f"component_{self.name}_{self.path.stem}"
+            stem = self.path.stem if self.path is not None else "trusted"
+            self.cache_key = f"component_{self.name}_{stem}"
 
 
 class ComponentValidationError(Exception):
@@ -291,7 +301,26 @@ def load_component_from_source(source: str, name: str) -> t.Any:
     # CWE-95 rule cannot see the validation, so we suppress it
     # with the precise rule ID and a justification comment for
     # human reviewers.
-    namespace: dict[str, t.Any] = {"__name__": f"htmy_component_{name}"}
+    # The validated source is executed inside a real (but temporary) module
+    # object registered in ``sys.modules``.
+    #
+    # This is not cosmetic: CPython's ``dataclasses._is_type`` does an
+    # unguarded ``sys.modules.get(cls.__module__).__dict__`` while scanning a
+    # dataclass for ``KW_ONLY``. Executing into a bare dict whose ``__name__``
+    # is absent from ``sys.modules`` makes that return ``None``, so **every**
+    # ``@dataclass`` component carrying an annotated field died with
+    # ``AttributeError: 'NoneType' object has no attribute '__dict__'`` -- and
+    # a ``@dataclass`` with fields is precisely the documented component shape.
+    #
+    # The registration is uniquely named and removed in ``finally``, so nothing
+    # stays importable afterwards and concurrent loads of the same component
+    # cannot collide -- preserving the original "never persists in
+    # ``sys.modules``" intent while letting stdlib introspection work.
+    module_name = f"htmy_component_{name}_{uuid4().hex[:8]}"
+    temp_module = ModuleType(module_name)
+    namespace: dict[str, t.Any] = temp_module.__dict__
+    namespace["__name__"] = module_name
+    sys.modules[module_name] = temp_module
     try:
         # nosemgrep: python.lang.security.audit.eval-injection
         # The above is a documented false positive: the source has
@@ -304,6 +333,9 @@ def load_component_from_source(source: str, name: str) -> t.Any:
         raise ComponentCompilationError(
             f"component '{name}' failed to execute after validation: {exc}"
         ) from exc
+    finally:
+        # Never leave the synthetic module importable, on success or failure.
+        sys.modules.pop(module_name, None)
 
     cls = namespace.get(target_class.name)
     if cls is None or not inspect.isclass(cls):
@@ -792,6 +824,7 @@ class AdvancedHTMYComponentRegistry:
         searchpaths: list[AsyncPath] | None = None,
         cache: t.Any = None,
         storage: t.Any = None,
+        trusted_components: dict[str, t.Any] | None = None,
     ) -> None:
         self.searchpaths = searchpaths or []
         self.cache = cache
@@ -802,10 +835,57 @@ class AdvancedHTMYComponentRegistry:
         self._validator = ComponentValidator()
         self._lifecycle_manager = ComponentLifecycleManager()
         self._hot_reload_enabled = False
+        # Trusted, pre-registered component classes — see
+        # `register_trusted_component` for the trust-tier rationale.
+        self._trusted_components: dict[str, t.Any] = dict(trusted_components or {})
+
+    def register_trusted_component(self, name: str, component_class: t.Any) -> None:
+        """Register an already-imported, trusted component class.
+
+        Bypasses file discovery and the AST-sandboxed source loader
+        (`load_component_from_source`) entirely. That sandbox exists to
+        protect against arbitrary `.py` files an app author (or, worse, an
+        attacker) drops into a `components/` search path — untrusted source
+        text that has never been reviewed or vetted. A class shipped by a
+        pip-installed library (e.g. a design-system adapter package) is at
+        the same trust tier as any other project dependency: it was already
+        vetted the way any dependency is (via `pip`/`uv` install, code
+        review, CI on that package), so re-running it through a sandboxed
+        AST source-loader would be pointless overhead, not a real security
+        boundary. Use this for library-shipped components only — never for
+        anything derived from user input or an unreviewed source string.
+        """
+        self._trusted_components[name] = component_class
+        # Clear any stale cached entry so re-registration takes effect.
+        self._component_cache.pop(name, None)
+        self._metadata_cache.pop(name, None)
+
+    def register_trusted_components(self, components: dict[str, t.Any]) -> None:
+        """Bulk form of `register_trusted_component`."""
+        for name, component_class in components.items():
+            self.register_trusted_component(name, component_class)
 
     async def discover_components(self) -> dict[str, ComponentMetadata]:
         """Discover all components with metadata."""
-        components = {}
+        components: dict[str, ComponentMetadata] = {}
+
+        # Trusted components never touch the filesystem or the AST-sandboxed
+        # loader — they're already-imported, already-vetted Python objects.
+        # There's no path/mtime to track, so they're always considered READY
+        # and are only invalidated by an explicit re-registration.
+        for trusted_name, trusted_class in self._trusted_components.items():
+            cached = self._metadata_cache.get(trusted_name)
+            if cached is None:
+                cached = ComponentMetadata(
+                    name=trusted_name,
+                    path=None,
+                    type=ComponentValidator._determine_component_type(trusted_class),
+                    status=ComponentStatus.READY,
+                    docstring=inspect.getdoc(trusted_class),
+                )
+                self._metadata_cache[trusted_name] = cached
+            components[trusted_name] = cached
+            self._component_cache[trusted_name] = trusted_class
 
         for search_path in self.searchpaths:
             if not await search_path.exists():
@@ -832,6 +912,11 @@ class AdvancedHTMYComponentRegistry:
 
     async def _is_cache_valid(self, metadata: ComponentMetadata) -> bool:
         """Check if cached metadata is still valid."""
+        if metadata.path is None:
+            # Trusted, pre-registered components aren't file-backed — there's
+            # no mtime to compare against. They're invalidated explicitly via
+            # register_trusted_component(), not by staleness detection.
+            return True
         try:
             current_stat = await metadata.path.stat()
             current_mtime = datetime.fromtimestamp(current_stat.st_mtime)
@@ -841,6 +926,9 @@ class AdvancedHTMYComponentRegistry:
 
     async def get_component_class(self, component_name: str) -> t.Any:
         """Get compiled component class with enhanced error handling."""
+        if component_name in self._trusted_components:
+            return self._trusted_components[component_name]
+
         if component_name in self._component_cache:
             return self._component_cache[component_name]
 
@@ -878,47 +966,33 @@ class AdvancedHTMYComponentRegistry:
     async def _load_component_from_source(
         self, source: str, metadata: ComponentMetadata
     ) -> t.Any:
-        """Load a component class from source code."""
+        """Load a component class from source through the AST sandbox.
+
+        Delegates to the module-level :func:`load_component_from_source`
+        (Phase 1.3), which parses the source with ``ast.parse`` and rejects
+        disallowed imports and ``exec``/``eval``/``compile``/``__import__``
+        calls before executing anything.
+
+        This method previously wrote ``source`` to a tempfile and ran
+        ``importlib.util.spec_from_file_location`` + ``spec.loader
+        .exec_module`` on it -- the RCE path this module's own header
+        comment says was replaced. Because ``render_component()`` routes to
+        ``render_component_advanced()`` whenever ``enable_advanced_registry``
+        is set (the default), that made this registry -- not the sandboxed
+        legacy one -- the loader actually reached at runtime, so untrusted
+        component sources were executed with the sandbox bypassed entirely.
+        See ``TestAdvancedRegistryUsesSandbox``.
+        """
+        component_name = metadata.name or (
+            metadata.path.stem if metadata.path is not None else "component"
+        )
         try:
-            # Import and analyze component safely
-            import importlib.util
-
-            # Create a temporary module to safely load the component
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-                f.write(source)
-                temp_module_path = f.name
-
-            try:
-                spec = importlib.util.spec_from_file_location(
-                    metadata.path.stem, temp_module_path
-                )
-                if spec is None or spec.loader is None:
-                    raise ComponentCompilationError(
-                        f"Could not load module from {metadata.path}"
-                    )
-
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-                component_class = None
-                for obj in vars(module).values():
-                    if (
-                        inspect.isclass(obj)
-                        and hasattr(obj, "htmy")
-                        and callable(getattr(obj, "htmy"))
-                    ):
-                        component_class = obj
-                        break
-            finally:
-                # Clean up the temporary file
-                Path(temp_module_path).unlink()
-
-            return component_class
+            return load_component_from_source(source, component_name)
         except Exception as e:
             metadata.status = ComponentStatus.ERROR
             metadata.error_message = str(e)
             raise ComponentCompilationError(
-                f"Failed to compile component '{metadata.path.stem}': {e}"
+                f"Failed to compile component '{component_name}': {e}"
             ) from e
 
     async def render_component_with_lifecycle(

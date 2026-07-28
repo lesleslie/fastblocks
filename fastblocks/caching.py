@@ -534,7 +534,14 @@ def serialize_response(response: Response) -> dict[str, t.Any]:
     return {
         "content": _base64_encodebytes(response.body).decode("ascii"),
         "status_code": response.status_code,
-        "headers": response.headers.copy(),  # type: ignore[attr-defined]
+        # `dict(...)`, not `.copy()`: neither `Headers` nor `MutableHeaders`
+        # defines `copy()` (the immutable one offers `mutablecopy()`), so this
+        # raised `AttributeError` on every cache write -- meaning no response
+        # was ever actually stored. A plain dict is also what
+        # `deserialize_response` needs, since it feeds this straight into
+        # `Response(headers=...)` and the value has to survive the cache
+        # backend's serialization.
+        "headers": dict(response.headers),
     }
 
 

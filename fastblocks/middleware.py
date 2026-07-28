@@ -401,16 +401,61 @@ class MiddlewareStackManager:
         self._initialized = False
 
     def _get_config_dependency(self) -> t.Any:
-        """Get the config dependency using Oneiric."""
-        import asyncio
+        """Resolve config from the shared Oneiric resolver.
 
-        from oneiric.core.resolution import Resolver
+        Three separate bugs made the previous implementation incapable of
+        ever returning a config, which silently disabled CSRF, session and
+        security-header middleware in production:
 
-        resolver = Resolver()
+        1. it built a private ``Resolver()`` instead of using the
+           process-wide singleton, so it could not see anything registered
+           elsewhere (``core/resolver.py`` exists precisely to prevent this);
+        2. it called ``resolve("config")`` -- the real signature is
+           ``resolve(domain, key)``, so this raised ``TypeError``; and
+        3. it wrapped that in ``asyncio.run(...)`` even though ``resolve``
+           is synchronous.
+
+        Every failure was swallowed by ``except Exception: return None``.
+        """
+        from .core.resolver import get_resolver
+
         try:
-            return asyncio.run(resolver.resolve("config"))
+            candidate = get_resolver().resolve("fastblocks", "config")
         except Exception:
+            self._warn_no_config()
             return None
+
+        if candidate is None:
+            self._warn_no_config()
+            return None
+
+        # `resolve()` returns a `Candidate` describing how to build the
+        # object, not the object itself.
+        factory = getattr(candidate, "factory", None)
+        if factory is None:
+            return candidate
+        try:
+            return factory()
+        except Exception:
+            self._warn_no_config()
+            return None
+
+    def _warn_no_config(self) -> None:
+        """Make a missing config loud instead of silently insecure.
+
+        Without a config the conditional stack (CSRF, session, security
+        headers) is skipped entirely. That must never be a silent outcome.
+        """
+        import warnings
+
+        warnings.warn(
+            "FastBlocks could not resolve a config object, so CSRF, session "
+            "and security-header middleware were NOT installed. Pass a config "
+            "explicitly (`middlewares(config=...)`) or register one under "
+            "domain 'fastblocks', key 'config'.",
+            RuntimeWarning,
+            stacklevel=3,
+        )
 
     def _get_logger_dependency(self) -> t.Any:
         """Get the logger dependency using Oneiric."""
@@ -535,5 +580,14 @@ class MiddlewareStackManager:
         }
 
 
-def middlewares() -> list[Middleware]:
-    return MiddlewareStackManager().build_stack()
+def middlewares(config: t.Any | None = None, logger: t.Any | None = None) -> list[Middleware]:
+    """Build the system middleware stack.
+
+    ``config`` is accepted (and should be supplied by the application
+    initializer, which has already resolved one) because
+    ``MiddlewareStackManager`` cannot register the conditional security stack
+    without it. This previously took no arguments and constructed the manager
+    bare, so CSRF/session/security-header middleware were never installed --
+    see ``test_middlewares_accepts_and_uses_config``.
+    """
+    return MiddlewareStackManager(config=config, logger=logger).build_stack()

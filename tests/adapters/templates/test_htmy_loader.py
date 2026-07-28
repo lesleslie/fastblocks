@@ -383,7 +383,7 @@ class TestLoaderAcceptsValidComponent:
 class TestValidatorAndRegistryUseNewLoader:
     """Validate and registry code paths now use the safe loader."""
 
-    def test_validator_does_not_call_spec_from_file_location(self) -> None:
+    async def test_validator_does_not_call_spec_from_file_location(self) -> None:
         with patch(
             "importlib.util.spec_from_file_location"
         ) as mock_spec:
@@ -405,12 +405,11 @@ class TestValidatorAndRegistryUseNewLoader:
                 )
                 path = AsyncPath(f.name)
             try:
-                # invoke through async helper to mirror real flow
-                import asyncio
-
-                asyncio.get_event_loop().run_until_complete(
-                    validator.validate_component_file(path)
-                )
+                # invoke through async helper to mirror real flow.
+                # `asyncio.get_event_loop()` raises in the main thread when no
+                # loop is running (removed implicit-loop behaviour); the suite
+                # runs `asyncio_mode = "auto"`, so just await directly.
+                await validator.validate_component_file(path)
             finally:
                 Path(f.name).unlink(missing_ok=True)
         assert mock_spec.call_count == 0
@@ -469,3 +468,77 @@ class TestLegacyExecModulePathGone:
         source = "compile('x', '<s>', 'exec')\n"
         with pytest.raises(ComponentValidationError):
             load_component_from_source(source, name="card")
+
+
+# ---------------------------------------------------------------------------
+# Regression: the *advanced* registry must not exec untrusted source.
+#
+# `render_component()` routes to `render_component_advanced()` by default
+# (`enable_advanced_registry=True`), which reaches
+# `AdvancedHTMYComponentRegistry.get_component_class()` ->
+# `_load_component_from_source()`. That method used
+# `spec_from_file_location` + `exec_module` -- the RCE path CLAUDE.md says
+# was removed -- so the AST sandbox was bypassed on the default path.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestAdvancedRegistryUsesSandbox:
+    """The advanced registry must route source loading through the AST sandbox."""
+
+    @staticmethod
+    def _metadata(tmp_path: Path, source: str) -> "ComponentMetadata":
+        from fastblocks.adapters.templates._htmy_components import (
+            ComponentMetadata,
+            ComponentType,
+        )
+
+        path = tmp_path / "evil.py"
+        path.write_text(source)
+        return ComponentMetadata(
+            name="evil", path=AsyncPath(path), type=ComponentType.BASIC
+        )
+
+    async def test_untrusted_source_has_no_side_effects(self, tmp_path: Path) -> None:
+        """Loading untrusted source must not execute it."""
+        sentinel = tmp_path / "pwned.txt"
+        source = textwrap.dedent(
+            f"""
+            import pathlib
+            pathlib.Path({str(sentinel)!r}).write_text("pwned")
+
+            class Evil:
+                def htmy(self, context):
+                    return "<div></div>"
+            """
+        )
+        registry = AdvancedHTMYComponentRegistry(searchpaths=[AsyncPath(tmp_path)])
+        metadata = self._metadata(tmp_path, source)
+
+        with pytest.raises((ComponentValidationError, ComponentCompilationError)):
+            await registry._load_component_from_source(source, metadata)
+
+        assert not sentinel.exists(), (
+            "untrusted component source was EXECUTED -- the advanced registry "
+            "bypassed the AST sandbox (RCE path)"
+        )
+
+    async def test_safe_source_still_loads(self, tmp_path: Path) -> None:
+        """A component that obeys the sandbox rules must still load."""
+        source = textwrap.dedent(
+            """
+            from dataclasses import dataclass
+
+            @dataclass
+            class Good:
+                def htmy(self, context):
+                    return "<div>ok</div>"
+            """
+        )
+        registry = AdvancedHTMYComponentRegistry(searchpaths=[AsyncPath(tmp_path)])
+        metadata = self._metadata(tmp_path, source)
+
+        cls = await registry._load_component_from_source(source, metadata)
+
+        assert cls.__name__ == "Good"
+        assert callable(cls.htmy)

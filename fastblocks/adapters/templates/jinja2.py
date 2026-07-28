@@ -947,6 +947,13 @@ class Templates(TemplatesBase):
         globals_dict["config"] = self.config  # type: ignore[attr-defined]
         globals_dict["render_block"] = templates.render_block
         globals_dict["render_component"] = self._get_htmy_component_renderer()
+        with suppress(Exception):
+            from fastblocks.core.style_registry import register_style_functions
+
+            style_name = getattr(
+                getattr(self.config, "app", None), "style", None
+            )  # type: ignore[attr-defined]
+            register_style_functions(templates.env, style_name)
         if admin:
             try:
                 from sqladmin.helpers import (

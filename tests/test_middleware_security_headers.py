@@ -183,3 +183,61 @@ def test_csrf_cookie_set_in_response() -> None:
     parsed = SimpleCookie()
     parsed.load(joined)
     assert len(parsed) >= 1, f"No cookies set: {cookies!r}"
+
+
+# ---------------------------------------------------------------------------
+# Regression: the *production* wiring must actually deliver a config.
+#
+# Every test above injects `config=` straight into MiddlewareStackManager, so
+# they pass regardless of whether real app startup ever supplies one. In
+# production `middlewares()` built `MiddlewareStackManager()` with no config,
+# and the fallback `_get_config_dependency()` called
+# `asyncio.run(Resolver().resolve("config"))` -- wrong arity on a *synchronous*
+# method, swallowed by `except Exception: return None`. Config was therefore
+# always None, `_register_conditional_middleware` returned early, and CSRF,
+# SessionMiddleware and SecureHeadersMiddleware were silently never installed.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_middlewares_accepts_and_uses_config() -> None:
+    """`middlewares(config=...)` must register the conditional security stack."""
+    from fastblocks.middleware import middlewares
+
+    stack = middlewares(config=_make_config(deployed=False))
+
+    classes = {getattr(m, "cls", None) for m in stack}
+    assert CSRFMiddleware in classes, (
+        "CSRF middleware missing from the built stack -- the production "
+        "middlewares() entry point is not propagating config"
+    )
+    assert SecureHeadersMiddleware in classes, (
+        "SecureHeaders middleware missing from the built stack"
+    )
+
+
+@pytest.mark.unit
+def test_config_dependency_uses_shared_resolver_correctly() -> None:
+    """The fallback must call the shared resolver with the real signature.
+
+    `Resolver.resolve` is synchronous and takes `(domain, key)`; it returns a
+    `Candidate` whose `.factory()` produces the instance. The old code awaited
+    it via `asyncio.run` with a single positional arg, which could only ever
+    raise.
+    """
+    from unittest.mock import patch
+
+    from fastblocks.middleware import MiddlewareStackManager
+
+    sentinel = _make_config(deployed=False)
+    candidate = MagicMock()
+    candidate.factory.return_value = sentinel
+
+    resolver = MagicMock()
+    resolver.resolve.return_value = candidate
+
+    with patch("fastblocks.core.resolver.get_resolver", return_value=resolver):
+        resolved = MiddlewareStackManager()._get_config_dependency()
+
+    resolver.resolve.assert_called_once_with("fastblocks", "config")
+    assert resolved is sentinel

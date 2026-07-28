@@ -351,7 +351,10 @@ class FastBlocks(Starlette):
         from .middleware import middlewares
 
         middleware_list = self._build_base_middleware_list(error_handler)
-        system_middleware = middlewares()
+        # Pass the config resolved just above: without it
+        # MiddlewareStackManager cannot register the conditional security
+        # stack (CSRF, session, security headers) and silently skips it.
+        system_middleware = middlewares(config=config, logger=logger)
         system_middleware = self._apply_system_middleware_overrides(
             system_middleware,
             logger,
