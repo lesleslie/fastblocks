@@ -8,10 +8,13 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import httpx
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 from pydantic import SecretStr
 
 from ._base import ImagesBase, ImagesBaseSettings
+
+_log = get_logger("fastblocks.adapters.images.cloudflare")
 
 depends = Resolver()
 
@@ -289,7 +292,15 @@ def register_cloudflare_filters(env: Any) -> None:
                     )
                 )
                 srcset_parts.append(f"{url} {width}w")
-            except Exception:
+            except Exception as exc:  # noqa: BLE001
+                # Per-size failures should not collapse the entire srcset; skip
+                # but record so operators can see which descriptor dropped.
+                _log.warning(
+                    "cloudflare_responsive_img: skipping width=%s for %s: %s",
+                    width,
+                    image_id,
+                    exc,
+                )
                 continue
 
         # Build img tag with srcset
@@ -319,7 +330,7 @@ Images = CloudflareImages
 __all__ = [
     "CloudflareImages",
     "CloudflareImagesSettings",
-    "register_cloudflare_filters",
     "Images",
     "ImagesSettings",
+    "register_cloudflare_filters",
 ]

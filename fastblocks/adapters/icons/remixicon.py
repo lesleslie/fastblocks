@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
@@ -36,63 +37,67 @@ class RemixIconSettings(IconsBaseSettings):
     default_size: str = "1em"
 
     # Icon variants
-    enabled_variants: list[str] = ["line", "fill"]
+    enabled_variants: list[str] = Field(default_factory=lambda: ["line", "fill"])
 
     # Icon mapping for common names
-    icon_aliases: dict[str, str] = {
-        "home": "home-line",
-        "user": "user-line",
-        "settings": "settings-line",
-        "search": "search-line",
-        "menu": "menu-line",
-        "close": "close-line",
-        "check": "check-line",
-        "error": "error-warning-line",
-        "info": "information-line",
-        "success": "checkbox-circle-line",
-        "warning": "alert-line",
-        "edit": "edit-line",
-        "delete": "delete-bin-line",
-        "save": "save-line",
-        "download": "download-line",
-        "upload": "upload-line",
-        "email": "mail-line",
-        "phone": "phone-line",
-        "location": "map-pin-line",
-        "calendar": "calendar-line",
-        "clock": "time-line",
-        "heart": "heart-line",
-        "star": "star-line",
-        "share": "share-line",
-        "link": "external-link-line",
-        "copy": "file-copy-line",
-        "cut": "scissors-cut-line",
-        "paste": "clipboard-line",
-        "undo": "arrow-go-back-line",
-        "redo": "arrow-go-forward-line",
-        "refresh": "refresh-line",
-        "logout": "logout-box-r-line",
-        "login": "login-box-line",
-        "plus": "add-line",
-        "minus": "subtract-line",
-        "eye": "eye-line",
-        "eye-off": "eye-off-line",
-        "lock": "lock-line",
-        "unlock": "lock-unlock-line",
-    }
+    icon_aliases: dict[str, str] = Field(
+        default_factory=lambda: {
+            "home": "home-line",
+            "user": "user-line",
+            "settings": "settings-line",
+            "search": "search-line",
+            "menu": "menu-line",
+            "close": "close-line",
+            "check": "check-line",
+            "error": "error-warning-line",
+            "info": "information-line",
+            "success": "checkbox-circle-line",
+            "warning": "alert-line",
+            "edit": "edit-line",
+            "delete": "delete-bin-line",
+            "save": "save-line",
+            "download": "download-line",
+            "upload": "upload-line",
+            "email": "mail-line",
+            "phone": "phone-line",
+            "location": "map-pin-line",
+            "calendar": "calendar-line",
+            "clock": "time-line",
+            "heart": "heart-line",
+            "star": "star-line",
+            "share": "share-line",
+            "link": "external-link-line",
+            "copy": "file-copy-line",
+            "cut": "scissors-cut-line",
+            "paste": "clipboard-line",
+            "undo": "arrow-go-back-line",
+            "redo": "arrow-go-forward-line",
+            "refresh": "refresh-line",
+            "logout": "logout-box-r-line",
+            "login": "login-box-line",
+            "plus": "add-line",
+            "minus": "subtract-line",
+            "eye": "eye-line",
+            "eye-off": "eye-off-line",
+            "lock": "lock-line",
+            "unlock": "lock-unlock-line",
+        }
+    )
 
     # Size presets
-    size_presets: dict[str, str] = {
-        "xs": "0.75em",
-        "sm": "0.875em",
-        "md": "1em",
-        "lg": "1.125em",
-        "xl": "1.25em",
-        "2xl": "1.5em",
-        "3xl": "1.875em",
-        "4xl": "2.25em",
-        "5xl": "3em",
-    }
+    size_presets: dict[str, str] = Field(
+        default_factory=lambda: {
+            "xs": "0.75em",
+            "sm": "0.875em",
+            "md": "1em",
+            "lg": "1.125em",
+            "xl": "1.25em",
+            "2xl": "1.5em",
+            "3xl": "1.875em",
+            "4xl": "2.25em",
+            "5xl": "3em",
+        }
+    )
 
 
 class RemixIcon(IconsBase):
@@ -754,9 +759,9 @@ with suppress(Exception):
 
 # ACB 0.19.0+ compatibility
 __all__ = [
+    "Icons",
+    "IconsSettings",
     "RemixIcon",
     "RemixIconSettings",
     "register_remixicon_filters",
-    "Icons",
-    "IconsSettings",
 ]

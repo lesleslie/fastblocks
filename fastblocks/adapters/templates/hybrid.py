@@ -22,6 +22,10 @@ import typing as t
 from contextlib import suppress
 from uuid import UUID
 
+from oneiric.core.logging import get_logger
+
+_log = get_logger("fastblocks.adapters.templates.hybrid")
+
 
 # Custom AdapterStatus for Oneiric compatibility
 class AdapterStatus:
@@ -66,7 +70,14 @@ class HybridTemplates:
         # Get or create base templates
         try:
             self.base_templates = depends.resolve("fastblocks", "templates")
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            # No templates registered yet -- construct a fresh one.
+            # Logged because this is a structural mismatch the
+            # operator should know about.
+            _log.warning(
+                "HybridTemplates.initialize: templates fallback: %s",
+                type(exc).__name__,
+            )
             self.base_templates = Templates()
             await self.base_templates.init()
 
@@ -421,7 +432,7 @@ class HybridTemplates:
             await self.initialize()
 
         compiled = await self.hybrid_manager.precompile_templates()  # type: ignore[union-attr]
-        return {name: True for name in compiled.keys()}
+        return {name: True for name in compiled}
 
     async def get_template_dependencies(self, template_name: str) -> list[str]:
         """Get dependencies for a template."""

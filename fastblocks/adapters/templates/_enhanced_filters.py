@@ -21,7 +21,10 @@ from contextlib import suppress
 from uuid import UUID
 
 # Oneiric imports
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.templates._enhanced_filters")
 
 
 # Custom implementations for ACB compatibility
@@ -140,7 +143,13 @@ def cf_responsive_image(
 
         return f"<img {' '.join(attr_parts)}>"
 
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        # No cloudflare adapter in scope (tests, partial boot, or
+        # replacement adapter). Return a bare ``<img>`` so the page
+        # still renders.
+        _log.warning(
+            "cf_responsive_image: cloudflare unavailable: %s", type(exc).__name__
+        )
         return f'<img src="{image_id}" alt="{alt}">'
 
 

@@ -4,17 +4,20 @@ import json
 import os
 from contextlib import suppress
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 import yaml
+from oneiric.core.logging import get_logger
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from .discovery import AdapterInfo
 from .registry import AdapterRegistry
+
+logger = get_logger(__name__)
 
 
 class ConfigurationProfile(StrEnum):
@@ -68,8 +71,8 @@ class ConfigurationSchema(BaseModel):
 
     version: str = "1.0"
     profile: ConfigurationProfile = ConfigurationProfile.DEVELOPMENT
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     adapters: dict[str, AdapterConfiguration] = Field(default_factory=dict)
     global_settings: dict[str, Any] = Field(default_factory=dict)
     global_environment: list[EnvironmentVariable] = Field(default_factory=list)
@@ -273,7 +276,7 @@ class ConfigurationManager:
         except ValidationError as e:
             result.status = ConfigurationStatus.ERROR
             result.errors.extend([str(error) for error in e.errors()])
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError) as e:
             result.status = ConfigurationStatus.ERROR
             result.errors.append(f"Configuration validation error: {e}")
 
@@ -323,11 +326,15 @@ class ConfigurationManager:
         if adapter_config.enabled:
             # Check required environment variables
             for env_var in adapter_config.environment_variables:
-                if env_var.required and not env_var.value and not env_var.default:
-                    if env_var.name not in os.environ:
-                        result["warnings"].append(
-                            f"Required environment variable {env_var.name} is not set"
-                        )
+                if (
+                    env_var.required
+                    and not env_var.value
+                    and not env_var.default
+                    and env_var.name not in os.environ
+                ):
+                    result["warnings"].append(
+                        f"Required environment variable {env_var.name} is not set"
+                    )
 
         return result
 
@@ -405,7 +412,9 @@ class ConfigurationManager:
     ) -> Path:
         """Save configuration to YAML file."""
         if not name:
-            name = f"{config.profile.value}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            name = (
+                f"{config.profile.value}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
+            )
 
         config_file = self.config_dir / f"{name}.yaml"
 
@@ -606,7 +615,7 @@ class ConfigurationManager:
             id=backup_id,
             name=name,
             description=description,
-            created_at=datetime.now(),
+            created_at=datetime.now(UTC),
             profile=config.profile,
             file_path=backup_file,
             checksum=checksum,
@@ -653,8 +662,10 @@ class ConfigurationManager:
                 # Verify file still exists
                 if backup.file_path.exists():
                     backups.append(backup)
-            except Exception:
-                # Skip corrupted metadata files
+            except (OSError, json.JSONDecodeError, KeyError, ValueError):
+                logger.exception(
+                    "Skipping corrupted backup metadata file %s", metadata_file
+                )
                 continue
 
         return sorted(backups, key=lambda b: b.created_at, reverse=True)

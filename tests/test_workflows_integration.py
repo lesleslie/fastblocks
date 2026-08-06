@@ -1,33 +1,27 @@
-"""Tests for FastBlocks ACB Workflows integration.
+"""Tests for FastBlocks Oneiric Workflows integration.
 
 Verifies workflow orchestration, background jobs, and graceful degradation.
 """
 
 import pytest
 
-# Try to import workflows integration
-try:
-    from fastblocks._workflows_integration import (
-        ACB_WORKFLOWS_AVAILABLE,
-        FastBlocksWorkflowService,
-        execute_cache_warming,
-        execute_performance_optimization,
-        execute_template_cleanup,
-        get_workflow_service,
-        register_fastblocks_workflows,
-    )
-
-    WORKFLOWS_INTEGRATION_AVAILABLE = True
-except ImportError:
-    WORKFLOWS_INTEGRATION_AVAILABLE = False
-    pytestmark = pytest.mark.skip(reason="Workflows integration not available")
+# Import workflows integration (no fallback — the Oneiric shim is required).
+from fastblocks._workflows_integration import (
+    FastBlocksWorkflowService,
+    execute_cache_warming,
+    execute_performance_optimization,
+    execute_template_cleanup,
+    get_workflow_service,
+    oneiric_workflows_available,
+    register_fastblocks_workflows,
+)
 
 
 @pytest.fixture
 def workflow_service():
     """Get workflow service instance."""
-    if not WORKFLOWS_INTEGRATION_AVAILABLE:
-        pytest.skip("Workflows integration not available")
+    if not oneiric_workflows_available:
+        pytest.skip("Oneiric workflows integration not available")
     return get_workflow_service()
 
 
@@ -47,8 +41,8 @@ class TestWorkflowServiceBasics:
         assert isinstance(workflow_service.available, bool)
 
     def test_acb_availability_flag(self):
-        """Test ACB_WORKFLOWS_AVAILABLE flag."""
-        assert isinstance(ACB_WORKFLOWS_AVAILABLE, bool)
+        """Test oneiric_workflows_available flag."""
+        assert isinstance(oneiric_workflows_available, bool)
 
 
 @pytest.mark.integration
@@ -550,7 +544,7 @@ class TestRegistration:
             "execute_template_cleanup",
             "execute_performance_optimization",
             "register_fastblocks_workflows",
-            "ACB_WORKFLOWS_AVAILABLE",
+            "oneiric_workflows_available",
         ]
 
         from fastblocks import _workflows_integration

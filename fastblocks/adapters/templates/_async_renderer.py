@@ -25,7 +25,10 @@ from enum import Enum
 from uuid import UUID
 
 # Oneiric imports
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.templates._async_renderer")
 
 
 # Custom implementations for ACB compatibility
@@ -130,7 +133,11 @@ class AsyncTemplateRenderer:
         if not self.base_templates:
             try:
                 self.base_templates = await depends.resolve("fastblocks", "templates")
-            except Exception:
+            except Exception as exc:  # noqa: BLE001
+                _log.warning(
+                    "AsyncTemplateRenderer.initialize: templates fallback: %s",
+                    type(exc).__name__,
+                )
                 self.base_templates = Templates()
                 await self.base_templates.init()
 
@@ -139,7 +146,11 @@ class AsyncTemplateRenderer:
                 self.hybrid_manager = await depends.resolve(
                     "fastblocks", "hybrid_template_manager"
                 )
-            except Exception:
+            except Exception as exc:  # noqa: BLE001
+                _log.warning(
+                    "AsyncTemplateRenderer.initialize: hybrid_manager fallback: %s",
+                    type(exc).__name__,
+                )
                 self.hybrid_manager = HybridTemplatesManager()
                 await self.hybrid_manager.initialize()
 
@@ -172,7 +183,10 @@ class AsyncTemplateRenderer:
 
             return result
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Renderer boundary: never raise. Logged so an operator
+            # can correlate the failed template by name & timing.
+            _log.exception("AsyncTemplateRenderer.render: %s", type(e).__name__)
             return self._create_error_result(
                 str(e), render_time=time.time() - start_time, status_code=500
             )
@@ -289,7 +303,16 @@ class AsyncTemplateRenderer:
             return await self.hybrid_manager.validate_template(
                 source, render_context.template_name, render_context.context
             )
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            # Pre-render validation hit an unexpected error (env
+            # crash, missing module). Returning ``is_valid=False``
+            # with empty lists tells the renderer to proceed
+            # optimistically and surface the real error from
+            # ``render()`` instead.
+            _log.warning(
+                "AsyncTemplateRenderer._validate_before_render: %s",
+                type(exc).__name__,
+            )
             return TemplateValidationResult(is_valid=False, errors=[], warnings=[])
 
     async def _check_cache(self, render_context: RenderContext) -> RenderResult | None:
@@ -627,7 +650,7 @@ class AsyncTemplateRenderer:
         """Clear render cache, optionally for specific template pattern."""
         if template_pattern:
             keys_to_remove = [
-                key for key in self._render_cache.keys() if template_pattern in key
+                key for key in self._render_cache if template_pattern in key
             ]
             for key in keys_to_remove:
                 del self._render_cache[key]

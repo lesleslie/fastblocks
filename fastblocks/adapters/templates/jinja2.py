@@ -48,7 +48,11 @@ from pathlib import Path
 from uuid import UUID
 
 from oneiric.core.config import OneiricSettings
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+from pydantic import Field
+
+_log = get_logger("fastblocks.adapters.templates.jinja2")
 
 # Add parent directory to path for helper import
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -130,7 +134,7 @@ def _try_resolve_sync(key: str) -> t.Any:
     try:
         # For fallback and testing - use depends.get if it exists
         if hasattr(depends, "get"):
-            return getattr(depends, "get")(key)
+            return depends.get(key)
 
         # Try to await the resolve call synchronously
         import asyncio
@@ -139,9 +143,13 @@ def _try_resolve_sync(key: str) -> t.Any:
         loop = asyncio.new_event_loop()
         try:
             return loop.run_until_complete(result)
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            _log.warning(
+                "jinja2._try_resolve_sync(%r): inner loop failed: %s", key, exc
+            )
             return None
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("jinja2._try_resolve_sync(%r): outer failed: %s", key, exc)
         return None
 
 
@@ -350,8 +358,16 @@ class FileSystemLoader(BaseTemplateLoader):
             debug(f"Template sync result: {result.sync_status} for {path}")
             return resp, local_mtime
 
-        except Exception as e:
-            debug(f"Sync action failed for {path}: {e}, falling back to primitive sync")
+        except Exception as e:  # noqa: BLE001
+            # The sync subsystem crashed (transient backend error,
+            # permission failure, etc.). Log and fall through to the
+            # primitive storage-fallback path so the renderer still
+            # gets bytes for the template.
+            _log.exception(
+                "FileSystemLoader._sync_template_file: sync action failed for %s: %s",
+                path,
+                e,
+            )
             return await self._sync_from_storage_fallback(path, storage_path)
 
     async def _sync_from_storage_fallback(
@@ -496,9 +512,15 @@ class StorageLoader(BaseTemplateLoader):
             )
             return resp, local_mtime
 
-        except Exception as e:
-            debug(
-                f"Storage sync failed for {storage_path}: {e}, reading from storage only"
+        except Exception as e:  # noqa: BLE001
+            # The sync subsystem could not reconcile the storage layer
+            # with the filesystem copy. Logging then falling back to
+            # "read storage directly" preserves the renderer contract:
+            # it gets template bytes either way.
+            _log.exception(
+                "StorageLoader._sync_storage_with_filesystem: sync failed for %s: %s",
+                storage_path,
+                e,
             )
             resp = await self.storage.templates.open(storage_path)
             stat = await self.storage.templates.stat(storage_path)
@@ -728,8 +750,11 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
                 result = await loader.get_source_async(template)
                 return result
             except TemplateNotFound:
-                continue
-            except Exception:  # nosec B112
+                # The next loader may have it; only "missing template"
+                # is a recoverable signal at this level. Loader
+                # syntax errors, permission failures, and programming
+                # mistakes must propagate to the renderer so they are
+                # not silently swallowed.
                 continue
         raise TemplateNotFound(str(template))
 
@@ -790,17 +815,19 @@ def reload_loader() -> None:
 
 class TemplatesSettings(TemplatesBaseSettings):
     loader: str | None = None
-    extensions: list[str] = []
-    delimiters: dict[str, str] = {
-        "block_start_string": "[%",
-        "block_end_string": "%]",
-        "variable_start_string": "[[",
-        "variable_end_string": "]]",
-        "comment_start_string": "[#",
-        "comment_end_string": "#]",
-    }
-    globals: dict[str, t.Any] = {}
-    context_processors: list[str] = []
+    extensions: list[str] = Field(default_factory=list)
+    delimiters: dict[str, str] = Field(
+        default_factory=lambda: {
+            "block_start_string": "[%",
+            "block_end_string": "%]",
+            "variable_start_string": "[[",
+            "variable_end_string": "]]",
+            "comment_start_string": "[#",
+            "comment_end_string": "#]",
+        }
+    )
+    globals: dict[str, t.Any] = Field(default_factory=dict)
+    context_processors: list[str] = Field(default_factory=list)
 
     def __init__(self, **data: t.Any) -> None:
         from pydantic import BaseModel
@@ -811,7 +838,7 @@ class TemplatesSettings(TemplatesBaseSettings):
         try:
             models = _try_resolve_sync("models")
             self.globals["models"] = models
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.globals["models"] = None
 
 
@@ -950,9 +977,7 @@ class Templates(TemplatesBase):
         with suppress(Exception):
             from fastblocks.core.style_registry import register_style_functions
 
-            style_name = getattr(
-                getattr(self.config, "app", None), "style", None
-            )  # type: ignore[attr-defined]
+            style_name = getattr(getattr(self.config, "app", None), "style", None)  # type: ignore[attr-defined]
             register_style_functions(templates.env, style_name)
         if admin:
             try:
@@ -1038,7 +1063,17 @@ class Templates(TemplatesBase):
                         f"HTMY adapter not available for component '{component_name}'"
                     )
                     return f"<!-- HTMY adapter not available for '{component_name}' -->"
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
+                # The renderer must not raise from inside Jinja2 eval --
+                # log and return a comment stub. Different exceptions
+                # mean different failure modes (HS lookup vs adapter
+                # internal), so we record the type explicitly.
+                _log.exception(
+                    "Templates._get_htmy_component_renderer: HTMY "
+                    "render_component(%r) raised %s",
+                    component_name,
+                    type(e).__name__,
+                )
                 debug(
                     f"Failed to render component '{component_name}' via HTMY adapter: {e}"
                 )
@@ -1066,8 +1101,17 @@ class Templates(TemplatesBase):
                         factory=lambda: app_adapter,
                         metadata={"name": "app", "category": "app"},
                     )
-                except Exception:
-                    from types import SimpleNamespace as SimpleNamespace
+                except Exception as exc:  # noqa: BLE001
+                    # Both the dependency resolver and the direct import
+                    # failed. Fall back to a stub so init_envs has *some*
+                    # adapter-like object to query. Logged so operators
+                    # can tell the difference between a missing dependency
+                    # and an unexpected impl failure.
+                    _log.exception(
+                        "Templates.init: app-adapter fallback failed: %s",
+                        type(exc).__name__,
+                    )
+                    from types import SimpleNamespace
 
                     app_adapter = SimpleNamespace(name="app", category="app")
                     debug(
@@ -1175,7 +1219,15 @@ class Templates(TemplatesBase):
                     status_code=500,
                     headers=headers,
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Last-resort safety net: never let an unhandled adapter
+            # failure escape into the renderer. Return a 500 with the
+            # exception name visible so operators can correlate.
+            _log.exception(
+                "Templates.render_component(%r): adapter raised %s",
+                component,
+                type(e).__name__,
+            )
             from starlette.responses import HTMLResponse
 
             return HTMLResponse(

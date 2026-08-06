@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import typing as t
 from contextvars import ContextVar
 
 # Oneiric imports
 from oneiric.core.config import OneiricSettings
+from oneiric.core.logging import get_logger
 from pydantic import UUID4, EmailStr, SecretStr
 from starlette.authentication import UnauthenticatedUser
 from fastblocks.htmx import HtmxRequest
+
+_log = get_logger("fastblocks.adapters.auth._base")
 
 
 class AuthBaseSettings(OneiricSettings):  # type: ignore[misc]
@@ -57,14 +62,21 @@ class AuthProtocol(t.Protocol):
 class AuthBase:
     """Auth base adapter using Oneiric."""
 
-    _current_user: ContextVar[t.Any] = ContextVar(
+    # B039: ``ContextVar`` defaults must not be mutable instances. Use a
+    # ``None`` sentinel and lazily construct a fresh ``UnauthenticatedUser``
+    # the first time ``current_user`` is read with no surrounding token.
+    _current_user: ContextVar[UnauthenticatedUser | None] = ContextVar(
         "current_user",
-        default=UnauthenticatedUser(),
+        default=None,
     )
 
     @property
-    def current_user(self) -> t.Any:
-        return self._current_user.get()
+    def current_user(self) -> UnauthenticatedUser:
+        # ``get()`` returns the request-scoped value when one was set
+        # via ``_current_user.set(...)``; otherwise we materialize a fresh
+        # ``UnauthenticatedUser`` for the absent-context case.
+        value = self._current_user.get()
+        return value if value is not None else UnauthenticatedUser()
 
     @property
     def token_id(self) -> str:

@@ -1,19 +1,21 @@
 """Middleware gathering and stack building functionality."""
 
 import typing as t
-from contextlib import suppress
 from enum import Enum
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
 # Migration from ACB to Oneiric
 depends = Resolver()
 
+_log = get_logger("fastblocks.actions.gather.middleware")
+
+
 # Debug function: Oneiric-backed replacement for the legacy acb.debug symbol
 def debug(msg: str) -> None:
     """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
-    from oneiric.core.logging import get_logger
-    get_logger("actions.gather.middleware").debug(msg)
+    _log.debug(msg)
 
 
 from starlette.middleware import Middleware
@@ -132,16 +134,14 @@ async def _gather_default_middleware() -> dict[MiddlewarePosition, t.Any]:
                 middleware_map[position] = middleware
         debug(f"Gathered {len(middleware_map)} default middleware components")
         return middleware_map
-    except Exception as e:
+    except (ImportError, AttributeError, ValueError) as e:
         debug(f"Error gathering default middleware: {e}")
         return {}
 
 
 async def _gather_custom_middleware() -> list[Middleware]:
     custom_middleware = []
-    with suppress(Exception):
-        # MIGRATED: Removed ACB import - using Oneiric equivalent
-
+    try:
         config = await depends.resolve("fastblocks", "config")
         if hasattr(config, "middleware") and hasattr(config.middleware, "custom"):
             for middleware_path in config.middleware.custom:
@@ -152,8 +152,16 @@ async def _gather_custom_middleware() -> list[Middleware]:
                     middleware = Middleware(middleware_class)
                     custom_middleware.append(middleware)
                     debug(f"Added custom middleware: {class_name}")
-                except Exception as e:
+                except (
+                    ImportError,
+                    ModuleNotFoundError,
+                    AttributeError,
+                    ValueError,
+                ) as e:
                     debug(f"Error loading custom middleware {middleware_path}: {e}")
+    except (ImportError, AttributeError, ValueError) as e:
+        debug(f"Error gathering custom middleware: {e}")
+        return []
 
     return custom_middleware
 
@@ -186,7 +194,7 @@ def _add_system_middleware(
 ) -> None:
     try:
         _apply_system_middleware(stack, system_overrides)
-    except Exception as e:
+    except (ImportError, AttributeError, ValueError) as e:
         debug(f"Error building system middleware: {e}")
 
 

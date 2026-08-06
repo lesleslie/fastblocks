@@ -23,9 +23,10 @@ from fastblocks._events_integration import (
     register_fastblocks_event_handlers,
 )
 
-# acb replaced by oneiric; legacy ACB_EVENTS_AVAILABLE flag is always False
-# under oneiric (events live in-process via the local FastBlocksEventPublisher).
-ACB_EVENTS_AVAILABLE = False
+# Oneiric-native events: live in-process via the FastBlocksEventPublisher.
+from fastblocks._events_integration import oneiric_events_available
+
+ACB_EVENTS_AVAILABLE = oneiric_events_available
 
 
 @pytest.fixture

@@ -1,20 +1,20 @@
 """Sync strategies for handling synchronization operations with conflict resolution."""
 
+from __future__ import annotations
+
 import asyncio
 import typing as t
 from enum import Enum
 from pathlib import Path
 
-from oneiric.core.resolution import Resolver
+from oneiric.core.logging import get_logger
 
-# Migration from ACB to Oneiric
-depends = Resolver()
+_log = get_logger("fastblocks.actions.sync.strategies")
 
-# Debug function: Oneiric-backed replacement for the legacy acb.debug symbol
+
 def debug(msg: str) -> None:
-    """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
-    from oneiric.core.logging import get_logger
-    get_logger("actions.sync.strategies").debug(msg)
+    """Log a sync-strategy debug message."""
+    _log.debug(msg)
 
 
 class SyncDirection(Enum):
@@ -62,15 +62,39 @@ class SyncResult:
         *,
         synced_items: list[str] | None = None,
         conflicts: list[dict[str, t.Any]] | None = None,
-        errors: list[Exception] | None = None,
+        errors: list[Exception | str] | None = None,
         skipped: list[str] | None = None,
         backed_up: list[str] | None = None,
+        completed: dict[str, bool] | None = None,
+        item_errors: dict[str, str] | None = None,
+        primary_error: str | None = None,
+        cleanup_errors: list[str] | None = None,
     ) -> None:
         self.synced_items = synced_items if synced_items is not None else []
         self.conflicts = conflicts if conflicts is not None else []
         self.errors = errors if errors is not None else []
         self.skipped = skipped if skipped is not None else []
         self.backed_up = backed_up if backed_up is not None else []
+        self.completed = completed if completed is not None else {}
+        self.item_errors = item_errors if item_errors is not None else {}
+        self.primary_error = primary_error
+        self.cleanup_errors = cleanup_errors if cleanup_errors is not None else []
+
+    def record_completed(self, item: str) -> None:
+        """Record a successfully completed independent sync item."""
+        self.completed[item] = True
+
+    def record_item_error(self, item: str, error: Exception) -> None:
+        """Record an independent item failure without aborting its batch."""
+        self.completed[item] = False
+        self.item_errors[item] = str(error)
+        self.errors.append(error)
+
+    def record_primary_error(self, error: Exception) -> None:
+        """Retain the first transfer or write failure as the primary error."""
+        if self.primary_error is None:
+            self.primary_error = str(error)
+        self.errors.append(error)
 
     @property
     def total_processed(self) -> int:
@@ -91,7 +115,7 @@ class SyncResult:
 
     @property
     def has_errors(self) -> bool:
-        return len(self.errors) > 0
+        return bool(self.errors or self.item_errors or self.cleanup_errors)
 
     @property
     def is_success(self) -> bool:
@@ -168,9 +192,10 @@ async def _execute_sequential_sync(
             if isinstance(task_result, dict):
                 _merge_sync_result(result, task_result)
 
-        except Exception as e:
+        # Sync tasks may execute pluggable storage/cache implementations.
+        except Exception as e:  # noqa: BLE001, RUF100
             result.errors.append(e)
-            debug(f"Sync task failed: {e}")
+            _log.exception("Sync item failed: %s", task)
 
 
 async def _execute_with_retry(
@@ -246,8 +271,8 @@ async def create_backup(file_path: Path, suffix: str | None = None) -> Path:
             debug(f"Created backup: {backup_path}")
 
         return backup_path
-    except Exception as e:
-        debug(f"Error creating backup for {file_path}: {e}")
+    except OSError:
+        _log.exception("Error creating backup for %s", file_path)
         raise
 
 
@@ -291,8 +316,8 @@ async def get_file_info(file_path: Path) -> dict[str, t.Any]:
             "content_hash": content_hash,
             "content": content,
         }
-    except Exception as e:
-        debug(f"Error getting file info for {file_path}: {e}")
+    except OSError as e:
+        _log.exception("Error getting file info for %s", file_path)
         return {
             "exists": False,
             "size": 0,
@@ -324,13 +349,19 @@ def _check_missing_files(
     remote_exists: bool,
     direction: SyncDirection,
 ) -> tuple[bool, str] | None:
-    if not local_exists and remote_exists:
-        if direction in (SyncDirection.PULL, SyncDirection.BIDIRECTIONAL):
-            return True, "local_missing"
+    if (
+        not local_exists
+        and remote_exists
+        and direction in (SyncDirection.PULL, SyncDirection.BIDIRECTIONAL)
+    ):
+        return True, "local_missing"
 
-    if local_exists and not remote_exists:
-        if direction in (SyncDirection.PUSH, SyncDirection.BIDIRECTIONAL):
-            return True, "remote_missing"
+    if (
+        local_exists
+        and not remote_exists
+        and direction in (SyncDirection.PUSH, SyncDirection.BIDIRECTIONAL)
+    ):
+        return True, "remote_missing"
 
     if not local_exists and not remote_exists:
         return False, "both_missing"

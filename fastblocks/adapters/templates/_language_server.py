@@ -8,6 +8,7 @@ from uuid import UUID
 
 from oneiric.core.config import OneiricSettings
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -36,8 +37,10 @@ class LanguageServerSettings(OneiricSettings):  # type: ignore[misc]
     enable_signature_help: bool = True
 
     # Performance settings
-    completion_trigger_characters: list[str] = ["[", "|", ".", "("]
-    signature_trigger_characters: list[str] = ["(", ","]
+    completion_trigger_characters: list[str] = Field(
+        default_factory=lambda: ["[", "|", ".", "("]
+    )
+    signature_trigger_characters: list[str] = Field(default_factory=lambda: ["(", ","])
     diagnostic_delay_ms: int = 500
     completion_timeout_ms: int = 1000
 
@@ -508,9 +511,9 @@ def generate_textmate_grammar() -> dict[str, Any]:
 
 # ACB 0.19.0+ compatibility
 __all__ = [
-    "FastBlocksLanguageServer",
     "FastBlocksLanguageClient",
+    "FastBlocksLanguageServer",
     "LanguageServerSettings",
-    "generate_vscode_extension",
     "generate_textmate_grammar",
+    "generate_vscode_extension",
 ]

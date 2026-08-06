@@ -142,7 +142,10 @@ class FastBlocksApp(FastBlocks):
     async def post_startup(self) -> None:
         try:
             await self._display_fancy_startup()
-        except Exception:
+        except Exception:  # noqa: BLE001
+            # Fancy startup depends on optional ``aioconsole`` and
+            # ``pyfiglet`` -- fall back to the simple variant on any
+            # import or render failure so startup always succeeds.
             await self._display_simple_startup()
 
     @asynccontextmanager
@@ -151,10 +154,10 @@ class FastBlocksApp(FastBlocks):
             logger = getattr(self, "logger", None)
             if logger:
                 logger.info("FastBlocks application starting up")
-        except Exception as e:
+        except Exception:
             logger = getattr(self, "logger", None)
             if logger:
-                logger.exception(f"Error during startup: {e}")
+                logger.exception("Error during startup")
             raise
         yield
         logger = getattr(self, "logger", None)
@@ -273,8 +276,10 @@ class App(AppBase):
     async def lifespan(self, app: FastBlocks) -> t.AsyncIterator[None]:
         try:
             await self._startup_sequence(app)
-        except Exception as e:
-            self.logger.exception(f"Error during startup: {e}")
+        except Exception:
+            # Fail-loud: log + re-raise so Starlette surfaces the
+            # startup failure rather than silently serving traffic.
+            self.logger.exception("Error during startup")
             raise
         yield
         self.logger.critical("Application shut down")
@@ -282,8 +287,8 @@ class App(AppBase):
             await self._shutdown_logger()
         except TimeoutError:
             self.logger.warning("Logger completion timed out, forcing shutdown")
-        except Exception as e:
-            self.logger.exception(f"Logger completion failed: {e}")
+        except Exception:
+            self.logger.exception("Logger completion failed")
         finally:
             with suppress(Exception):
                 self._cancel_remaining_tasks()

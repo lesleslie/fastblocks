@@ -11,7 +11,7 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
-def ensure_cli_module():  # noqa: C901
+def ensure_cli_module():
     """Ensure the CLI module is importable for tests."""
     # ACB modules should already be mocked via conftest.py
 

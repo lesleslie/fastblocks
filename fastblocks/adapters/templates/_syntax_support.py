@@ -19,8 +19,6 @@ depends = Resolver()
 class Settings(OneiricSettings):  # type: ignore[misc]
     """Base settings class for Oneiric compatibility."""
 
-    pass
-
 
 @dataclass
 class CompletionItem:
@@ -682,9 +680,7 @@ class FastBlocksSyntaxSupport:
             if any(
                 stripped.startswith(f"[% {block}")
                 for block in ("if", "for", "block", "macro")
-            ):
-                indent_level += 1
-            elif stripped.startswith("[% else"):
+            ) or stripped.startswith("[% else"):
                 indent_level += 1
 
         return "\n".join(formatted_lines)
@@ -724,9 +720,9 @@ def register_syntax_filters(env: Any) -> None:
 
 # ACB 0.19.0+ compatibility
 __all__ = [
-    "FastBlocksSyntaxSupport",
-    "FastBlocksSyntaxSettings",
     "CompletionItem",
+    "FastBlocksSyntaxSettings",
+    "FastBlocksSyntaxSupport",
     "SyntaxError",
     "register_syntax_filters",
 ]

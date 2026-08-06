@@ -1,9 +1,11 @@
 """Tests for cache synchronization functionality."""
 
+from __future__ import annotations
+
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastblocks.actions.sync.cache import CacheSyncResult, sync_cache
+from fastblocks.actions.sync.cache import CacheSyncResult, _clear_cache, sync_cache
 from fastblocks.actions.sync.strategies import SyncStrategy
 
 
@@ -34,12 +36,28 @@ def mock_strategy():
 def mock_depends_get(mock_cache):
     """Create a mock for depends.resolve that returns the cache adapter."""
 
-    async def _resolve(domain, key):
+    async def _resolve(_resolver, domain, key):
         if domain == "fastblocks" and key == "cache":
             return mock_cache
         return None
 
     return _resolve
+
+
+async def test_sync_records_one_namespace_failure_and_continues() -> None:
+    cache = AsyncMock()
+
+    async def clear_namespace(namespace: str) -> None:
+        if namespace == "broken":
+            raise RuntimeError("namespace failed")
+
+    cache.clear.side_effect = clear_namespace
+    result = CacheSyncResult()
+
+    await _clear_cache(cache, ["good", "broken"], SyncStrategy(), result)
+
+    assert result.completed["good"] is True
+    assert result.item_errors["broken"] == "namespace failed"
 
 
 class TestCacheSyncResult:
@@ -76,10 +94,12 @@ class TestSyncCache:
     async def test_sync_cache_no_cache_adapter(self, mock_strategy):
         """Test sync_cache handles missing cache adapter."""
 
-        async def _resolve_none(domain, key):
+        async def _resolve_none(_resolver, domain, key):
             return None
 
-        with patch("fastblocks.actions.sync.cache.depends.resolve", new=_resolve_none):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", new=_resolve_none
+        ):
             result = await sync_cache(strategy=mock_strategy)
 
             assert len(result.errors) > 0
@@ -88,7 +108,9 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_refresh_operation(self, mock_depends_get, mock_strategy):
         """Test sync_cache with refresh operation."""
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(
                 operation="refresh", namespaces=["templates"], strategy=mock_strategy
             )
@@ -102,7 +124,9 @@ class TestSyncCache:
         """Test sync_cache with invalidate operation."""
         keys_to_invalidate = ["key1", "key2"]
 
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(
                 operation="invalidate", keys=keys_to_invalidate, strategy=mock_strategy
             )
@@ -113,7 +137,9 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_warm_operation(self, mock_depends_get, mock_strategy):
         """Test sync_cache with warm operation."""
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(
                 operation="warm", namespaces=["templates"], strategy=mock_strategy
             )
@@ -123,7 +149,9 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_clear_operation(self, mock_depends_get, mock_strategy):
         """Test sync_cache with clear operation."""
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(
                 operation="clear", namespaces=["templates"], strategy=mock_strategy
             )
@@ -134,7 +162,9 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_unknown_operation(self, mock_depends_get, mock_strategy):
         """Test sync_cache with unknown operation."""
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(operation="unknown", strategy=mock_strategy)
 
             assert len(result.errors) > 0
@@ -143,7 +173,9 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_default_namespaces(self, mock_depends_get, mock_strategy):
         """Test sync_cache uses default namespaces when none provided."""
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(operation="refresh", strategy=mock_strategy)
 
             assert isinstance(result, CacheSyncResult)
@@ -151,7 +183,9 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_default_strategy(self, mock_depends_get):
         """Test sync_cache uses default strategy when none provided."""
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(operation="refresh", namespaces=["templates"])
 
             assert isinstance(result, CacheSyncResult)
@@ -161,7 +195,9 @@ class TestSyncCache:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_cache with warm_templates enabled."""
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(
                 operation="refresh", warm_templates=True, strategy=mock_strategy
             )
@@ -173,7 +209,9 @@ class TestSyncCache:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_cache with warm_templates disabled."""
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(
                 operation="refresh", warm_templates=False, strategy=mock_strategy
             )
@@ -185,12 +223,15 @@ class TestSyncCache:
         """Test sync_cache handles exceptions gracefully."""
         mock_cache.delete_pattern.side_effect = Exception("Cache error")
 
-        async def _resolve(domain, key):
+        async def _resolve(_resolver, domain, key):
             if domain == "fastblocks" and key == "cache":
                 return mock_cache
             return None
 
-        with patch("fastblocks.actions.sync.cache.depends.resolve", AsyncMock(side_effect=_resolve)):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async",
+            AsyncMock(side_effect=_resolve),
+        ):
             result = await sync_cache(operation="refresh", strategy=mock_strategy)
 
             assert isinstance(result, CacheSyncResult)
@@ -201,7 +242,9 @@ class TestSyncCache:
         """Test sync_cache with custom namespaces."""
         custom_namespaces = ["custom1", "custom2"]
 
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(
                 operation="refresh",
                 namespaces=custom_namespaces,
@@ -215,7 +258,9 @@ class TestSyncCache:
         """Test sync_cache with specific keys for invalidation."""
         keys = ["app:cache:key1", "app:cache:key2"]
 
-        with patch("fastblocks.actions.sync.cache.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async", mock_depends_get
+        ):
             result = await sync_cache(
                 operation="invalidate", keys=keys, strategy=mock_strategy
             )
@@ -226,7 +271,10 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_exception_during_get_depends(self, mock_strategy):
         """Test sync_cache handles exception when getting cache adapter."""
-        with patch("fastblocks.actions.sync.cache.depends.resolve", side_effect=Exception("Depends error")):
+        with patch(
+            "fastblocks.actions.sync.cache.resolve_component_async",
+            side_effect=Exception("Depends error"),
+        ):
             result = await sync_cache(strategy=mock_strategy)
 
             assert len(result.errors) > 0

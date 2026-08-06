@@ -13,5 +13,3 @@ class RoutesBaseSettings(OneiricSettings):  # type: ignore[misc]
 
 class RoutesBase:
     """Routes base adapter using Oneiric patterns."""
-
-    pass

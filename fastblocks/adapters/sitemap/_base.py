@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import typing as t
 from dataclasses import dataclass
 from datetime import datetime
 
 # Oneiric imports
 from oneiric.core.config import OneiricSettings
+from pydantic import Field
 
 
 @dataclass
@@ -31,14 +34,16 @@ class SitemapBaseSettings(OneiricSettings):  # type: ignore[misc]
     ] = "weekly"
     cache_ttl: int = 3600
 
-    strategy_options: dict[str, t.Any] = {
-        "include_patterns": [],
-        "exclude_patterns": ["^/admin/.*", "^/api/.*", ".*/__.*"],
-        "static_urls": [],
-        "model_configs": [],
-        "background_refresh": True,
-        "cache_warmup": False,
-    }
+    strategy_options: dict[str, t.Any] = Field(
+        default_factory=lambda: {
+            "include_patterns": [],
+            "exclude_patterns": ["^/admin/.*", "^/api/.*", ".*/__.*"],
+            "static_urls": [],
+            "model_configs": [],
+            "background_refresh": True,
+            "cache_warmup": False,
+        }
+    )
 
     def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)

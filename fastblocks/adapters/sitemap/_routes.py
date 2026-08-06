@@ -26,7 +26,7 @@ depends = Resolver()
 
 def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
-    return None
+    return
 
 
 from fastblocks.adapters.sitemap._base import SitemapProtocol

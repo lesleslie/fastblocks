@@ -192,7 +192,6 @@ async def get_registry_and_health() -> tuple[AdapterRegistry, HealthCheckSystem]
 @click.group()
 def cli() -> None:
     """FastBlocks MCP Adapter Management CLI."""
-    pass
 
 
 # Phase 0b: the ``config`` Click subcommand group from the deleted
@@ -451,7 +450,7 @@ def audit(config_file: str, output: str | None, format: str) -> None:
                 if output:
                     _write_text_audit_report(report, output)
 
-        except Exception as e:
+        except (ValueError, OSError, RuntimeError) as e:
             click.echo(f"Error: {e}", err=True)
 
     asyncio.run(_audit())
@@ -619,7 +618,7 @@ def health_check(config_file: str, test_types: str | None, output: str | None) -
             # Save report if requested
             await _save_health_report_if_requested(health_checker, report, output)
 
-        except Exception as e:
+        except (ValueError, OSError, RuntimeError) as e:
             click.echo(f"Error: {e}", err=True)
 
     asyncio.run(_health_check())

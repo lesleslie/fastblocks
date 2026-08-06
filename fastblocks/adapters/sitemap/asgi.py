@@ -28,7 +28,10 @@ def debug(msg: str) -> None:
     print(f"[DEBUG] {msg}")
 
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.sitemap.asgi")
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -36,7 +39,7 @@ depends = Resolver()
 
 def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
-    return None
+    return
 
 
 from ._base import SitemapBase, SitemapBaseSettings
@@ -57,7 +60,11 @@ class AsgiSitemap(NativeSitemap[str], SitemapBase):
             if routes_adapter and hasattr(routes_adapter, "routes"):
                 return [r.path for r in routes_adapter.routes]
             return []
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            _log.warning(
+                "AsgiSitemap.items: routes resolver failed: %s",
+                type(exc).__name__,
+            )
             return []
 
     def location(self, item: str) -> str:

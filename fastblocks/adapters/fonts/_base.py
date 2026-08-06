@@ -1,5 +1,7 @@
 """Base classes and protocols for font adapters."""
 
+from __future__ import annotations
+
 from contextlib import suppress
 from typing import Any, Protocol
 from uuid import UUID
@@ -7,6 +9,7 @@ from uuid import UUID
 # Oneiric imports
 from oneiric.core.config import OneiricSettings
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -18,7 +21,7 @@ class FontsBaseSettings(OneiricSettings):  # type: ignore[misc]
     primary_font: str = "Arial, sans-serif"
     secondary_font: str = "Georgia, serif"
     cdn_url: str | None = None
-    font_weights: list[str] = ["400", "700"]
+    font_weights: list[str] = Field(default_factory=lambda: ["400", "700"])
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)

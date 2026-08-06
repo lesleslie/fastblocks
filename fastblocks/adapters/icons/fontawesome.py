@@ -1,5 +1,8 @@
 """FontAwesome icons adapter implementation."""
 
+from __future__ import annotations
+
+import typing as t
 from contextlib import suppress
 from typing import Any
 from uuid import UUID
@@ -78,8 +81,9 @@ class FontAwesomeIcons(IconsBase):
     MODULE_ID: UUID = UUID("01937d86-4f2a-7b3c-8d9e-f3b4d3c2d1a1")  # Static UUID7
     MODULE_STATUS = "stable"
 
-    # Icon mapping for common icons across different styles
-    ICON_MAPPINGS = {
+    # Icon mapping for common icons across different styles. ``ClassVar``
+    # keeps this immutable mapping out of Pydantic field-discovery (Task 4 brief).
+    ICON_MAPPINGS: t.ClassVar[dict[str, str]] = {
         "home": "house",
         "user": "user",
         "users": "users",
@@ -137,8 +141,9 @@ class FontAwesomeIcons(IconsBase):
         "help": "circle-question",
     }
 
-    # Brand icons (always use fab prefix)
-    BRAND_ICONS = {
+    # Brand icons (always use fab prefix). ``ClassVar`` keeps the
+    # immutable mapping out of Pydantic field-discovery (Task 4 brief).
+    BRAND_ICONS: t.ClassVar[dict[str, str]] = {
         "github": "fa-github",
         "twitter": "fa-twitter",
         "facebook": "fa-facebook",
@@ -223,9 +228,7 @@ class FontAwesomeIcons(IconsBase):
 
         # Handle common attributes
         for key, value in attributes.items():
-            if key in ("id", "style", "title", "data-*"):
-                attr_parts.append(f'{key}="{value}"')
-            elif key.startswith("aria-"):
+            if key in ("id", "style", "title", "data-*") or key.startswith("aria-"):
                 attr_parts.append(f'{key}="{value}"')
 
         # Add accessibility attributes
@@ -297,4 +300,4 @@ Icons = FontAwesomeIcons
 with suppress(Exception):
     depends.set(Icons, "fontawesome")
 
-__all__ = ["Icons", "IconsSettings", "FontAwesomeIcons", "FontAwesomeIconsSettings"]
+__all__ = ["FontAwesomeIcons", "FontAwesomeIconsSettings", "Icons", "IconsSettings"]

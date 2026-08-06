@@ -39,10 +39,12 @@ from contextlib import suppress
 from dataclasses import dataclass
 from enum import StrEnum
 
-# Oneiric imports for dependency injection
+from oneiric.core.logging import get_logger
 from fastblocks.adapters.oneiric_helper import register_candidate
 from fastblocks.core.patterns import SingletonMeta
 from fastblocks.core.resolver import get_resolver
+
+logger = get_logger(__name__)
 
 # Custom Oneiric-compatible validation system
 depends = get_resolver()
@@ -164,9 +166,17 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
         if self._config.prevent_xss and self._sanitizer:
             try:
                 return self._sanitizer.sanitize_html(value)
-            except Exception as e:
-                errors.append(f"Failed to sanitize {key}: {e}")
-                return value
+            except Exception as exc:
+                # Fail-closed: surface the error and return an empty string
+                # rather than the original (potentially unsafe) input. The
+                # downstream ``validate_template_context`` already treats a
+                # non-empty ``errors`` list as a strict-mode failure.
+                logger.exception(
+                    "Input sanitization failed for %s",
+                    key,
+                )
+                errors.append(f"Failed to sanitize {key}: {exc}")
+                return ""
 
         return value
 
@@ -238,7 +248,8 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
             # Validation passed (or warnings only)
             return len(errors) == 0 or not strict, sanitized, errors
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary validation must return diagnostic, never raise on user input
+            logger.exception("Template context validation failed")
             errors.append(f"Validation error: {e}")
             return False, context, errors
 
@@ -274,7 +285,8 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
 
             return len(errors) == 0, sanitized, errors
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary validation must return diagnostic, never raise on user input
+            logger.exception("Form input validation failed")
             errors.append(f"Validation error: {e}")
             return False, form_data, errors
 
@@ -351,7 +363,8 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
             sanitized = self._sanitize_api_data(request_data)
             return True, sanitized, []
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary validation must return diagnostic, never raise on user input
+            logger.exception("API request validation failed")
             errors.append(f"Validation error: {e}")
             return False, request_data, errors
 
@@ -371,24 +384,32 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
         Returns:
             Validation result tuple if successful, None to continue with fallback
         """
-        # Try Pydantic validation
+        # Try Pydantic validation. Catch the schema-specific exception
+        # (ValidationError) around ``model_validate`` so genuine bad-data
+        # errors are surfaced, while unexpected framework errors propagate.
         if hasattr(schema, "model_validate"):
+            from pydantic import ValidationError as PydanticValidationError
+
             try:
                 validated = schema.model_validate(data)
                 return True, validated.model_dump(), []
-            except Exception as e:
-                errors.append(f"Pydantic validation failed: {e}")
+            except PydanticValidationError as exc:
+                errors.append(f"Pydantic validation failed: {exc}")
                 return False, data, errors
 
-        # Try msgspec validation
+        # Try msgspec validation. Catch the msgspec-specific exception
+        # around ``msgspec.convert`` so decoding/type failures are reported
+        # with the framework's diagnostic, while arbitrary exceptions
+        # escape to the outer integration catch.
         if hasattr(schema, "__struct_fields__"):
-            try:
-                import msgspec
+            import msgspec
+            from msgspec import MsgspecError
 
+            try:
                 validated = msgspec.convert(data, type=schema)
                 return True, msgspec.to_builtins(validated), []
-            except Exception as e:
-                errors.append(f"msgspec validation failed: {e}")
+            except MsgspecError as exc:
+                errors.append(f"msgspec validation failed: {exc}")
                 return False, data, errors
 
         return None
@@ -441,7 +462,8 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
 
             return True, response_data, []
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary validation must return diagnostic, never raise on user input
+            logger.exception("API response validation failed")
             errors.append(f"Validation error: {e}")
             return False, response_data, errors
 
@@ -461,24 +483,27 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
         Returns:
             Validation result tuple if successful, None otherwise
         """
-        # Try Pydantic validation
+        # Narrow schema-specific catches: Pydantic ValidationError around
+        # ``model_validate`` and msgspec MsgspecError around ``msgspec.convert``.
         if hasattr(schema, "model_validate"):
+            from pydantic import ValidationError as PydanticValidationError
+
             try:
                 validated = schema.model_validate(data)
                 return True, validated.model_dump(), []
-            except Exception as e:
-                errors.append(f"Response validation failed: {e}")
+            except PydanticValidationError as exc:
+                errors.append(f"Response validation failed: {exc}")
                 return False, data, errors
 
-        # Try msgspec validation
         if hasattr(schema, "__struct_fields__"):
-            try:
-                import msgspec
+            import msgspec
+            from msgspec import MsgspecError
 
+            try:
                 validated = msgspec.convert(data, type=schema)
                 return True, msgspec.to_builtins(validated), []
-            except Exception as e:
-                errors.append(f"Response validation failed: {e}")
+            except MsgspecError as exc:
+                errors.append(f"Response validation failed: {exc}")
                 return False, data, errors
 
         return None
@@ -536,13 +561,19 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
         if not isinstance(value, str):
             return value
 
-        # Sanitize for XSS (only if ACB available)
+        # Sanitize for XSS (form fields share the fail-closed contract with
+        # ``_sanitize_context_value``: a broken sanitizer leaves the input
+        # rejected instead of leaking the raw value downstream).
         if self.available and self._config.prevent_xss and self._sanitizer:
             try:
                 return self._sanitizer.sanitize_html(value)
-            except Exception as e:
-                errors.append(f"Failed to sanitize {key}: {e}")
-                return value
+            except Exception as exc:
+                logger.exception(
+                    "Form field sanitization failed for %s",
+                    key,
+                )
+                errors.append(f"Failed to sanitize {key}: {exc}")
+                return ""
 
         return value
 
@@ -562,15 +593,12 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
         if not self.available:
             return
 
-        # Check for SQL injection
-        if self._config.prevent_sql_injection:
-            if self._contains_sql_injection(value):
-                errors.append(f"SQL injection detected in {key}")
-
-        # Check for path traversal
-        if self._config.prevent_path_traversal:
-            if self._contains_path_traversal(value):
-                errors.append(f"Potential path traversal in {key}")
+        # Flattened: combine the config flag with the detector in one branch
+        # so the policy and the predicate are evaluated together.
+        if self._config.prevent_sql_injection and self._contains_sql_injection(value):
+            errors.append(f"SQL injection detected in {key}")
+        if self._config.prevent_path_traversal and self._contains_path_traversal(value):
+            errors.append(f"Potential path traversal in {key}")
 
     def _validate_field_schema(
         self,
@@ -1038,7 +1066,8 @@ async def register_fastblocks_validation() -> bool:
 
         return validation_service.available
 
-    except Exception:
+    except Exception:  # noqa: BLE001, RUF100 - framework-boundary registration must not break startup
+        logger.exception("FastBlocks validation service registration failed")
         return False
 
 
@@ -1047,8 +1076,8 @@ __all__ = [
     "ValidationConfig",
     "ValidationType",
     "get_validation_service",
-    "validate_template_context",
-    "validate_form_input",
-    "validate_api_contract",
     "register_fastblocks_validation",
+    "validate_api_contract",
+    "validate_form_input",
+    "validate_template_context",
 ]

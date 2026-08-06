@@ -29,7 +29,7 @@ def _get_adapter_or_none(domain: str) -> t.Any:
     """
     try:
         return depends.resolve(domain)
-    except Exception:
+    except (KeyError, AttributeError, RuntimeError, TypeError):
         return None
 
 
@@ -188,7 +188,7 @@ class SecureHeadersMiddleware:
         self.app = app
         try:
             self.logger = get_logger("fastblocks")
-        except Exception:
+        except (ImportError, AttributeError, RuntimeError):
             self.logger = None
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -421,7 +421,7 @@ class MiddlewareStackManager:
 
         try:
             candidate = get_resolver().resolve("fastblocks", "config")
-        except Exception:
+        except (KeyError, AttributeError, RuntimeError):
             self._warn_no_config()
             return None
 
@@ -436,7 +436,7 @@ class MiddlewareStackManager:
             return candidate
         try:
             return factory()
-        except Exception:
+        except (ValueError, TypeError, RuntimeError):
             self._warn_no_config()
             return None
 
@@ -463,7 +463,7 @@ class MiddlewareStackManager:
             from oneiric.core.logging import get_logger
 
             return get_logger("fastblocks")
-        except Exception:
+        except (ImportError, AttributeError, RuntimeError):
             return None
 
     def _ensure_dependencies(self) -> None:
@@ -580,7 +580,9 @@ class MiddlewareStackManager:
         }
 
 
-def middlewares(config: t.Any | None = None, logger: t.Any | None = None) -> list[Middleware]:
+def middlewares(
+    config: t.Any | None = None, logger: t.Any | None = None
+) -> list[Middleware]:
     """Build the system middleware stack.
 
     ``config`` is accepted (and should be supplied by the application

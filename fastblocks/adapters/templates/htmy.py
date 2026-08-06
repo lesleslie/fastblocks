@@ -37,10 +37,14 @@ from uuid import UUID
 
 from anyio import Path as AsyncPath
 from oneiric.core.config import OneiricSettings
+from oneiric.core.logging import get_logger
 
 # Oneiric imports
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 from starlette.responses import HTMLResponse
+
+_log = get_logger("fastblocks.adapters.templates.htmy")
 
 
 # Custom implementations for ACB compatibility
@@ -207,7 +211,14 @@ class HTMYComponentRegistry:
             debug(f"Component sync result: {result.sync_status} for {path}")
             return source, local_mtime
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # The sync subsystem crashed; fall through to the primitive
+            # storage-fallback path so the renderer still gets source.
+            _log.exception(
+                "HTMYTemplates._sync_component_file: sync failed for %s: %s",
+                path,
+                type(e).__name__,
+            )
             debug(f"Sync action failed for {path}: {e}, falling back to primitive sync")
             return await self._sync_from_storage_fallback(path, storage_path)
 
@@ -231,7 +242,15 @@ class HTMYComponentRegistry:
                     await path.write_bytes(resp)
                     source = resp.decode()
                     return source, storage_mtime
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
+                # Primitive fallback also failed -- typically a stat/read
+                # error on the local path or a permission issue. Continue
+                # to the local read-only branch below.
+                _log.exception(
+                    "HTMYTemplates._sync_from_storage_fallback: primitive failed for %s: %s",
+                    path,
+                    type(e).__name__,
+                )
                 debug(f"Storage fallback failed for {path}: {e}")
 
         source = await path.read_text()
@@ -312,7 +331,7 @@ class HTMYComponentRegistry:
 
                 component_class = None
                 for obj in vars(module).values():
-                    if hasattr(obj, "htmy") and callable(getattr(obj, "htmy")):
+                    if hasattr(obj, "htmy") and callable(obj.htmy):
                         component_class = obj
                         break
             finally:
@@ -322,7 +341,14 @@ class HTMYComponentRegistry:
             # Cache the compiled form instead of pickle-able bytecode
             self._component_cache[component_name] = component_class
             return component_class
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Cached bytecode reload failed; the caller will fall through
+            # to the source-compile path on the next attempt.
+            _log.warning(
+                "HTMYTemplates._load_from_cached_bytecode(%s): %s",
+                component_name,
+                type(e).__name__,
+            )
             debug(f"Failed to load cached bytecode for {component_name}: {e}")
             return None
 
@@ -352,7 +378,7 @@ class HTMYComponentRegistry:
 
                 component_class = None
                 for obj in vars(module).values():
-                    if hasattr(obj, "htmy") and callable(getattr(obj, "htmy")):
+                    if hasattr(obj, "htmy") and callable(obj.htmy):
                         component_class = obj
                         break
             finally:
@@ -368,7 +394,7 @@ class HTMYComponentRegistry:
 
 
 class HTMYTemplatesSettings(OneiricSettings):  # type: ignore
-    searchpaths: list[str] = []
+    searchpaths: list[str] = Field(default_factory=list)
     cache_timeout: int = 300
     enable_bidirectional: bool = True
     debug_components: bool = False
@@ -405,8 +431,9 @@ class HTMYTemplates(TemplatesBase):
             depends.set(self, "htmy")
 
     async def register_trusted_components(self, components: dict[str, t.Any]) -> None:
-        """Register pre-imported, trusted component classes for use in
-        ``[[ render_component("name", context) ]]`` template calls.
+        """Register pre-imported, trusted component classes.
+
+        Used in ``[[ render_component("name", context) ]]`` template calls.
 
         This is the integration point for design-system adapter packages
         (e.g. ``fastblocks-htmy``) that ship typed, already-imported
@@ -453,7 +480,14 @@ class HTMYTemplates(TemplatesBase):
         # Use Oneiric resolver to get app adapter
         try:
             app_adapter = depends.resolve("fastblocks", "app")
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            # App-adapter lookup failed (no resolver, key missing, etc.).
+            # Fall back to a stub object with a category so the registry
+            # still gets a valid path.
+            _log.warning(
+                "HTMYTemplates._init_htmy_registry: app-adapter fallback: %s",
+                type(exc).__name__,
+            )
             from types import SimpleNamespace
 
             app_adapter = SimpleNamespace(name="app", category="app")
@@ -555,7 +589,15 @@ class HTMYTemplates(TemplatesBase):
                 headers=headers,
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Even an unexpected error in the renderer must still produce
+            # an HTMLResponse so the caller (a Starlette route) doesn't
+            # crash with a bare 500 from middleware.
+            _log.exception(
+                "HTMYTemplates.render_component(%r): advanced registry raised %s",
+                component,
+                type(e).__name__,
+            )
             error_content = (
                 f"<html><body>Component {component} error: {e}</body></html>"
             )
@@ -641,7 +683,7 @@ class HTMYTemplates(TemplatesBase):
         async def render_template(
             template_name: str,
             context: dict[str, t.Any] | None = None,
-            inherit_context: bool = True,  # noqa: ARG001
+            inherit_context: bool = True,
             **kwargs: t.Any,
         ) -> str:
             if context is None:
@@ -657,7 +699,15 @@ class HTMYTemplates(TemplatesBase):
                     else:
                         rendered = template.render(template_context)
                     return t.cast(str, rendered)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
+                    # Template rendering failed inside an HTMY component;
+                    # log + emit a comment stub so the surrounding component
+                    # HTML still reaches the browser.
+                    _log.exception(
+                        "HTMYTemplates._render_template_in_component(%r): %s",
+                        template_name,
+                        type(e).__name__,
+                    )
                     debug(
                         f"Failed to render template '{template_name}' in HTMY component: {e}"
                     )
@@ -776,7 +826,16 @@ class HTMYTemplates(TemplatesBase):
                             block_name, block_context
                         )
                     return t.cast(str, rendered)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
+                    # Block rendering inside an HTMY component failed;
+                    # emit a comment stub. Different exception types
+                    # (TemplateNotFound, AttributeError) get logged once
+                    # but we still preserve the soft-fail contract.
+                    _log.exception(
+                        "HTMYTemplates._render_block_in_component(%r): %s",
+                        block_name,
+                        type(e).__name__,
+                    )
                     debug(
                         f"Failed to render block '{block_name}' in HTMY component: {e}"
                     )
@@ -793,17 +852,35 @@ class HTMYTemplates(TemplatesBase):
         if cache is None:
             try:
                 cache = depends.resolve("fastblocks", "cache")
-            except Exception:
+            except Exception as exc:  # noqa: BLE001
+                # No cache registered (resolver absent or key missing).
+                # Adapter keeps going without it; logging makes the
+                # absence explicit so cold-start metrics are accurate.
+                _log.warning(
+                    "HTMYTemplates.init: cache unavailable: %s",
+                    type(exc).__name__,
+                )
                 cache = None
         self.cache = cache
         try:
             self.storage = depends.resolve("fastblocks", "storage")
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            # Storage layer optional -- fall back to filesystem-only.
+            _log.warning(
+                "HTMYTemplates.init: storage unavailable: %s",
+                type(exc).__name__,
+            )
             self.storage = None
         await self._init_htmy_registry()
         try:
             self.jinja_templates = depends.resolve("fastblocks", "templates")
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            # Bidirectional Jinja2 integration is best-effort; HTMY works
+            # on its own if Jinja2 cannot be resolved.
+            _log.warning(
+                "HTMYTemplates.init: jinja_templates unavailable: %s",
+                type(exc).__name__,
+            )
             self.jinja_templates = None
         # Already registered in __init__, but ensure it's set (fail gracefully)
         with suppress(Exception):
@@ -837,4 +914,4 @@ Templates = HTMYTemplates
 with suppress(Exception):
     depends.set(Templates, "htmy")
 
-__all__ = ["Templates", "TemplatesSettings", "HTMYTemplatesSettings", "HTMYTemplates"]
+__all__ = ["HTMYTemplates", "HTMYTemplatesSettings", "Templates", "TemplatesSettings"]

@@ -139,7 +139,7 @@ async def safe_depends_get(
     if key not in cache_dict:
         try:
             cache_dict[key] = await depends.resolve("fastblocks", key)
-        except Exception:
+        except (ImportError, AttributeError, ValueError):
             cache_dict[key] = default
     return cache_dict[key]
 
@@ -253,3 +253,28 @@ class ResponseNotCachable(StarletteCachesException):
         super().__init__(
             f"Response with status {response.status_code} is not cacheable",
         )
+
+
+class GatherError(FastBlocksException):
+    """Raised when a gather strategy cannot recover from a failure.
+
+    Used by ``fastblocks.actions.gather.strategies`` when a
+    ``COLLECT_ERRORS`` strategy yields zero successes and zero recoverable
+    paths forward. The original exception is preserved via ``raise ... from``
+    at the call site, so callers can inspect both the domain context
+    (this class) and the underlying cause.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        errors: list[Exception] | None = None,
+    ) -> None:
+        details = {"errors": [str(e) for e in errors]} if errors else {}
+        super().__init__(
+            message,
+            category=ErrorCategory.MIDDLEWARE,
+            severity=ErrorSeverity.ERROR,
+            details=details,
+        )
+        self.errors = errors or []

@@ -3,7 +3,7 @@
 import re
 import typing as t
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -44,7 +44,7 @@ class AuditFinding:
     affected_items: list[str] = field(default_factory=list)
     details: dict[str, Any] = field(default_factory=dict)
     references: list[str] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass
@@ -115,7 +115,7 @@ class ConfigurationAuditor:
         report = AuditReport(
             configuration_name="configuration",
             profile=config.profile.value,
-            audit_timestamp=datetime.now(),
+            audit_timestamp=datetime.now(UTC),
         )
 
         # Run all audit checks
@@ -231,9 +231,8 @@ class ConfigurationAuditor:
         """Check for weak secret values in environment variables."""
         weak_secrets = []
         for var in variables:
-            if var.secret and var.value:
-                if self._is_weak_secret(var.value):
-                    weak_secrets.append(var.name)
+            if var.secret and var.value and self._is_weak_secret(var.value):
+                weak_secrets.append(var.name)
 
         if weak_secrets:
             return AuditFinding(
@@ -252,11 +251,13 @@ class ConfigurationAuditor:
         """Check for unmarked secret variables."""
         unmarked_secrets = []
         for var in variables:
-            if not var.secret and any(
-                pattern.match(var.name) for pattern in self.secret_patterns
-            ):
-                if var.value and len(var.value) > 10:  # Likely a secret
-                    unmarked_secrets.append(var.name)
+            if (
+                not var.secret
+                and any(pattern.match(var.name) for pattern in self.secret_patterns)
+                and var.value
+                and len(var.value) > 10
+            ):  # Likely a secret
+                unmarked_secrets.append(var.name)
 
         if unmarked_secrets:
             return AuditFinding(
@@ -367,22 +368,21 @@ class ConfigurationAuditor:
             )
 
         # Check for configuration version currency
-        if hasattr(config, "version"):
-            if config.version != "1.0":
-                findings.append(
-                    AuditFinding(
-                        id="CFG-003",
-                        category=AuditCategory.CONFIGURATION,
-                        severity=AuditSeverity.LOW,
-                        title="Outdated Configuration Version",
-                        description="Configuration uses an older schema version.",
-                        recommendation="Migrate to the latest configuration schema version.",
-                        details={
-                            "current_version": config.version,
-                            "latest_version": "1.0",
-                        },
-                    )
+        if hasattr(config, "version") and config.version != "1.0":
+            findings.append(
+                AuditFinding(
+                    id="CFG-003",
+                    category=AuditCategory.CONFIGURATION,
+                    severity=AuditSeverity.LOW,
+                    title="Outdated Configuration Version",
+                    description="Configuration uses an older schema version.",
+                    recommendation="Migrate to the latest configuration schema version.",
+                    details={
+                        "current_version": config.version,
+                        "latest_version": "1.0",
+                    },
                 )
+            )
 
         return findings
 
@@ -546,9 +546,12 @@ class ConfigurationAuditor:
         hardcoded = []
 
         for key, value in config.global_settings.items():
-            if isinstance(value, str) and self._is_secret_key(key):
-                if self._is_hardcoded_value(value):
-                    hardcoded.append(f"global_settings.{key}")
+            if (
+                isinstance(value, str)
+                and self._is_secret_key(key)
+                and self._is_hardcoded_value(value)
+            ):
+                hardcoded.append(f"global_settings.{key}")
 
         return hardcoded
 
@@ -560,9 +563,12 @@ class ConfigurationAuditor:
 
         for adapter_name, adapter_config in config.adapters.items():
             for key, value in adapter_config.settings.items():
-                if isinstance(value, str) and self._is_secret_key(key):
-                    if self._is_hardcoded_value(value):
-                        hardcoded.append(f"adapters.{adapter_name}.settings.{key}")
+                if (
+                    isinstance(value, str)
+                    and self._is_secret_key(key)
+                    and self._is_hardcoded_value(value)
+                ):
+                    hardcoded.append(f"adapters.{adapter_name}.settings.{key}")
 
         return hardcoded
 
@@ -596,7 +602,7 @@ class ConfigurationAuditor:
                 "severity": "high",
                 "reference": "A2 - Broken Authentication",
                 "check_function": lambda config: any(
-                    name.startswith("auth") for name in config.adapters.keys()
+                    name.startswith("auth") for name in config.adapters
                 ),
             },
             {
@@ -741,7 +747,7 @@ class ConfigurationAuditor:
         }
 
         # Authentication checks
-        auth_adapters = [name for name in config.adapters.keys() if "auth" in name]
+        auth_adapters = [name for name in config.adapters if "auth" in name]
         checklist["authentication"].append(
             {
                 "item": "Authentication adapter configured",

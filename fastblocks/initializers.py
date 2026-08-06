@@ -39,7 +39,7 @@ def get_installed_adapter(adapter_name: str) -> str | None:
         if adapter_metadata:
             return adapter_name
         return None
-    except Exception:
+    except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: adapter registry lookup must never break caller code.
         return None
 
 
@@ -82,7 +82,7 @@ class ApplicationInitializer:
             logger_class = logger.__class__ if logger is not None else None
             # Oneiric doesn't have InterceptHandler, use None
             interceptor_class = None
-        except Exception:
+        except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: logger probe must never break startup.
             logger_class = None
             interceptor_class = None
 
@@ -103,14 +103,14 @@ class ApplicationInitializer:
         if self.config is None:
             try:
                 self.config = _get_dependency_sync("config")
-            except Exception:
+            except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: resolver may be unconfigured; caller pins defaults below.
                 self.config = None
 
         self.logger = self.kwargs.get("logger")
         if self.logger is None:
             try:
                 self.logger = oneiric_get_logger("fastblocks")
-            except Exception:
+            except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: logger probe must never block startup.
                 self.logger = None
 
         self.depends = None
@@ -166,7 +166,7 @@ class ApplicationInitializer:
     def _setup_models(self) -> None:
         try:
             models = _get_dependency_sync("models")
-        except Exception:
+        except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: models probed lazily; empty app is valid.
             models = None
         object.__setattr__(self.app, "models", models)
 
@@ -213,11 +213,9 @@ class ApplicationInitializer:
                     )
                     if self.logger:
                         self.logger.info("All FastBlocks integrations registered")
-                except Exception as e:
+                except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: integration failures are WARN'd, never raised.
                     if self.logger:
-                        self.logger.warning(
-                            f"Some integrations failed to register: {e}"
-                        )
+                        self.logger.exception("Some integrations failed to register")
 
             # Use running loop when available, otherwise start a new one
             with suppress(Exception):  # Graceful degradation
@@ -243,9 +241,9 @@ class ApplicationInitializer:
                 self.logger.debug(
                     "Integration modules not available - running without enhanced features"
                 )
-        except Exception as e:
+        except Exception:  # noqa: BLE001, RUF100  # Final framework-boundary: degraded startup is acceptable.
             # Log error but don't fail application startup
             if self.logger:
-                self.logger.warning(
-                    f"Failed to register ACB integrations: {e} - continuing with degraded features"
+                self.logger.exception(
+                    "Failed to register ACB integrations - continuing with degraded features"
                 )

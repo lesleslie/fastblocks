@@ -53,6 +53,7 @@ from tests._mocks import (
     SitemapURL,
 )
 from tests._websocket_stub import (
+    _install_mcp_common_websocket_stub,
     _StubEventTypes,
     _StubMessageType,
     _StubWebSocketAuthenticator,
@@ -60,7 +61,6 @@ from tests._websocket_stub import (
     _StubWebSocketMessage,
     _StubWebSocketProtocol,
     _StubWebSocketServer,
-    _install_mcp_common_websocket_stub,
 )
 
 __all__ = [
@@ -260,7 +260,7 @@ def mock_jinja2_templates() -> t.Any:
         def get_template(self, template_name: str) -> t.Any:
             if template_name not in self.templates:
                 msg = f"Template not found: {template_name}"
-                raise Exception(msg)
+                raise KeyError(msg)
 
             return template_name
 
@@ -360,9 +360,7 @@ def restore_module_state():
     """Save and restore sys.modules state for packages polluted by test mocks."""
 
     def _matches(key: str) -> bool:
-        return any(
-            key == ns or key.startswith(f"{ns}.") for ns in _RESTORED_NAMESPACES
-        )
+        return any(key == ns or key.startswith(f"{ns}.") for ns in _RESTORED_NAMESPACES)
 
     saved = {k: v for k, v in sys.modules.items() if _matches(k)}
     yield

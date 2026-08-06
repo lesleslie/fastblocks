@@ -1,10 +1,14 @@
 """Vanilla CSS adapter implementation for custom stylesheets."""
 
+from __future__ import annotations
+
+import typing as t
 from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 from ._base import StyleBase, StyleBaseSettings
 
@@ -15,9 +19,9 @@ depends = Resolver()
 class VanillaStyleSettings(StyleBaseSettings):
     """Vanilla CSS-specific settings."""
 
-    css_paths: list[str] = ["/static/css/base.css"]
-    custom_properties: dict[str, str] = {}
-    css_variables: dict[str, str] = {}
+    css_paths: list[str] = Field(default_factory=lambda: ["/static/css/base.css"])
+    custom_properties: dict[str, str] = Field(default_factory=dict)
+    css_variables: dict[str, str] = Field(default_factory=dict)
 
 
 class VanillaStyle(StyleBase):
@@ -27,8 +31,9 @@ class VanillaStyle(StyleBase):
     MODULE_ID: UUID = UUID("01937d86-4f2a-7b3c-8d9e-f3b4d3c2c1a2")  # Static UUID7
     MODULE_STATUS = "stable"
 
-    # Default component class mappings for semantic naming
-    COMPONENT_CLASSES = {
+    # Default component class mappings for semantic naming. ``ClassVar``
+    # keeps the immutable mapping out of Pydantic field-discovery (Task 4 brief).
+    COMPONENT_CLASSES: t.ClassVar[dict[str, str]] = {
         "button": "btn",
         "button_primary": "btn btn--primary",
         "button_secondary": "btn btn--secondary",
@@ -218,4 +223,4 @@ Style = VanillaStyle
 with suppress(Exception):
     depends.set(Style, "vanilla")
 
-__all__ = ["VanillaStyle", "VanillaStyleSettings", "Style", "StyleSettings"]
+__all__ = ["Style", "StyleSettings", "VanillaStyle", "VanillaStyleSettings"]

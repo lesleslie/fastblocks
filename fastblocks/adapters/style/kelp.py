@@ -8,6 +8,7 @@ from typing import Any
 from uuid import UUID
 
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 from ._base import StyleBase, StyleBaseSettings
 
@@ -34,56 +35,62 @@ class KelpStyleSettings(StyleBaseSettings):
     neutral_hue: int = 220  # Cool gray
 
     # Spacing system (rem units)
-    spacing_scale: list[str] = [
-        "0",
-        "0.25",
-        "0.5",
-        "0.75",
-        "1",
-        "1.25",
-        "1.5",
-        "2",
-        "2.5",
-        "3",
-        "4",
-        "5",
-        "6",
-        "8",
-        "10",
-        "12",
-        "16",
-        "20",
-        "24",
-    ]
+    spacing_scale: list[str] = Field(
+        default_factory=lambda: [
+            "0",
+            "0.25",
+            "0.5",
+            "0.75",
+            "1",
+            "1.25",
+            "1.5",
+            "2",
+            "2.5",
+            "3",
+            "4",
+            "5",
+            "6",
+            "8",
+            "10",
+            "12",
+            "16",
+            "20",
+            "24",
+        ]
+    )
 
     # Typography
     font_family_sans: str = "Inter, system-ui, -apple-system, sans-serif"
     font_family_mono: str = "JetBrains Mono, 'Fira Code', Consolas, monospace"
-    font_scale: dict[str, str] = {
-        "xs": "0.75rem",
-        "sm": "0.875rem",
-        "base": "1rem",
-        "lg": "1.125rem",
-        "xl": "1.25rem",
-        "2xl": "1.5rem",
-        "3xl": "1.875rem",
-        "4xl": "2.25rem",
-        "5xl": "3rem",
-        "6xl": "3.75rem",
-    }
+    font_scale: dict[str, str] = Field(
+        default_factory=lambda: {
+            "xs": "0.75rem",
+            "sm": "0.875rem",
+            "base": "1rem",
+            "lg": "1.125rem",
+            "xl": "1.25rem",
+            "2xl": "1.5rem",
+            "3xl": "1.875rem",
+            "4xl": "2.25rem",
+            "5xl": "3rem",
+            "6xl": "3.75rem",
+        }
+    )
 
     # Border radius
-    radius_scale: dict[str, str] = {
-        "none": "0",
-        "sm": "0.125rem",
-        "base": "0.25rem",
-        "md": "0.375rem",
-        "lg": "0.5rem",
-        "xl": "0.75rem",
-        "2xl": "1rem",
-        "3xl": "1.5rem",
-        "full": "9999px",
-    }
+    radius_scale: dict[str, str] = Field(
+        default_factory=lambda: {
+            "none": "0",
+            "sm": "0.125rem",
+            "base": "0.25rem",
+            "md": "0.375rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "3xl": "1.5rem",
+            "full": "9999px",
+        }
+    )
 
     # Shadow system
     enable_shadows: bool = True
@@ -879,7 +886,7 @@ with suppress(Exception):
 __all__ = [
     "KelpStyle",
     "KelpStyleSettings",
-    "register_kelp_functions",
     "Style",
     "StyleSettings",
+    "register_kelp_functions",
 ]

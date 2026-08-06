@@ -1,20 +1,21 @@
 """Cache synchronization and consistency management across layers."""
 
+from __future__ import annotations
+
 import typing as t
 
-from oneiric.core.resolution import Resolver
-
-# Migration from ACB to Oneiric
-depends = Resolver()
-
-# Debug function: Oneiric-backed replacement for the legacy acb.debug symbol
-def debug(msg: str) -> None:
-    """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
-    from oneiric.core.logging import get_logger
-    get_logger("actions.sync.cache").debug(msg)
-
+from oneiric.core.logging import get_logger
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
 from .strategies import SyncResult, SyncStrategy
+
+depends = get_resolver()
+_log = get_logger("fastblocks.actions.sync.cache")
+
+
+def debug(msg: str) -> None:
+    """Log a cache-sync debug message."""
+    _log.debug(msg)
 
 
 class CacheSyncResult(SyncResult):
@@ -55,14 +56,16 @@ async def sync_cache(
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        cache = await depends.resolve("fastblocks", "cache")
+        cache = await resolve_component_async(depends, "fastblocks", "cache")
 
         if not cache:
-            result.errors.append(Exception("Cache adapter not available"))
+            result.record_primary_error(Exception("Cache adapter not available"))
             return result
 
-    except Exception as e:
-        result.errors.append(e)
+        # Component factories are pluggable and may raise implementation-specific errors.
+    except Exception as e:  # noqa: BLE001, RUF100
+        result.record_primary_error(e)
+        _log.exception("Cache adapter resolution failed")
         return result
 
     try:
@@ -85,9 +88,10 @@ async def sync_cache(
         ):
             await _warm_template_cache(cache, strategy, result)
 
-    except Exception as e:
-        result.errors.append(e)
-        debug(f"Error in cache sync operation {operation}: {e}")
+        # Cache operations dispatch to a pluggable cache implementation.
+    except Exception as e:  # noqa: BLE001, RUF100
+        result.record_primary_error(e)
+        _log.exception("Cache sync operation failed: %s", operation)
 
     debug(
         f"Cache sync completed: {len(result.invalidated_keys)} invalidated, {len(result.warmed_keys)} warmed",
@@ -124,9 +128,12 @@ async def _invalidate_cache(
             try:
                 await cache.delete(key)
                 result.invalidated_keys.append(key)
+                result.record_completed(key)
                 debug(f"Invalidated cache key: {key}")
-            except Exception as e:
-                result.errors.append(e)
+            # Individual keys are isolated because cache implementations are pluggable.
+            except Exception as e:  # noqa: BLE001, RUF100
+                result.record_item_error(key, e)
+                _log.exception("Sync item failed: %s", key)
 
     for namespace in namespaces:
         try:
@@ -169,9 +176,11 @@ async def _invalidate_cache(
                 result.invalidated_keys.extend(deleted_keys or [pattern])
                 debug(f"Invalidated namespace {namespace}: {pattern}")
 
-        except Exception as e:
-            result.errors.append(e)
-            debug(f"Error invalidating namespace {namespace}: {e}")
+            result.record_completed(namespace)
+        # Namespaces are independent and cache implementations are pluggable.
+        except Exception as e:  # noqa: BLE001, RUF100
+            result.record_item_error(namespace, e)
+            _log.exception("Sync item failed: %s", namespace)
 
 
 async def _warm_cache(
@@ -194,9 +203,11 @@ async def _warm_cache(
             elif namespace == "gather":
                 await _warm_gather_cache(cache, strategy, result)
 
-        except Exception as e:
-            result.errors.append(e)
-            debug(f"Error warming namespace {namespace}: {e}")
+            result.record_completed(namespace)
+        # Namespaces are independent and cache implementations are pluggable.
+        except Exception as e:  # noqa: BLE001, RUF100
+            result.record_item_error(namespace, e)
+            _log.exception("Sync item failed: %s", namespace)
 
 
 async def _clear_cache(
@@ -214,11 +225,13 @@ async def _clear_cache(
         try:
             await cache.clear(namespace)
             result.cleared_namespaces.append(namespace)
+            result.record_completed(namespace)
             debug(f"Cleared cache namespace: {namespace}")
 
-        except Exception as e:
-            result.errors.append(e)
-            debug(f"Error clearing namespace {namespace}: {e}")
+        # Namespaces are independent and cache implementations are pluggable.
+        except Exception as e:  # noqa: BLE001, RUF100
+            result.record_item_error(namespace, e)
+            _log.exception("Sync item failed: %s", namespace)
 
 
 async def _warm_template_cache(
@@ -239,7 +252,7 @@ async def _warm_template_cache(
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        storage = await depends.resolve("fastblocks", "storage")
+        storage = await resolve_component_async(depends, "fastblocks", "storage")
 
         if not storage:
             debug("Storage not available for template warming")
@@ -256,11 +269,16 @@ async def _warm_template_cache(
 
                     debug(f"Warmed template cache: {template_path}")
 
-            except Exception as e:
-                debug(f"Error warming template {template_path}: {e}")
+                result.record_completed(template_path)
+            # Template entries are independent and storage/cache adapters are pluggable.
+            except Exception as e:  # noqa: BLE001, RUF100
+                result.record_item_error(template_path, e)
+                _log.exception("Sync item failed: %s", template_path)
 
-    except Exception as e:
-        debug(f"Error in template cache warming: {e}")
+        # Storage component factories are pluggable framework boundaries.
+    except Exception as e:  # noqa: BLE001, RUF100
+        result.record_item_error("template-cache", e)
+        _log.exception("Template cache warming failed")
 
 
 async def _warm_response_cache(
@@ -284,27 +302,34 @@ async def _warm_gather_cache(
             if routes_result.total_routes > 0:
                 result.warmed_keys.append("gather:routes")
                 debug("Warmed gather routes cache")
-        except Exception as e:
-            debug(f"Error warming routes cache: {e}")
+        # Gather actions may invoke pluggable application components.
+        except Exception as e:  # noqa: BLE001, RUF100
+            result.record_item_error("gather:routes", e)
+            _log.exception("Sync item failed: %s", "gather:routes")
 
         try:
             templates_result = await gather.templates()
             if templates_result.total_components > 0:
                 result.warmed_keys.append("gather:templates")
                 debug("Warmed gather templates cache")
-        except Exception as e:
-            debug(f"Error warming templates cache: {e}")
+        # Gather actions may invoke pluggable application components.
+        except Exception as e:  # noqa: BLE001, RUF100
+            result.record_item_error("gather:templates", e)
+            _log.exception("Sync item failed: %s", "gather:templates")
 
         try:
             middleware_result = await gather.middleware()
             if middleware_result.total_middleware > 0:
                 result.warmed_keys.append("gather:middleware")
                 debug("Warmed gather middleware cache")
-        except Exception as e:
-            debug(f"Error warming middleware cache: {e}")
+        # Gather actions may invoke pluggable application components.
+        except Exception as e:  # noqa: BLE001, RUF100
+            result.record_item_error("gather:middleware", e)
+            _log.exception("Sync item failed: %s", "gather:middleware")
 
-    except Exception as e:
-        debug(f"Error warming gather cache: {e}")
+    except ImportError as e:
+        result.record_item_error("gather", e)
+        _log.exception("Gather cache warming import failed")
 
 
 async def invalidate_template_cache(
@@ -314,12 +339,13 @@ async def invalidate_template_cache(
     result: dict[str, t.Any] = {
         "invalidated": [],
         "errors": [],
+        "item_errors": {},
     }
 
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        cache = await depends.resolve("fastblocks", "cache")
+        cache = await resolve_component_async(depends, "fastblocks", "cache")
 
         if not cache:
             result["errors"].append("Cache adapter not available")
@@ -345,12 +371,17 @@ async def invalidate_template_cache(
 
                     debug(f"Invalidated cache for template: {template_path}")
 
-                except Exception as e:
+                # Template paths are independent and cache implementations are pluggable.
+                except Exception as e:  # noqa: BLE001, RUF100
                     result["errors"].append(f"{template_path}: {e}")
+                    result["item_errors"][template_path] = str(e)
+                    _log.exception("Sync item failed: %s", template_path)
 
-    except Exception as e:
+        # Component resolution and cache operations are pluggable boundaries.
+    except Exception as e:  # noqa: BLE001, RUF100
         result["errors"].append(str(e))
-        debug(f"Error invalidating template cache: {e}")
+        result["item_errors"]["cache"] = str(e)
+        _log.exception("Template cache invalidation failed")
 
     return result
 
@@ -367,6 +398,7 @@ async def get_cache_stats(
         "memory_usage": 0,
         "hit_rate": 0.0,
         "errors": [],
+        "item_errors": {},
     }
 
     try:
@@ -377,9 +409,11 @@ async def get_cache_stats(
         await _collect_cache_info(cache, stats)
         await _collect_namespace_stats(cache, namespaces, stats)
 
-    except Exception as e:
+        # Cache stats cross a pluggable adapter boundary.
+    except Exception as e:  # noqa: BLE001, RUF100
         stats["errors"].append(str(e))
-        debug(f"Error getting cache stats: {e}")
+        stats["item_errors"]["cache"] = str(e)
+        _log.exception("Cache stats collection failed")
 
     return stats
 
@@ -387,7 +421,7 @@ async def get_cache_stats(
 async def _get_cache_adapter(stats: dict[str, t.Any]) -> t.Any:
     # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-    cache = await depends.resolve("fastblocks", "cache")
+    cache = await resolve_component_async(depends, "fastblocks", "cache")
     if not cache:
         stats["errors"].append("Cache adapter not available")
     return cache
@@ -400,8 +434,11 @@ async def _collect_cache_info(cache: t.Any, stats: dict[str, t.Any]) -> None:
         hits = info.get("keyspace_hits", 0)
         misses = info.get("keyspace_misses", 0)
         stats["hit_rate"] = hits / max(hits + misses, 1)
-    except Exception as e:
+    # Cache info is supplied by a pluggable cache implementation.
+    except Exception as e:  # noqa: BLE001, RUF100
         stats["errors"].append(f"Error getting cache info: {e}")
+        stats["item_errors"]["cache:info"] = str(e)
+        _log.exception("Sync item failed: %s", "cache:info")
 
 
 async def _collect_namespace_stats(
@@ -422,8 +459,11 @@ async def _collect_namespace_stats(
 
             stats["total_keys"] += key_count
 
-        except Exception as e:
+        # Namespaces are independent and cache implementations are pluggable.
+        except Exception as e:  # noqa: BLE001, RUF100
             stats["errors"].append(f"Error checking namespace {namespace}: {e}")
+            stats["item_errors"][namespace] = str(e)
+            _log.exception("Sync item failed: %s", namespace)
 
 
 async def optimize_cache(
@@ -434,6 +474,7 @@ async def optimize_cache(
         "optimizations": [],
         "warnings": [],
         "errors": [],
+        "item_errors": {},
     }
 
     try:
@@ -448,9 +489,11 @@ async def optimize_cache(
         # Analyze cache stats and generate warnings
         await _analyze_cache_stats(result)
 
-    except Exception as e:
+        # Optimization dispatches to a pluggable cache implementation.
+    except Exception as e:  # noqa: BLE001, RUF100
         result["errors"].append(str(e))
-        debug(f"Error optimizing cache: {e}")
+        result["item_errors"]["cache"] = str(e)
+        _log.exception("Cache optimization failed")
 
     return result
 
@@ -463,14 +506,20 @@ async def _configure_memory_settings(
         max_memory_bytes = max_memory_mb * 1024 * 1024
         await cache.config_set("maxmemory", max_memory_bytes)
         result["optimizations"].append(f"Set max memory to {max_memory_mb}MB")
-    except Exception as e:
+    # Cache configuration is implemented by a pluggable adapter.
+    except Exception as e:  # noqa: BLE001, RUF100
         result["errors"].append(f"Error setting max memory: {e}")
+        result["item_errors"]["maxmemory"] = str(e)
+        _log.exception("Sync item failed: %s", "maxmemory")
 
     try:
         await cache.config_set("maxmemory-policy", eviction_policy)
         result["optimizations"].append(f"Set eviction policy to {eviction_policy}")
-    except Exception as e:
+    # Cache configuration is implemented by a pluggable adapter.
+    except Exception as e:  # noqa: BLE001, RUF100
         result["errors"].append(f"Error setting eviction policy: {e}")
+        result["item_errors"]["maxmemory-policy"] = str(e)
+        _log.exception("Sync item failed: %s", "maxmemory-policy")
 
 
 async def _analyze_cache_stats(result: dict[str, t.Any]) -> None:

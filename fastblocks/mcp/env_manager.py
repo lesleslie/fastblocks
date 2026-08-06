@@ -109,14 +109,13 @@ class EnvironmentManager:
         result: EnvironmentValidationResult,
     ) -> None:
         """Validate variable against its pattern."""
-        if var.validator_pattern:
-            if not re.match(
-                var.validator_pattern, actual_value
-            ):  # REGEX OK: custom validator pattern from config
-                result.invalid_format.append(
-                    f"{var.name}: does not match pattern {var.validator_pattern}"
-                )
-                result.valid = False
+        if var.validator_pattern and not re.match(
+            var.validator_pattern, actual_value
+        ):  # REGEX OK: custom validator pattern from config
+            result.invalid_format.append(
+                f"{var.name}: does not match pattern {var.validator_pattern}"
+            )
+            result.valid = False
 
     def validate_environment_variables(
         self,
@@ -187,9 +186,10 @@ class EnvironmentManager:
         result: EnvironmentValidationResult,
     ) -> None:
         """Validate UUID format."""
-        if "uuid" in name_lower or "id" in name_lower:
-            if not self.validation_patterns["uuid"].match(value):
-                result.recommendations.append(f"{name}: consider using UUID format")
+        if (
+            "uuid" in name_lower or "id" in name_lower
+        ) and not self.validation_patterns["uuid"].match(value):
+            result.recommendations.append(f"{name}: consider using UUID format")
 
     def _validate_boolean_pattern(
         self,
@@ -203,11 +203,10 @@ class EnvironmentManager:
             "debug" in name_lower
             or "enable" in name_lower
             or name_lower.endswith("_flag")
-        ):
-            if not self.validation_patterns["boolean"].match(value):
-                result.invalid_format.append(
-                    f"{name}: should be boolean (true/false, 1/0, yes/no)"
-                )
+        ) and not self.validation_patterns["boolean"].match(value):
+            result.invalid_format.append(
+                f"{name}: should be boolean (true/false, 1/0, yes/no)"
+            )
 
     def _validate_log_level_pattern(
         self,
@@ -217,9 +216,10 @@ class EnvironmentManager:
         result: EnvironmentValidationResult,
     ) -> None:
         """Validate log level values."""
-        if "log" in name_lower and "level" in name_lower:
-            if not self.validation_patterns["log_level"].match(value):
-                result.invalid_format.append(f"{name}: invalid log level")
+        if (
+            "log" in name_lower and "level" in name_lower
+        ) and not self.validation_patterns["log_level"].match(value):
+            result.invalid_format.append(f"{name}: invalid log level")
 
     def _check_secret_strength(
         self,
@@ -273,13 +273,14 @@ class EnvironmentManager:
             self._check_secret_strength(name, value, result)
 
         # Check for exposed secrets in non-secret variables
-        if not (is_marked_secret or is_potentially_secret):
-            if len(value) > 20 and re.match(
-                r"^[A-Za-z0-9+/=]+$", value
-            ):  # REGEX OK: detect potential base64-encoded secrets
-                result.security_warnings.append(
-                    f"{name}: value looks like encoded data but not marked as secret"
-                )
+        if (
+            not (is_marked_secret or is_potentially_secret)
+            and len(value) > 20
+            and re.match(r"^[A-Za-z0-9+/=]+$", value)
+        ):  # REGEX OK: detect potential base64-encoded secrets
+            result.security_warnings.append(
+                f"{name}: value looks like encoded data but not marked as secret"
+            )
 
     def _generate_recommendations(
         self, variables: list[EnvironmentVariable], result: EnvironmentValidationResult
@@ -473,8 +474,8 @@ class EnvironmentManager:
             grouped[prefix].append(var)
 
         # Sort variables within each group
-        for prefix in grouped:
-            grouped[prefix].sort(key=lambda v: (not v.required, v.name))
+        for prefix, group in grouped.items():
+            group.sort(key=lambda v: (not v.required, v.name))
 
         return grouped
 
@@ -700,13 +701,14 @@ class EnvironmentManager:
         self, var: EnvironmentVariable, audit_results: dict[str, list[str]]
     ) -> None:
         """Audit format validation patterns."""
-        if var.validator_pattern and var.value:
-            if not re.match(
-                var.validator_pattern, var.value
-            ):  # REGEX OK: custom validator pattern from config
-                audit_results["low"].append(
-                    f"{var.name}: Value doesn't match expected pattern"
-                )
+        if (
+            var.validator_pattern
+            and var.value
+            and not re.match(var.validator_pattern, var.value)
+        ):  # REGEX OK: custom validator pattern from config
+            audit_results["low"].append(
+                f"{var.name}: Value doesn't match expected pattern"
+            )
 
     def _audit_best_practices(
         self, var: EnvironmentVariable, audit_results: dict[str, list[str]]

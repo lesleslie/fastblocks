@@ -27,7 +27,10 @@ from enum import Enum
 from uuid import UUID
 
 # Oneiric imports
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.templates._advanced_manager")
 
 
 # Custom implementations for ACB compatibility
@@ -63,10 +66,10 @@ from jinja2.runtime import StrictUndefined as RuntimeStrictUndefined
 from .jinja2 import Templates, TemplatesSettings
 
 __all__ = [
-    "HybridTemplatesManager",
-    "HybridTemplatesSettings",
     "AutocompleteItem",
     "FragmentInfo",
+    "HybridTemplatesManager",
+    "HybridTemplatesSettings",
     "SecurityLevel",
     "TemplateError",
     "TemplateValidationResult",
@@ -320,7 +323,14 @@ class HybridTemplatesManager:
         """Initialize base templates instance."""
         try:
             self.base_templates = depends.resolve("fastblocks", "templates")
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            # Fallback path: no templates registered, so create one
+            # ourselves. Logged because this is a structural mismatch
+            # that an operator needs to know about.
+            _log.warning(
+                "HybridTemplatesManager._initialize_base_templates: resolver fallback: %s",
+                type(exc).__name__,
+            )
             self.base_templates = Templates()
             if not self.base_templates.app:
                 await self.base_templates.init()
@@ -420,7 +430,15 @@ class HybridTemplatesManager:
             )
             result.errors.append(error)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Any non-Jinja2 failure (broken env, missing module, etc.)
+            # comes through here -- distinct from syntax errors, which
+            # are caught above and carry richer position info.
+            _log.exception(
+                "HybridTemplatesManager.validate_template(%s): %s",
+                template_name,
+                type(e).__name__,
+            )
             result.is_valid = False
             error = TemplateValidationError(
                 message=f"Validation error: {e}",
@@ -531,7 +549,15 @@ class HybridTemplatesManager:
         except UndefinedError:
             # This is expected for some undefined variables
             pass
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Mock render failures usually mean the template has a
+            # structural problem, not an UndefinedError. Distinct from
+            # the natural `UndefinedError` branch above.
+            _log.exception(
+                "HybridTemplatesManager._validate_compilation(%s): %s",
+                template_name,
+                type(e).__name__,
+            )
             result.is_valid = False
             error = TemplateValidationError(
                 message=f"Compilation error: {e}",
@@ -641,7 +667,14 @@ class HybridTemplatesManager:
             template_names = await asyncio.get_event_loop().run_in_executor(
                 None, env.loader.list_templates
             )
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            # Discovery failures (env without a loader, broken loader,
+            # loop closure) -- log and return without fragments; the
+            # template manager still works without fragment discovery.
+            _log.warning(
+                "HybridTemplatesManager._discover_fragments: list_templates raised %s",
+                type(exc).__name__,
+            )
             return
 
         for template_name in template_names:
@@ -875,7 +908,7 @@ class HybridTemplatesManager:
         filtered.sort(
             key=lambda x: (
                 not x.name.lower().startswith(current_word.lower()),
-                not x.name.lower() == current_word.lower(),
+                x.name.lower() != current_word.lower(),
                 x.name.lower(),
             )
         )
@@ -924,7 +957,15 @@ class HybridTemplatesManager:
                 template = env.get_template(fragment_info.template_path)
                 return template.render(context or {})
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Render failures during fragment execution are surfaced
+            # as ``TemplateError`` so the caller can distinguish
+            # "fragment render crashed" from a normal TemplateNotFound.
+            _log.exception(
+                "HybridTemplatesManager.render_fragment(%s): %s",
+                fragment_name,
+                type(e).__name__,
+            )
             raise TemplateError(f"Error rendering fragment '{fragment_name}': {e}")
 
     async def _find_fragment(

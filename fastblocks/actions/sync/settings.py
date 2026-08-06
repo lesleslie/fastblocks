@@ -4,34 +4,17 @@ Settings sync is intentionally limited to filesystem and cloud storage only.
 Unlike templates, settings are not cached for security and consistency reasons.
 """
 
+from __future__ import annotations
+
+import hashlib
 import typing as t
 from pathlib import Path
 
 import yaml
-from oneiric.core.resolution import Resolver
-
-# Migration from ACB to Oneiric
-depends = Resolver()
-
-# Debug function: Oneiric-backed replacement for the legacy acb.debug symbol
-def debug(msg: str) -> None:
-    """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
-    from oneiric.core.logging import get_logger
-    get_logger("actions.sync.settings").debug(msg)
-
-
-    # Note: hash module would need Oneiric equivalent for production use
-    import hashlib
-
-    class HashFallback:
-        @staticmethod
-        async def blake3(data: bytes) -> str:
-            """Blake3 fallback using SHA256."""
-            return hashlib.sha256(data).hexdigest()
-
-    hash = HashFallback()
-
 from anyio import Path as AsyncPath
+from oneiric.core.logging import get_logger
+from oneiric.core.resolution import Candidate
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
 from .strategies import (
     ConflictStrategy,
@@ -43,6 +26,18 @@ from .strategies import (
     resolve_conflict,
     should_sync,
 )
+
+depends = get_resolver()
+_log = get_logger("fastblocks.actions.sync.settings")
+
+
+def _build_config_candidate(config: t.Any) -> Candidate:
+    return Candidate(domain="fastblocks", key="config", factory=lambda: config)
+
+
+def debug(msg: str) -> None:
+    """Log a settings-sync debug message."""
+    _log.debug(msg)
 
 
 class SettingsSyncResult(SyncResult):
@@ -119,14 +114,16 @@ async def _initialize_storage_only(result: SettingsSyncResult) -> t.Any | None:
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        storage = await depends.resolve("fastblocks", "storage")
+        storage = await resolve_component_async(depends, "fastblocks", "storage")
         if not storage:
-            result.errors.append(Exception("Storage adapter not available"))
+            result.record_primary_error(Exception("Storage adapter not available"))
             return None
 
         return storage
-    except Exception as e:
-        result.errors.append(e)
+        # Component factories are pluggable and may raise implementation-specific errors.
+    except Exception as e:  # noqa: BLE001, RUF100
+        result.record_primary_error(e)
+        _log.exception("Settings storage adapter resolution failed")
         return None
 
 
@@ -144,8 +141,8 @@ async def _get_default_settings_bucket() -> str:
                 bucket_name = "settings"
             debug(f"Using settings bucket from config: {bucket_name}")
             return bucket_name
-    except Exception as e:
-        debug(f"Could not load storage config, using default: {e}")
+    except (OSError, UnicodeError, yaml.YAMLError, ValueError) as e:
+        _log.warning("Could not load settings storage config; using default: %s", e)
     debug("Using fallback settings bucket: settings")
     return "settings"
 
@@ -167,9 +164,11 @@ async def _sync_settings_files(
             )
             _accumulate_settings_sync_results(file_result, result)
 
-        except Exception as e:
-            result.errors.append(e)
-            debug(f"Error syncing settings {settings_info['relative_path']}: {e}")
+        # Settings files are independent and storage implementations are pluggable.
+        except Exception as e:  # noqa: BLE001, RUF100
+            item = str(settings_info["relative_path"])
+            result.record_item_error(item, e)
+            _log.exception("Sync item failed: %s", item)
 
 
 def _accumulate_settings_sync_results(
@@ -188,6 +187,12 @@ def _accumulate_settings_sync_results(
     if file_result.get("backed_up"):
         result.backed_up.extend(file_result["backed_up"])
 
+    result.completed.update(file_result.get("completed", {}))
+    result.item_errors.update(file_result.get("item_errors", {}))
+    if result.primary_error is None:
+        result.primary_error = file_result.get("primary_error")
+    result.cleanup_errors.extend(file_result.get("cleanup_errors", []))
+
 
 async def _handle_config_reload(
     reload_config: bool,
@@ -197,9 +202,9 @@ async def _handle_config_reload(
         try:
             await _reload_configuration(result.adapters_affected)
             result.config_reloaded = result.adapters_affected.copy()
-        except Exception as e:
+        except (OSError, ValueError, yaml.YAMLError) as e:
             result.errors.append(e)
-            debug(f"Error reloading configuration: {e}")
+            _log.exception("Settings configuration reload failed")
 
 
 async def _discover_settings_files(
@@ -274,7 +279,18 @@ async def _sync_single_settings_file(
     storage_path = settings_info["storage_path"]
     adapter_name = settings_info["adapter_name"]
 
-    result = _create_sync_result()
+    result: dict[str, t.Any] = {
+        "synced": [],
+        "conflicts": [],
+        "errors": [],
+        "skipped": [],
+        "backed_up": [],
+        "adapters_affected": [],
+        "completed": {},
+        "item_errors": {},
+        "primary_error": None,
+        "cleanup_errors": [],
+    }
 
     try:
         local_info, remote_info = await _get_file_infos(
@@ -309,23 +325,17 @@ async def _sync_single_settings_file(
 
         if result["synced"]:
             result["adapters_affected"].append(adapter_name)
+            result["completed"][storage_path] = True
 
-    except Exception as e:
+        # A settings sync may invoke arbitrary storage implementations.
+    except Exception as e:  # noqa: BLE001, RUF100
         result["errors"].append(e)
-        debug(f"Error in _sync_single_settings_file for {storage_path}: {e}")
+        result["completed"][storage_path] = False
+        result["item_errors"][storage_path] = str(e)
+        result["primary_error"] = result["primary_error"] or str(e)
+        _log.exception("Sync item failed: %s", storage_path)
 
     return result
-
-
-def _create_sync_result() -> dict[str, t.Any]:
-    return {
-        "synced": [],
-        "conflicts": [],
-        "errors": [],
-        "skipped": [],
-        "backed_up": [],
-        "adapters_affected": [],
-    }
 
 
 async def _get_file_infos(
@@ -363,8 +373,10 @@ async def _validate_local_yaml(
     if local_info["exists"]:
         try:
             await _validate_yaml_content(local_info["content"])
-        except Exception as e:
+        except ValueError as e:
             result["errors"].append(f"Invalid YAML in {storage_path}: {e}")
+            result["completed"][storage_path] = False
+            result["item_errors"][storage_path] = str(e)
             return False
     return True
 
@@ -451,56 +463,39 @@ async def _get_storage_file_info(
     bucket: str,
     file_path: str,
 ) -> dict[str, t.Any]:
-    try:
-        bucket_obj = getattr(storage, bucket, None)
+    bucket_obj = getattr(storage, bucket, None)
+    if bucket_obj is None:
+        await storage._create_bucket(bucket)
+        bucket_obj = getattr(storage, bucket)
 
-        if not bucket_obj:
-            await storage._create_bucket(bucket)
-            bucket_obj = getattr(storage, bucket)
-
-        exists = await bucket_obj.exists(file_path)
-
-        if not exists:
-            return {
-                "exists": False,
-                "size": 0,
-                "mtime": 0,
-                "content_hash": None,
-            }
-
-        content = await bucket_obj.read(file_path)
-        metadata = await bucket_obj.stat(file_path)
-
-        # ACB's Blake3 is 10x faster than Blake2b for cryptographic hashing
-        content_hash = await hash.blake3(content)
-
-        return {
-            "exists": True,
-            "size": len(content),
-            "mtime": metadata.get("mtime", 0),
-            "content_hash": content_hash,
-            "content": content,
-        }
-
-    except Exception as e:
-        debug(f"Error getting storage file info for {file_path}: {e}")
+    exists = await bucket_obj.exists(file_path)
+    if not exists:
         return {
             "exists": False,
             "size": 0,
             "mtime": 0,
             "content_hash": None,
-            "error": str(e),
         }
+
+    content = await bucket_obj.read(file_path)
+    metadata = await bucket_obj.stat(file_path)
+    content_hash = hashlib.blake2b(content).hexdigest()
+
+    return {
+        "exists": True,
+        "size": len(content),
+        "mtime": metadata.get("mtime", 0),
+        "content_hash": content_hash,
+        "content": content,
+    }
 
 
 async def _validate_yaml_content(content: bytes) -> None:
     try:
-        import yaml
-
         yaml.safe_load(content.decode())
-    except Exception as e:
+    except (UnicodeError, yaml.YAMLError) as e:
         msg = f"Invalid YAML content: {e}"
-        raise ValueError(msg)
+        raise ValueError(msg) from e
 
 
 async def _pull_settings(
@@ -511,32 +506,28 @@ async def _pull_settings(
     strategy: SyncStrategy,
     result: dict[str, t.Any],
 ) -> None:
-    try:
-        bucket_obj = getattr(storage, bucket)
+    bucket_obj = getattr(storage, bucket)
 
-        if strategy.dry_run:
-            debug(f"DRY RUN: Would pull {storage_path} to {local_path}")
-            result["synced"].append(f"PULL(dry-run): {storage_path}")
-            return
+    if strategy.dry_run:
+        debug(f"DRY RUN: Would pull {storage_path} to {local_path}")
+        result["synced"].append(f"PULL(dry-run): {storage_path}")
+        return
 
-        if await local_path.exists() and strategy.backup_on_conflict:
+    if await local_path.exists() and strategy.backup_on_conflict:
+        try:
             backup_path = await create_backup(Path(local_path))
             result["backed_up"].append(str(backup_path))
+        except OSError as e:
+            result["cleanup_errors"].append(str(e))
+            _log.exception("Settings backup failed: %s", storage_path)
 
-        content = await bucket_obj.read(storage_path)
+    content = await bucket_obj.read(storage_path)
+    await _validate_yaml_content(content)
+    await local_path.parent.mkdir(parents=True, exist_ok=True)
+    await local_path.write_bytes(content)
 
-        await _validate_yaml_content(content)
-
-        await local_path.parent.mkdir(parents=True, exist_ok=True)
-
-        await local_path.write_bytes(content)
-
-        result["synced"].append(f"PULL: {storage_path}")
-        debug(f"Pulled settings from storage: {storage_path}")
-
-    except Exception as e:
-        result["errors"].append(e)
-        debug(f"Error pulling settings {storage_path}: {e}")
+    result["synced"].append(f"PULL: {storage_path}")
+    debug(f"Pulled settings from storage: {storage_path}")
 
 
 async def _push_settings(
@@ -547,25 +538,19 @@ async def _push_settings(
     strategy: SyncStrategy,
     result: dict[str, t.Any],
 ) -> None:
-    try:
-        bucket_obj = getattr(storage, bucket)
+    bucket_obj = getattr(storage, bucket)
 
-        if strategy.dry_run:
-            debug(f"DRY RUN: Would push {local_path} to {storage_path}")
-            result["synced"].append(f"PUSH(dry-run): {storage_path}")
-            return
+    if strategy.dry_run:
+        debug(f"DRY RUN: Would push {local_path} to {storage_path}")
+        result["synced"].append(f"PUSH(dry-run): {storage_path}")
+        return
 
-        content = await local_path.read_bytes()
-        await _validate_yaml_content(content)
+    content = await local_path.read_bytes()
+    await _validate_yaml_content(content)
+    await bucket_obj.write(storage_path, content)
 
-        await bucket_obj.write(storage_path, content)
-
-        result["synced"].append(f"PUSH: {storage_path}")
-        debug(f"Pushed settings to storage: {storage_path}")
-
-    except Exception as e:
-        result["errors"].append(e)
-        debug(f"Error pushing settings {storage_path}: {e}")
+    result["synced"].append(f"PUSH: {storage_path}")
+    debug(f"Pushed settings to storage: {storage_path}")
 
 
 async def _handle_settings_conflict(
@@ -578,73 +563,68 @@ async def _handle_settings_conflict(
     strategy: SyncStrategy,
     result: dict[str, t.Any],
 ) -> None:
-    try:
-        if strategy.conflict_strategy == ConflictStrategy.MANUAL:
-            result["conflicts"].append(
-                {
-                    "path": storage_path,
-                    "local_mtime": local_info["mtime"],
-                    "remote_mtime": remote_info["mtime"],
-                    "reason": "manual_resolution_required",
-                },
-            )
-            return
-
-        try:
-            await _validate_yaml_content(local_info["content"])
-            await _validate_yaml_content(remote_info["content"])
-        except Exception as e:
-            result["errors"].append(f"Invalid YAML during conflict resolution: {e}")
-            return
-
-        resolved_content, resolution_reason = await resolve_conflict(
-            Path(local_path),
-            remote_info["content"],
-            local_info["content"],
-            strategy.conflict_strategy,
-            local_info["mtime"],
-            remote_info["mtime"],
-        )
-
-        if strategy.dry_run:
-            debug(
-                f"DRY RUN: Would resolve conflict for {storage_path}: {resolution_reason}",
-            )
-            result["synced"].append(
-                f"CONFLICT(dry-run): {storage_path} - {resolution_reason}",
-            )
-            return
-
-        if (
-            strategy.backup_on_conflict
-            or strategy.conflict_strategy == ConflictStrategy.BACKUP_BOTH
-        ):
-            backup_path = await create_backup(Path(local_path), "conflict")
-            result["backed_up"].append(str(backup_path))
-
-        if resolved_content == remote_info["content"]:
-            await local_path.write_bytes(resolved_content)
-            result["synced"].append(
-                f"CONFLICT->REMOTE: {storage_path} - {resolution_reason}",
-            )
-        else:
-            bucket_obj = getattr(storage, bucket)
-            await bucket_obj.write(storage_path, resolved_content)
-            result["synced"].append(
-                f"CONFLICT->LOCAL: {storage_path} - {resolution_reason}",
-            )
-
-        debug(f"Resolved settings conflict: {storage_path} - {resolution_reason}")
-
-    except Exception as e:
-        result["errors"].append(e)
+    if strategy.conflict_strategy == ConflictStrategy.MANUAL:
         result["conflicts"].append(
             {
                 "path": storage_path,
-                "error": str(e),
-                "reason": "resolution_failed",
+                "local_mtime": local_info["mtime"],
+                "remote_mtime": remote_info["mtime"],
+                "reason": "manual_resolution_required",
             },
         )
+        return
+
+    try:
+        await _validate_yaml_content(local_info["content"])
+        await _validate_yaml_content(remote_info["content"])
+    except ValueError as e:
+        result["errors"].append(f"Invalid YAML during conflict resolution: {e}")
+        result["completed"][storage_path] = False
+        result["item_errors"][storage_path] = str(e)
+        return
+
+    resolved_content, resolution_reason = await resolve_conflict(
+        Path(local_path),
+        remote_info["content"],
+        local_info["content"],
+        strategy.conflict_strategy,
+        local_info["mtime"],
+        remote_info["mtime"],
+    )
+
+    if strategy.dry_run:
+        debug(
+            f"DRY RUN: Would resolve conflict for {storage_path}: {resolution_reason}",
+        )
+        result["synced"].append(
+            f"CONFLICT(dry-run): {storage_path} - {resolution_reason}",
+        )
+        return
+
+    if (
+        strategy.backup_on_conflict
+        or strategy.conflict_strategy == ConflictStrategy.BACKUP_BOTH
+    ):
+        try:
+            backup_path = await create_backup(Path(local_path), "conflict")
+            result["backed_up"].append(str(backup_path))
+        except OSError as e:
+            result["cleanup_errors"].append(str(e))
+            _log.exception("Settings conflict backup failed: %s", storage_path)
+
+    if resolved_content == remote_info["content"]:
+        await local_path.write_bytes(resolved_content)
+        result["synced"].append(
+            f"CONFLICT->REMOTE: {storage_path} - {resolution_reason}",
+        )
+    else:
+        bucket_obj = getattr(storage, bucket)
+        await bucket_obj.write(storage_path, resolved_content)
+        result["synced"].append(
+            f"CONFLICT->LOCAL: {storage_path} - {resolution_reason}",
+        )
+
+    debug(f"Resolved settings conflict: {storage_path} - {resolution_reason}")
 
 
 async def _reload_configuration(adapter_names: list[str]) -> None:
@@ -653,10 +633,10 @@ async def _reload_configuration(adapter_names: list[str]) -> None:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
         config = await reload_config()  # type: ignore[name-defined]
-        depends.set("config", config)
+        depends.register(_build_config_candidate(config))
         debug(f"Reloaded configuration for adapters: {adapter_names}")
-    except Exception as e:
-        debug(f"Error reloading configuration: {e}")
+    except (OSError, ValueError, yaml.YAMLError):
+        _log.exception("Settings configuration reload failed")
         raise
 
 
@@ -676,9 +656,9 @@ async def backup_settings(
 
         await _backup_files_with_patterns(settings_path, backup_suffix, result)
 
-    except Exception as e:
+    except OSError as e:
         result["errors"].append(str(e))
-        debug(f"Error in backup_settings: {e}")
+        _log.exception("Error in backup_settings")
 
     return result
 
@@ -728,8 +708,9 @@ async def _backup_single_file(
     try:
         backup_path = await create_backup(Path(file_path), backup_suffix)
         result["backed_up"].append(str(backup_path))
-    except Exception as e:
+    except OSError as e:
         result["errors"].append(f"{file_path}: {e}")
+        _log.exception("Settings backup failed: %s", file_path)
 
 
 async def get_settings_sync_status(
@@ -764,9 +745,10 @@ async def get_settings_sync_status(
             status["conflicts"] + status["local_only"] + status["remote_only"]
         )
 
-    except Exception as e:
+    # Status collection crosses a pluggable storage implementation boundary.
+    except Exception as e:  # noqa: BLE001, RUF100
         status["error"] = str(e)
-        debug(f"Error getting settings sync status: {e}")
+        _log.exception("Settings sync status collection failed")
 
     return status
 
@@ -775,7 +757,7 @@ async def _get_storage_adapter() -> t.Any:
     """Get the storage adapter."""
     # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-    return depends.resolve("fastblocks", "storage")
+    return await resolve_component_async(depends, "fastblocks", "storage")
 
 
 async def _process_settings_files(
@@ -875,7 +857,7 @@ async def validate_all_settings(
                 content = await file_path.read_bytes()
                 await _validate_yaml_content(content)
                 result["valid"].append(str(file_path))
-            except Exception as e:
+            except (OSError, UnicodeError, ValueError) as e:
                 result["invalid"].append(
                     {
                         "path": str(file_path),
@@ -883,9 +865,9 @@ async def validate_all_settings(
                     },
                 )
 
-    except Exception as e:
+    except OSError as e:
         result["error"] = str(e)
-        debug(f"Error validating settings: {e}")
+        _log.exception("Error validating settings")
 
     return result
 

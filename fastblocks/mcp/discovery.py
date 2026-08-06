@@ -17,8 +17,6 @@ depends = Resolver()
 class AdapterBase:
     """Custom AdapterBase for Oneiric compatibility."""
 
-    pass
-
 
 class AdapterInfo:
     """Information about a discovered adapter."""
@@ -115,7 +113,7 @@ class AdapterDiscoveryServer:
             # Get all registered instances that might be adapters
             registry = getattr(depends, "_registry", {})
 
-            for _key, adapter in registry.items():
+            for adapter in registry.values():
                 if hasattr(adapter, "MODULE_ID") and hasattr(adapter, "MODULE_STATUS"):
                     adapter_name = adapter.__class__.__name__.lower().replace(
                         "adapter", ""
@@ -201,7 +199,8 @@ class AdapterDiscoveryServer:
         """Extract description from class docstring."""
         doc = cls.__doc__
         if doc:
-            return doc.split("\n")[0].strip('."""')
+            first_line = doc.split("\n")[0]
+            return first_line.strip().strip('"').strip("'").strip(".")
         return ""
 
     def _extract_protocols(self, cls: type) -> list[str]:
@@ -248,7 +247,7 @@ class AdapterDiscoveryServer:
         """Get an actual adapter instance from ACB registry."""
         try:
             return depends.get(name)
-        except Exception:
+        except (KeyError, AttributeError, RuntimeError):
             return None
 
     async def instantiate_adapter(self, name: str) -> Any | None:
@@ -261,5 +260,5 @@ class AdapterDiscoveryServer:
             module = importlib.import_module(adapter_info.module_path)
             adapter_class = getattr(module, adapter_info.class_name)
             return adapter_class()
-        except Exception:
+        except (ImportError, AttributeError, TypeError):
             return None

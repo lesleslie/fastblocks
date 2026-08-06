@@ -4,6 +4,7 @@ Registers a lightweight ``mcp_common.websocket`` package in ``sys.modules``
 so fastblocks websocket tests can import from it at collection time without
 needing the real mcp-common package installed in the test venv.
 """
+
 from __future__ import annotations
 
 import sys
@@ -40,14 +41,10 @@ class _StubWebSocketAuthenticator:
         header = base64.urlsafe_b64encode(
             json.dumps({"alg": self.algorithm, "typ": "JWT"}).encode()
         ).rstrip(b"=")
-        body = base64.urlsafe_b64encode(
-            json.dumps(payload).encode()
-        ).rstrip(b"=")
+        body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=")
         signing_input = header + b"." + body
         signature = base64.urlsafe_b64encode(
-            hmac.new(
-                self.secret.encode(), signing_input, hashlib.sha256
-            ).digest()
+            hmac.new(self.secret.encode(), signing_input, hashlib.sha256).digest()
         ).rstrip(b"=")
         return (signing_input + b"." + signature).decode()
 
@@ -66,9 +63,7 @@ class _StubWebSocketAuthenticator:
         try:
             signing_input = header_b64.encode() + b"." + body_b64.encode()
             expected = base64.urlsafe_b64encode(
-                hmac.new(
-                    self.secret.encode(), signing_input, hashlib.sha256
-                ).digest()
+                hmac.new(self.secret.encode(), signing_input, hashlib.sha256).digest()
             ).rstrip(b"=")
             if not hmac.compare_digest(expected, sig_b64.encode()):
                 return None
@@ -163,11 +158,13 @@ class _StubWebSocketProtocol:
     @staticmethod
     def encode(message: dict[str, t.Any]) -> str:
         import json
+
         return json.dumps(message)
 
     @staticmethod
     def decode(raw: str) -> _StubWebSocketMessage:
         import json
+
         payload = json.loads(raw)
         msg = _StubWebSocketMessage(
             type=payload.get("type", ""),
@@ -232,9 +229,7 @@ class _StubWebSocketServer:
         for conns in self.connection_rooms.values():
             conns.discard(connection_id)
 
-    async def broadcast_to_room(
-        self, room_id: str, event: dict[str, t.Any]
-    ) -> None:
+    async def broadcast_to_room(self, room_id: str, event: dict[str, t.Any]) -> None:
         import json
 
         for connection_id in list(self.connection_rooms.get(room_id, ())):
@@ -285,7 +280,7 @@ def _install_mcp_common_websocket_stub() -> None:
     websocket_pkg.WebSocketServer = _StubWebSocketServer
     websocket_pkg.WebSocketClient = _StubWebSocketClient
     sys.modules["mcp_common.websocket"] = websocket_pkg
-    setattr(sys.modules["mcp_common"], "websocket", websocket_pkg)
+    sys.modules["mcp_common"].websocket = websocket_pkg
 
     protocol_mod = ModuleType("mcp_common.websocket.protocol")
     protocol_mod.EventTypes = _StubEventTypes
@@ -293,9 +288,9 @@ def _install_mcp_common_websocket_stub() -> None:
     protocol_mod.MessageType = _StubMessageType
     protocol_mod.WebSocketMessage = _StubWebSocketMessage
     sys.modules["mcp_common.websocket.protocol"] = protocol_mod
-    setattr(websocket_pkg, "protocol", protocol_mod)
+    websocket_pkg.protocol = protocol_mod
 
     auth_mod = ModuleType("mcp_common.websocket.auth")
     auth_mod.WebSocketAuthenticator = _StubWebSocketAuthenticator
     sys.modules["mcp_common.websocket.auth"] = auth_mod
-    setattr(websocket_pkg, "auth", auth_mod)
+    websocket_pkg.auth = auth_mod

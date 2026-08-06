@@ -8,17 +8,19 @@ from contextlib import suppress
 from importlib import import_module
 from pathlib import Path
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
 # Migration from ACB to Oneiric
 depends = Resolver()
 
+_log = get_logger("fastblocks.actions.gather.models")
+
+
 # Debug function: Oneiric-backed replacement for the legacy acb.debug symbol
 def debug(msg: str) -> None:
     """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
-    from oneiric.core.logging import get_logger
-    get_logger("actions.gather.models").debug(msg)
-
+    _log.debug(msg)
 
     def get_adapters() -> list[t.Any]:
         """Adapter fallback - returns empty list."""
@@ -240,7 +242,7 @@ async def _process_base_models_file(
         models = await _extract_models_from_file(models_file, base_classes)
         _add_models_to_base_collection(models, str(models_file), base_models)
         debug(f"Found {len(models)} base models in models.py")
-    except Exception as e:
+    except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
         debug(f"Error gathering base models from models.py: {e}")
 
 
@@ -266,7 +268,7 @@ async def _process_base_models_directory(
                 debug(
                     f"Found {len(models)} models in {file_path.relative_to(root_path())}",
                 )
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
             debug(f"Error gathering models from {file_path}: {e}")
 
 
@@ -372,7 +374,7 @@ async def _gather_models_with_glob_pattern(
                         f"Found {len(models)} models in {adapter_name}/{file_path.name}",
                     )
 
-            except Exception as e:
+            except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
                 debug(
                     f"Error gathering models from {adapter_name}/{file_path.name}: {e}",
                 )
@@ -404,7 +406,7 @@ async def _gather_models_with_exact_pattern(
             if models:
                 debug(f"Found {len(models)} models in {adapter_name}/{pattern}")
 
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
             debug(f"Error gathering models from {adapter_name}/{pattern}: {e}")
 
     return found_models
@@ -460,7 +462,7 @@ async def _process_custom_models_file(
         if models:
             debug(f"Found {len(models)} custom models in {custom_path}")
 
-    except Exception as e:
+    except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
         debug(f"Error gathering custom models from {custom_path}: {e}")
 
 
@@ -615,7 +617,7 @@ async def validate_models(
     for model_name, model_class in models.items():
         try:
             _validate_single_model(model_name, model_class, validation)
-        except Exception as e:
+        except (ImportError, AttributeError, ValueError, TypeError) as e:
             validation["invalid_models"].append(
                 {
                     "model": model_name,

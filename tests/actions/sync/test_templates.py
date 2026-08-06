@@ -1,6 +1,8 @@
 """Tests for template synchronization functionality."""
 
-from unittest.mock import AsyncMock, patch
+from __future__ import annotations
+
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from anyio import Path as AsyncPath
@@ -53,14 +55,73 @@ def mock_strategy():
 def mock_depends_get(mock_storage, mock_cache):
     """Create a mock for depends.get that returns adapters."""
 
-    async def _get(name):
-        if name == "storage":
+    async def _get(_resolver, domain, key):
+        if domain == "fastblocks" and key == "storage":
             return mock_storage
-        elif name == "cache":
+        if domain == "fastblocks" and key == "cache":
             return mock_cache
         return None
 
     return AsyncMock(side_effect=_get)
+
+
+async def test_cleanup_does_not_replace_primary_sync_error() -> None:
+    local_path = MagicMock()
+    local_path.__fspath__.return_value = "/tmp/index.html"
+    local_path.exists = AsyncMock(return_value=False)
+    local_path.parent.mkdir = AsyncMock()
+    local_path.write_bytes = AsyncMock(side_effect=OSError("write failed"))
+
+    storage = MagicMock()
+    storage.templates.read = AsyncMock(return_value=b"remote content")
+    cache = MagicMock()
+    cache.delete = AsyncMock(side_effect=RuntimeError("cleanup failed"))
+
+    template_info = {
+        "local_path": local_path,
+        "relative_path": "index.html",
+        "storage_path": "index.html",
+    }
+    local_info = {
+        "exists": False,
+        "size": 0,
+        "mtime": 0,
+        "content_hash": None,
+    }
+    remote_info = {
+        "exists": True,
+        "size": 14,
+        "mtime": 1,
+        "content_hash": "remote",
+        "content": b"remote content",
+    }
+    strategy = SyncStrategy(direction=SyncDirection.PULL)
+
+    with (
+        patch(
+            "fastblocks.actions.sync.templates._initialize_adapters",
+            AsyncMock(return_value={"storage": storage, "cache": cache}),
+        ),
+        patch(
+            "fastblocks.actions.sync.templates._discover_template_files",
+            AsyncMock(return_value=[template_info]),
+        ),
+        patch(
+            "fastblocks.actions.sync.templates.get_file_info",
+            AsyncMock(return_value=local_info),
+        ),
+        patch(
+            "fastblocks.actions.sync.templates._get_storage_file_info",
+            AsyncMock(return_value=remote_info),
+        ),
+    ):
+        result = await sync_templates(
+            strategy=strategy,
+            storage_bucket="templates",
+        )
+
+    assert result.primary_error == "write failed"
+    assert result.cleanup_errors == ["cleanup failed"]
 
 
 class TestTemplateSyncResult:
@@ -151,10 +212,13 @@ class TestSyncTemplates:
     async def test_sync_templates_no_storage_adapter(self, mock_strategy):
         """Test sync_templates handles missing storage adapter."""
 
-        async def _resolve_none(domain, key):
+        async def _resolve_none(_resolver, domain, key):
             return None
 
-        with patch("fastblocks.actions.sync.templates.depends.resolve", new=_resolve_none):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            new=_resolve_none,
+        ):
             result = await sync_templates(strategy=mock_strategy)
 
             assert len(result.errors) > 0
@@ -163,7 +227,10 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_defaults(self, mock_depends_get):
         """Test sync_templates with default parameters."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -179,7 +246,10 @@ class TestSyncTemplates:
         """Test sync_templates with custom template paths."""
         custom_paths = [AsyncPath("custom/templates")]
 
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -195,7 +265,10 @@ class TestSyncTemplates:
         """Test sync_templates with custom patterns."""
         patterns = ["*.html", "*.jinja2"]
 
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -209,7 +282,10 @@ class TestSyncTemplates:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_templates with custom storage bucket."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -223,7 +299,10 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_direction_cloud_to_local(self, mock_depends_get):
         """Test sync_templates with cloud_to_local direction."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -236,7 +315,10 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_direction_local_to_cloud(self, mock_depends_get):
         """Test sync_templates with local_to_cloud direction."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -249,7 +331,10 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_direction_bidirectional(self, mock_depends_get):
         """Test sync_templates with bidirectional direction."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -264,7 +349,10 @@ class TestSyncTemplates:
         self, mock_depends_get
     ):
         """Test sync_templates with local_wins conflict strategy."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -279,7 +367,10 @@ class TestSyncTemplates:
         self, mock_depends_get
     ):
         """Test sync_templates with remote_wins conflict strategy."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -294,7 +385,10 @@ class TestSyncTemplates:
         self, mock_depends_get
     ):
         """Test sync_templates with newest_wins conflict strategy."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -307,7 +401,10 @@ class TestSyncTemplates:
     @pytest.mark.asyncio
     async def test_sync_templates_with_dry_run_enabled(self, mock_depends_get):
         """Test sync_templates with dry_run enabled."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -322,7 +419,10 @@ class TestSyncTemplates:
         """Test sync_templates with filters."""
         filters = {"include_patterns": ["*.html"]}
 
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            mock_depends_get,
+        ):
             with patch(
                 "fastblocks.actions.sync.templates._discover_template_files",
                 AsyncMock(return_value=[]),
@@ -336,7 +436,10 @@ class TestSyncTemplates:
         self, mock_strategy
     ):
         """Test sync_templates handles initialization exceptions."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", side_effect=Exception("Init error")):
+        with patch(
+            "fastblocks.actions.sync.templates.resolve_component_async",
+            side_effect=Exception("Init error"),
+        ):
             result = await sync_templates(strategy=mock_strategy)
 
             assert isinstance(result, TemplateSyncResult)

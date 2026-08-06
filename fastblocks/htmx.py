@@ -153,7 +153,7 @@ def _get_header(scope: "Scope", key: bytes) -> str | None:
     # Handle URI autoencoding if needed
     try:
         return unquote(value) if should_unquote else value
-    except Exception as e:
+    except (ValueError, UnicodeDecodeError) as e:
         debug(f"HtmxDetails: Error unquoting header value: {e}")
         return value
 
@@ -436,10 +436,10 @@ __all__ = [
     "HtmxDetails",
     "HtmxRequest",
     "HtmxResponse",
-    "htmx_trigger",
+    "htmx_push_url",
     "htmx_redirect",
     "htmx_refresh",
-    "htmx_push_url",
     "htmx_retarget",
+    "htmx_trigger",
     "is_htmx",
 ]

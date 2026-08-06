@@ -8,7 +8,6 @@ Provides IDE/AI assistant integration for FastBlocks capabilities including:
 
 from __future__ import annotations
 
-from contextlib import suppress
 from typing import Any
 
 from oneiric.core.logging import get_logger
@@ -32,7 +31,14 @@ class FastBlocksMCPServer:
         self._initialized = False
 
     async def initialize(self) -> None:
-        """Initialize MCP server with Oneiric integration."""
+        """Initialize MCP server with Oneiric integration.
+
+        Registration failures propagate: ``_initialized`` stays ``False``
+        when ``_register_tools`` or ``_register_resources`` raises. An
+        ``ImportError`` from Oneiric (no MCP infrastructure available)
+        degrades gracefully without flipping the flag — the server is
+        not usable in that mode but we do not pretend it is.
+        """
         if self._initialized:
             return
 
@@ -44,7 +50,10 @@ class FastBlocksMCPServer:
             # Oneiric provides the MCP server with rate limiting already configured
             self._server = MCPServerCLIFactory.create_server()  # type: ignore[attr-defined]
 
-            # Register FastBlocks tools and resources
+            # Register FastBlocks tools and resources. Failures propagate
+            # so the caller sees the same RuntimeError we raised — the
+            # previous inner ``with suppress(Exception)`` swallowed
+            # every registration error and made ``_initialized`` a lie.
             await self._register_tools()
             await self._register_resources()
 
@@ -58,30 +67,26 @@ class FastBlocksMCPServer:
             logger.debug(
                 "Oneiric MCP dependencies not available - graceful degradation"
             )
-        except Exception:
-            logger.exception("Failed to initialize MCP server")
 
     async def _register_tools(self) -> None:
         """Register FastBlocks MCP tools.
 
         Tools will be implemented in tools.py and registered here.
         """
-        with suppress(Exception):
-            from .tools import register_fastblocks_tools
+        from .tools import register_fastblocks_tools
 
-            await register_fastblocks_tools(self._server)
-            logger.debug("FastBlocks MCP tools registered")
+        await register_fastblocks_tools(self._server)
+        logger.debug("FastBlocks MCP tools registered")
 
     async def _register_resources(self) -> None:
         """Register FastBlocks MCP resources.
 
         Resources will be implemented in resources.py and registered here.
         """
-        with suppress(Exception):
-            from .resources import register_fastblocks_resources
+        from .resources import register_fastblocks_resources
 
-            await register_fastblocks_resources(self._server)
-            logger.debug("FastBlocks MCP resources registered")
+        await register_fastblocks_resources(self._server)
+        logger.debug("FastBlocks MCP resources registered")
 
     async def start(self) -> None:
         """Start the MCP server."""

@@ -3,7 +3,7 @@
 import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, cast
@@ -48,7 +48,7 @@ class MigrationResult:
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     execution_time_ms: float = 0.0
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class ConfigurationMigrationManager:
@@ -162,7 +162,7 @@ class ConfigurationMigrationManager:
                 current_data = await step.function(current_data)
                 result.steps_applied.append(step.name)
                 current_data["version"] = step.version_to
-            except Exception as e:
+            except (ValueError, TypeError, KeyError, RuntimeError) as e:
                 result.success = False
                 result.errors.append(f"Migration step '{step.name}' failed: {e}")
                 break
@@ -448,7 +448,7 @@ class ConfigurationMigrationManager:
                 else:
                     config_data = yaml.safe_load(f)
             return config_data, None
-        except Exception as e:
+        except (OSError, json.JSONDecodeError, yaml.YAMLError) as e:
             return None, MigrationResult(
                 success=False,
                 version_from="unknown",
@@ -466,7 +466,7 @@ class ConfigurationMigrationManager:
                     json.dump(config_data, f, indent=2)
                 else:
                     yaml.dump(config_data, f, default_flow_style=False)
-        except Exception as e:
+        except (OSError, yaml.YAMLError) as e:
             result.success = False
             result.errors.append(f"Failed to save migrated configuration: {e}")
 
@@ -505,7 +505,7 @@ class ConfigurationMigrationManager:
         self, config_file: Path, target_version: str
     ) -> Path:
         """Create backup before migration."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         backup_name = f"{config_file.stem}_backup_{timestamp}{config_file.suffix}"
         backup_path = self.migrations_dir / backup_name
 
@@ -517,7 +517,7 @@ class ConfigurationMigrationManager:
         # Create migration metadata
         metadata = {
             "original_file": str(config_file),
-            "backup_created": datetime.now().isoformat(),
+            "backup_created": datetime.now(UTC).isoformat(),
             "target_version": target_version,
             "original_version": self._detect_configuration_version(config_file),
         }
@@ -539,7 +539,7 @@ class ConfigurationMigrationManager:
 
             version: str = config_data.get("version", "0.1.0")
             return version
-        except Exception:
+        except (OSError, json.JSONDecodeError, yaml.YAMLError, AttributeError):
             return "unknown"
 
     def _create_compatibility_result(

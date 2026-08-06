@@ -134,7 +134,7 @@ class UniversalQueryParser:
             debug(f"Unknown operator '{operator}' for field '{field}', skipping")
         return query_builder
 
-    def _apply_filters(  # noqa: C901
+    def _apply_filters(
         self, query_builder: t.Any, filters: list[tuple[str, str, t.Any]]
     ) -> t.Any:
         for field, operator, value in filters:
@@ -186,7 +186,11 @@ class UniversalQueryParser:
             return await self._execute_query(
                 query_builder, filters, order_by, order_dir, offset, limit
             )
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError) as e:
+            # Query builder contract errors (AttributeError on missing
+            # methods, ValueError on bad filter values, TypeError on
+            # mismatched operand types) are the only failure modes we
+            # want to silently degrade to an empty result.
             debug(f"Query execution failed: {e}")
             return []
 
@@ -257,7 +261,7 @@ class UniversalQueryParser:
             query_builder = self._apply_filters(query_builder, filters)
 
             return t.cast(int, await query_builder.count())
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError) as e:
             debug(f"Count query failed: {e}")
             return 0
 
@@ -280,7 +284,7 @@ async def get_model_for_query(model_name: str) -> t.Any | None:
         models = await depends.resolve("fastblocks", "models")
         if models and hasattr(models, model_name):
             return getattr(models, model_name)
-    except Exception as e:
+    except (ImportError, AttributeError, ValueError) as e:
         debug(f"Failed to get model '{model_name}': {e}")
 
     return None

@@ -106,7 +106,7 @@ def _run_async(coro: t.Coroutine[t.Any, t.Any, t.Any]) -> t.Any:
     async contexts.
     """
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(coro)
     # Already inside a running loop (pytest-asyncio test fixture, etc.).
@@ -134,8 +134,12 @@ def _run_async(coro: t.Coroutine[t.Any, t.Any, t.Any]) -> t.Any:
 @cli.command()
 def run(docker: bool = False, granian: bool = False, host: str = "127.0.0.1") -> None:
     if docker:
+        # Fire-and-forget: the interactive ``docker run`` handles its
+        # own exit; we deliberately do not raise on non-zero so a
+        # transient error here does not brick the CLI.
         execute(
             f"docker run -it -ePORT=8080 -p8080:8080 {Path.cwd().stem}".split(),
+            check=False,
         )
     else:
         setup_signal_handlers()
@@ -194,7 +198,7 @@ def _display_adapters() -> None:
             adapters = []
             console.print("  [dim]Adapter registry not available[/dim]")
             return
-    except Exception:
+    except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; display fallback.
         console.print("  [dim]No adapters found[/dim]")
         return
 
@@ -247,7 +251,7 @@ def components() -> None:
         _display_default_config()
         _display_actions()
         _display_htmy_commands()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
         console.print(f"[red]Error displaying components: {e}[/red]")
         console.print("[dim]Make sure you're in a FastBlocks project directory[/dim]")
 
@@ -414,7 +418,7 @@ def scaffold(
                 f"[green]✓[/green] Created {component_type.value} component '{name}' at {created_path}"
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
             console.print(f"[red]Error scaffolding component: {e}[/red]")
 
     _run_async(scaffold_component())
@@ -480,7 +484,7 @@ def list_components() -> None:
             for name, metadata in components.items():
                 _display_component_entry(name, metadata)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
             console.print(f"[red]Error listing components: {e}[/red]")
 
     _run_async(list_all_components())
@@ -554,7 +558,7 @@ def validate(
             _display_dependencies(metadata)
             _display_status_message(metadata)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
             console.print(f"[red]Error validating component '{component}': {e}[/red]")
 
     _run_async(validate_component())
@@ -614,13 +618,13 @@ def info(
             try:
                 component_class = await htmy_adapter.get_component_class(component)
                 _display_component_class_info(component_class, component)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
                 console.print(f"[red]Could not load component class: {e}[/red]")
 
             # Show metadata
             _display_component_metadata(metadata)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
             console.print(
                 f"[red]Error getting info for component '{component}': {e}[/red]"
             )
@@ -701,7 +705,7 @@ def syntax_check(
 
             _display_syntax_errors(file_path, errors)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
             console.print(f"[red]Error checking syntax: {e}[/red]")
 
     _run_async(check_syntax())
@@ -751,7 +755,7 @@ def format_template(
             else:
                 console.print(formatted)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
             console.print(f"[red]Error formatting template: {e}[/red]")
 
     _run_async(format_file())
@@ -899,7 +903,7 @@ def start_language_server(
                 except KeyboardInterrupt:
                     console.print("\n[yellow]Language server stopped.[/yellow]")
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
             console.print(f"[red]Error starting language server: {e}[/red]")
 
     _run_async(start_server())
@@ -1060,7 +1064,11 @@ def _run_setup_commands() -> None:
         ["pdm", "install"],
         ["python", "-m", "fastblocks", "run"],
     ):
-        execute(command, stdout=DEVNULL, stderr=DEVNULL)
+        # Direnv/pdm each decide whether their environment is healthy;
+        # we intentionally do not raise on non-zero so a single
+        # missing tool does not abort the rest of the post-create
+        # smoke flow.
+        execute(command, stdout=DEVNULL, stderr=DEVNULL, check=False)
 
 
 def create_compat(
@@ -1082,7 +1090,7 @@ def version() -> None:
     try:
         __version__ = get_version("fastblocks")
         console.print(f"FastBlocks v{__version__}")
-    except Exception:
+    except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: fallback message is acceptable.
         console.print("Unable to determine FastBlocks version")
 
 
@@ -1129,7 +1137,7 @@ def mcp(
         except ImportError as e:
             console.print(f"[red]MCP dependencies not available: {e}[/red]")
             console.print("[dim]Make sure Oneiric and mcp-common are installed[/dim]")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: CLI must never raise; show error to user.
             console.print(f"[red]Error starting MCP server: {e}[/red]")
 
     _run_async(start_mcp_server())

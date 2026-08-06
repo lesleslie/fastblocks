@@ -62,8 +62,8 @@ def mock_async_path():
 def mock_depends_get(mock_storage):
     """Create a mock for depends.get that returns the storage adapter."""
 
-    async def _get(name):
-        if name == "storage":
+    async def _get(_resolver, domain, key):
+        if domain == "fastblocks" and key == "storage":
             return mock_storage
         return None
 
@@ -100,10 +100,13 @@ class TestSyncSettings:
     async def test_sync_settings_no_storage_adapter(self, mock_strategy):
         """Test sync_settings handles missing storage adapter."""
 
-        async def _resolve_none(domain, key):
+        async def _resolve_none(_resolver, domain, key):
             return None
 
-        with patch("fastblocks.actions.sync.settings.depends.resolve", new=_resolve_none):
+        with patch(
+            "fastblocks.actions.sync.settings.resolve_component_async",
+            new=_resolve_none,
+        ):
             result = await sync_settings(strategy=mock_strategy)
 
             assert len(result.errors) > 0
@@ -112,7 +115,9 @@ class TestSyncSettings:
     @pytest.mark.asyncio
     async def test_sync_settings_no_files_found(self, mock_depends_get, mock_strategy):
         """Test sync_settings with no settings files."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.settings.resolve_component_async", mock_depends_get
+        ):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -128,7 +133,9 @@ class TestSyncSettings:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_settings with specific adapter names."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.settings.resolve_component_async", mock_depends_get
+        ):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -145,7 +152,9 @@ class TestSyncSettings:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_settings with config reload disabled."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.settings.resolve_component_async", mock_depends_get
+        ):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -163,7 +172,9 @@ class TestSyncSettings:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_settings with custom storage bucket."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.settings.resolve_component_async", mock_depends_get
+        ):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -180,7 +191,9 @@ class TestSyncSettings:
         self, mock_depends_get, mock_strategy
     ):
         """Test sync_settings with custom settings path."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve", mock_depends_get):
+        with patch(
+            "fastblocks.actions.sync.settings.resolve_component_async", mock_depends_get
+        ):
             custom_path = AsyncPath("custom/settings")
 
             with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
@@ -195,12 +208,15 @@ class TestSyncSettings:
         """Test sync_settings handles exceptions gracefully."""
         mock_storage._create_bucket.side_effect = Exception("Storage error")
 
-        async def _get(name):
-            if name == "storage":
+        async def _get(_resolver, domain, key):
+            if domain == "fastblocks" and key == "storage":
                 return mock_storage
             return None
 
-        with patch("fastblocks.actions.sync.settings.depends.resolve", AsyncMock(side_effect=_get)):
+        with patch(
+            "fastblocks.actions.sync.settings.resolve_component_async",
+            AsyncMock(side_effect=_get),
+        ):
             with patch("fastblocks.actions.sync.settings.AsyncPath") as MockAsyncPath:
                 mock_path = AsyncMock()
                 mock_path.exists = AsyncMock(return_value=False)
@@ -256,7 +272,7 @@ class TestBackupSettings:
             mock_path = AsyncMock()
             mock_path.exists = AsyncMock(return_value=True)
             # Make rglob raise an exception
-            mock_path.rglob = AsyncMock(side_effect=Exception("Rglob error"))
+            mock_path.rglob = MagicMock(side_effect=OSError("Rglob error"))
             MockAsyncPath.return_value = mock_path
 
             result = await backup_settings()
@@ -355,7 +371,7 @@ class TestValidateSettings:
         """Test validate_all_settings handles exceptions."""
         with patch(
             "fastblocks.actions.sync.settings._discover_settings_files",
-            side_effect=Exception("Discovery error"),
+            side_effect=OSError("Discovery error"),
         ):
             result = await validate_all_settings()
 

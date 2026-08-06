@@ -46,6 +46,7 @@ sys.modules["acb.pkg_registry"] = acb_pkg_registry_module
 
 from anyio import Path as AsyncPath
 from fastblocks.adapters.templates._base import (
+    SafeAwaitError,
     TemplatesBase,
     TemplatesBaseSettings,
     safe_await,
@@ -93,7 +94,14 @@ class TestSafeAwait:
 
     @pytest.mark.asyncio
     async def test_safe_await_with_exception(self) -> None:
-        """Test safe_await with a callable that raises an exception."""
+        """safe_await must NOT silently coerce a crash into ``True``.
+
+        Pre-fix, any exception inside the callable was swallowed and
+        ``True`` was returned -- so every downstream ``if safe_await(... )``
+        test silently accepted validator-impl failures as "validator
+        said yes". The brief asked for a typed failure representation;
+        ``SafeAwaitError`` is that sentinel.
+        """
 
         # Create a callable that raises an exception
         def callable() -> None:
@@ -103,8 +111,64 @@ class TestSafeAwait:
         # Call safe_await
         result = await safe_await(callable)
 
-        # Verify the result
-        assert result is True
+        # The result is a SafeAwaitError, not ``True``. Comparing
+        # against the wrong-truth-y value is the regression we
+        # explicitly guard against here.
+        assert isinstance(result, SafeAwaitError)
+        assert result is not True
+        assert isinstance(result.exception, ValueError)
+        assert str(result.exception) == "error"
+
+    @pytest.mark.asyncio
+    async def test_safe_await_with_runtime_error_preserves_exception(self) -> None:
+        """RuntimeError (validator-load failure) is not mistaken for success."""
+        sentinel = RuntimeError("template module crash")
+
+        def load() -> None:
+            raise sentinel
+
+        result = await safe_await(load)
+
+        assert isinstance(result, SafeAwaitError)
+        assert result.exception is sentinel
+        assert not isinstance(result, bool)
+        assert result is not True
+
+    @pytest.mark.asyncio
+    async def test_safe_await_with_invalid_template_returns_failure(self) -> None:
+        """A simulated template-validity helper raising an exception must
+        NOT pass through as ``True``. The pre-fix behavior broke the
+        renderer's "skip if invalid" guard; the new contract keeps the
+        renderer able to detect the distinction.
+        """
+
+        class FakeTemplateResult:
+            def __bool__(self) -> bool:
+                raise TypeError("not bool-able")
+
+        def validate() -> FakeTemplateResult:
+            # Mirror a real validator that returns a domain object whose
+            # ``__bool__`` raises -- the historical safe_await wrapped
+            # that exception into ``True``.
+            return FakeTemplateResult()
+
+        # Wrapping in a small closure that calls bool() because the
+        # SafeAwaitError sentinel must NOT crash under a ``bool()``
+        # consumer; its truth value is irrelevant.
+        result = await safe_await(validate)
+
+        # Validation function did not raise, so we get the returned
+        # FakeTemplateResult (it was returned, not raised).
+        assert not isinstance(result, SafeAwaitError)
+        assert isinstance(result, FakeTemplateResult)
+
+        # Now check the case where the validator really did raise.
+        def validate_raises() -> FakeTemplateResult:
+            raise RuntimeError("template parse failed")
+
+        invalid = await safe_await(validate_raises)
+        assert isinstance(invalid, SafeAwaitError)
+        assert invalid is not True
 
 
 @pytest.mark.unit

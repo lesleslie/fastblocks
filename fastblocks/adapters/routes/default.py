@@ -39,7 +39,10 @@ from anyio import Path as AsyncPath
 from jinja2.exceptions import TemplateNotFound
 
 # Oneiric imports
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.routes.default")
 from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
@@ -182,13 +185,25 @@ class Component(FastBlocksEndpoint):
                 request, component_name, context=context
             )
             return t.cast(Response, result)
-        except Exception as e:
-            debug(f"Component '{component_name}' not found: {e}")
+        except Exception:  # noqa: BLE001
+            # Every component resolution failure becomes a 404 -- the
+            # HTMX response is a fragment swap into a parent template,
+            # so the renderer can't distinguish "missing" from "broken"
+            # and operators see the trace in logs.
+            _log.exception("Component %s: not available", component_name)
+            debug("Component '%s' not found", component_name)
             raise HTTPException(status_code=404)
 
 
 class Routes(RoutesBase):
-    routes: list[Route | Router | Mount | Host | WebSocketRoute] = []
+    # Shared per-instance mutable list. Initialize in ``__init__``
+    # rather than as a class-attribute default to keep RUF012 happy
+    # (and to avoid the well-known mutable-default-argument trap).
+    routes: list[Route | Router | Mount | Host | WebSocketRoute]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.routes = []
 
     async def gather_routes(self, path: AsyncPath) -> None:
         depth = -2

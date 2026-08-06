@@ -1,10 +1,14 @@
 """Google Fonts adapter implementation."""
 
+from __future__ import annotations
+
+import typing as t
 from contextlib import suppress
 from urllib.parse import quote_plus
 from uuid import UUID
 
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 from ._base import FontsBase, FontsBaseSettings
 
@@ -16,9 +20,9 @@ class GoogleFontsSettings(FontsBaseSettings):
     """Google Fonts-specific settings."""
 
     api_key: str | None = None  # Optional API key for advanced features
-    families: list[str] = ["Roboto", "Open Sans"]
-    weights: list[str] = ["400", "700"]
-    subsets: list[str] = ["latin"]
+    families: list[str] = Field(default_factory=lambda: ["Roboto", "Open Sans"])
+    weights: list[str] = Field(default_factory=lambda: ["400", "700"])
+    subsets: list[str] = Field(default_factory=lambda: ["latin"])
     display: str = "swap"  # font-display CSS property
     preconnect: bool = True  # Add preconnect link for performance
 
@@ -30,8 +34,10 @@ class GoogleFonts(FontsBase):
     MODULE_ID: UUID = UUID("01937d86-4f2a-7b3c-8d9e-f3b4d3c2e1a1")  # Static UUID7
     MODULE_STATUS = "stable"
 
-    # Common Google Fonts families with fallbacks
-    FONT_FALLBACKS = {
+    # Common Google Fonts families with fallbacks. ``ClassVar`` keeps this
+    # immutable mapping out of Pydantic field-discovery so RUF012 does not
+    # treat the shared dict as a mutable default (Task 4 brief).
+    FONT_FALLBACKS: t.ClassVar[dict[str, str]] = {
         "Roboto": "Roboto, -apple-system, BlinkMacSystemFont, sans-serif",
         "Open Sans": "'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif",
         "Lato": "Lato, -apple-system, BlinkMacSystemFont, sans-serif",

@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -36,61 +37,67 @@ class HeroiconsIconsSettings(IconsBaseSettings):
     default_size: str = "24"  # 20 (mini), 24 (outline/solid)
 
     # Variant settings
-    enabled_variants: list[str] = ["outline", "solid", "mini"]
+    enabled_variants: list[str] = Field(
+        default_factory=lambda: ["outline", "solid", "mini"]
+    )
 
     # Icon mapping for common names and aliases
-    icon_aliases: dict[str, str] = {
-        "home": "home",
-        "user": "user",
-        "settings": "cog-6-tooth",
-        "search": "magnifying-glass",
-        "menu": "bars-3",
-        "close": "x-mark",
-        "check": "check",
-        "error": "exclamation-triangle",
-        "info": "information-circle",
-        "success": "check-circle",
-        "warning": "exclamation-triangle",
-        "edit": "pencil",
-        "delete": "trash",
-        "save": "document-arrow-down",
-        "download": "arrow-down-tray",
-        "upload": "arrow-up-tray",
-        "email": "envelope",
-        "phone": "phone",
-        "location": "map-pin",
-        "calendar": "calendar-days",
-        "clock": "clock",
-        "heart": "heart",
-        "star": "star",
-        "share": "share",
-        "link": "link",
-        "copy": "document-duplicate",
-        "cut": "scissors",
-        "paste": "clipboard",
-        "undo": "arrow-uturn-left",
-        "redo": "arrow-uturn-right",
-        "refresh": "arrow-path",
-        "logout": "arrow-right-on-rectangle",
-        "login": "arrow-left-on-rectangle",
-        "plus": "plus",
-        "minus": "minus",
-        "eye": "eye",
-        "eye-off": "eye-slash",
-        "lock": "lock-closed",
-        "unlock": "lock-open",
-    }
+    icon_aliases: dict[str, str] = Field(
+        default_factory=lambda: {
+            "home": "home",
+            "user": "user",
+            "settings": "cog-6-tooth",
+            "search": "magnifying-glass",
+            "menu": "bars-3",
+            "close": "x-mark",
+            "check": "check",
+            "error": "exclamation-triangle",
+            "info": "information-circle",
+            "success": "check-circle",
+            "warning": "exclamation-triangle",
+            "edit": "pencil",
+            "delete": "trash",
+            "save": "document-arrow-down",
+            "download": "arrow-down-tray",
+            "upload": "arrow-up-tray",
+            "email": "envelope",
+            "phone": "phone",
+            "location": "map-pin",
+            "calendar": "calendar-days",
+            "clock": "clock",
+            "heart": "heart",
+            "star": "star",
+            "share": "share",
+            "link": "link",
+            "copy": "document-duplicate",
+            "cut": "scissors",
+            "paste": "clipboard",
+            "undo": "arrow-uturn-left",
+            "redo": "arrow-uturn-right",
+            "refresh": "arrow-path",
+            "logout": "arrow-right-on-rectangle",
+            "login": "arrow-left-on-rectangle",
+            "plus": "plus",
+            "minus": "minus",
+            "eye": "eye",
+            "eye-off": "eye-slash",
+            "lock": "lock-closed",
+            "unlock": "lock-open",
+        }
+    )
 
     # Size presets
-    size_presets: dict[str, str] = {
-        "xs": "16",
-        "sm": "20",
-        "md": "24",
-        "lg": "28",
-        "xl": "32",
-        "2xl": "40",
-        "3xl": "48",
-    }
+    size_presets: dict[str, str] = Field(
+        default_factory=lambda: {
+            "xs": "16",
+            "sm": "20",
+            "md": "24",
+            "lg": "28",
+            "xl": "32",
+            "2xl": "40",
+            "3xl": "48",
+        }
+    )
 
 
 class HeroiconsIcons(IconsBase):
@@ -645,7 +652,7 @@ with suppress(Exception):
 __all__ = [
     "HeroiconsIcons",
     "HeroiconsIconsSettings",
-    "register_heroicons_filters",
     "Icons",
     "IconsSettings",
+    "register_heroicons_filters",
 ]

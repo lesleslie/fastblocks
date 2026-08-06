@@ -24,7 +24,10 @@ from enum import Enum
 from uuid import UUID
 
 # Oneiric imports
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.templates._block_renderer")
 
 
 # Custom implementations for ACB compatibility
@@ -192,7 +195,13 @@ class BlockRenderer:
                 self.hybrid_manager = await depends.resolve(
                     "fastblocks", "hybrid_template_manager"
                 )
-            except Exception:
+            except Exception as exc:  # noqa: BLE001
+                # No hybrid manager in scope -- construct a fresh one.
+                # Logged so the operator can see the wiring mismatch.
+                _log.warning(
+                    "BlockRenderer.initialize: hybrid_manager fallback: %s",
+                    type(exc).__name__,
+                )
                 self.hybrid_manager = HybridTemplatesManager()
                 await self.hybrid_manager.initialize()
 
@@ -399,8 +408,15 @@ class BlockRenderer:
                     result = await self.render_block(request_obj)
                     rendered_fragments.append(result.content)
 
-            except Exception:
-                # Skip failed fragments but continue with others
+            except Exception as exc:  # noqa: BLE001
+                # Per-fragment failure must not collapse the whole
+                # composition. Logged so operators can spot which
+                # fragment regressed.
+                _log.exception(
+                    "BlockRenderer._render_composition: fragment %s failed: %s",
+                    fragment_name,
+                    type(exc).__name__,
+                )
                 rendered_fragments.append(
                     f"<!-- Fragment {fragment_name} failed to render -->"
                 )
@@ -449,7 +465,7 @@ class BlockRenderer:
                 # Clear cache for dependent block
                 cache_keys_to_remove = [
                     key
-                    for key in self._render_cache.keys()
+                    for key in self._render_cache
                     if f"block:{block_def.name}" in key
                 ]
                 for key in cache_keys_to_remove:

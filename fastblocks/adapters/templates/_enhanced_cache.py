@@ -28,7 +28,10 @@ from typing import Any
 from uuid import UUID
 
 # Oneiric imports
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.templates._enhanced_cache")
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -374,8 +377,15 @@ class EnhancedCacheManager:
                 await self._demote_entry(entry)
                 demotions += 1
 
-        self.metrics.tier_promotions += promotions
-        self.metrics.tier_demotions += demotions
+        # Metrics are optional -- callers may run with ``metrics=None``
+        # to disable counters (e.g. in test harnesses or in the
+        # pre-initialization window before ``CacheMetrics()`` attaches).
+        # Contract: when ``self.metrics`` is None, skip metric writes
+        # instead of raising AttributeError; the maintenance loop must
+        # remain crash-free.
+        if self.metrics is not None:
+            self.metrics.tier_promotions += promotions
+            self.metrics.tier_demotions += demotions
 
         return {
             "promotions": promotions,
@@ -400,7 +410,7 @@ class EnhancedCacheManager:
 
             regex = re.compile(pattern)  # REGEX OK: pattern-based cache invalidation
             keys_to_remove = [
-                key for key in self.entries.keys() if regex.search(key)
+                key for key in self.entries if regex.search(key)
             ]  # REGEX OK: pattern-based cache invalidation
         else:
             keys_to_remove = list(self.entries.keys())
@@ -417,7 +427,14 @@ class EnhancedCacheManager:
             import sys
 
             return sys.getsizeof(value)
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            # ``sys.getsizeof`` rejects objects it doesn't recognize (e.g.
+            # deeply-recursive dataclasses, asyncio futures) -- fall
+            # through to a content-shape estimate.
+            _log.debug(
+                "EnhancedCacheManager._calculate_size: sys.getsizeof unavailable: %s",
+                type(exc).__name__,
+            )
             # Fallback estimation
             if isinstance(value, str):
                 return len(value.encode("utf-8"))
@@ -444,9 +461,13 @@ class EnhancedCacheManager:
 
         entry = self.entries[key]
 
-        # Update metrics
-        self.metrics.memory_usage -= entry.size
-        self.metrics.evictions += 1
+        # Update metrics -- optional, see contract on ``optimize_tiers``.
+        # When ``self.metrics`` is None, skip counter writes instead of
+        # raising; the maintenance loop must remain crash-free even
+        # before a ``CacheMetrics()`` instance is attached.
+        if self.metrics is not None:
+            self.metrics.memory_usage -= entry.size
+            self.metrics.evictions += 1
 
         # Clean up indexes
         for dep in entry.dependencies:
@@ -535,14 +556,21 @@ class EnhancedCacheManager:
                 await asyncio.sleep(60)
 
             except asyncio.CancelledError:
+                # Shutdown path -- never log, never suppress silently.
+                # ``cancel()`` is a deliberate "stop now" signal.
                 break
-            except Exception:
-                # Continue on errors
+            except Exception as exc:  # noqa: BLE001
+                # Maintenance should not crash the background task.
+                # Log the failure and back off before the next pass.
+                _log.warning(
+                    "EnhancedCacheManager._maintenance_loop: %s", type(exc).__name__
+                )
                 await asyncio.sleep(60)
 
     async def _warming_loop(self) -> None:
         """Background cache warming loop."""
         while True:
+            key: str | None = None
             try:
                 # Wait for warming request
                 key, loader_func = await self.warming_queue.get()
@@ -556,15 +584,29 @@ class EnhancedCacheManager:
                             value,
                             tier=CacheTier.WARM,  # Warmed entries start in WARM tier
                         )
-
-                # Mark task as done
-                self.warming_queue.task_done()
-
             except asyncio.CancelledError:
+                # Same shutdown semantics as the maintenance loop.
+                # ``get()`` already advanced the unfinished-task counter
+                # before the cancellation point -- it MUST be balanced
+                # before we exit.
+                if key is not None or not self.warming_queue.empty():
+                    self.warming_queue.task_done()
                 break
-            except Exception:
-                # Continue on errors
+            except Exception as exc:  # noqa: BLE001
+                # Continue on errors but never leak a queued slot --
+                # ``get()`` already moved the unfinished-task counter;
+                # the original code skipped ``task_done()`` here which
+                # left any later ``queue.join()`` call hanging forever.
+                _log.warning(
+                    "EnhancedCacheManager._warming_loop: %s", type(exc).__name__
+                )
                 await asyncio.sleep(1)
+            finally:
+                # Only mark the slot once ``get()`` has returned a
+                # record. ``CancelledError`` and other pre-get errors
+                # do not consume a slot (the await never yielded).
+                if key is not None:
+                    self.warming_queue.task_done()
 
     async def shutdown(self) -> None:
         """Shutdown cache manager and cleanup resources."""
@@ -604,9 +646,9 @@ _using_oneiric = True
 
 # ACB 0.19.0+ compatibility
 __all__ = [
-    "EnhancedCacheManager",
-    "CacheTier",
     "CacheEntry",
     "CacheStats",
+    "CacheTier",
+    "EnhancedCacheManager",
     "get_enhanced_cache",
 ]

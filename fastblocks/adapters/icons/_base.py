@@ -1,5 +1,7 @@
 """Base classes and protocols for icon adapters."""
 
+from __future__ import annotations
+
 from contextlib import suppress
 from typing import Any, Protocol
 from uuid import UUID
@@ -7,6 +9,7 @@ from uuid import UUID
 # Oneiric imports
 from oneiric.core.config import OneiricSettings
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -18,7 +21,7 @@ class IconsBaseSettings(OneiricSettings):  # type: ignore[misc]
     cdn_url: str | None = None
     version: str = "latest"
     default_prefix: str = ""
-    icon_mapping: dict[str, str] = {}
+    icon_mapping: dict[str, str] = Field(default_factory=dict)
 
     def __init__(self, **data: Any) -> None:
         super().__init__(**data)

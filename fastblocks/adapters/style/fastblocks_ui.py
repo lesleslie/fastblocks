@@ -195,13 +195,13 @@ def register_fastblocks_ui_functions(env: t.Any) -> None:
     # does with the same functions.
     for helper_name in ("button", "card", "field", "alert", "container"):
         helper = getattr(fastblocks_ui, helper_name)
-        globals_dict[f"ui_{helper_name}"] = (
-            lambda *a, __helper=helper, **kw: __helper(*a, **kw)
+        globals_dict[f"ui_{helper_name}"] = lambda *a, __helper=helper, **kw: __helper(
+            *a, **kw
         )
 
     with suppress(Exception):
-        from ..oneiric_helper import register_candidate
         from ...core.resolver import get_resolver
+        from ..oneiric_helper import register_candidate
 
         register_candidate(
             get_resolver(),
@@ -218,7 +218,7 @@ Style = FastBlocksUIStyle
 __all__ = [
     "FastBlocksUIStyle",
     "FastBlocksUIStyleSettings",
-    "register_fastblocks_ui_functions",
     "Style",
     "StyleSettings",
+    "register_fastblocks_ui_functions",
 ]

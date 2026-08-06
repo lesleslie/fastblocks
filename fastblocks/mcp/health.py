@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from .registry import AdapterRegistry
@@ -25,7 +25,7 @@ class HealthCheckResult:
         self.message = message
         self.details = details or {}
         self.duration_ms = duration_ms
-        self.timestamp = timestamp or datetime.now()
+        self.timestamp = timestamp or datetime.now(UTC)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert result to dictionary."""
@@ -92,7 +92,7 @@ class HealthCheckSystem:
                         adapter_name, adapter, start_time
                     )
 
-        except Exception as e:
+        except (ConnectionError, TimeoutError, RuntimeError) as e:
             duration_ms = (time.time() - start_time) * 1000
             result = HealthCheckResult(
                 adapter_name,
@@ -161,7 +161,7 @@ class HealthCheckSystem:
                 checks.append("Registered with ACB")
             else:
                 warnings.append("Not registered with ACB")
-        except Exception:
+        except (KeyError, AttributeError, RuntimeError):
             warnings.append("ACB registration check failed")
 
         return checks, warnings
@@ -288,7 +288,7 @@ class HealthCheckSystem:
 
         # Run checks concurrently
         tasks = []
-        for adapter_name in available_adapters.keys():
+        for adapter_name in available_adapters:
             task = asyncio.create_task(self.check_adapter_health(adapter_name))
             tasks.append((adapter_name, task))
 
@@ -296,7 +296,7 @@ class HealthCheckSystem:
             try:
                 result = await task
                 results[adapter_name] = result
-            except Exception as e:
+            except (ConnectionError, TimeoutError, RuntimeError) as e:
                 results[adapter_name] = HealthCheckResult(
                     adapter_name, "error", f"Check failed: {e}"
                 )
@@ -382,6 +382,6 @@ class HealthCheckSystem:
             try:
                 await self.check_all_adapters()
                 await asyncio.sleep(interval_minutes * 60)
-            except Exception:
+            except (ConnectionError, TimeoutError, RuntimeError):
                 # Log error but continue
                 await asyncio.sleep(60)  # Wait 1 minute before retrying

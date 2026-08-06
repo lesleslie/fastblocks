@@ -22,11 +22,10 @@ import ast
 import asyncio
 import inspect
 import sys
-import tempfile
 import typing as t
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, fields, is_dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from types import ModuleType
@@ -34,7 +33,10 @@ from typing import Any
 from uuid import uuid4
 
 from anyio import Path as AsyncPath
+from oneiric.core.logging import get_logger
 from starlette.requests import Request
+
+_log = get_logger("fastblocks.adapters.templates._htmy_components")
 
 
 # Custom debug function for Oneiric compatibility
@@ -102,19 +104,13 @@ class ComponentMetadata:
 class ComponentValidationError(Exception):
     """Raised when component validation fails."""
 
-    pass
-
 
 class ComponentCompilationError(Exception):
     """Raised when component compilation fails."""
 
-    pass
-
 
 class ComponentRenderError(Exception):
     """Raised when component rendering fails."""
-
-    pass
 
 
 # ---------------------------------------------------------------------------
@@ -270,9 +266,15 @@ def load_component_from_source(source: str, name: str) -> t.Any:
     """
     try:
         tree = ast.parse(source, filename=f"<{name}>")
-    except SyntaxError:
-        # Re-raise the original SyntaxError so callers can
-        # distinguish it from the validation / compilation failures.
+    except SyntaxError:  # noqa: TRY203
+        # The deliberate re-raise must stay distinct from the
+        # validation (``ComponentValidationError``) and compilation
+        # (``ComponentCompilationError``) failures that follow. The
+        # ``load_component_from_source`` docstring contract is
+        # ``SyntaxError -> preserves the original position/lineno so
+        # callers can tell "wrong syntax" apart from "wrong policy"``.
+        # No logging, no enrichment: the exception already carries
+        # everything callers need.
         raise
 
     if not isinstance(tree, ast.Module):
@@ -328,7 +330,7 @@ def load_component_from_source(source: str, name: str) -> t.Any:
         # ``ast.Module`` has been validated against the safety
         # rules in ``_walk_top_level``, ``_validate_imports``, and
         # ``_check_no_dangerous_calls`` before this line is reached.
-        exec(compile(tree, f"<{name}>", "exec"), namespace)  # nosec  noqa: S102  # nosemgrep
+        exec(compile(tree, f"<{name}>", "exec"), namespace)  # nosec # noqa: S102 # nosemgrep
     except Exception as exc:
         raise ComponentCompilationError(
             f"component '{name}' failed to execute after validation: {exc}"
@@ -419,7 +421,6 @@ class ComponentBase(ABC):
     @abstractmethod
     def htmy(self, context: dict[str, Any]) -> str:
         """Render the component to HTML."""
-        pass
 
     async def async_htmy(self, context: dict[str, Any]) -> str:
         """Async version of htmy method."""
@@ -480,11 +481,15 @@ class DataclassComponentBase(ComponentBase):
                 # Basic type validation
                 origin = getattr(field_info.type, "__origin__", None)
                 # Only validate if field_info.type is a proper class
-                if origin is None and isinstance(field_info.type, type):
-                    if not isinstance(value, field_info.type):
-                        raise ComponentValidationError(
-                            f"Field {field_info.name} must be of type {field_info.type}"
-                        )
+                # (i.e. not a parameterized generic from typing/Optional).
+                if (
+                    origin is None
+                    and isinstance(field_info.type, type)
+                    and not isinstance(value, field_info.type)
+                ):
+                    raise ComponentValidationError(
+                        f"Field {field_info.name} must be of type {field_info.type}"
+                    )
 
 
 class ComponentScaffolder:
@@ -550,7 +555,7 @@ class {name}({", ".join(base_classes)}):
         return f"""
         <div class="{name.lower()}-component">
             <h3>{name} Component</h3>
-            {f'<p>{{self.{list(props.keys())[0]} if props else "content"}}</p>' if props else ""}
+            {f'<p>{{self.{next(iter(props.keys()))} if props else "content"}}</p>' if props else ""}
             <!-- Add your HTML here -->
         </div>
         """
@@ -678,7 +683,18 @@ class ComponentValidator:
                 component_class, component_path
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
+            # Validation/discovery failure is *not* a silent pass. We
+            # surface it as a ``ComponentMetadata(status=ERROR)`` so
+            # the caller (``discover_components``) and operator log
+            # both see which component failed and why. The full
+            # traceback goes to the logger; the metadata carries a
+            # short message so it's UI-friendly.
+            _log.exception(
+                "ComponentValidator.validate_component(%s): %s",
+                component_path.stem,
+                type(e).__name__,
+            )
             return ComponentMetadata(
                 name=component_path.stem,
                 path=component_path,
@@ -716,11 +732,7 @@ class ComponentValidator:
                 if hasattr(component_class, "__dict__")
                 else []
             ):
-                if (
-                    inspect.isclass(obj)
-                    and hasattr(obj, "htmy")
-                    and callable(getattr(obj, "htmy"))
-                ):
+                if inspect.isclass(obj) and hasattr(obj, "htmy") and callable(obj.htmy):
                     return obj
         return component_class
 
@@ -740,7 +752,8 @@ class ComponentValidator:
             status=ComponentStatus.VALIDATED,
             docstring=inspect.getdoc(component_class),
             last_modified=datetime.fromtimestamp(
-                (await component_path.stat()).st_mtime
+                (await component_path.stat()).st_mtime,
+                tz=UTC,
             ),
         )
 
@@ -792,7 +805,17 @@ class ComponentLifecycleManager:
                     await hook(**kwargs)
                 else:
                     hook(**kwargs)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
+                # A misbehaving hook must not collapse the surrounding
+                # render path. Logged so operators can spot the bad
+                # hook and the call continues to the next registered
+                # handler.
+                _log.exception(
+                    "ComponentLifecycleManager.execute_hooks(%s): hook %s raised %s",
+                    event,
+                    getattr(hook, "__qualname__", repr(hook)),
+                    type(e).__name__,
+                )
                 debug(f"Lifecycle hook error for {event}: {e}")
 
     def set_component_state(self, component_id: str, state: dict[str, Any]) -> None:
@@ -922,9 +945,21 @@ class AdvancedHTMYComponentRegistry:
             return True
         try:
             current_stat = await metadata.path.stat()
-            current_mtime = datetime.fromtimestamp(current_stat.st_mtime)
+            current_mtime = datetime.fromtimestamp(
+                current_stat.st_mtime,
+                tz=UTC,
+            )
             return metadata.last_modified == current_mtime
-        except Exception:
+        except Exception as exc:  # noqa: BLE001
+            # Cache-validity failure (vanished file, permission denied, etc.)
+            # is genuinely ambiguous -- the cached entry might still be
+            # good. Returning False forces a re-validation rather than
+            # risking stale metadata, but we log so it's not silent.
+            _log.warning(
+                "AdvancedHTMYComponentRegistry._is_cache_valid(%s): %s",
+                metadata.path,
+                type(exc).__name__,
+            )
             return False
 
     async def get_component_class(self, component_name: str) -> t.Any:

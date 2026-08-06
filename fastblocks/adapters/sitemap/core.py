@@ -31,7 +31,10 @@ def debug(msg: str) -> None:
     print(f"[DEBUG] {msg}")
 
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.sitemap.core")
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -133,8 +136,10 @@ class SitemapApp:
 
             debug(f"SitemapApp: Sent sitemap response ({len(content)} bytes)")
 
-        except Exception as e:
-            debug(f"SitemapApp: Error generating sitemap: {e}")
+        except Exception as exc:  # noqa: BLE001
+            # ASGI entrypoint -- log the failure, do not raise.
+            _log.warning("SitemapApp: Error generating sitemap: %s", type(exc).__name__)
+            debug("SitemapApp: Error generating sitemap")
             await self._send_error(send, 500)
 
     async def _send_error(
@@ -201,8 +206,14 @@ async def _generate_sitemap_content(
                         yield 8 * b" " + f"<{name}>{escaped_value}</{name}>".encode()
                     yield 4 * b" " + b"</url>"
                     total_urls += 1
-            except Exception as e:
-                debug(f"generate_sitemap: Error processing sitemap {sitemap_idx}: {e}")
+            except Exception as exc:  # noqa: BLE001
+                # Per-sitemap failure must not collapse the whole URL
+                # set -- log and skip.
+                _log.warning(
+                    "generate_sitemap: Error processing sitemap %d: %s",
+                    sitemap_idx,
+                    type(exc).__name__,
+                )
         yield b"</urlset>"
         debug(f"generate_sitemap: Generated {total_urls} URLs")
 
@@ -224,8 +235,10 @@ async def _ensure_async_iterator[T](items: ItemsTypes[T]) -> AsyncIterator[T]:
             items_sync = items
             for item in items_sync:
                 yield item
-    except Exception as e:
-        debug(f"_ensure_async_iterator: Error processing items: {e}")
+    except Exception as exc:  # noqa: BLE001
+        _log.warning(
+            "_ensure_async_iterator: Error processing items: %s", type(exc).__name__
+        )
 
 
 def get_fields[T](
@@ -260,8 +273,10 @@ def get_fields[T](
 
         return fields
 
-    except Exception as e:
-        debug(f"get_fields: Error processing item {item}: {e}")
+    except Exception as exc:  # noqa: BLE001
+        _log.warning(
+            "get_fields: Error processing item %s: %s", item, type(exc).__name__
+        )
         return {"loc": urljoin(f"{protocol}://{domain}", "/"), "priority": "0.5"}
 
 
@@ -287,8 +302,8 @@ async def _get_cached_sitemap(cache_key: str) -> bytes | None:
                     if isinstance(cached_data, bytes)
                     else cached_data.encode()
                 )
-    except Exception as e:
-        debug(f"_get_cached_sitemap: Cache error: {e}")
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("_get_cached_sitemap: Cache error: %s", type(exc).__name__)
 
     return None
 
@@ -299,5 +314,5 @@ async def _cache_sitemap(cache_key: str, content: bytes) -> None:
         if cache and hasattr(cache, "set"):
             await cache.set(cache_key, content, ttl=3600)
             debug(f"_cache_sitemap: Cached sitemap ({len(content)} bytes)")
-    except Exception as e:
-        debug(f"_cache_sitemap: Cache error: {e}")
+    except Exception as exc:  # noqa: BLE001
+        _log.warning("_cache_sitemap: Cache error: %s", type(exc).__name__)

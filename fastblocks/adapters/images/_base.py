@@ -1,11 +1,14 @@
 """Base classes and protocols for image adapters."""
 
+from __future__ import annotations
+
 from typing import Any, Protocol
 from uuid import UUID
 
 # Oneiric imports
 from oneiric.core.config import OneiricSettings
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 from ..oneiric_helper import register_candidate
 
@@ -18,7 +21,7 @@ class ImagesBaseSettings(OneiricSettings):  # type: ignore[misc]
 
     cdn_url: str | None = None
     media_bucket: str = "media"
-    default_transformations: dict[str, Any] = {}
+    default_transformations: dict[str, Any] = Field(default_factory=dict)
     lazy_loading: bool = True
 
     def __init__(self, **data: dict[str, Any]) -> None:

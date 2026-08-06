@@ -1,5 +1,8 @@
 """Lucide icons adapter implementation."""
 
+from __future__ import annotations
+
+import typing as t
 from contextlib import suppress
 from typing import Any
 from uuid import UUID
@@ -28,8 +31,9 @@ class LucideIcons(IconsBase):
     MODULE_ID: UUID = UUID("01937d86-4f2a-7b3c-8d9e-f3b4d3c2d1a2")  # Static UUID7
     MODULE_STATUS = "stable"
 
-    # Icon mapping for common icons (Lucide naming)
-    ICON_MAPPINGS = {
+    # Icon mapping for common icons (Lucide naming). ``ClassVar`` keeps
+    # this immutable mapping out of Pydantic field-discovery (Task 4 brief).
+    ICON_MAPPINGS: t.ClassVar[dict[str, str]] = {
         "home": "home",
         "user": "user",
         "users": "users",
@@ -179,9 +183,14 @@ class LucideIcons(IconsBase):
 
         # Handle other attributes
         for key, value in attributes.items():
-            if key in ("class", "id", "style", "stroke-width", "color", "title"):
-                attr_parts.append(f'{key}="{value}"')
-            elif key.startswith(("data-", "aria-")):
+            if key in (
+                "class",
+                "id",
+                "style",
+                "stroke-width",
+                "color",
+                "title",
+            ) or key.startswith(("data-", "aria-")):
                 attr_parts.append(f'{key}="{value}"')
 
         # Add accessibility
@@ -214,9 +223,7 @@ class LucideIcons(IconsBase):
 
         # Handle common attributes
         for key, value in attributes.items():
-            if key in ("id", "style", "title"):
-                attr_parts.append(f'{key}="{value}"')
-            elif key.startswith(("data-", "aria-")):
+            if key in ("id", "style", "title") or key.startswith(("data-", "aria-")):
                 attr_parts.append(f'{key}="{value}"')
 
         # Add accessibility
@@ -279,4 +286,4 @@ Icons = LucideIcons
 with suppress(Exception):
     depends.set(Icons, "lucide")
 
-__all__ = ["LucideIcons", "LucideIconsSettings", "IconsSettings", "Icons"]
+__all__ = ["Icons", "IconsSettings", "LucideIcons", "LucideIconsSettings"]

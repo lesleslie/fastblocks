@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import typing as t
-from contextlib import suppress
 from importlib import import_module
 from pathlib import Path
 
@@ -12,7 +11,6 @@ from pathlib import Path
 # later references can find them. The original try/except only bound
 # ``debug`` in the try branch, which silently fell through to the except
 # branch (no def debug) and crashed every call with NameError.
-
 # Always-available Oneiric logger is the foundation of the ``debug`` shim.
 from oneiric.core.logging import get_logger
 
@@ -25,8 +23,10 @@ def debug(msg: str) -> None:
 
 # Try to import Oneiric components first, fall back to ACB for compatibility
 try:
-    from oneiric.adapters.discovery import get_adapters  # type: ignore[import-not-found]
-    from oneiric.core.resolution import Resolver  # noqa: F401
+    from oneiric.adapters.discovery import (
+        get_adapters,  # type: ignore[import-not-found]
+    )
+    from oneiric.core.resolution import Resolver
 
     # Create root_path equivalent for Oneiric
     root_path = Path(__file__).parent.parent.parent.parent
@@ -158,7 +158,7 @@ async def _process_adapter_routes(
                     debug(
                         f"Found {len(found_routes)} routes in {adapter_name}/{pattern}",
                     )
-            except Exception as e:
+            except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
                 debug(f"Error gathering routes from {adapter_name}/{pattern}: {e}")
                 raise
 
@@ -176,7 +176,7 @@ async def _gather_base_routes(patterns: list[str]) -> list[RouteType]:
                 if routes:
                     base_routes.extend(routes)
                     debug(f"Found {len(routes)} base routes in {pattern}")
-            except Exception as e:
+            except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
                 debug(f"Error gathering base routes from {pattern}: {e}")
 
     return base_routes
@@ -202,7 +202,7 @@ async def _gather_custom_routes(
                     custom_routes.extend(routes)
                     debug(f"Found {len(routes)} custom routes in {custom_path}")
 
-            except Exception as e:
+            except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
                 debug(f"Error gathering custom routes from {custom_path}: {e}")
                 if strategy.error_strategy.value == "fail_fast":
                     raise
@@ -214,10 +214,9 @@ async def _extract_routes_from_file(file_path: Path) -> list[RouteType]:
     module_path = _get_module_path_from_file_path(file_path)
     debug(f"Extracting routes from {file_path} -> {module_path}")
     try:
-        with suppress(ModuleNotFoundError, ImportError):
-            module = import_module(module_path)
-            return _extract_routes_from_module(module, module_path)
-    except Exception as e:
+        module = import_module(module_path)
+        return _extract_routes_from_module(module, module_path)
+    except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
         debug(f"Error extracting routes from {file_path}: {e}")
         raise
 
@@ -338,7 +337,7 @@ def _validate_single_route(
         _check_route_endpoint(route, validation)
         validation["valid_routes"].append(route)
 
-    except Exception as e:
+    except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
         validation["invalid_routes"].append({"route": str(route), "error": str(e)})
 
 

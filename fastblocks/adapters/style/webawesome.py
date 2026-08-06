@@ -623,9 +623,9 @@ with suppress(Exception):
 
 # ACB 0.19.0+ compatibility
 __all__ = [
+    "Style",
+    "StyleSettings",
     "WebAwesomeStyle",
     "WebAwesomeStyleSettings",
     "register_webawesome_functions",
-    "Style",
-    "StyleSettings",
 ]

@@ -27,7 +27,10 @@ def debug(msg: str) -> None:
     print(f"[DEBUG] {msg}")
 
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.sitemap.cached")
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -35,7 +38,7 @@ depends = Resolver()
 
 def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
-    return None
+    return
 
 
 from ._base import SitemapBase, SitemapBaseSettings
@@ -62,8 +65,11 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
                 debug(f"CachedSitemap: Cached {len(route_paths)} routes")
                 return route_paths
             return []
-        except Exception as e:
-            debug(f"CachedSitemap: Error getting routes: {e}")
+        except Exception as exc:  # noqa: BLE001
+            _log.warning(
+                "CachedSitemap.items: Error getting routes: %s",
+                type(exc).__name__,
+            )
             return []
 
     def location(self, item: str) -> str:
@@ -95,8 +101,13 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
             except asyncio.CancelledError:
                 debug("CachedSitemap: Background refresh cancelled")
                 break
-            except Exception as e:
-                debug(f"CachedSitemap: Background refresh error: {e}")
+            except Exception as exc:  # noqa: BLE001
+                # Background refresh failures must not crash the
+                # loop -- log and back off.
+                _log.warning(
+                    "CachedSitemap._background_refresh: %s",
+                    type(exc).__name__,
+                )
                 await asyncio.sleep(300)
 
     async def init(self) -> None:

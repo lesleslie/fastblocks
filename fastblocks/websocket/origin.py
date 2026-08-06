@@ -74,9 +74,7 @@ def _is_well_formed_url(origin: str) -> bool:
         return False
     if parsed.scheme not in ("http", "https"):
         return False
-    if not parsed.netloc:
-        return False
-    return True
+    return bool(parsed.netloc)
 
 
 __all__ = ["check_origin", "parse_allowed_origins"]

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing as t
 from contextlib import suppress
 from platform import system
@@ -19,8 +21,6 @@ class AdapterBase:
     introspect ``cls.__bases__`` and see the literal name
     ``"AdapterBase"`` instead of ``"object"``.
     """
-
-    pass
 
 
 # Oneiric resolver
@@ -47,15 +47,17 @@ class FastBlocksSettings:
     def __init_subclass__(cls, **kwargs: t.Any) -> None:
         # Skip modifying __bases__ if AdapterBase is already in the MRO
         # or if it's the same as the current class (avoid self-reference)
-        if AdapterBase not in cls.__mro__ and AdapterBase is not cls:  # type: ignore[comparison-overlap]
-            # Only modify __bases__ if AdapterBase is not already a base
-            if AdapterBase not in cls.__bases__:
-                # Create new tuple of bases with AdapterBase included
-                new_bases = (AdapterBase,) + cls.__bases__
-                # Update the __bases__ attribute properly
-                with suppress(TypeError):
-                    # If direct assignment fails, just continue without modification
-                    cls.__bases__ = new_bases
+        if (
+            AdapterBase not in cls.__mro__
+            and AdapterBase is not cls  # type: ignore[comparison-overlap]
+            and AdapterBase not in cls.__bases__
+        ):
+            # Create new tuple of bases with AdapterBase included
+            new_bases = (AdapterBase,) + cls.__bases__
+            # Update the __bases__ attribute properly
+            with suppress(TypeError):
+                # If direct assignment fails, just continue without modification
+                cls.__bases__ = new_bases
         super().__init_subclass__(**kwargs)
 
 
@@ -148,7 +150,7 @@ class FastBlocks(Starlette):
         self,
         middleware: t.Sequence[Middleware] | None = None,
         exception_handlers: t.Mapping[t.Any, ExceptionHandler] | None = None,
-        lifespan: Lifespan["t.Self"] | None = None,
+        lifespan: Lifespan[t.Self] | None = None,
         config: t.Any | None = None,
         logger: t.Any | None = None,
     ) -> None:
@@ -267,12 +269,12 @@ class FastBlocks(Starlette):
         if config is None:
             try:
                 config = depends.get_sync("config")
-            except Exception:
+            except (ImportError, AttributeError, ValueError):
                 config = None
         if logger is None:
             try:
                 logger = depends.get_sync("logger")
-            except Exception:
+            except (ImportError, AttributeError, ValueError):
                 logger = None
         if logger is not None and not hasattr(logger, "debug"):
             logger = None

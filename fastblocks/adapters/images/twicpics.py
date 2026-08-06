@@ -9,10 +9,13 @@ from urllib.parse import quote
 from uuid import UUID
 
 import httpx
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 from pydantic import SecretStr
 
 from ._base import ImagesBase, ImagesBaseSettings
+
+_log = get_logger("fastblocks.adapters.images.twicpics")
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -253,7 +256,15 @@ class TwicPicsImages(ImagesBase):
                     self.get_image_url(image_id, combined_transforms)
                 )
                 srcset_parts.append(f"{url} {descriptor}")
-            except Exception:
+            except Exception as exc:  # noqa: BLE001
+                # Per-breakpoint failures must not collapse the entire srcset;
+                # log and continue to keep the responsive image usable.
+                _log.warning(
+                    "twicpics_responsive: skipping %s for %s: %s",
+                    descriptor,
+                    image_id,
+                    exc,
+                )
                 continue
 
         # Default src (largest size)
@@ -348,9 +359,9 @@ depends.set(Images, "twicpics")
 
 # ACB 0.19.0+ compatibility
 __all__ = [
+    "Images",
+    "ImagesSettings",
     "TwicPicsImages",
     "TwicPicsImagesSettings",
     "register_twicpics_filters",
-    "Images",
-    "ImagesSettings",
 ]

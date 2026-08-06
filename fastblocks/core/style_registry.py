@@ -50,8 +50,11 @@ throughout ``fastblocks/adapters/style/*.py`` and ``StyleBase.__init__``.
 from __future__ import annotations
 
 import typing as t
-from contextlib import suppress
 from importlib import import_module
+
+from oneiric.core.logging import get_logger
+
+_log = get_logger("fastblocks.style_registry")
 
 
 def register_style_functions(env: t.Any, style_name: str | None) -> None:
@@ -69,7 +72,7 @@ def register_style_functions(env: t.Any, style_name: str | None) -> None:
         return
     try:
         module = import_module(f"fastblocks.adapters.style.{style_name}")
-    except Exception:
+    except ImportError:
         # No adapter module for this style at all -- expected/silent for
         # styles with no template-level wiring (e.g. "vanilla").
         return
@@ -80,7 +83,7 @@ def register_style_functions(env: t.Any, style_name: str | None) -> None:
 
     try:
         register_fn(env)
-    except Exception:
+    except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: WS-17 invariant — never raise, regardless of style-adapter or logging-backend state.
         # Unlike a missing module (above), a callable that exists but raises
         # is exactly the failure mode this module's docstring warns about
         # (kelp.py/webawesome.py's register_*_functions would raise
@@ -88,16 +91,19 @@ def register_style_functions(env: t.Any, style_name: str | None) -> None:
         # nonexistent env.global_()/env.filter() methods). Swallowing it
         # silently here would repeat the original problem this workstream
         # exists to fix -- log it so the bug is at least discoverable,
-        # rather than invisible the way it was before. Logging itself is
-        # wrapped too: this function's hard invariant is "never raise,
-        # regardless of style-adapter or logging-backend state."
-        with suppress(Exception):
-            from oneiric.core.logging import get_logger
-
-            get_logger("fastblocks.style_registry").exception(
+        # rather than invisible the way it was before. This function's
+        # hard invariant is "never raise, regardless of style-adapter or
+        # logging-backend state"; logging itself swallows its own errors.
+        try:
+            _log.exception(
                 f"register_{style_name}_functions(env) raised; style "
                 f"{style_name!r} registered no Jinja globals/filters for "
                 "this environment."
+            )
+        except Exception:  # noqa: BLE001, RUF100  # Last-resort: logging backend failure must not break template rendering.
+            _log.warning(
+                "style_registry logger.exception() failed; style "
+                f"{style_name!r} failure is unauditable.",
             )
 
 

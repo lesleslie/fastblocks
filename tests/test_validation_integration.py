@@ -1,43 +1,37 @@
-"""Tests for FastBlocks ACB ValidationService integration.
+"""Tests for FastBlocks Oneiric ValidationService integration.
 
 Verifies validation functionality, security features, and graceful degradation.
 """
 
 import pytest
 
-# Try to import validation integration
-try:
-    from fastblocks._validation_integration import (
-        ACB_VALIDATION_AVAILABLE,
-        FastBlocksValidationService,
-        ValidationConfig,
-        ValidationType,
-        get_validation_service,
-        register_fastblocks_validation,
-        validate_api_contract,
-        validate_form_input,
-        validate_template_context,
-    )
-
-    VALIDATION_INTEGRATION_AVAILABLE = True
-except ImportError:
-    VALIDATION_INTEGRATION_AVAILABLE = False
-    pytestmark = pytest.mark.skip(reason="Validation integration not available")
+# Import validation integration (no fallback — the Oneiric shim is required).
+from fastblocks._validation_integration import (
+    FastBlocksValidationService,
+    ValidationConfig,
+    ValidationType,
+    get_validation_service,
+    oneiric_validation_available,
+    register_fastblocks_validation,
+    validate_api_contract,
+    validate_form_input,
+    validate_template_context,
+)
 
 
 @pytest.fixture
 def validation_service():
     """Get validation service instance."""
-    if not VALIDATION_INTEGRATION_AVAILABLE:
-        pytest.skip("Validation integration not available")
+    if not oneiric_validation_available:
+        pytest.skip("Oneiric validation integration not available")
     return get_validation_service()
 
 
 @pytest.fixture
 def validation_config():
     """Get validation configuration."""
-    if not VALIDATION_INTEGRATION_AVAILABLE:
-        pytest.skip("Validation integration not available")
+    if not oneiric_validation_available:
+        pytest.skip("Oneiric validation integration not available")
     return ValidationConfig()
 
 
@@ -581,8 +575,8 @@ class TestGracefulDegradation:
         assert isinstance(errors, list)
 
     def test_acb_availability_flag(self):
-        """Test ACB_VALIDATION_AVAILABLE flag."""
-        assert isinstance(ACB_VALIDATION_AVAILABLE, bool)
+        """Test oneiric_validation_available flag."""
+        assert isinstance(oneiric_validation_available, bool)
 
 
 @pytest.mark.integration
@@ -608,7 +602,7 @@ class TestRegistration:
             "validate_form_input",
             "validate_api_contract",
             "register_fastblocks_validation",
-            "ACB_VALIDATION_AVAILABLE",
+            "oneiric_validation_available",
         ]
 
         from fastblocks import _validation_integration

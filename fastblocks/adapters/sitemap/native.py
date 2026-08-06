@@ -27,7 +27,10 @@ def debug(msg: str) -> None:
     print(f"[DEBUG] {msg}")
 
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.sitemap.native")
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -35,7 +38,7 @@ depends = Resolver()
 
 def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
-    return None
+    return
 
 
 from ._base import SitemapBase, SitemapBaseSettings
@@ -61,8 +64,8 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
             debug(f"NativeSitemap: Filtered to {len(filtered_paths)} routes")
 
             return filtered_paths
-        except Exception as e:
-            debug(f"NativeSitemap: Error getting routes: {e}")
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("NativeSitemap: Error getting routes: %s", type(exc).__name__)
             return []
 
     def _filter_routes(self, routes: list[str]) -> list[str]:

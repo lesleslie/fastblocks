@@ -5,6 +5,7 @@ from __future__ import annotations
 import typing as t
 from importlib import import_module
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
 # Migration from ACB to Oneiric
@@ -12,10 +13,12 @@ from oneiric.core.resolution import Resolver
 # special handling for Oneiric migration
 depends = Resolver()
 
+_log = get_logger("fastblocks.actions.gather.application")
+
 
 def debug(msg: str) -> None:
     """Debug function fallback for Oneiric migration."""
-    print(f"[DEBUG] {msg}")
+    _log.debug(msg)
 
 
 def get_adapters() -> list[t.Any]:
@@ -175,8 +178,9 @@ def _process_application_gather_results(
 async def _gather_application_config(result: ApplicationGatherResult) -> None:
     try:
         result.config = await _gather_config()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: gather must never raise; surface errors via the result.
         result.errors.append(e)
+        debug(f"Gathered config not available: {e}")
 
 
 async def _gather_adapters_and_modules(adapter_patterns: list[str]) -> dict[str, t.Any]:
@@ -206,7 +210,7 @@ async def _gather_adapters_and_modules(adapter_patterns: list[str]) -> dict[str,
                     except ModuleNotFoundError:
                         debug(f"Module {module_path} not found, skipping")
                         continue
-            except Exception as e:
+            except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
                 debug(f"Error loading {adapter_name}/{pattern}: {e}")
     debug(
         f"Gathered {len(adapters_info['adapters'])} adapters and {len(adapters_info['adapter_modules'])} modules",
@@ -234,7 +238,7 @@ async def _gather_acb_modules() -> dict[str, t.Any]:
             module_name = module_path.split(".")[-1]
             acb_modules[module_name] = module
             debug(f"Loaded core ACB module: {module_path}")
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
             debug(f"Error loading core ACB module {module_path}: {e}")
     for module_path in optional_modules:
         try:
@@ -244,7 +248,7 @@ async def _gather_acb_modules() -> dict[str, t.Any]:
             debug(f"Loaded optional ACB module: {module_path}")
         except ModuleNotFoundError:
             debug(f"Optional ACB module {module_path} not available")
-        except Exception as e:
+        except (ImportError, AttributeError, ValueError) as e:
             debug(f"Error loading optional ACB module {module_path}: {e}")
     debug(f"Gathered {len(acb_modules)} ACB modules")
     return acb_modules
@@ -254,19 +258,14 @@ async def _gather_application_dependencies(
     dependency_patterns: list[str],
 ) -> dict[str, t.Any]:
     dependencies: dict[str, t.Any] = {}
-    try:
-        # MIGRATED: Removed ACB import - using Oneiric equivalent
-
-        for dep_name in dependency_patterns:
-            try:
-                dependency = await depends.get(dep_name)
-                if dependency is not None:
-                    dependencies[dep_name] = dependency
-                    debug(f"Gathered dependency: {dep_name}")
-            except Exception as e:
-                debug(f"Could not get dependency {dep_name}: {e}")
-    except Exception as e:
-        debug(f"Error accessing depends system: {e}")
+    for dep_name in dependency_patterns:
+        try:
+            dependency = await depends.get(dep_name)
+            if dependency is not None:
+                dependencies[dep_name] = dependency
+                debug(f"Gathered dependency: {dep_name}")
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
+            debug(f"Could not get dependency {dep_name}: {e}")
     app_modules = [
         "models",
         "views",
@@ -281,7 +280,7 @@ async def _gather_application_dependencies(
             debug(f"Loaded application module: {module_name}")
         except ModuleNotFoundError:
             continue
-        except Exception as e:
+        except (ImportError, AttributeError, ValueError) as e:
             debug(f"Error loading application module {module_name}: {e}")
     debug(f"Gathered {len(dependencies)} application dependencies")
     return dependencies
@@ -316,7 +315,7 @@ async def _gather_standard_initializers(
                 debug(f"Found initializer: {init_path}")
         except (ModuleNotFoundError, AttributeError):
             continue
-        except Exception as e:
+        except (ImportError, ValueError) as e:
             debug(f"Error loading initializer {init_path}: {e}")
 
 
@@ -330,7 +329,7 @@ async def _gather_adapter_initializers(
             _collect_adapter_init_functions(module, adapter.name, initializers)
         except ModuleNotFoundError:
             continue
-        except Exception as e:
+        except (ImportError, AttributeError, ValueError) as e:
             debug(f"Error loading adapter initializer for {adapter.name}: {e}")
 
 
@@ -355,14 +354,14 @@ async def _gather_config() -> t.Any:
         if config:
             debug("Gathered application config from depends")
             return config
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: resolver errors fall back to direct settings load.
         debug(f"Error getting config from depends: {e}")
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
         debug("Gathered application config directly")
         return Config()  # type: ignore
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: gather must never raise; surface errors via the result.
         debug(f"Error importing config directly: {e}")
         raise
 
@@ -382,26 +381,19 @@ async def initialize_application_components(
             initialization_results["adapters_initialized"].append(adapter_name)
             debug(f"Initialized adapter: {adapter_name}")
 
-        except Exception as e:
+        except (ImportError, AttributeError, ValueError) as e:
             initialization_results["errors"].append(e)
             debug(f"Error initializing adapter {adapter_name}: {e}")
 
-    try:
-        # MIGRATED: Removed ACB import - using Oneiric equivalent
+    for dep_name, dependency in gather_result.dependencies.items():
+        try:
+            depends.set(dep_name, dependency)
+            initialization_results["dependencies_set"].append(dep_name)
+            debug(f"Set dependency: {dep_name}")
 
-        for dep_name, dependency in gather_result.dependencies.items():
-            try:
-                depends.set(dep_name, dependency)
-                initialization_results["dependencies_set"].append(dep_name)
-                debug(f"Set dependency: {dep_name}")
-
-            except Exception as e:
-                initialization_results["errors"].append(e)
-                debug(f"Error setting dependency {dep_name}: {e}")
-
-    except Exception as e:
-        initialization_results["errors"].append(e)
-        debug(f"Error accessing depends system: {e}")
+        except (ImportError, AttributeError, ValueError) as e:
+            initialization_results["errors"].append(e)
+            debug(f"Error setting dependency {dep_name}: {e}")
 
     for i, initializer in enumerate(gather_result.initializers):
         try:
@@ -420,7 +412,7 @@ async def initialize_application_components(
             initialization_results["initializers_run"].append(f"initializer_{i}")
             debug(f"Ran initializer {i}")
 
-        except Exception as e:
+        except (ImportError, AttributeError, ValueError) as e:
             initialization_results["errors"].append(e)
             debug(f"Error running initializer {i}: {e}")
 

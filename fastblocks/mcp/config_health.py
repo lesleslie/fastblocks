@@ -6,7 +6,7 @@ import time
 import typing as t
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -50,7 +50,7 @@ class ConfigurationTestResult:
     message: str
     details: dict[str, Any] = field(default_factory=dict)
     execution_time_ms: float = 0.0
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass
@@ -64,7 +64,7 @@ class ConfigurationHealthReport:
     summary: dict[str, Any] = field(default_factory=dict)
     recommendations: list[str] = field(default_factory=list)
     execution_time_ms: float = 0.0
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class ConfigurationHealthChecker:
@@ -188,7 +188,7 @@ class ConfigurationHealthChecker:
                     )
                 )
 
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             results.append(
                 ConfigurationTestResult(
                     test_type=ConfigurationTestType.VALIDATION,
@@ -324,7 +324,7 @@ class ConfigurationHealthChecker:
                         )
                     )
 
-            except Exception as e:
+            except (ImportError, AttributeError, TypeError) as e:
                 results.append(
                     ConfigurationTestResult(
                         test_type=ConfigurationTestType.ADAPTER_LOADING,
@@ -572,7 +572,7 @@ class ConfigurationHealthChecker:
                         )
                     )
 
-            except Exception as e:
+            except (ConnectionError, TimeoutError, RuntimeError) as e:
                 results.append(
                     ConfigurationTestResult(
                         test_type=ConfigurationTestType.INTEGRATION,

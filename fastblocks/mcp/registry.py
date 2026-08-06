@@ -37,7 +37,7 @@ class AdapterRegistry:
             self._active_adapters[adapter_name] = adapter_instance
 
             return True
-        except Exception:
+        except (KeyError, AttributeError, RuntimeError):
             return False
 
     async def unregister_adapter(self, adapter_name: str) -> bool:
@@ -48,7 +48,7 @@ class AdapterRegistry:
 
             # TODO: Remove from ACB registry if possible
             return True
-        except Exception:
+        except (KeyError, AttributeError, RuntimeError):
             return False
 
     async def get_adapter(self, adapter_name: str) -> Any | None:
@@ -155,7 +155,7 @@ class AdapterRegistry:
             if not result["errors"]:
                 result["valid"] = True
 
-        except Exception as e:
+        except (ValueError, TypeError, AttributeError) as e:
             result["errors"].append(f"Validation error: {e}")
 
         return result
@@ -173,7 +173,7 @@ class AdapterRegistry:
                     results[adapter_name] = success
                 else:
                     results[adapter_name] = False
-            except Exception:
+            except (ImportError, AttributeError, TypeError):
                 results[adapter_name] = False
 
         return results

@@ -1,9 +1,14 @@
 """Async versions of Jinja2 custom filters for FastBlocks adapter integration."""
 
+from __future__ import annotations
+
 from typing import Any
 
 # Oneiric imports
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.templates._async_filters")
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -17,7 +22,13 @@ async def async_image_url(image_id: str, **transformations: Any) -> str:
     """
     try:
         images = await depends.resolve("fastblocks", "images")
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        # Resolver may not have registered the images adapter yet (test
+        # harness, partial boot). Templates then receive the bare
+        # ``image_id`` so the page still renders.
+        _log.warning(
+            "async_image_url: images adapter unavailable: %s", type(exc).__name__
+        )
         images = None
 
     if images and hasattr(images, "get_image_url"):
@@ -38,7 +49,12 @@ async def async_font_import() -> str:
     """
     try:
         fonts = await depends.resolve("fastblocks", "fonts")
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        # Same rationale as async_image_url: missing font adapter
+        # degrades to an empty string so the page renders.
+        _log.warning(
+            "async_font_import: fonts adapter unavailable: %s", type(exc).__name__
+        )
         fonts = None
 
     if fonts and hasattr(fonts, "get_font_import"):
@@ -86,7 +102,11 @@ async def async_image_with_transformations(
     """
     try:
         images = await depends.resolve("fastblocks", "images")
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        _log.warning(
+            "async_image_with_transformations: images adapter unavailable: %s",
+            type(exc).__name__,
+        )
         images = None
 
     if images:
@@ -117,7 +137,11 @@ async def async_responsive_image(
     """
     try:
         images = await depends.resolve("fastblocks", "images")
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        _log.warning(
+            "async_responsive_image: images adapter unavailable: %s",
+            type(exc).__name__,
+        )
         images = None
 
     if not images:
@@ -180,7 +204,11 @@ async def async_optimized_font_stack() -> str:
     """
     try:
         fonts = await depends.resolve("fastblocks", "fonts")
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        _log.warning(
+            "async_optimized_font_stack: fonts adapter unavailable: %s",
+            type(exc).__name__,
+        )
         fonts = None
 
     if not fonts:
@@ -219,7 +247,11 @@ async def async_critical_css_fonts(critical_fonts: list[str] | None = None) -> s
     """
     try:
         fonts = await depends.resolve("fastblocks", "fonts")
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        _log.warning(
+            "async_optimized_font_stack: fonts adapter unavailable: %s",
+            type(exc).__name__,
+        )
         fonts = None
 
     if not fonts:
@@ -252,7 +284,11 @@ async def async_image_placeholder(
     """
     try:
         images = await depends.resolve("fastblocks", "images")
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        _log.warning(
+            "async_image_placeholder: images adapter unavailable: %s",
+            type(exc).__name__,
+        )
         images = None
 
     # If the image adapter supports placeholder generation
@@ -288,7 +324,11 @@ async def async_lazy_image(
     """
     try:
         images = await depends.resolve("fastblocks", "images")
-    except Exception:
+    except Exception as exc:  # noqa: BLE001
+        _log.warning(
+            "async_image_placeholder: images adapter unavailable: %s",
+            type(exc).__name__,
+        )
         images = None
 
     # Get the actual image URL
@@ -315,14 +355,15 @@ async def async_lazy_image(
     ]
 
     for key, value in attributes.items():
-        if key not in ("width", "height") and key in (
-            "class",
-            "id",
-            "style",
-            "decoding",
-        ):
+        # Readable whitelist of attributes we forward onto the <img>
+        # tag. Originally collapsed to a (A and B) or C boolean
+        # expression that was functionally correct but hard to audit
+        # -- this explicit form documents the intent. Keep branches
+        # split for readability even though SIM114 prefers a single
+        # combined ``or``.
+        if key in ("width", "height"):  # noqa: SIM114
             attr_parts.append(f'{key}="{value}"')
-        elif key in ("width", "height"):
+        elif key in ("class", "id", "style", "decoding"):
             attr_parts.append(f'{key}="{value}"')
 
     return f"<img {' '.join(attr_parts)}>"

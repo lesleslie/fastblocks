@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -28,51 +29,55 @@ class PhosphorIconsSettings(IconsBaseSettings):
     default_size: str = "1em"
 
     # Variant settings
-    enabled_variants: list[str] = [
-        "regular",
-        "thin",
-        "light",
-        "bold",
-        "fill",
-        "duotone",
-    ]
+    enabled_variants: list[str] = Field(
+        default_factory=lambda: [
+            "regular",
+            "thin",
+            "light",
+            "bold",
+            "fill",
+            "duotone",
+        ]
+    )
 
     # Icon mapping for common names
-    icon_aliases: dict[str, str] = {
-        "home": "house",
-        "user": "user-circle",
-        "settings": "gear",
-        "search": "magnifying-glass",
-        "menu": "list",
-        "close": "x",
-        "check": "check",
-        "error": "warning-circle",
-        "info": "info",
-        "success": "check-circle",
-        "warning": "warning",
-        "edit": "pencil",
-        "delete": "trash",
-        "save": "floppy-disk",
-        "download": "download",
-        "upload": "upload",
-        "email": "envelope",
-        "phone": "phone",
-        "location": "map-pin",
-        "calendar": "calendar",
-        "clock": "clock",
-        "heart": "heart",
-        "star": "star",
-        "share": "share",
-        "link": "link",
-        "copy": "copy",
-        "cut": "scissors",
-        "paste": "clipboard",
-        "undo": "arrow-counter-clockwise",
-        "redo": "arrow-clockwise",
-        "refresh": "arrow-clockwise",
-        "logout": "sign-out",
-        "login": "sign-in",
-    }
+    icon_aliases: dict[str, str] = Field(
+        default_factory=lambda: {
+            "home": "house",
+            "user": "user-circle",
+            "settings": "gear",
+            "search": "magnifying-glass",
+            "menu": "list",
+            "close": "x",
+            "check": "check",
+            "error": "warning-circle",
+            "info": "info",
+            "success": "check-circle",
+            "warning": "warning",
+            "edit": "pencil",
+            "delete": "trash",
+            "save": "floppy-disk",
+            "download": "download",
+            "upload": "upload",
+            "email": "envelope",
+            "phone": "phone",
+            "location": "map-pin",
+            "calendar": "calendar",
+            "clock": "clock",
+            "heart": "heart",
+            "star": "star",
+            "share": "share",
+            "link": "link",
+            "copy": "copy",
+            "cut": "scissors",
+            "paste": "clipboard",
+            "undo": "arrow-counter-clockwise",
+            "redo": "arrow-clockwise",
+            "refresh": "arrow-clockwise",
+            "logout": "sign-out",
+            "login": "sign-in",
+        }
+    )
 
 
 class PhosphorIcons(IconsBase):
@@ -594,9 +599,9 @@ with suppress(Exception):
 
 # ACB 0.19.0+ compatibility
 __all__ = [
+    "Icons",
+    "IconsSettings",
     "PhosphorIcons",
     "PhosphorIconsSettings",
     "register_phosphor_filters",
-    "Icons",
-    "IconsSettings",
 ]

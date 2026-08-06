@@ -1,20 +1,25 @@
 """Gather strategies for error handling, caching, and parallelization."""
 
+from __future__ import annotations
+
 import asyncio
 import typing as t
 from enum import Enum
 from pathlib import Path
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
 # Migration from ACB to Oneiric
 depends = Resolver()
 
+_log = get_logger("fastblocks.actions.gather.strategies")
+
+
 # Debug function: Oneiric-backed replacement for the legacy acb.debug symbol
 def debug(msg: str) -> None:
     """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
-    from oneiric.core.logging import get_logger
-    get_logger("actions.gather.strategies").debug(msg)
+    _log.debug(msg)
 
 
 class ErrorStrategy(Enum):
@@ -107,10 +112,13 @@ def _check_cache(
     cache_key: str | None,
     strategy: GatherStrategy,
 ) -> GatherResult | None:
-    if cache_key and strategy.cache_strategy != CacheStrategy.NO_CACHE:
-        if cached_result := _memory_cache.get(cache_key):
-            debug(f"Cache hit for {cache_key}")
-            return t.cast(GatherResult, cached_result)
+    if (
+        cache_key
+        and strategy.cache_strategy != CacheStrategy.NO_CACHE
+        and (cached_result := _memory_cache.get(cache_key))
+    ):
+        debug(f"Cache hit for {cache_key}")
+        return t.cast(GatherResult, cached_result)
     return None
 
 
@@ -171,7 +179,7 @@ async def _execute_tasks_sequential(
             )
             success_results.append(result)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: gather tasks are user-supplied; any failure is captured and routed through the strategy.
             error_results.append(e)
             if strategy.error_strategy == ErrorStrategy.FAIL_FAST:
                 break
@@ -189,10 +197,17 @@ def _handle_gather_errors(
 
         if strategy.error_strategy == ErrorStrategy.FAIL_FAST:
             raise error_results[0]
-        if strategy.error_strategy == ErrorStrategy.COLLECT_ERRORS:
-            if not success_results:
-                msg = f"All gathering operations failed: {error_results}"
-                raise Exception(msg)
+        if (
+            strategy.error_strategy == ErrorStrategy.COLLECT_ERRORS
+            and not success_results
+        ):
+            from fastblocks.exceptions import GatherError
+
+            msg = f"All gathering operations failed: {error_results}"
+            cause = error_results[0] if error_results else None
+            if cause is not None:
+                raise GatherError(msg, errors=error_results) from cause
+            raise GatherError(msg, errors=error_results)
 
 
 def _cache_result_if_needed(

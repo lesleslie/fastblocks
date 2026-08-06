@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+from typing import ClassVar
 
 
 class SingletonMeta(type):
@@ -13,7 +14,9 @@ class SingletonMeta(type):
     `_validation_integration`, and `_workflows_integration`.
     """
 
-    _instances: dict[type, object] = {}
+    # ``ClassVar`` declaration: this is an intentional shared singleton
+    # registry on the metaclass (RUF012 mutable-class-default fix).
+    _instances: ClassVar[dict[type, object]] = {}
     _lock = threading.Lock()
 
     def __call__(cls, *args: object, **kwargs: object) -> object:

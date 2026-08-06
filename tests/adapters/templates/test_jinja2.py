@@ -2,6 +2,7 @@
 # pyright: reportAttributeAccessIssue=false, reportUnusedImport=false, reportMissingParameterType=false, reportUnknownParameterType=false
 
 import sys
+import typing as t
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -328,6 +329,58 @@ async def test_choice_loader_template_not_found(
     # Verify
     loader1.get_source_async.assert_called_once_with("nonexistent.html")
     loader2.get_source_async.assert_called_once_with("nonexistent.html")
+
+
+@pytest.mark.asyncio
+@pytest.mark.unit
+async def test_choice_loader_propagates_non_template_not_found_exceptions(
+    config: Config,
+    mock_cache: AsyncMock,
+    mock_storage: AsyncMock,
+) -> None:
+    """Only ``TemplateNotFound`` is recoverable -- other failures propagate.
+
+    Pre-fix, ``ChoiceLoader.get_source_async`` caught a bare
+    ``Exception`` and ``continue``'d, swallowing loader
+    (programming / config / backend) failures and masquerading them
+    as "this loader does not have the template". Step 5 of the Task 4
+    brief restricted the catch to ``TemplateNotFound`` only --
+    ``RuntimeError`` from the first loader must surface to the
+    caller so the renderer can decide whether to keep going or
+    alert the operator.
+    """
+    loader1 = RedisLoader([AsyncPath("/templates")])
+    loader1.config = config
+    loader1.cache = mock_cache
+    loader1.storage = mock_storage
+
+    loader2 = StorageLoader([AsyncPath("/templates")])
+    loader2.config = config
+    loader2.cache = mock_cache
+    loader2.storage = mock_storage
+
+    choice_loader = ChoiceLoader([loader1, loader2])
+
+    loader1.get_source_async = AsyncMock(
+        side_effect=RuntimeError("backend crashed")
+    )
+
+    loader2_called = False
+
+    async def second_loader(name: str) -> tuple[str, str, t.Any]:
+        nonlocal loader2_called
+        loader2_called = True
+        # Should never be reached when loader1 raises a non-TNF
+        # error -- the renderer boundary treats that as fatal.
+        return ("<html></html>", "name.html", AsyncMock(return_value=True))
+
+    loader2.get_source_async = second_loader  # type: ignore[assignment]
+
+    with pytest.raises(RuntimeError, match="backend crashed"):
+        await choice_loader.get_source_async("important.html")
+
+    assert loader1.get_source_async.await_count == 1
+    assert loader2_called is False
 
 
 @pytest.mark.asyncio

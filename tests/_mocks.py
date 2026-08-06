@@ -3,12 +3,13 @@
 Extracted from tests/conftest.py to keep conftest under 500 lines.
 Import these directly rather than importing from tests.conftest.
 """
+
 from __future__ import annotations
 
 import os
 import typing as t
 from contextlib import suppress
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, Mock
@@ -58,7 +59,7 @@ class MockAsyncPath:
     def __contains__(self, item: object) -> bool:
         try:
             other_str = str(item)
-        except Exception:
+        except (TypeError, ValueError):
             return False
         if other_str == self._path:
             return True
@@ -718,7 +719,7 @@ class MockSitemap:
             msg = f"Invalid priority value: {priority}. Must be between 0.0 and 1.0"
             raise ValueError(msg)
 
-        last_modified = kwargs.get("last_modified", datetime.now())
+        last_modified = kwargs.get("last_modified", datetime.now(UTC))
         url_obj = SitemapURL(
             loc=url,
             change_freq=change_freq,
@@ -875,7 +876,7 @@ class MockFileSystemLoader(MockAsyncBaseLoader):
                 path = Path(path)
             template_path = path / template
             if Path(template_path).exists():
-                content = open(template_path).read()
+                content = Path(template_path).read_text()
                 return content, str(template_path), lambda: True
 
         return None
@@ -1049,7 +1050,7 @@ class MockStorageLoader(MockAsyncBaseLoader):
                 self.cache.set(cache_key, content)
 
             return content, template_path, lambda: True
-        except Exception as e:
+        except (OSError, UnicodeDecodeError, AttributeError) as e:
             raise MockTemplateNotFound(template) from e
 
     async def list_templates_async(self) -> list[str]:
@@ -1058,7 +1059,7 @@ class MockStorageLoader(MockAsyncBaseLoader):
 
         try:
             return self.storage.templates.list(Path("templates"))
-        except Exception:
+        except (OSError, AttributeError):
             return []
 
 
@@ -1085,7 +1086,7 @@ class MockChoiceLoader(MockAsyncBaseLoader):
         for loader in self.loaders:
             try:
                 return await loader.get_source_async(template)
-            except (MockTemplateNotFound, Exception):
+            except MockTemplateNotFound:
                 continue
 
         from jinja2 import TemplateNotFound
@@ -1133,7 +1134,6 @@ class MockPackageLoader(MockAsyncBaseLoader):
             raise TemplateNotFound(template)
 
         source = await path.read_bytes()
-        (await path.stat()).st_mtime
 
         async def uptodate() -> bool:
             return True

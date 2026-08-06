@@ -5,23 +5,15 @@ Static sync uses selective caching based on file type:
 - Binary files (images, fonts, media) sync to storage only to avoid cache bloat
 """
 
+from __future__ import annotations
+
 import typing as t
 from pathlib import Path
 
 import yaml
-from oneiric.core.resolution import Resolver
-
-# Migration from ACB to Oneiric
-depends = Resolver()
-
-# Debug function: Oneiric-backed replacement for the legacy acb.debug symbol
-def debug(msg: str) -> None:
-    """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
-    from oneiric.core.logging import get_logger
-    get_logger("actions.sync.static").debug(msg)
-
-
 from anyio import Path as AsyncPath
+from oneiric.core.logging import get_logger
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
 from .strategies import (
     ConflictStrategy,
@@ -33,6 +25,14 @@ from .strategies import (
     resolve_conflict,
     should_sync,
 )
+
+depends = get_resolver()
+_log = get_logger("fastblocks.actions.sync.static")
+
+
+def debug(msg: str) -> None:
+    """Log a static-sync debug message."""
+    _log.debug(msg)
 
 
 class StaticSyncResult(SyncResult):
@@ -174,15 +174,17 @@ async def _initialize_adapters(result: StaticSyncResult) -> dict[str, t.Any] | N
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        storage = await depends.resolve("fastblocks", "storage")
-        cache = await depends.resolve("fastblocks", "cache")
+        storage = await resolve_component_async(depends, "fastblocks", "storage")
+        cache = await resolve_component_async(depends, "fastblocks", "cache")
         if not storage:
-            result.errors.append(Exception("Storage adapter not available"))
+            result.record_primary_error(Exception("Storage adapter not available"))
             return None
 
         return {"storage": storage, "cache": cache}
-    except Exception as e:
-        result.errors.append(e)
+        # Component factories are pluggable and may raise implementation-specific errors.
+    except Exception as e:  # noqa: BLE001, RUF100
+        result.record_primary_error(e)
+        _log.exception("Static adapter resolution failed")
         return None
 
 
@@ -200,8 +202,8 @@ async def _get_default_static_bucket() -> str:
                 bucket_name = "static"
             debug(f"Using static bucket from config: {bucket_name}")
             return bucket_name
-    except Exception as e:
-        debug(f"Could not load storage config, using default: {e}")
+    except (OSError, UnicodeError, yaml.YAMLError, ValueError) as e:
+        _log.warning("Could not load static storage config; using default: %s", e)
     debug("Using fallback static bucket: static")
     return "static"
 
@@ -319,9 +321,11 @@ async def _sync_static_files(
                 else:
                     result.non_cacheable_assets.append(static_info["storage_path"])
 
-        except Exception as e:
-            result.errors.append(e)
-            debug(f"Error syncing static file {static_info['relative_path']}: {e}")
+        # Static files are independent and storage/cache implementations are pluggable.
+        except Exception as e:  # noqa: BLE001, RUF100
+            item = str(static_info["relative_path"])
+            result.record_item_error(item, e)
+            _log.exception("Sync item failed: %s", item)
 
 
 def _accumulate_static_sync_results(
@@ -342,6 +346,12 @@ def _accumulate_static_sync_results(
         result.cache_invalidated.extend(file_result["cache_invalidated"])
     if file_result.get("cache_cleared"):
         result.cache_cleared.extend(file_result["cache_cleared"])
+
+    result.completed.update(file_result.get("completed", {}))
+    result.item_errors.update(file_result.get("item_errors", {}))
+    if result.primary_error is None:
+        result.primary_error = file_result.get("primary_error")
+    result.cleanup_errors.extend(file_result.get("cleanup_errors", []))
 
 
 async def _sync_single_static_file(
@@ -389,9 +399,16 @@ async def _sync_single_static_file(
             result,
         )
 
-    except Exception as e:
+        if result["synced"]:
+            result["completed"][storage_path] = True
+
+        # A static sync may invoke arbitrary storage/cache implementations.
+    except Exception as e:  # noqa: BLE001, RUF100
         result["errors"].append(e)
-        debug(f"Error in _sync_single_static_file for {storage_path}: {e}")
+        result["completed"][storage_path] = False
+        result["item_errors"][storage_path] = str(e)
+        result["primary_error"] = result["primary_error"] or str(e)
+        _log.exception("Sync item failed: %s", storage_path)
 
     return result
 
@@ -405,6 +422,10 @@ def _create_sync_result() -> dict[str, t.Any]:
         "backed_up": [],
         "cache_invalidated": [],
         "cache_cleared": [],
+        "completed": {},
+        "item_errors": {},
+        "primary_error": None,
+        "cleanup_errors": [],
     }
 
 
@@ -528,47 +549,34 @@ async def _get_storage_file_info(
     bucket: str,
     file_path: str,
 ) -> dict[str, t.Any]:
-    try:
-        bucket_obj = getattr(storage, bucket, None)
+    bucket_obj = getattr(storage, bucket, None)
+    if bucket_obj is None:
+        await storage._create_bucket(bucket)
+        bucket_obj = getattr(storage, bucket)
 
-        if not bucket_obj:
-            await storage._create_bucket(bucket)
-            bucket_obj = getattr(storage, bucket)
-
-        exists = await bucket_obj.exists(file_path)
-
-        if not exists:
-            return {
-                "exists": False,
-                "size": 0,
-                "mtime": 0,
-                "content_hash": None,
-            }
-
-        content = await bucket_obj.read(file_path)
-        metadata = await bucket_obj.stat(file_path)
-
-        import hashlib
-
-        content_hash = hashlib.blake2b(content).hexdigest()
-
-        return {
-            "exists": True,
-            "size": len(content),
-            "mtime": metadata.get("mtime", 0),
-            "content_hash": content_hash,
-            "content": content,
-        }
-
-    except Exception as e:
-        debug(f"Error getting storage file info for {file_path}: {e}")
+    exists = await bucket_obj.exists(file_path)
+    if not exists:
         return {
             "exists": False,
             "size": 0,
             "mtime": 0,
             "content_hash": None,
-            "error": str(e),
         }
+
+    content = await bucket_obj.read(file_path)
+    metadata = await bucket_obj.stat(file_path)
+
+    import hashlib
+
+    content_hash = hashlib.blake2b(content).hexdigest()
+
+    return {
+        "exists": True,
+        "size": len(content),
+        "mtime": metadata.get("mtime", 0),
+        "content_hash": content_hash,
+        "content": content,
+    }
 
 
 async def _pull_static(
@@ -581,32 +589,30 @@ async def _pull_static(
     is_cacheable: bool,
     result: dict[str, t.Any],
 ) -> None:
-    try:
-        bucket_obj = getattr(storage, bucket)
+    bucket_obj = getattr(storage, bucket)
 
-        if strategy.dry_run:
-            debug(f"DRY RUN: Would pull {storage_path} to {local_path}")
-            result["synced"].append(f"PULL(dry-run): {storage_path}")
-            return
+    if strategy.dry_run:
+        debug(f"DRY RUN: Would pull {storage_path} to {local_path}")
+        result["synced"].append(f"PULL(dry-run): {storage_path}")
+        return
 
-        if await local_path.exists() and strategy.backup_on_conflict:
+    if await local_path.exists() and strategy.backup_on_conflict:
+        try:
             backup_path = await create_backup(Path(local_path))
             result["backed_up"].append(str(backup_path))
+        except OSError as e:
+            result["cleanup_errors"].append(str(e))
+            _log.exception("Static backup failed: %s", storage_path)
 
-        content = await bucket_obj.read(storage_path)
+    content = await bucket_obj.read(storage_path)
+    await local_path.parent.mkdir(parents=True, exist_ok=True)
+    await local_path.write_bytes(content)
 
-        await local_path.parent.mkdir(parents=True, exist_ok=True)
-        await local_path.write_bytes(content)
+    result["synced"].append(f"PULL: {storage_path}")
+    debug(f"Pulled static file from storage: {storage_path}")
 
-        result["synced"].append(f"PULL: {storage_path}")
-        debug(f"Pulled static file from storage: {storage_path}")
-
-        if is_cacheable and cache:
-            await _cache_static_file(cache, storage_path, content, result)
-
-    except Exception as e:
-        result["errors"].append(e)
-        debug(f"Error pulling static file {storage_path}: {e}")
+    if is_cacheable and cache:
+        await _cache_static_file(cache, storage_path, content, result)
 
 
 async def _push_static(
@@ -620,28 +626,22 @@ async def _push_static(
     is_cacheable: bool,
     result: dict[str, t.Any],
 ) -> None:
-    try:
-        bucket_obj = getattr(storage, bucket)
+    bucket_obj = getattr(storage, bucket)
 
-        if strategy.dry_run:
-            debug(f"DRY RUN: Would push {local_path} to {storage_path}")
-            result["synced"].append(f"PUSH(dry-run): {storage_path}")
-            return
+    if strategy.dry_run:
+        debug(f"DRY RUN: Would push {local_path} to {storage_path}")
+        result["synced"].append(f"PUSH(dry-run): {storage_path}")
+        return
 
-        content = await local_path.read_bytes()
+    content = await local_path.read_bytes()
+    metadata = {"content_type": mime_type}
+    await bucket_obj.write(storage_path, content, metadata=metadata)
 
-        metadata = {"content_type": mime_type}
-        await bucket_obj.write(storage_path, content, metadata=metadata)
+    result["synced"].append(f"PUSH: {storage_path}")
+    debug(f"Pushed static file to storage: {storage_path} (MIME: {mime_type})")
 
-        result["synced"].append(f"PUSH: {storage_path}")
-        debug(f"Pushed static file to storage: {storage_path} (MIME: {mime_type})")
-
-        if is_cacheable and cache:
-            await _cache_static_file(cache, storage_path, content, result)
-
-    except Exception as e:
-        result["errors"].append(e)
-        debug(f"Error pushing static file {storage_path}: {e}")
+    if is_cacheable and cache:
+        await _cache_static_file(cache, storage_path, content, result)
 
 
 async def _handle_static_conflict(
@@ -657,70 +657,63 @@ async def _handle_static_conflict(
     is_cacheable: bool,
     result: dict[str, t.Any],
 ) -> None:
-    try:
-        if strategy.conflict_strategy == ConflictStrategy.MANUAL:
-            result["conflicts"].append(
-                {
-                    "path": storage_path,
-                    "local_mtime": local_info["mtime"],
-                    "remote_mtime": remote_info["mtime"],
-                    "reason": "manual_resolution_required",
-                },
-            )
-            return
-
-        resolved_content, resolution_reason = await resolve_conflict(
-            Path(local_path),
-            remote_info["content"],
-            local_info["content"],
-            strategy.conflict_strategy,
-            local_info["mtime"],
-            remote_info["mtime"],
-        )
-
-        if strategy.dry_run:
-            debug(
-                f"DRY RUN: Would resolve conflict for {storage_path}: {resolution_reason}",
-            )
-            result["synced"].append(
-                f"CONFLICT(dry-run): {storage_path} - {resolution_reason}",
-            )
-            return
-
-        if (
-            strategy.backup_on_conflict
-            or strategy.conflict_strategy == ConflictStrategy.BACKUP_BOTH
-        ):
-            backup_path = await create_backup(Path(local_path), "conflict")
-            result["backed_up"].append(str(backup_path))
-
-        if resolved_content == remote_info["content"]:
-            await local_path.write_bytes(resolved_content)
-            result["synced"].append(
-                f"CONFLICT->REMOTE: {storage_path} - {resolution_reason}",
-            )
-        else:
-            bucket_obj = getattr(storage, bucket)
-            metadata = {"content_type": mime_type}
-            await bucket_obj.write(storage_path, resolved_content, metadata=metadata)
-            result["synced"].append(
-                f"CONFLICT->LOCAL: {storage_path} - {resolution_reason}",
-            )
-
-        if is_cacheable and cache:
-            await _cache_static_file(cache, storage_path, resolved_content, result)
-
-        debug(f"Resolved static conflict: {storage_path} - {resolution_reason}")
-
-    except Exception as e:
-        result["errors"].append(e)
+    if strategy.conflict_strategy == ConflictStrategy.MANUAL:
         result["conflicts"].append(
             {
                 "path": storage_path,
-                "error": str(e),
-                "reason": "resolution_failed",
+                "local_mtime": local_info["mtime"],
+                "remote_mtime": remote_info["mtime"],
+                "reason": "manual_resolution_required",
             },
         )
+        return
+
+    resolved_content, resolution_reason = await resolve_conflict(
+        Path(local_path),
+        remote_info["content"],
+        local_info["content"],
+        strategy.conflict_strategy,
+        local_info["mtime"],
+        remote_info["mtime"],
+    )
+
+    if strategy.dry_run:
+        debug(
+            f"DRY RUN: Would resolve conflict for {storage_path}: {resolution_reason}",
+        )
+        result["synced"].append(
+            f"CONFLICT(dry-run): {storage_path} - {resolution_reason}",
+        )
+        return
+
+    if (
+        strategy.backup_on_conflict
+        or strategy.conflict_strategy == ConflictStrategy.BACKUP_BOTH
+    ):
+        try:
+            backup_path = await create_backup(Path(local_path), "conflict")
+            result["backed_up"].append(str(backup_path))
+        except OSError as e:
+            result["cleanup_errors"].append(str(e))
+            _log.exception("Static conflict backup failed: %s", storage_path)
+
+    if resolved_content == remote_info["content"]:
+        await local_path.write_bytes(resolved_content)
+        result["synced"].append(
+            f"CONFLICT->REMOTE: {storage_path} - {resolution_reason}",
+        )
+    else:
+        bucket_obj = getattr(storage, bucket)
+        metadata = {"content_type": mime_type}
+        await bucket_obj.write(storage_path, resolved_content, metadata=metadata)
+        result["synced"].append(
+            f"CONFLICT->LOCAL: {storage_path} - {resolution_reason}",
+        )
+
+    if is_cacheable and cache:
+        await _cache_static_file(cache, storage_path, resolved_content, result)
+
+    debug(f"Resolved static conflict: {storage_path} - {resolution_reason}")
 
 
 async def _cache_static_file(
@@ -737,22 +730,23 @@ async def _cache_static_file(
         await cache.set(cache_key, content, ttl=86400)
         result["cache_invalidated"].append(cache_key)
         debug(f"Cached static file: {storage_path}")
-    except Exception as e:
-        debug(f"Error caching static file {storage_path}: {e}")
-
-    pass
+    # Cache writes cross a pluggable cache implementation boundary.
+    except Exception as e:  # noqa: BLE001, RUF100
+        result["cleanup_errors"].append(str(e))
+        _log.exception("Static cache write failed: %s", storage_path)
 
 
 async def _validate_cache_dependencies() -> tuple[t.Any, t.Any, dict[str, t.Any]]:
     """Validate and return cache and storage dependencies."""
     # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-    cache = await depends.resolve("fastblocks", "cache")
-    storage = await depends.resolve("fastblocks", "storage")
+    cache = await resolve_component_async(depends, "fastblocks", "cache")
+    storage = await resolve_component_async(depends, "fastblocks", "storage")
     result: dict[str, t.Any] = {
         "warmed": [],
         "errors": [],
         "skipped": [],
+        "item_errors": {},
     }
 
     if not cache or not storage:
@@ -786,9 +780,11 @@ async def _warm_single_static_file(
 
         debug(f"Warmed cache for static file: {static_path}")
 
-    except Exception as e:
+    # Static paths are independent and storage/cache implementations are pluggable.
+    except Exception as e:  # noqa: BLE001, RUF100
         result["errors"].append(f"{static_path}: {e}")
-        debug(f"Error warming cache for static file {static_path}: {e}")
+        result["item_errors"][static_path] = str(e)
+        _log.exception("Sync item failed: %s", static_path)
 
 
 async def warm_static_cache(
@@ -799,6 +795,7 @@ async def warm_static_cache(
         "warmed": [],
         "errors": [],
         "skipped": [],
+        "item_errors": {},
     }
 
     if not static_paths:
@@ -821,9 +818,11 @@ async def warm_static_cache(
                 static_path, cache, storage, cache_namespace, result
             )
 
-    except Exception as e:
+        # Cache/storage resolution and warming cross pluggable boundaries.
+    except Exception as e:  # noqa: BLE001, RUF100
         result["errors"].append(str(e))
-        debug(f"Error in warm_static_cache: {e}")
+        result["item_errors"]["static-cache"] = str(e)
+        _log.exception("Static cache warming failed")
 
     return result
 
@@ -864,9 +863,10 @@ async def get_static_sync_status(
             status["conflicts"] + status["local_only"] + status["remote_only"]
         )
 
-    except Exception as e:
+        # Status collection crosses a pluggable storage implementation boundary.
+    except Exception as e:  # noqa: BLE001, RUF100
         status["error"] = str(e)
-        debug(f"Error getting static sync status: {e}")
+        _log.exception("Static sync status collection failed")
 
     return status
 
@@ -875,7 +875,7 @@ async def _get_storage_adapter() -> t.Any:
     """Get the storage adapter."""
     # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-    return depends.resolve("fastblocks", "storage")
+    return await resolve_component_async(depends, "fastblocks", "storage")
 
 
 async def _process_static_files(
@@ -963,9 +963,9 @@ async def backup_static_files(
 
         await _backup_static_files_with_patterns(static_path, backup_suffix, result)
 
-    except Exception as e:
+    except OSError as e:
         result["errors"].append(str(e))
-        debug(f"Error in backup_static_files: {e}")
+        _log.exception("Error in backup_static_files")
 
     return result
 
@@ -1031,8 +1031,9 @@ async def _backup_single_file(
     try:
         backup_path = await create_backup(Path(file_path), backup_suffix)
         result["backed_up"].append(str(backup_path))
-    except Exception as e:
+    except OSError as e:
         result["errors"].append(f"{file_path}: {e}")
+        _log.exception("Static backup failed: %s", file_path)
 
 
 # Migration status indicator

@@ -93,7 +93,7 @@ class {name.title().replace("_", "")}:
         }
 
     except Exception as e:
-        logger.exception(f"Error creating template: {e}")
+        logger.exception("Error creating template")
         return {"success": False, "error": str(e)}
 
 
@@ -144,7 +144,7 @@ async def validate_template(template_path: str) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.exception(f"Error validating template: {e}")
+        logger.exception("Error validating template")
         return {"success": False, "error": str(e)}
 
 
@@ -159,10 +159,7 @@ def _should_skip_variant_dir(variant_dir: Path, variant_filter: str | None) -> b
         True if should skip, False otherwise
     """
     # Skip if variant filter is set and directory name doesn't match
-    if variant_filter and variant_dir.name != variant_filter:
-        return True
-
-    return False
+    return bool(variant_filter and variant_dir.name != variant_filter)
 
 
 def _determine_template_type(suffix: str) -> str:
@@ -253,7 +250,7 @@ async def list_templates(variant: str | None = None) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.exception(f"Error listing templates: {e}")
+        logger.exception("Error listing templates")
         return {"success": False, "error": str(e)}
 
 
@@ -293,7 +290,7 @@ async def render_template(
         }
 
     except Exception as e:
-        logger.exception(f"Error rendering template: {e}")
+        logger.exception("Error rendering template")
         return {"success": False, "error": str(e)}
 
 
@@ -356,7 +353,7 @@ async def create_component(
         }
 
     except Exception as e:
-        logger.exception(f"Error creating component: {e}")
+        logger.exception("Error creating component")
         return {"success": False, "error": str(e)}
 
 
@@ -393,7 +390,7 @@ async def list_components() -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.exception(f"Error listing components: {e}")
+        logger.exception("Error listing components")
         return {"success": False, "error": str(e)}
 
 
@@ -434,7 +431,7 @@ async def validate_component(component_name: str) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.exception(f"Error validating component: {e}")
+        logger.exception("Error validating component")
         return {"success": False, "error": str(e)}
 
 
@@ -474,7 +471,7 @@ async def configure_adapter(
         }
 
     except Exception as e:
-        logger.exception(f"Error configuring adapter: {e}")
+        logger.exception("Error configuring adapter")
         return {"success": False, "error": str(e)}
 
 
@@ -507,7 +504,7 @@ async def list_adapters(category: str | None = None) -> dict[str, Any]:
         }
 
     except Exception as e:
-        logger.exception(f"Error listing adapters: {e}")
+        logger.exception("Error listing adapters")
         return {"success": False, "error": str(e)}
 
 
@@ -547,7 +544,7 @@ async def check_adapter_health(adapter_name: str | None = None) -> dict[str, Any
         }
 
     except Exception as e:
-        logger.exception(f"Error checking adapter health: {e}")
+        logger.exception("Error checking adapter health")
         return {"success": False, "error": str(e)}
 
 
@@ -600,6 +597,6 @@ async def register_fastblocks_tools(server: Any) -> None:
 
         logger.info(f"Registered {len(tools)} FastBlocks MCP tools")
 
-    except Exception as e:
-        logger.exception(f"Failed to register MCP tools: {e}")
+    except Exception:
+        logger.exception("Failed to register MCP tools")
         raise

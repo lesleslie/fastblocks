@@ -27,7 +27,10 @@ def debug(msg: str) -> None:
     print(f"[DEBUG] {msg}")
 
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+
+_log = get_logger("fastblocks.adapters.sitemap.dynamic")
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -35,7 +38,7 @@ depends = Resolver()
 
 def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
-    return None
+    return
 
 
 from ._base import SitemapBase, SitemapBaseSettings
@@ -57,8 +60,14 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
             try:
                 items = await self._get_model_items(model_config)
                 all_items.extend(items)
-            except Exception as e:
-                debug(f"DynamicSitemap: Error loading model {model_config}: {e}")
+            except Exception as exc:  # noqa: BLE001
+                # Skip the missing/broken model config but still
+                # surface the failure in logs.
+                _log.warning(
+                    "DynamicSitemap: Error loading model %s: %s",
+                    model_config,
+                    type(exc).__name__,
+                )
         debug(f"DynamicSitemap: Generated {len(all_items)} dynamic URLs")
         return all_items
 
@@ -71,7 +80,7 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
         return [
             {
                 "url": f"/{model_name.lower()}/sample-item",
-                "lastmod": dt.datetime.now(),
+                "lastmod": dt.datetime.now(tz=dt.UTC),
                 "priority": 0.7,
             }
         ]

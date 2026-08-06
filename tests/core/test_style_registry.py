@@ -110,11 +110,11 @@ class TestRegisterStyleFunctions:
             def exception(self, msg, *args):
                 logged.append((msg, args))
 
-        import oneiric.core.logging as oneiric_logging
+        # Patch the module-level `_log` directly so the test stays
+        # independent of oneiric's logger lookup timing.
+        import fastblocks.core.style_registry as style_registry_module
 
-        monkeypatch.setattr(
-            oneiric_logging, "get_logger", lambda name: FakeLogger()
-        )
+        monkeypatch.setattr(style_registry_module, "_log", FakeLogger())
 
         env = jinja2.Environment()
         register_style_functions(env, "loggedbreak")  # must not raise

@@ -79,7 +79,7 @@ class PerformanceOptimizer:
         """Evict the least-recently-used template entry."""
         if not self.template_stats:
             return
-        evicted_key, _ = self.template_stats.popitem(last=False)
+        _evicted_key, _ = self.template_stats.popitem(last=False)
         self._evictions_total += 1
 
     def record_render(self, template_name: str, metrics: PerformanceMetrics) -> None:

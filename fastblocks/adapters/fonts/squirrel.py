@@ -1,11 +1,14 @@
 """Font Squirrel adapter implementation for self-hosted fonts."""
 
+from __future__ import annotations
+
 import typing as t
 from contextlib import suppress
 from pathlib import Path
 from uuid import UUID
 
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 from ._base import FontsBase, FontsBaseSettings
 
@@ -17,7 +20,7 @@ class FontSquirrelFontsSettings(FontsBaseSettings):
     """Font Squirrel-specific settings."""
 
     fonts_dir: str = "/static/fonts"
-    fonts: list[dict[str, t.Any]] = []
+    fonts: list[dict[str, t.Any]] = Field(default_factory=list)
     preload_critical: bool = True
     display: str = "swap"
 
@@ -29,8 +32,15 @@ class FontSquirrelFonts(FontsBase):
     MODULE_ID: UUID = UUID("01937d86-4f2a-7b3c-8d9e-f3b4d3c2e1a2")  # Static UUID7
     MODULE_STATUS = "stable"
 
-    # Common font format priorities (most modern first)
-    FORMAT_PRIORITIES = ["woff2", "woff", "ttf", "otf", "eot"]
+    # Common font format priorities (most modern first). ClassVar keeps
+    # this immutable sequence out of Pydantic field-discovery (Task 4 brief).
+    FORMAT_PRIORITIES: t.ClassVar[list[str]] = [
+        "woff2",
+        "woff",
+        "ttf",
+        "otf",
+        "eot",
+    ]
 
     def __init__(self) -> None:
         """Initialize Font Squirrel adapter."""

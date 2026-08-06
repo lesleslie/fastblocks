@@ -19,19 +19,22 @@ Created: 2025-01-13
 import asyncio
 from contextlib import suppress
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
 # Migration from ACB to Oneiric
 depends = Resolver()
 
+_log = get_logger("fastblocks.actions.gather.components")
+
+
 # Debug function: Oneiric-backed replacement for the legacy acb.debug symbol
 def debug(msg: str) -> None:
     """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
-    from oneiric.core.logging import get_logger
-    get_logger("actions.gather.components").debug(msg)
+    _log.debug(msg)
 
 
 from anyio import Path as AsyncPath
@@ -118,11 +121,13 @@ async def _get_htmy_adapter(
     try:
         htmy_adapter = await depends.resolve("fastblocks", "htmy")
         return htmy_adapter, None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: any resolver failure becomes "no adapter available".
+        # Resolver may fail at any layer (load, lookup, factory invocation);
+        # callers only care whether the adapter is reachable.
         debug(f"Could not get HTMY adapter: {e}")
         result = ComponentGatherResult(
             error_message=f"HTMY adapter not available: {e}",
-            execution_time=(datetime.now() - start_time).total_seconds(),
+            execution_time=(datetime.now(UTC) - start_time).total_seconds(),
         )
         result.errors = [e]
         return None, result
@@ -207,7 +212,7 @@ async def gather_components(
     Returns:
         ComponentGatherResult with discovered components and metadata
     """
-    start_time = datetime.now()
+    start_time = datetime.now(UTC)
 
     if strategy is None:
         strategy = ComponentGatherStrategy(
@@ -224,7 +229,7 @@ async def gather_components(
     if htmy_adapter is None:
         result = ComponentGatherResult(
             error_message="HTMY adapter not found",
-            execution_time=(datetime.now() - start_time).total_seconds(),
+            execution_time=(datetime.now(UTC) - start_time).total_seconds(),
         )
         result.errors = [Exception("HTMY adapter not found")]
         return result
@@ -270,7 +275,7 @@ async def gather_components(
             if item and "name" in item
         }
 
-        execution_time = (datetime.now() - start_time).total_seconds()
+        execution_time = (datetime.now(UTC) - start_time).total_seconds()
         debug(f"Gathered {len(final_components)} components in {execution_time:.2f}s")
 
         result = ComponentGatherResult(
@@ -290,8 +295,8 @@ async def gather_components(
         result.success = list(final_components.values()) if final_components else []
         return result
 
-    except Exception as e:
-        execution_time = (datetime.now() - start_time).total_seconds()
+    except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: unknown gather failures land in the result, never raise.
+        execution_time = (datetime.now(UTC) - start_time).total_seconds()
         debug(f"Component gathering failed: {e}")
 
         result = ComponentGatherResult(
@@ -350,7 +355,8 @@ async def gather_component_dependencies(
 
         return dependencies
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: log and return structured result
+        _log.exception("gather_component_dependencies failed: %s", e)
         return {"error": str(e)}
 
 
@@ -402,7 +408,8 @@ async def analyze_component_usage(
 
         return analysis
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: log and return structured result
+        _log.exception("analyze_component_usage failed: %s", e)
         return {"error": str(e)}
 
 

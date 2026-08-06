@@ -7,8 +7,8 @@ from .server import FastBlocksMCPServer, create_fastblocks_mcp_server
 
 __all__ = [
     "AdapterDiscoveryServer",
-    "HealthCheckSystem",
     "AdapterRegistry",
     "FastBlocksMCPServer",
+    "HealthCheckSystem",
     "create_fastblocks_mcp_server",
 ]

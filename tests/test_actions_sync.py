@@ -120,7 +120,7 @@ class TestSyncCache:
     @pytest.mark.asyncio
     async def test_sync_cache_error_handling(self) -> None:
         """Test cache sync error handling."""
-        with patch("fastblocks.actions.sync.settings.depends.resolve") as mock_get:
+        with patch("fastblocks.actions.sync.cache.resolve_component_async") as mock_get:
             mock_cache = MagicMock()
             mock_cache.keys = AsyncMock(
                 side_effect=Exception("Cache connection failed"),

@@ -31,15 +31,18 @@ from __future__ import annotations
 
 import typing as t
 from contextlib import suppress
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal
 
 # Oneiric imports for dependency injection
+from oneiric.core.logging import get_logger
 from fastblocks.core.patterns import SingletonMeta
 from fastblocks.core.resolver import get_resolver
 
 # Custom Oneiric-compatible workflow system
 depends = get_resolver()
+
+logger = get_logger(__name__)
 
 
 # Workflow system availability
@@ -144,11 +147,14 @@ class BasicWorkflowEngine:
                             "result": None,
                             "error": f"Handler not found for action: {step.action}",
                         }
-                except Exception as e:
+                except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+                    logger.exception(
+                        "Workflow step failed: %s (%s)", step.step_id, step.action
+                    )
                     step_results[step.step_id] = {
                         "state": "failed",
                         "result": None,
-                        "error": str(e),
+                        "error": str(exc),
                     }
 
             # Determine overall state
@@ -157,11 +163,12 @@ class BasicWorkflowEngine:
 
             return WorkflowResult(state, step_results)
 
-        except Exception as e:
+        except Exception as exc:  # noqa: BLE001, RUF100 - engine boundary returns failures
+            logger.exception("Workflow execution failed: %s", workflow.workflow_id)
             return WorkflowResult(
                 WorkflowState.FAILED,
                 {
-                    "error": str(e),
+                    "error": str(exc),
                     "state": WorkflowState.FAILED,
                 },
             )
@@ -329,7 +336,7 @@ def _build_workflow_result(
     return {
         "workflow_id": workflow.workflow_id,
         "state": state,
-        "completed_at": datetime.now().isoformat(),
+        "completed_at": datetime.now(UTC).isoformat(),
         "steps_completed": len(
             [s for s in result.step_results.values() if s["state"] == "completed"]
         ),
@@ -535,7 +542,7 @@ async def _warm_template_cache(
                         cache_key,
                         {
                             "name": template_name,
-                            "warmed_at": datetime.now().isoformat(),
+                            "warmed_at": datetime.now(UTC).isoformat(),
                         },
                         ttl=3600,
                     )
@@ -549,10 +556,17 @@ async def _warm_template_cache(
 async def _warm_static_cache(
     context: dict[str, t.Any], params: dict[str, t.Any]
 ) -> dict[str, t.Any]:
-    """Warm static file cache by pre-loading metadata."""
-    raise NotImplementedError(
-        "Static file cache warming requires a static file adapter"
-    )
+    """Warm static file cache by pre-loading metadata.
+
+    Returns a structured failure dict rather than raising so callers
+    (workflow engine and manual fallback) can record the unsupported
+    step in ``step_results`` and keep the aggregate honest.
+    """
+    return {
+        "static_warmed": 0,
+        "status": "skipped",
+        "reason": "Static file cache warming requires a static file adapter",
+    }
 
 
 async def _warm_route_cache(
@@ -604,8 +618,16 @@ async def _remove_stale_templates(
 async def _optimize_template_storage(
     context: dict[str, t.Any], params: dict[str, t.Any]
 ) -> dict[str, t.Any]:
-    """Optimize template storage (compress, deduplicate)."""
-    raise NotImplementedError("Template storage optimization is not yet implemented")
+    """Optimize template storage (compress, deduplicate).
+
+    Returns a structured failure dict so the workflow engine and manual
+    fallback can record the unsupported step in ``step_results``.
+    """
+    return {
+        "templates_optimized": 0,
+        "status": "skipped",
+        "reason": "Template storage optimization is not yet implemented",
+    }
 
 
 async def _cleanup_expired_sessions(
@@ -625,15 +647,33 @@ async def _cleanup_expired_sessions(
 async def _optimize_database_queries(
     context: dict[str, t.Any], params: dict[str, t.Any]
 ) -> dict[str, t.Any]:
-    """Analyze and optimize slow database queries."""
-    raise NotImplementedError("Database query optimization is not yet implemented")
+    """Analyze and optimize slow database queries.
+
+    Returns an unsupported-status dict rather than raising so the workflow
+    engine and manual fallback can record the unsupported step in
+    ``step_results`` and keep the aggregate honest.
+    """
+    return {
+        "queries_optimized": 0,
+        "status": "skipped",
+        "reason": "Database query optimization is not yet implemented",
+    }
 
 
 async def _rebuild_database_indexes(
     context: dict[str, t.Any], params: dict[str, t.Any]
 ) -> dict[str, t.Any]:
-    """Rebuild database indexes for optimal performance."""
-    raise NotImplementedError("Database index rebuild is not yet implemented")
+    """Rebuild database indexes for optimal performance.
+
+    Returns an unsupported-status dict rather than raising so the workflow
+    engine and manual fallback can record the unsupported step in
+    ``step_results`` and keep the aggregate honest.
+    """
+    return {
+        "indexes_rebuilt": 0,
+        "status": "skipped",
+        "reason": "Database index rebuild is not yet implemented",
+    }
 
 
 # Manual fallback implementations (when ACB Workflows unavailable)
@@ -642,26 +682,79 @@ async def _rebuild_database_indexes(
 async def _manual_cache_warming(
     warm_templates: bool, warm_static: bool, warm_routes: bool
 ) -> dict[str, t.Any]:
-    """Manual cache warming without workflow orchestration."""
-    results = {}
+    """Manual cache warming without workflow orchestration.
+
+    Each step's outcome is recorded in ``step_results`` and the aggregate
+    ``state`` is honest: any failed or unsupported step flips the workflow
+    to ``"failed"`` rather than silently succeeding.
+    """
+    # Non-completed handlers store their step-state string in error (for example, "skipped").
+    step_results: dict[str, dict[str, t.Any]] = {}
 
     if warm_templates:
-        result = await _warm_template_cache({}, {})
-        results["templates"] = result
+        try:
+            result = await _warm_template_cache({}, {})
+            completed = result.get("status") == "completed"
+            step_results["templates"] = {
+                "state": "completed" if completed else "failed",
+                "result": result,
+                "error": None if completed else result.get("status"),
+            }
+        except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+            # Manual fallback translates arbitrary integration failures into a
+            # documented step result; we log the trace for the operator and
+            # surface the error to the caller.
+            logger.exception("Manual cache warming step failed: warm_templates")
+            step_results["templates"] = {
+                "state": "failed",
+                "result": None,
+                "error": str(exc),
+            }
 
     if warm_static:
-        result = await _warm_static_cache({}, {})
-        results["static"] = result
+        try:
+            result = await _warm_static_cache({}, {})
+            completed = result.get("status") == "completed"
+            step_results["static"] = {
+                "state": "completed" if completed else "failed",
+                "result": result,
+                "error": None if completed else result.get("status"),
+            }
+        except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+            # Manual fallback translates arbitrary integration failures into a
+            # documented step result; we log the trace for the operator and
+            # surface the error to the caller.
+            logger.exception("Manual cache warming step failed: warm_static")
+            step_results["static"] = {
+                "state": "failed",
+                "result": None,
+                "error": str(exc),
+            }
 
     if warm_routes:
-        result = await _warm_route_cache({}, {})
-        results["routes"] = result
+        try:
+            result = await _warm_route_cache({}, {})
+            completed = result.get("status") == "completed"
+            step_results["routes"] = {
+                "state": "completed" if completed else "failed",
+                "result": result,
+                "error": None if completed else result.get("status"),
+            }
+        except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+            logger.exception("Manual cache warming step failed: warm_routes")
+            step_results["routes"] = {
+                "state": "failed",
+                "result": None,
+                "error": str(exc),
+            }
 
+    failed = [s for s in step_results.values() if s["state"] == "failed"]
     return {
         "workflow_id": "cache-warming",
-        "state": "completed",
-        "completed_at": datetime.now().isoformat(),
-        "results": results,
+        "state": "failed" if failed else "completed",
+        "completed_at": datetime.now(UTC).isoformat(),
+        "step_results": step_results,
+        "results": {step_id: step["result"] for step_id, step in step_results.items()},
         "mode": "manual",
     }
 
@@ -669,26 +762,73 @@ async def _manual_cache_warming(
 async def _manual_template_cleanup(
     remove_stale: bool, optimize_storage: bool, cleanup_cache: bool
 ) -> dict[str, t.Any]:
-    """Manual template cleanup without workflow orchestration."""
-    results = {}
+    """Manual template cleanup without workflow orchestration.
+
+    Mirrors the contract used by ``_manual_cache_warming``: failed or
+    unsupported steps are surfaced in ``step_results`` and the aggregate
+    state reflects them.
+    """
+    # Non-completed handlers store their step-state string in error (for example, "skipped").
+    step_results: dict[str, dict[str, t.Any]] = {}
 
     if cleanup_cache:
-        result = await _cleanup_template_cache({}, {})
-        results["cache_cleanup"] = result
+        try:
+            result = await _cleanup_template_cache({}, {})
+            completed = result.get("status") == "completed"
+            step_results["cache_cleanup"] = {
+                "state": "completed" if completed else "failed",
+                "result": result,
+                "error": None if completed else result.get("status"),
+            }
+        except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+            logger.exception("Manual template cleanup step failed: cleanup_cache")
+            step_results["cache_cleanup"] = {
+                "state": "failed",
+                "result": None,
+                "error": str(exc),
+            }
 
     if remove_stale:
-        result = await _remove_stale_templates({}, {"days_threshold": 30})
-        results["stale_removal"] = result
+        try:
+            result = await _remove_stale_templates({}, {"days_threshold": 30})
+            completed = result.get("status") == "completed"
+            step_results["stale_removal"] = {
+                "state": "completed" if completed else "failed",
+                "result": result,
+                "error": None if completed else result.get("status"),
+            }
+        except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+            logger.exception("Manual template cleanup step failed: remove_stale")
+            step_results["stale_removal"] = {
+                "state": "failed",
+                "result": None,
+                "error": str(exc),
+            }
 
     if optimize_storage:
-        result = await _optimize_template_storage({}, {})
-        results["storage_optimization"] = result
+        try:
+            result = await _optimize_template_storage({}, {})
+            completed = result.get("status") == "completed"
+            step_results["storage_optimization"] = {
+                "state": "completed" if completed else "failed",
+                "result": result,
+                "error": None if completed else result.get("status"),
+            }
+        except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+            logger.exception("Manual template cleanup step failed: optimize_storage")
+            step_results["storage_optimization"] = {
+                "state": "failed",
+                "result": None,
+                "error": str(exc),
+            }
 
+    failed = [s for s in step_results.values() if s["state"] == "failed"]
     return {
         "workflow_id": "template-cleanup",
-        "state": "completed",
-        "completed_at": datetime.now().isoformat(),
-        "results": results,
+        "state": "failed" if failed else "completed",
+        "completed_at": datetime.now(UTC).isoformat(),
+        "step_results": step_results,
+        "results": {step_id: step["result"] for step_id, step in step_results.items()},
         "mode": "manual",
     }
 
@@ -697,25 +837,73 @@ async def _manual_performance_optimization(
     optimize_queries: bool, rebuild_indexes: bool, cleanup_sessions: bool
 ) -> dict[str, t.Any]:
     """Manual performance optimization without workflow orchestration."""
-    results = {}
+    # Non-completed handlers store their step-state string in error (for example, "skipped").
+    step_results: dict[str, dict[str, t.Any]] = {}
 
     if cleanup_sessions:
-        result = await _cleanup_expired_sessions({}, {"expiry_hours": 24})
-        results["session_cleanup"] = result
+        try:
+            result = await _cleanup_expired_sessions({}, {"expiry_hours": 24})
+            completed = result.get("status") == "completed"
+            step_results["session_cleanup"] = {
+                "state": "completed" if completed else "failed",
+                "result": result,
+                "error": None if completed else result.get("status"),
+            }
+        except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+            logger.exception(
+                "Manual performance optimization step failed: cleanup_sessions"
+            )
+            step_results["session_cleanup"] = {
+                "state": "failed",
+                "result": None,
+                "error": str(exc),
+            }
 
     if optimize_queries:
-        result = await _optimize_database_queries({}, {})
-        results["query_optimization"] = result
+        try:
+            result = await _optimize_database_queries({}, {})
+            completed = result.get("status") == "completed"
+            step_results["query_optimization"] = {
+                "state": "completed" if completed else "failed",
+                "result": result,
+                "error": None if completed else result.get("status"),
+            }
+        except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+            logger.exception(
+                "Manual performance optimization step failed: optimize_queries"
+            )
+            step_results["query_optimization"] = {
+                "state": "failed",
+                "result": None,
+                "error": str(exc),
+            }
 
     if rebuild_indexes:
-        result = await _rebuild_database_indexes({}, {})
-        results["index_rebuild"] = result
+        try:
+            result = await _rebuild_database_indexes({}, {})
+            completed = result.get("status") == "completed"
+            step_results["index_rebuild"] = {
+                "state": "completed" if completed else "failed",
+                "result": result,
+                "error": None if completed else result.get("status"),
+            }
+        except Exception as exc:  # noqa: BLE001, RUF100 - plugins may fail arbitrarily
+            logger.exception(
+                "Manual performance optimization step failed: rebuild_indexes"
+            )
+            step_results["index_rebuild"] = {
+                "state": "failed",
+                "result": None,
+                "error": str(exc),
+            }
 
+    failed = [s for s in step_results.values() if s["state"] == "failed"]
     return {
         "workflow_id": "performance-optimization",
-        "state": "completed",
-        "completed_at": datetime.now().isoformat(),
-        "results": results,
+        "state": "failed" if failed else "completed",
+        "completed_at": datetime.now(UTC).isoformat(),
+        "step_results": step_results,
+        "results": {step_id: step["result"] for step_id, step in step_results.items()},
         "mode": "manual",
     }
 
@@ -738,11 +926,14 @@ async def register_fastblocks_workflows() -> bool:
 
         return workflow_service.available
 
-    except Exception:
+    except Exception:  # noqa: BLE001, RUF100 - resolver boundary returns false
+        logger.exception(
+            "FastBlocks workflow registration failed: fastblocks_workflows"
+        )
         return False
 
 
-__all__ = [
+__all__ = [  # noqa: RUF022 - preserve established public export order
     "FastBlocksWorkflowService",
     "get_workflow_service",
     "execute_optimization",

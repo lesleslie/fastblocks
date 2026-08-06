@@ -19,12 +19,8 @@ from mcp_common.websocket import (
     WebSocketProtocol,
     WebSocketServer,
 )
-
-# Import EventTypes from protocol module
 from mcp_common.websocket.protocol import EventTypes
 from oneiric.core.logging import get_logger
-
-# Import authentication
 from fastblocks.websocket.auth import get_authenticator
 
 # Re-export origin-allowlist helpers so callers can ``from
@@ -216,10 +212,9 @@ class FastblocksWebSocketServer(WebSocketServer):
         """
         try:
             await self._dispatch_request(websocket, message)
-        except Exception as exc:  # noqa: BLE001
+        except Exception:
             logger.exception(
-                "WebSocket request handler raised; sending INTERNAL_ERROR to client (raw exception: %r)",
-                exc,
+                "WebSocket request handler raised; sending INTERNAL_ERROR to client"
             )
             error = WebSocketProtocol.create_error(
                 error_code="INTERNAL_ERROR",

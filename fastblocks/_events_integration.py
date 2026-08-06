@@ -15,13 +15,15 @@ from contextlib import suppress
 from dataclasses import dataclass
 from uuid import UUID
 
-# Oneiric imports for dependency injection
+from oneiric.core.logging import get_logger
 from fastblocks.adapters.oneiric_helper import register_candidate
 from fastblocks.core.patterns import SingletonMeta
 from fastblocks.core.resolver import get_resolver
 
 # Custom Oneiric-compatible events system
 depends = get_resolver()
+
+logger = get_logger(__name__)
 
 # Event system availability
 oneiric_events_available = True
@@ -77,34 +79,70 @@ class Event:
         self.priority = priority
 
 
+_FAIL_LIMIT = 5
+
+
 class EventPublisher:
     """Event publisher for Oneiric-compatible event system."""
 
     def __init__(self) -> None:
         self.subscriptions: dict[str, list[EventSubscription]] = {}
+        self.failure_log: list[dict[str, t.Any]] = []
 
     async def publish(self, event: Event) -> bool:
-        """Publish an event to all subscribers."""
-        try:
-            handlers = self.subscriptions.get(event.event_type, [])
+        """Publish an event to all subscribers.
 
-            for subscription in handlers:
-                await subscription.handler.handle(event)
-
-            return True
-        except Exception:
-            return False
+        Each subscriber is invoked inside its own try/except so a single
+        failure cannot poison delivery for the rest of the chain.  The
+        aggregate result is ``False`` only when at least one required
+        delivery failed; the per-handler diagnostic record is preserved via
+        ``logger.exception`` (handler identity + exception) and ``failure_log``.
+        """
+        all_succeeded = True
+        handlers = list(self.subscriptions.get(event.event_type, []))
+        for subscription in handlers:
+            handler = subscription.handler
+            handler_id = (
+                getattr(handler, "__qualname__", None)
+                or getattr(handler, "__class__", type(handler)).__name__
+            )
+            try:
+                await handler.handle(event)
+            except Exception as exc:
+                all_succeeded = False
+                logger.exception(
+                    "Event subscriber failed: event=%s handler=%s",
+                    event.event_type,
+                    handler_id,
+                )
+                self.failure_log.append(
+                    {
+                        "event_type": event.event_type,
+                        "handler": handler_id,
+                        "error": str(exc),
+                    }
+                )
+                if len(self.failure_log) > _FAIL_LIMIT:
+                    self.failure_log = self.failure_log[-_FAIL_LIMIT:]
+        return all_succeeded
 
     async def subscribe(self, subscription: EventSubscription) -> bool:
-        """Subscribe to an event type."""
-        try:
-            if subscription.event_type not in self.subscriptions:
-                self.subscriptions[subscription.event_type] = []
+        """Subscribe to an event type.
 
-            self.subscriptions[subscription.event_type].append(subscription)
-            return True
+        Returns ``True`` only when the subscription is actually stored; the
+        store path is checked so a partial failure mode is visible to the
+        caller instead of being hidden behind a blanket ``True``.
+        """
+        try:
+            bucket = self.subscriptions.setdefault(subscription.event_type, [])
+            bucket.append(subscription)
         except Exception:
+            logger.exception(
+                "Event subscription failed: event=%s",
+                subscription.event_type,
+            )
             return False
+        return True
 
 
 def create_event(
@@ -215,7 +253,8 @@ class CacheInvalidationHandler:
                 message=f"Invalidated cache key: {payload.cache_key}",
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary event handler returns diagnostic
+            logger.exception("Cache invalidation handler failed")
             return EventHandlerResult(
                 success=False,
                 error=str(e),
@@ -254,7 +293,8 @@ class TemplateRenderHandler:
                 message=f"Recorded render metrics for {payload.template_name}",
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary event handler returns diagnostic
+            logger.exception("Template render metrics handler failed")
             return EventHandlerResult(
                 success=False,
                 error=str(e),
@@ -321,7 +361,8 @@ class HtmxUpdateHandler:
                 data={"headers": headers},
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary event handler returns diagnostic
+            logger.exception("HTMX update handler failed")
             return EventHandlerResult(
                 success=False,
                 error=str(e),
@@ -362,7 +403,8 @@ class AdminActionHandler:
                 message=f"Logged admin action: {payload.action_type}",
             )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary event handler returns diagnostic
+            logger.exception("Admin action handler failed")
             return EventHandlerResult(
                 success=False,
                 error=str(e),
@@ -432,7 +474,8 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
             await self._publisher.publish(event)
             return True
 
-        except Exception:
+        except Exception:  # noqa: BLE001, RUF100 - framework-boundary publish swallows transport errors
+            logger.exception("FastBlocks event publish failed")
             return False
 
     async def publish_template_render(
@@ -472,7 +515,8 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
             await self._publisher.publish(event)
             return True
 
-        except Exception:
+        except Exception:  # noqa: BLE001, RUF100 - framework-boundary publish swallows transport errors
+            logger.exception("FastBlocks event publish failed")
             return False
 
     async def publish_htmx_update(
@@ -504,7 +548,8 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
             await self._publisher.publish(event)
             return True
 
-        except Exception:
+        except Exception:  # noqa: BLE001, RUF100 - framework-boundary publish swallows transport errors
+            logger.exception("FastBlocks event publish failed")
             return False
 
     async def publish_admin_action(
@@ -538,7 +583,8 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
             await self._publisher.publish(event)
             return True
 
-        except Exception:
+        except Exception:  # noqa: BLE001, RUF100 - framework-boundary publish swallows transport errors
+            logger.exception("FastBlocks event publish failed")
             return False
 
 
@@ -620,8 +666,8 @@ async def register_fastblocks_event_handlers() -> bool:
 
         return True
 
-    except Exception:
-        # Graceful degradation if registration fails
+    except Exception:  # noqa: BLE001, RUF100 - framework-boundary registration must not break startup
+        logger.exception("FastBlocks event handler registration failed")
         return False
 
 

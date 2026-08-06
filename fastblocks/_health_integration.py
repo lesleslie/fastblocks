@@ -13,12 +13,14 @@ import typing as t
 from contextlib import suppress
 from uuid import UUID
 
-# Oneiric imports for dependency injection
+from oneiric.core.logging import get_logger
 from fastblocks.adapters.oneiric_helper import register_candidate
 from fastblocks.core.resolver import get_resolver
 
 # Custom Oneiric-compatible health system
 depends = get_resolver()
+
+logger = get_logger(__name__)
 
 # Health system availability
 oneiric_health_available = True
@@ -160,7 +162,8 @@ class TemplatesHealthCheck(FastBlocksHealthCheck):
             # For Oneiric, we'll use a simpler approach
             # In practice, this would be replaced with actual dependency resolution
             details["cache_available"] = True  # Placeholder
-        except Exception:
+        except Exception:  # noqa: BLE001, RUF100 - framework-boundary health probe must report degraded, not raise
+            logger.exception("Cache availability probe failed")
             details["cache_available"] = False
 
     async def _perform_health_check(
@@ -188,7 +191,8 @@ class TemplatesHealthCheck(FastBlocksHealthCheck):
             # Check cache availability
             await self._check_cache_availability(details)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary health check returns diagnostic, never raises
+            logger.exception("Template health check failed")
             status = HealthStatus.UNHEALTHY
             message = f"Template health check failed: {e}"
             details["error"] = str(e)
@@ -226,7 +230,8 @@ class CacheHealthCheck(FastBlocksHealthCheck):
             details["read_test"] = "passed"  # Placeholder
             return HealthStatus.HEALTHY, "Cache system operational"
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary health check returns diagnostic, never raises
+            logger.exception("Cache operations probe failed")
             details["operation_error"] = str(e)
             return HealthStatus.DEGRADED, f"Cache operations failed: {e}"
 
@@ -263,7 +268,8 @@ class CacheHealthCheck(FastBlocksHealthCheck):
                 # Collect stats if available
                 await self._collect_cache_stats(cache, details)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary health check returns diagnostic, never raises
+            logger.exception("Cache health check failed")
             status = HealthStatus.UNHEALTHY
             message = f"Cache health check failed: {e}"
             details["error"] = str(e)
@@ -322,7 +328,8 @@ class RoutesHealthCheck(FastBlocksHealthCheck):
             else:
                 status, message = self._check_routes_adapter(routes, details)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary health check returns diagnostic, never raises
+            logger.exception("Routes health check failed")
             status = HealthStatus.UNHEALTHY
             message = f"Routes health check failed: {e}"
             details["error"] = str(e)
@@ -375,13 +382,15 @@ class DatabaseHealthCheck(FastBlocksHealthCheck):
                     # For Oneiric, we'll use a simpler approach
                     details["connection_info"] = {"pool_size": 10}  # Placeholder
 
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary health probe returns diagnostic
+                    logger.exception("Database connectivity probe failed")
                     status = HealthStatus.UNHEALTHY
                     message = f"Database query failed: {e}"
                     details["connectivity_test"] = "failed"
                     details["error"] = str(e)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary health check returns diagnostic, never raises
+            logger.exception("Database health check failed")
             status = HealthStatus.DEGRADED
             message = f"Database health check failed: {e}"
             details["error"] = str(e)
@@ -426,8 +435,8 @@ async def register_fastblocks_health_checks() -> bool:
 
         return True
 
-    except Exception:
-        # Graceful degradation if registration fails
+    except Exception:  # noqa: BLE001, RUF100 - framework-boundary registration must not break startup
+        logger.exception("FastBlocks health check registration failed")
         return False
 
 
@@ -445,20 +454,64 @@ def _determine_overall_health_status(results: dict[str, t.Any]) -> str:
 
 
 async def _get_component_health_results(health_service: t.Any) -> dict[str, t.Any]:
-    """Get health results for all components."""
+    """Get health results for all components.
+
+    One failing component must not erase the status of its successful
+    siblings: each per-component result is captured independently, with the
+    failure surfaced in the details dict instead of being dropped.
+    """
     component_ids = ["templates", "cache", "routes", "database"]
-    results = {}
+    results: dict[str, t.Any] = {}
 
     for component_id in component_ids:
-        try:
-            result = await health_service.get_component_health(component_id)
+        component = health_service.components.get(component_id)
+        if component is None:
+            # No registered component for this id — fall back to the legacy
+            # ``get_component_health`` API for backwards compatibility with
+            # callers that inject external components.
+            try:
+                result = await health_service.get_component_health(component_id)
+            except Exception as exc:
+                logger.exception(
+                    "Health check exception: component=%s",
+                    component_id,
+                )
+                results[component_id] = {
+                    "status": "unknown",
+                    "message": f"Health check failed: {exc}",
+                    "details": {"error": str(exc)},
+                }
+                continue
+
             if result:
                 results[component_id] = result.to_dict()
-        except Exception:
+            continue
+
+        # Per-component check: capture the failure explicitly so the
+        # overall aggregation can still see the healthy sibling.
+        runner = getattr(component, "_perform_health_check", None)
+        if runner is None:
+            continue
+        try:
+            outcome = await runner("standard")
+        except Exception as exc:
+            logger.exception(
+                "Health check exception: component=%s",
+                component_id,
+            )
             results[component_id] = {
                 "status": "unknown",
-                "message": "Health check failed",
+                "message": f"Health check failed: {exc}",
+                "details": {"error": str(exc)},
             }
+            continue
+
+        if outcome is not None:
+            result_dict = getattr(outcome, "to_dict", None)
+            if callable(result_dict):
+                results[component_id] = result_dict()
+            elif isinstance(outcome, dict):
+                results[component_id] = outcome
 
     return results
 
@@ -492,7 +545,8 @@ async def get_fastblocks_health_summary() -> dict[str, t.Any]:
             "components": results,
         }
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001, RUF100 - framework-boundary health check returns diagnostic, never raises
+        logger.exception("FastBlocks overall health check failed")
         return {
             "status": "error",
             "message": f"Health check failed: {e}",

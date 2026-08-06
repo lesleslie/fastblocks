@@ -7,17 +7,24 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-12-31
 """
 
-import typing as t
+from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
+
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Candidate, CandidateSource, Resolver
+from pydantic import ValidationError
+
+_log = get_logger("fastblocks.oneiric_helper")
 
 
 def register_candidate(
     resolver: Resolver,
     domain: str,
     key: str,
-    factory: t.Callable[..., t.Any],
-    metadata: dict[str, t.Any] | None = None,
+    factory: Callable[..., Any],
+    metadata: dict[str, Any] | None = None,
 ) -> bool:
     """Register a Oneiric Candidate with the resolver.
 
@@ -36,7 +43,11 @@ def register_candidate(
         metadata: Optional metadata dictionary
 
     Returns:
-        True if registration succeeded, False if it failed gracefully
+        True if registration succeeded, False if registration data was invalid
+        (Pydantic validation or value-shape failure). Resolver implementation
+        errors propagate to the caller -- a candidate the registry rejects for
+        reasons unrelated to the inputs we constructed is not a "graceful
+        degradation" case and must be visible to the caller.
 
     Example:
         >>> from oneiric.core.resolution import Resolver
@@ -58,8 +69,15 @@ def register_candidate(
             source=CandidateSource.LOCAL_PKG,
             metadata=metadata or {},
         )
-        resolver.register(candidate)
-        return True
-    except Exception:
-        # Graceful degradation if registration fails
+    except (ValidationError, ValueError, TypeError) as exc:
+        _log.exception(
+            "register_candidate rejected invalid registration: "
+            "domain=%r key=%r error=%s",
+            domain,
+            key,
+            exc,
+        )
         return False
+
+    resolver.register(candidate)
+    return True

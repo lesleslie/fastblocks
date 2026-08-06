@@ -75,7 +75,7 @@ async def _get_logger_instance() -> t.Any:
     """Get the logger instance."""
     try:
         return await _get_dependency("logger")
-    except Exception as e:
+    except (ImportError, AttributeError, ValueError) as e:
         import logging
 
         logger_instance = logging.getLogger("fastblocks")

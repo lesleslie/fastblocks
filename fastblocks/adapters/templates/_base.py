@@ -5,6 +5,7 @@ from abc import ABC
 
 from anyio import Path as AsyncPath
 from oneiric.core.config import OneiricSettings
+from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 from starlette.requests import Request
 from starlette.responses import Response
@@ -12,17 +13,59 @@ from starlette.responses import Response
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+_log = get_logger("fastblocks.adapters.templates._base")
+
+
+class SafeAwaitError:
+    """Sentinel returned by ``safe_await`` when the callable raised.
+
+    Distinct from ``True`` (the historical accidental-success value) and
+    from any genuine result. Callers that need to treat validator
+    implementation failures differently from validator ``False`` answers
+    should compare against ``SafeAwaitError``.
+    """
+
+    __slots__ = ("exception",)
+
+    def __init__(self, exception: BaseException) -> None:
+        self.exception = exception
+
+    def __repr__(self) -> str:  # pragma: no cover - debug aid
+        return f"SafeAwaitError({type(self.exception).__name__}: {self.exception!r})"
+
 
 async def safe_await(func_or_value: t.Any) -> t.Any:
-    if callable(func_or_value):
-        try:
-            result = func_or_value()
-            if hasattr(result, "__await__") and callable(result.__await__):
-                return await t.cast("t.Awaitable[t.Any]", result)
-            return result
-        except Exception:
-            return True
-    return func_or_value
+    """Resolve ``func_or_value`` to a concrete (possibly awaited) result.
+
+    Three branches:
+
+    1. ``func_or_value`` is not callable -- return it verbatim.
+    2. ``func_or_value`` is callable and the result is awaitable -- await it.
+    3. ``func_or_value`` is callable and returns a plain value -- return it.
+
+    When the callable raises ``Exception`` we return
+    :class:`SafeAwaitError` instead of ``True``. The previous behavior
+    silently treated "the validator implementation crashed" as "the
+    validator said yes", which made every downstream caller (templates
+    that check ``if safe_await(... )``) silently render whatever the
+    validator would have rendered had it succeeded.
+    """
+    if not callable(func_or_value):
+        return func_or_value
+
+    try:
+        result = func_or_value()
+    except Exception as exc:  # noqa: BLE001
+        _log.warning(
+            "safe_await: callable raised %s: %s",
+            type(exc).__name__,
+            exc,
+        )
+        return SafeAwaitError(exc)
+
+    if hasattr(result, "__await__") and callable(result.__await__):
+        return await t.cast("t.Awaitable[t.Any]", result)
+    return result
 
 
 TemplateContext: t.TypeAlias = dict[str, t.Any]

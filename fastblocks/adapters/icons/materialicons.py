@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 from oneiric.core.resolution import Resolver
+from pydantic import Field
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -36,90 +37,104 @@ class MaterialIconsSettings(IconsBaseSettings):
     default_size: str = "24px"
 
     # Available themes
-    enabled_themes: list[str] = ["filled", "outlined", "round", "sharp", "two-tone"]
+    enabled_themes: list[str] = Field(
+        default_factory=lambda: [
+            "filled",
+            "outlined",
+            "round",
+            "sharp",
+            "two-tone",
+        ]
+    )
 
     # Icon mapping for common names
-    icon_aliases: dict[str, str] = {
-        "home": "home",
-        "user": "person",
-        "settings": "settings",
-        "search": "search",
-        "menu": "menu",
-        "close": "close",
-        "check": "check",
-        "error": "error",
-        "info": "info",
-        "success": "check_circle",
-        "warning": "warning",
-        "edit": "edit",
-        "delete": "delete",
-        "save": "save",
-        "download": "download",
-        "upload": "upload",
-        "email": "email",
-        "phone": "phone",
-        "location": "location_on",
-        "calendar": "event",
-        "clock": "schedule",
-        "heart": "favorite",
-        "star": "star",
-        "share": "share",
-        "link": "link",
-        "copy": "content_copy",
-        "cut": "content_cut",
-        "paste": "content_paste",
-        "undo": "undo",
-        "redo": "redo",
-        "refresh": "refresh",
-        "logout": "logout",
-        "login": "login",
-        "plus": "add",
-        "minus": "remove",
-        "eye": "visibility",
-        "eye-off": "visibility_off",
-        "lock": "lock",
-        "unlock": "lock_open",
-        "arrow-up": "keyboard_arrow_up",
-        "arrow-down": "keyboard_arrow_down",
-        "arrow-left": "keyboard_arrow_left",
-        "arrow-right": "keyboard_arrow_right",
-    }
+    icon_aliases: dict[str, str] = Field(
+        default_factory=lambda: {
+            "home": "home",
+            "user": "person",
+            "settings": "settings",
+            "search": "search",
+            "menu": "menu",
+            "close": "close",
+            "check": "check",
+            "error": "error",
+            "info": "info",
+            "success": "check_circle",
+            "warning": "warning",
+            "edit": "edit",
+            "delete": "delete",
+            "save": "save",
+            "download": "download",
+            "upload": "upload",
+            "email": "email",
+            "phone": "phone",
+            "location": "location_on",
+            "calendar": "event",
+            "clock": "schedule",
+            "heart": "favorite",
+            "star": "star",
+            "share": "share",
+            "link": "link",
+            "copy": "content_copy",
+            "cut": "content_cut",
+            "paste": "content_paste",
+            "undo": "undo",
+            "redo": "redo",
+            "refresh": "refresh",
+            "logout": "logout",
+            "login": "login",
+            "plus": "add",
+            "minus": "remove",
+            "eye": "visibility",
+            "eye-off": "visibility_off",
+            "lock": "lock",
+            "unlock": "lock_open",
+            "arrow-up": "keyboard_arrow_up",
+            "arrow-down": "keyboard_arrow_down",
+            "arrow-left": "keyboard_arrow_left",
+            "arrow-right": "keyboard_arrow_right",
+        }
+    )
 
     # Size presets
-    size_presets: dict[str, str] = {
-        "xs": "16px",
-        "sm": "20px",
-        "md": "24px",
-        "lg": "28px",
-        "xl": "32px",
-        "2xl": "40px",
-        "3xl": "48px",
-        "4xl": "56px",
-        "5xl": "64px",
-    }
+    size_presets: dict[str, str] = Field(
+        default_factory=lambda: {
+            "xs": "16px",
+            "sm": "20px",
+            "md": "24px",
+            "lg": "28px",
+            "xl": "32px",
+            "2xl": "40px",
+            "3xl": "48px",
+            "4xl": "56px",
+            "5xl": "64px",
+        }
+    )
 
     # Color palette
-    material_colors: dict[str, str] = {
-        "red": "#f44336",
-        "pink": "#e91e63",
-        "purple": "#9c27b0",
-        "deep-purple": "#673ab7",
-        "indigo": "#3f51b5",
-        "blue": "#2196f3",
-        "light-blue": "#03a9f4",
-        "cyan": "#00bcd4",
-        "teal": "#009688",
-        "green": "#4caf50",
-        "light-green": "#8bc34a",
-        "lime": "#cddc39",
-        "yellow": "#ffeb3b",
-        "amber": "#ffc107",
-        "orange": "#ff9800",
-        "deep-orange": "#ff5722",
-        "brown": "#795548",
-        "grey": "#9e9e9e",
-        "blue-grey": "#607d8b",
-    }
+    material_colors: dict[str, str] = Field(
+        default_factory=lambda: {
+            "red": "#f44336",
+            "pink": "#e91e63",
+            "purple": "#9c27b0",
+            "deep-purple": "#673ab7",
+            "indigo": "#3f51b5",
+            "blue": "#2196f3",
+            "light-blue": "#03a9f4",
+            "cyan": "#00bcd4",
+            "teal": "#009688",
+            "green": "#4caf50",
+            "light-green": "#8bc34a",
+            "lime": "#cddc39",
+            "yellow": "#ffeb3b",
+            "amber": "#ffc107",
+            "orange": "#ff9800",
+            "deep-orange": "#ff5722",
+            "brown": "#795548",
+            "grey": "#9e9e9e",
+            "blue-grey": "#607d8b",
+        }
+    )
 
 
 class MaterialIcons(IconsBase):
@@ -930,9 +945,9 @@ with suppress(Exception):
 
 # ACB 0.19.0+ compatibility
 __all__ = [
+    "Icons",
+    "IconsSettings",
     "MaterialIcons",
     "MaterialIconsSettings",
     "register_materialicons_filters",
-    "Icons",
-    "IconsSettings",
 ]

@@ -1,19 +1,21 @@
 """Template component gathering to consolidate loader, extension, processor, and filter collection."""
 
+from __future__ import annotations
+
 import typing as t
-from contextlib import suppress
 from importlib import import_module
 from inspect import isclass
 
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
+_log = get_logger("fastblocks.actions.gather.templates")
+
 
 # Create debug function for Oneiric
 def debug(msg: str) -> None:
     """Debug logging function."""
-    logger = get_logger("fastblocks.actions.gather.templates")
-    logger.debug(msg)
+    _log.debug(msg)
 
 
 # Create resolver instance
@@ -191,12 +193,11 @@ async def _gather_loaders(
                 "StorageLoader",
             ],
         )
-        jinja2_module.ChoiceLoader
         FileSystemLoader = jinja2_module.FileSystemLoader
         PackageLoader = jinja2_module.PackageLoader
         RedisLoader = jinja2_module.RedisLoader
         StorageLoader = jinja2_module.StorageLoader
-    except (ImportError, AttributeError) as e:
+    except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
         debug(f"Error loading template loader classes: {e}")
         raise
 
@@ -222,7 +223,7 @@ async def _gather_loaders(
             enabled_admin = get_adapter("admin")  # type: ignore[name-defined]  # TODO: import get_adapter from oneiric once available
             if enabled_admin:
                 loaders.append(PackageLoader(enabled_admin.name, "templates", "admin"))
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
             debug(f"Could not create package loader: {e}")
 
     debug(f"Created {len(loaders)} template loaders")
@@ -247,7 +248,7 @@ async def _gather_extensions(extension_modules: list[str]) -> list[t.Any]:
                 ):
                     extensions.append(attr)
                     debug(f"Found extension {attr.__name__} in {module_path}")
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
             debug(f"Error loading extensions from {module_path}: {e}")
     debug(f"Gathered {len(extensions)} Jinja2 extensions")
     return extensions
@@ -264,12 +265,16 @@ async def _gather_default_extensions() -> list[t.Any]:
 
 
 async def _load_config_extensions(extensions: list[t.Any]) -> None:
-    with suppress(Exception):
+    # Narrow: resolver/import failures here are configuration-shaped
+    # (no template extensions registered); other exceptions must surface.
+    try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
         config = await depends.resolve("fastblocks", "config")
         if _has_template_extensions_config(config):
             _process_extension_paths(config.templates.extensions, extensions)
+    except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
+        debug(f"Skipping config extensions: {e}")
 
 
 def _has_template_extensions_config(config: t.Any) -> bool:
@@ -281,7 +286,7 @@ def _process_extension_paths(ext_paths: list[str], extensions: list[t.Any]) -> N
         try:
             module = import_module(ext_path)
             _extract_extension_classes_from_module(module, extensions)
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
             debug(f"Error loading extension {ext_path}: {e}")
 
 
@@ -315,7 +320,7 @@ async def _gather_context_processors(
                 debug(f"Found context processor {func_name} in {module_path}")
             else:
                 debug(f"Context processor {func_name} is not callable")
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
             debug(f"Error loading context processor {processor_path}: {e}")
     debug(f"Gathered {len(processors)} context processors")
     return processors
@@ -323,7 +328,7 @@ async def _gather_context_processors(
 
 async def _gather_default_context_processors() -> list[t.Callable[..., t.Any]]:
     processors = []
-    with suppress(Exception):
+    try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
         config = await depends.resolve("fastblocks", "config")
@@ -338,8 +343,15 @@ async def _gather_default_context_processors() -> list[t.Callable[..., t.Any]]:
                     processor = getattr(module, func_name)
                     if callable(processor):
                         processors.append(processor)
-                except Exception as e:
+                except (
+                    ImportError,
+                    ModuleNotFoundError,
+                    AttributeError,
+                    ValueError,
+                ) as e:
                     debug(f"Error loading context processor {processor_path}: {e}")
+    except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
+        debug(f"Could not read default context processors from config: {e}")
 
     return processors
 
@@ -352,7 +364,7 @@ async def _gather_filters(
         try:
             module = import_module(module_path)
             _extract_filters_from_module(module, module_path, filters)
-        except Exception as e:
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
             debug(f"Error loading filters from {module_path}: {e}")
     debug(f"Gathered {len(filters)} template filters")
     return [filters]
@@ -405,7 +417,7 @@ async def _gather_default_filters() -> list[dict[str, t.Callable[..., t.Any]]]:
             fromlist=["Filters"],
         )
         filters = getattr(filters_module, "Filters", {})
-    except Exception as e:
+    except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
         debug(f"Error loading default filters: {e}")
     debug(f"Gathered {len(filters)} default template filters")
     return [filters]
@@ -421,11 +433,11 @@ async def _gather_template_globals() -> list[dict[str, t.Any]]:
         try:
             models = await depends.resolve("fastblocks", "models")
             globals_dict["models"] = models
-        except Exception:
+        except (ImportError, ModuleNotFoundError, AttributeError, ValueError):
             globals_dict["models"] = None
         if hasattr(config, "templates") and hasattr(config.templates, "globals"):
             globals_dict.update(config.templates.globals)
-    except Exception as e:
+    except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
         debug(f"Error gathering template globals: {e}")
 
     return [globals_dict]

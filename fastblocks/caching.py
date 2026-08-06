@@ -244,7 +244,7 @@ def get_rule_matching_request(
     *,
     request: Request,
 ) -> Rule | None:
-    method = getattr(CacheRules, "get_rule_matching_request")
+    method = CacheRules.get_rule_matching_request
     result = method(rules, request=request)
     return t.cast(Rule | None, result)
 
@@ -255,19 +255,19 @@ def get_rule_matching_response(
     request: Request,
     response: Response,
 ) -> Rule | None:
-    method = getattr(CacheRules, "get_rule_matching_response")
+    method = CacheRules.get_rule_matching_response
     result = method(rules, request=request, response=response)
     return t.cast(Rule | None, result)
 
 
 def request_matches_rule(rule: Rule, *, request: Request) -> bool:
-    method = getattr(CacheRules, "request_matches_rule")
+    method = CacheRules.request_matches_rule
     result = method(rule, request=request)
     return t.cast(bool, result)
 
 
 def response_matches_rule(rule: Rule, *, request: Request, response: Response) -> bool:
-    method = getattr(CacheRules, "response_matches_rule")
+    method = CacheRules.response_matches_rule
     result = method(rule, request=request, response=response)
     return t.cast(bool, result)
 
@@ -415,7 +415,7 @@ async def get_from_cache(
     _validate_request_cacheable(request, logger)
 
     # Find matching rule
-    rule = getattr(CacheRules, "get_rule_matching_request")(rules, request=request)
+    rule = CacheRules.get_rule_matching_request(rules, request=request)
     if rule is None:
         _safe_log(logger, "debug", "request_not_cacheable reason=rule")
         raise RequestNotCachable(request)
@@ -511,16 +511,19 @@ async def _delete_cache_entries(
         logger.debug(f"clear_cache key={cache_key!r}")
         await cache.delete(cache_key)
 
-        # Publish cache invalidation event (async, don't block)
+        # Publish cache invalidation event (async, don't block).
+        # Bind `cache_key` as a default argument so the scheduled task sees
+        # the value captured at scheduling time -- not the final value of
+        # the loop variable when the task is awaited (B023).
         with suppress(Exception):
 
-            async def _publish_event() -> None:
+            async def _publish_event(key: str = cache_key) -> None:
                 from .adapters.templates._events_wrapper import (
                     publish_cache_invalidation,
                 )
 
                 await publish_cache_invalidation(
-                    cache_key=cache_key,
+                    cache_key=key,
                     reason="url_invalidation",
                     invalidated_by="cache_middleware",
                     affected_templates=None,
@@ -665,7 +668,7 @@ async def generate_cache_key(
     if config is None:
         try:
             config = depends.resolve("fastblocks", "config")
-        except Exception:
+        except (ImportError, AttributeError, ValueError):
             # Provide a default config if resolution fails
             from fastblocks.applications import FastBlocksSettings
 
@@ -779,13 +782,13 @@ class CacheResponder:
         self.rules = rules
         try:
             self.logger = depends.resolve("fastblocks", "logger")
-        except Exception:
+        except (ImportError, AttributeError, ValueError):
             from oneiric.core.logging import get_logger
 
             self.logger = get_logger("fastblocks.cache")
         try:
             self.cache = depends.resolve("fastblocks", "cache")
-        except Exception:
+        except (ImportError, AttributeError, ValueError):
             self.cache = None
         self.initial_message: Message = {}
         self.is_response_cacheable = True
@@ -869,7 +872,7 @@ class CacheControlResponder:
         self.kwargs = kwargs
         try:
             self.logger = depends.resolve("fastblocks", "logger")
-        except Exception:
+        except (ImportError, AttributeError, ValueError):
             from oneiric.core.logging import get_logger
 
             self.logger = get_logger("fastblocks.cache")
