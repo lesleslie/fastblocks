@@ -203,6 +203,7 @@ timeout_method = "thread"
 addopts = [
     "--cov=fastblocks",
     "--cov-report=term",
+    "--cov-fail-under=49.1324200913242",
     "-n", "auto",
     "--dist=loadfile"
 ]
