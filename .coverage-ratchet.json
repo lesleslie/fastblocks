@@ -1,6 +1,6 @@
 {
-  "baseline": 30.087302606239568,
-  "current_minimum": 40.0,
+  "baseline": 49.1324200913242,
+  "current_minimum": 49.1324200913242,
   "history": [
     {
       "commit": "baseline",
@@ -13,9 +13,16 @@
       "coverage": 50.21,
       "date": "2026-06-14T00:00:00.000000",
       "milestone": true
+    },
+    {
+      "date": "2026-08-11T21:22:59.064679",
+      "coverage": 49.1324200913242,
+      "commit": "lower",
+      "milestone": false,
+      "reason": "Realign ratchet to pyproject mirror; parent plan Task 5 set 49.13% without updating ratchet"
     }
   ],
-  "last_updated": "2026-06-14T00:00:00.000000",
+  "last_updated": "2026-08-11T21:22:59.064666",
   "milestones_achieved": [
     40
   ],
