@@ -1,0 +1,31 @@
+title = "FastBlocks Betterleaks Configuration"
+
+[allowlist]
+description = "Project-specific allowlist"
+paths = [
+    # Build artifacts (tarball embeds snapshot of .secrets.baseline)
+    '''dist/''',
+
+    # Cache and tooling output
+    '''\.cache/''',
+    '''\.venv/''',
+    '''\.crackerjack/''',
+    '''htmlcov/''',
+
+    # JS dependencies
+    '''node_modules/''',
+
+    # Backup files
+    '''\.backup/''',
+    '''\.backups/''',
+
+    # Documentation example commands containing deliberate fake credentials
+    '''\.claude/commands/tools/.*/.*\.md''',
+]
+
+# NOTE: ``.idea/`` and ``.obsidian/`` are intentionally NOT in the allowlist.
+# They are gitignored but betterleaks scans the working tree regardless, and
+# these directories have historically held live credentials (GitLab PATs,
+# Obsidian REST API keys + RSA private keys). Silencing them here would
+# hide future leaks. If they ever need to be excluded, do so with a
+# dedicated PR that documents the security review.
