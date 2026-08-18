@@ -29,9 +29,16 @@ class AdapterRegistry:
     async def register_adapter(self, adapter_name: str, adapter_instance: Any) -> bool:
         """Register an adapter instance in the registry."""
         try:
-            # Register with ACB system
+            # Register with the Oneiric resolver (0.13+ uses Candidate + factory).
             with suppress(Exception):
-                depends.set(adapter_instance)
+                from fastblocks.adapters.oneiric_helper import register_candidate
+
+                register_candidate(
+                    depends,
+                    domain="fastblocks",
+                    key=adapter_name,
+                    factory=lambda: adapter_instance,
+                )
 
             # Track in our registry
             self._active_adapters[adapter_name] = adapter_instance
@@ -57,12 +64,17 @@ class AdapterRegistry:
         if adapter_name in self._active_adapters:
             return self._active_adapters[adapter_name]
 
-        # Try ACB registry
-        with suppress(Exception):  # Try to instantiate from discovery
-            adapter = await depends.get(adapter_name)
-            if adapter:
-                self._active_adapters[adapter_name] = adapter
-                return adapter
+        # Try Oneiric resolver (0.13+ sync API; factory returns the instance).
+        with suppress(Exception):
+            candidate = depends.resolve("fastblocks", adapter_name)
+            if (
+                candidate is not None
+                and callable(candidate.factory)
+            ):
+                adapter = candidate.factory()
+                if adapter:
+                    self._active_adapters[adapter_name] = adapter
+                    return adapter
 
         adapter = await self.discovery.instantiate_adapter(adapter_name)
         if adapter:

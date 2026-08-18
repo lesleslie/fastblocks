@@ -474,7 +474,7 @@ class EnvironmentManager:
             grouped[prefix].append(var)
 
         # Sort variables within each group
-        for prefix, group in grouped.items():
+        for group in grouped.values():
             group.sort(key=lambda v: (not v.required, v.name))
 
         return grouped

@@ -199,12 +199,13 @@ async def get_htmy_component_catalog() -> dict[str, Any]:
         Dict with component catalog
     """
     try:
-        htmy_adapter = await depends.resolve("fastblocks", "htmy")
-        if htmy_adapter is None:
+        htmy_candidate = depends.resolve("fastblocks", "htmy")
+        if htmy_candidate is None or not callable(htmy_candidate.factory):
             return {
                 "success": False,
                 "error": "HTMY adapter not available",
             }
+        htmy_adapter = htmy_candidate.factory()
 
         components = await htmy_adapter.discover_components()
 
@@ -442,9 +443,13 @@ async def register_fastblocks_resources(server: Any) -> None:
         server: MCP server instance from ACB
     """
     try:
-        # MIGRATED: Removed ACB MCP registration - Oneiric MCP not yet available
+        # MIGRATED: Removed ACB MCP registration - Oneiric MCP not yet available.
+        # The `register_resources` symbol previously called here does not exist
+        # in the FastMCP API (use `server.resource(...)` decorator or
+        # `server.add_resource(Resource)`). Resource registration is therefore
+        # a no-op until Oneiric exposes an MCP registration helper.
 
-        # Define resource registry
+        # Define resource registry (preserved for the count log below).
         resources = {
             # Template resources
             "template_syntax": get_template_syntax_reference,
@@ -458,10 +463,10 @@ async def register_fastblocks_resources(server: Any) -> None:
             "htmx_patterns": get_htmx_patterns,
         }
 
-        # Register resources with MCP server
-        await register_resources(server, resources)  # type: ignore[name-defined]
-
-        logger.info(f"Registered {len(resources)} FastBlocks MCP resources")
+        logger.info(
+            f"Prepared {len(resources)} FastBlocks MCP resources "
+            "(registration deferred pending Oneiric MCP helper)"
+        )
 
     except Exception:
         logger.exception("Failed to register MCP resources")

@@ -39,7 +39,6 @@ depends = Resolver()
 
 def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
-    return
 
 
 from ._base import SitemapBase, SitemapBaseSettings

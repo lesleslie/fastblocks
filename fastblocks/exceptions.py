@@ -136,10 +136,25 @@ async def safe_depends_get(
     cache_dict: dict[str, t.Any],
     default: t.Any = None,
 ) -> t.Any:
+    """Resolve a dependency with cache-first semantics (Oneiric 0.13+ sync API).
+
+    Returns the cached value if present, otherwise calls ``depends.resolve``
+    (which returns a Candidate), invokes the factory to obtain the instance,
+    caches it, and returns it.
+    """
     if key not in cache_dict:
         try:
-            cache_dict[key] = await depends.resolve("fastblocks", key)
-        except (ImportError, AttributeError, ValueError):
+            candidate = depends.resolve("fastblocks", key)
+            instance = (
+                candidate.factory()
+                if candidate is not None and callable(candidate.factory)
+                else default
+            )
+            cache_dict[key] = instance
+        except Exception:
+            # ``safe_depends_get`` is contractually safe: any resolver failure
+            # (missing Oneiric, bad candidate, factory raising, etc.) falls
+            # back to ``default`` rather than propagating.
             cache_dict[key] = default
     return cache_dict[key]
 

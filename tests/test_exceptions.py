@@ -378,12 +378,14 @@ async def test_safe_depends_get_cached() -> None:
     """Test safe_depends_get with cached value."""
     cache = {"test_key": "cached_value"}
 
-    with patch("fastblocks.exceptions.depends.resolve", new_callable=AsyncMock) as mock_resolve:
+    # Oneiric 0.13+ sync API: resolve() is sync; the cached path should skip it.
+    mock_resolve = MagicMock()
+    with patch("fastblocks.exceptions.depends.resolve", new=mock_resolve):
         result = await safe_depends_get("test_key", cache)
 
         assert result == "cached_value"
         # Should not call depends.resolve since value is cached
-        mock_resolve.assert_not_awaited()
+        mock_resolve.assert_not_called()
 
 
 @pytest.mark.unit

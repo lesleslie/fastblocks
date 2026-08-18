@@ -113,13 +113,15 @@ async def validate_template(template_path: str) -> dict[str, Any]:
 
         content = path.read_text()
 
-        # Get syntax support from ACB registry
-        syntax_support = await depends.resolve("fastblocks", "syntax_support")
-        if syntax_support is None:
+        # Get syntax support from ACB registry (Oneiric 0.13+ sync API).
+        # resolve() returns a Candidate; call its factory to obtain the instance.
+        syntax_candidate = depends.resolve("fastblocks", "syntax_support")
+        if syntax_candidate is None or not callable(syntax_candidate.factory):
             return {
                 "success": False,
                 "error": "Syntax support not available",
             }
+        syntax_support = syntax_candidate.factory()
 
         # Check syntax
         errors = syntax_support.check_syntax(content, path)
@@ -268,13 +270,14 @@ async def render_template(
         Dict with rendered output or error
     """
     try:
-        # Get template adapter from ACB
-        templates = await depends.resolve("fastblocks", "templates")
-        if templates is None:
+        # Get template adapter from ACB (Oneiric 0.13+ sync API).
+        templates_candidate = depends.resolve("fastblocks", "templates")
+        if templates_candidate is None or not callable(templates_candidate.factory):
             return {
                 "success": False,
                 "error": "Template adapter not available",
             }
+        templates = templates_candidate.factory()
 
         # Render template
         context = context or {}
@@ -315,12 +318,13 @@ async def create_component(
         Dict with component creation status
     """
     try:
-        htmy_adapter = await depends.resolve("fastblocks", "htmy")
-        if htmy_adapter is None:
+        htmy_candidate = depends.resolve("fastblocks", "htmy")
+        if htmy_candidate is None or not callable(htmy_candidate.factory):
             return {
                 "success": False,
                 "error": "HTMY adapter not available",
             }
+        htmy_adapter = htmy_candidate.factory()
 
         from fastblocks.adapters.templates._htmy_components import ComponentType
 
@@ -364,12 +368,13 @@ async def list_components() -> dict[str, Any]:
         Dict with list of components and metadata
     """
     try:
-        htmy_adapter = await depends.resolve("fastblocks", "htmy")
-        if htmy_adapter is None:
+        htmy_candidate = depends.resolve("fastblocks", "htmy")
+        if htmy_candidate is None or not callable(htmy_candidate.factory):
             return {
                 "success": False,
                 "error": "HTMY adapter not available",
             }
+        htmy_adapter = htmy_candidate.factory()
 
         components = await htmy_adapter.discover_components()
 
@@ -404,12 +409,13 @@ async def validate_component(component_name: str) -> dict[str, Any]:
         Dict with validation status and metadata
     """
     try:
-        htmy_adapter = await depends.resolve("fastblocks", "htmy")
-        if htmy_adapter is None:
+        htmy_candidate = depends.resolve("fastblocks", "htmy")
+        if htmy_candidate is None or not callable(htmy_candidate.factory):
             return {
                 "success": False,
                 "error": "HTMY adapter not available",
             }
+        htmy_adapter = htmy_candidate.factory()
 
         metadata = await htmy_adapter.validate_component(component_name)
 
@@ -451,13 +457,14 @@ async def configure_adapter(
         Dict with configuration status
     """
     try:
-        # Get adapter from ACB registry
-        adapter = await depends.resolve("fastblocks", adapter_name)
-        if adapter is None:
+        # Get adapter from ACB registry (Oneiric 0.13+ sync API).
+        adapter_candidate = depends.resolve("fastblocks", adapter_name)
+        if adapter_candidate is None or not callable(adapter_candidate.factory):
             return {
                 "success": False,
                 "error": f"Adapter '{adapter_name}' not found",
             }
+        adapter = adapter_candidate.factory()
 
         # Update adapter settings
         for key, value in settings.items():

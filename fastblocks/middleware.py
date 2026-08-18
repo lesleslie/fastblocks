@@ -19,16 +19,19 @@ def debug(msg: str) -> None:
 depends = Resolver()
 
 
-def _get_adapter_or_none(domain: str) -> t.Any:
+def _get_adapter_or_none(domain: str, key: str) -> t.Any:
     """Oneiric replacement for the legacy ``oneiric.core.adapters.get_adapter``.
 
-    Resolves an adapter by domain name and returns the instance, or
-    ``None`` if no candidate is registered. The legacy module
+    Resolves an adapter by domain and key, returning the instance (or
+    ``None`` if no candidate is registered). The legacy module
     ``oneiric.core.adapters`` no longer exists in Oneiric 0.13+; the
-    public Resolver API is the supported path.
+    public Resolver API requires both ``domain`` and ``key``.
     """
     try:
-        return depends.resolve(domain)
+        candidate = depends.resolve(domain, key)
+        if candidate is not None and callable(candidate.factory):
+            return candidate.factory()
+        return None
     except (KeyError, AttributeError, RuntimeError, TypeError):
         return None
 
@@ -494,7 +497,7 @@ class MiddlewareStackManager:
             "cookie_name": f"{getattr(self.config.app, 'token_id', '_fb_')}_csrf",
             "cookie_secure": self.config.deployed,
         }
-        if _get_adapter_or_none("auth"):
+        if _get_adapter_or_none("fastblocks", "auth"):
             self._middleware_registry[MiddlewarePosition.SESSION] = SessionMiddleware
             self._middleware_options[MiddlewarePosition.SESSION] = {
                 "secret_key": self.config.app.secret_key.get_secret_value(),

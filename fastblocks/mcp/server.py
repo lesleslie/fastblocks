@@ -43,12 +43,15 @@ class FastBlocksMCPServer:
             return
 
         try:
-            # Import Oneiric MCP utilities
-            from mcp_common.cli import MCPServerCLIFactory
+            # Create server using the canonical FastMCP constructor.
+            # The previous `MCPServerCLIFactory.create_server()` call referenced a
+            # method that does not exist (only `create_app()` and `create_server_cli()`
+            # are part of `mcp_common.cli.MCPServerCLIFactory`). FastMCP gives us a
+            # working MCP server; Dhara (which replaced Oneiric MCP) infrastructure
+            # hooks (rate limiting, health) can be layered on later.
+            from mcp.server.fastmcp import FastMCP
 
-            # Create server using Oneiric infrastructure
-            # Oneiric provides the MCP server with rate limiting already configured
-            self._server = MCPServerCLIFactory.create_server()  # type: ignore[attr-defined]
+            self._server = FastMCP(name=self.name)
 
             # Register FastBlocks tools and resources. Failures propagate
             # so the caller sees the same RuntimeError we raised — the
@@ -144,10 +147,11 @@ def _get_http_app() -> Any:
     from contextlib import suppress
 
     try:
-        from mcp_common.cli import MCPServerCLIFactory
+        from mcp.server.fastmcp import FastMCP
 
-        # Create the MCP server (Oneiric returns ASGI app)
-        mcp_instance = MCPServerCLIFactory.create_server()  # type: ignore[attr-defined]
+        # Create the MCP server synchronously (Dhara replaced Oneiric MCP for
+        # the rate-limited/health-checked variant; for now use FastMCP directly).
+        mcp_instance = FastMCP(name="fastblocks")
 
         # Register tools synchronously
         with suppress(Exception):

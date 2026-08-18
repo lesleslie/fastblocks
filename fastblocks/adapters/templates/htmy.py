@@ -445,7 +445,7 @@ class HTMYTemplates(TemplatesBase):
         registry created later.
         """
         self._trusted_components.update(components)
-        if self.htmy_registry is None and self.advanced_registry is None:
+        if self.htmy_registry is None is self.advanced_registry:
             await self._init_htmy_registry()
         if self.advanced_registry is not None:
             self.advanced_registry.register_trusted_components(components)

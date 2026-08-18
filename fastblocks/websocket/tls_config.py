@@ -6,6 +6,8 @@ and helper functions for secure WebSocket connections.
 
 from __future__ import annotations
 
+from typing import Any
+
 from mcp_common.websocket.tls import (
     create_ssl_context,
     get_tls_config_from_env,
@@ -36,7 +38,7 @@ def load_ssl_context(
     key_file: str | None = None,
     ca_file: str | None = None,
     verify_client: bool = False,
-) -> dict:  # type: ignore
+) -> dict[str, Any]:
     """Load SSL context for WebSocket server.
 
     Args:
@@ -52,10 +54,19 @@ def load_ssl_context(
     if not cert_file and not key_file:
         config = get_websocket_tls_config()
         if config["tls_enabled"]:
-            cert_file = config["cert_file"]  # type: ignore[assignment]
-            key_file = config["key_file"]  # type: ignore[assignment]
-            ca_file = config["ca_file"]  # type: ignore[assignment]
-            verify_client = config.get("verify_client", False)  # type: ignore[assignment]
+            # The env dict's values are `str | bool | None`; narrow to the
+            # specific type expected by each parameter before assigning.
+            cert_file = (
+                config["cert_file"] if isinstance(config["cert_file"], str) else None
+            )
+            key_file = (
+                config["key_file"] if isinstance(config["key_file"], str) else None
+            )
+            ca_file = (
+                config["ca_file"] if isinstance(config["ca_file"], str) else None
+            )
+            raw_verify = config.get("verify_client", False)
+            verify_client = bool(raw_verify) if raw_verify is not None else False
 
     # Create SSL context if files provided
     ssl_context = None

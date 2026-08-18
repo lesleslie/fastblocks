@@ -153,16 +153,16 @@ class HealthCheckSystem:
         try:
             from oneiric.core.resolution import Resolver
 
-            # Use Oneiric resolver
+            # Use Oneiric resolver (0.13+ sync API; resolve returns Candidate).
             depends = Resolver()
 
-            registered_adapter = depends.get_sync(adapter_name)
-            if registered_adapter:
-                checks.append("Registered with ACB")
+            registered_adapter = depends.resolve("fastblocks", adapter_name)
+            if registered_adapter is not None:
+                checks.append("Registered with Oneiric resolver")
             else:
-                warnings.append("Not registered with ACB")
+                warnings.append("Not registered with Oneiric resolver")
         except (KeyError, AttributeError, RuntimeError):
-            warnings.append("ACB registration check failed")
+            warnings.append("Oneiric resolver check failed")
 
         return checks, warnings
 

@@ -229,10 +229,11 @@ class ConfigurationAuditor:
 
     def _check_weak_secrets(self, variables: list[t.Any]) -> AuditFinding | None:
         """Check for weak secret values in environment variables."""
-        weak_secrets = []
-        for var in variables:
-            if var.secret and var.value and self._is_weak_secret(var.value):
-                weak_secrets.append(var.name)
+        weak_secrets = [
+            var.name
+            for var in variables
+            if var.secret and var.value and self._is_weak_secret(var.value)
+        ]
 
         if weak_secrets:
             return AuditFinding(
@@ -249,15 +250,16 @@ class ConfigurationAuditor:
 
     def _check_unmarked_secrets(self, variables: list[t.Any]) -> AuditFinding | None:
         """Check for unmarked secret variables."""
-        unmarked_secrets = []
-        for var in variables:
+        unmarked_secrets = [
+            var.name
+            for var in variables
             if (
                 not var.secret
                 and any(pattern.match(var.name) for pattern in self.secret_patterns)
                 and var.value
-                and len(var.value) > 10
-            ):  # Likely a secret
-                unmarked_secrets.append(var.name)
+                and len(var.value) > 10  # Likely a secret
+            )
+        ]
 
         if unmarked_secrets:
             return AuditFinding(
@@ -543,15 +545,15 @@ class ConfigurationAuditor:
         self, config: ConfigurationSchema
     ) -> list[str]:
         """Check global settings for hardcoded secrets."""
-        hardcoded = []
-
-        for key, value in config.global_settings.items():
+        hardcoded = [
+            f"global_settings.{key}"
+            for key, value in config.global_settings.items()
             if (
                 isinstance(value, str)
                 and self._is_secret_key(key)
                 and self._is_hardcoded_value(value)
-            ):
-                hardcoded.append(f"global_settings.{key}")
+            )
+        ]
 
         return hardcoded
 

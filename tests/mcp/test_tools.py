@@ -121,7 +121,8 @@ class TestValidateTemplate:
         template_path = tmp_path / "test.html"
         template_path.write_text("<div>Test</div>")
 
-        async def mock_get(domain, key):
+        # Oneiric 0.13+ sync API: resolve returns Candidate; None signals "missing".
+        def mock_get(domain, key):
             return None
 
         with patch("fastblocks.mcp.tools.depends.resolve", new=mock_get):
@@ -139,8 +140,11 @@ class TestValidateTemplate:
         mock_syntax_support = MagicMock()
         mock_syntax_support.check_syntax = MagicMock(return_value=[])
 
-        async def mock_get(domain, key):
-            return mock_syntax_support
+        # Oneiric 0.13+ sync API: resolve returns a Candidate; factory returns instance.
+        def mock_get(domain, key):
+            mock_candidate = MagicMock()
+            mock_candidate.factory = MagicMock(return_value=mock_syntax_support)
+            return mock_candidate
 
         with patch("fastblocks.mcp.tools.depends.resolve", new=mock_get):
             result = await validate_template(str(template_path))
@@ -166,8 +170,10 @@ class TestValidateTemplate:
         mock_syntax_support = MagicMock()
         mock_syntax_support.check_syntax = MagicMock(return_value=[mock_error])
 
-        async def mock_get(domain, key):
-            return mock_syntax_support
+        def mock_get(domain, key):
+            mock_candidate = MagicMock()
+            mock_candidate.factory = MagicMock(return_value=mock_syntax_support)
+            return mock_candidate
 
         with patch("fastblocks.mcp.tools.depends.resolve", new=mock_get):
             result = await validate_template(str(template_path))
@@ -182,7 +188,8 @@ class TestValidateTemplate:
         template_path = tmp_path / "test.html"
         template_path.write_text("content")
 
-        async def mock_get(domain, key):
+        # Oneiric 0.13+ sync API; raise propagates from resolve() into the wrapper.
+        def mock_get(domain, key):
             raise Exception("Validation error")
 
         with patch("fastblocks.mcp.tools.depends.resolve", new=mock_get):
@@ -267,7 +274,7 @@ class TestListComponents:
     async def test_list_components_no_gather(self):
         """Test listing components when gather is not available."""
 
-        async def mock_get(domain, key):
+        def mock_get(domain, key):
             return None
 
         with patch("fastblocks.mcp.tools.depends.resolve", new=mock_get):
@@ -291,8 +298,10 @@ class TestListComponents:
             return_value={"UserCard": mock_metadata}
         )
 
-        async def mock_get(domain, key):
-            return mock_htmy
+        def mock_get(domain, key):
+            mock_candidate = MagicMock()
+            mock_candidate.factory = MagicMock(return_value=mock_htmy)
+            return mock_candidate
 
         with patch("fastblocks.mcp.tools.depends.resolve", new=mock_get):
             result = await list_components()
@@ -311,8 +320,10 @@ class TestValidateComponent:
         mock_htmy = MagicMock()
         mock_htmy.validate_component = AsyncMock(return_value=None)
 
-        async def mock_get(domain, key):
-            return mock_htmy
+        def mock_get(domain, key):
+            mock_candidate = MagicMock()
+            mock_candidate.factory = MagicMock(return_value=mock_htmy)
+            return mock_candidate
 
         with patch("fastblocks.mcp.tools.depends.resolve", new=mock_get):
             result = await validate_component("NonExistent")
@@ -330,8 +341,10 @@ class TestConfigureAdapter:
         mock_adapter = MagicMock()
         mock_adapter.key = "old_value"
 
-        async def mock_get(domain, key):
-            return mock_adapter
+        def mock_get(domain, key):
+            mock_candidate = MagicMock()
+            mock_candidate.factory = MagicMock(return_value=mock_adapter)
+            return mock_candidate
 
         with patch("fastblocks.mcp.tools.Path.cwd", return_value=tmp_path):
             with patch("fastblocks.mcp.tools.depends.resolve", new=mock_get):
@@ -387,8 +400,10 @@ class TestListAdapters:
         mock_discovery = AsyncMock()
         mock_discovery.list_available_adapters = AsyncMock(return_value=mock_adapters)
 
-        async def mock_get(domain, key):
-            return mock_discovery
+        def mock_get(domain, key):
+            mock_candidate = MagicMock()
+            mock_candidate.factory = MagicMock(return_value=mock_discovery)
+            return mock_candidate
 
         with patch("fastblocks.mcp.tools.depends.resolve", new=mock_get):
             result = await list_adapters(category="auth")

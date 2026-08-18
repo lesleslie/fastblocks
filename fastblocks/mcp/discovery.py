@@ -200,7 +200,7 @@ class AdapterDiscoveryServer:
         doc = cls.__doc__
         if doc:
             first_line = doc.split("\n")[0]
-            return first_line.strip().strip('"').strip("'").strip(".")
+            return first_line.strip().strip("\"'.").strip(".")
         return ""
 
     def _extract_protocols(self, cls: type) -> list[str]:

@@ -486,11 +486,13 @@ class TestSafeDependsGet:
         """Test successful resolution on cache miss."""
         cache: dict = {}
 
-        # Mock the resolver
+        # Mock the resolver (Oneiric 0.13+ sync API).
         from unittest.mock import patch
 
-        from unittest.mock import AsyncMock as _AsyncMock
-        with patch("fastblocks.exceptions.depends.resolve", new_callable=_AsyncMock, return_value="resolved_value"):
+        # resolve() returns a Candidate; factory() must yield the resolved value.
+        mock_candidate = MagicMock()
+        mock_candidate.factory = MagicMock(return_value="resolved_value")
+        with patch("fastblocks.exceptions.depends.resolve", return_value=mock_candidate):
             result = await safe_depends_get("test_key", cache)
             assert result == "resolved_value"
             assert cache["test_key"] == "resolved_value"
