@@ -26,13 +26,14 @@ consumer that wants stricter gating should use its own profile (the
 SplashStand MCP server, for example, ships with the full ``mcp_common``
 profile system enabled).
 
-**Import-resilience note**: ``mcp_common.tools`` is imported lazily inside
-:func:`apply_fastblocks_tool_profile` rather than at module load time.
-This is deliberate: the test conftest installs a stub ``mcp_common``
-package in ``sys.modules`` (see ``tests/_websocket_stub.py``) that lacks
-a ``tools`` submodule, and a module-level import would make this stub
-uncollectable. The lazy import also keeps the stub importable in any
-environment where ``mcp_common`` is not the real package.
+**Import-resilience note**: the ``mcp_common.tools`` import is wrapped
+in :func:`_resolve_tool_profile`, which catches ``ImportError`` and
+falls back to the local :class:`_FallbackToolProfile`. The resolution
+is therefore safe at module load time even when the test conftest has
+stubbed ``mcp_common`` in ``sys.modules`` without a ``tools`` submodule
+(see ``tests/_websocket_stub.py``). The fallback also keeps the stub
+importable in any environment where ``mcp_common`` is not the real
+package.
 """
 
 from __future__ import annotations
@@ -74,15 +75,30 @@ class _FallbackToolProfile(enum.StrEnum):
 def _resolve_tool_profile() -> Any:
     """Return the real ``mcp_common.tools.ToolProfile`` enum if importable, else the fallback.
 
-    The result is used only for ``isinstance`` checks inside
-    :func:`apply_fastblocks_tool_profile`. Both enums have the same
-    three members, so the check is unambiguous.
+    The result is used both at module load time (to key
+    :data:`PROFILE_REGISTRATIONS`) and inside
+    :func:`apply_fastblocks_tool_profile` for ``isinstance`` checks.
+    Both enums have the same three members, so the check is
+    unambiguous.
     """
     try:
         from mcp_common.tools import ToolProfile
     except ImportError:
         return _FallbackToolProfile
     return ToolProfile
+
+
+# Resolve the profile enum class once at module load so ``PROFILE_REGISTRATIONS``
+# can be keyed by whichever class is in scope. ``_resolve_tool_profile``
+# catches ``ImportError`` from ``mcp_common.tools``, so this is safe even
+# when the test conftest has stubbed ``mcp_common`` in ``sys.modules``
+# (see ``tests/_websocket_stub.py``); the fallback enum mirrors the
+# real ``mcp_common.tools.ToolProfile`` member names, so once
+# mcp-common is bumped past 0.3 the dict below is keyed by the real
+# enum and consumer lookups like
+# ``PROFILE_REGISTRATIONS[ToolProfile.MINIMAL]`` work without a
+# re-keying migration.
+_TOOL_PROFILE_CLS = _resolve_tool_profile()
 
 
 # ---------------------------------------------------------------------------
@@ -108,10 +124,18 @@ FASTBLOCKS_TOOLS: tuple[str, ...] = (
 # A profile → tool-set mapping. Every profile maps to the full set of
 # FastBlocks tools. This is the "opt out" form: nothing is filtered
 # regardless of which profile a consumer selects.
+#
+# Keying note: the dict is keyed by :data:`_TOOL_PROFILE_CLS` (the real
+# ``mcp_common.tools.ToolProfile`` enum when mcp-common exposes it,
+# otherwise the local ``_FallbackToolProfile``). The two enums share
+# the same three member names (``MINIMAL``, ``STANDARD``, ``FULL``),
+# so consumer-side ``PROFILE_REGISTRATIONS[ToolProfile.MINIMAL]``
+# lookups will match these keys directly once the consumer's
+# mcp-common is bumped past 0.3 — no re-keying migration required.
 PROFILE_REGISTRATIONS: dict[Any, tuple[str, ...]] = {
-    _FallbackToolProfile.MINIMAL: FASTBLOCKS_TOOLS,
-    _FallbackToolProfile.STANDARD: FASTBLOCKS_TOOLS,
-    _FallbackToolProfile.FULL: FASTBLOCKS_TOOLS,
+    _TOOL_PROFILE_CLS.MINIMAL: FASTBLOCKS_TOOLS,
+    _TOOL_PROFILE_CLS.STANDARD: FASTBLOCKS_TOOLS,
+    _TOOL_PROFILE_CLS.FULL: FASTBLOCKS_TOOLS,
 }
 
 
@@ -150,9 +174,8 @@ def apply_fastblocks_tool_profile(
         ``fastblocks/mcp/tools.py``).
     """
     global _deprecation_emitted
-    tool_profile_cls = _resolve_tool_profile()
     if profile is None:
-        profile = tool_profile_cls.FULL
+        profile = _TOOL_PROFILE_CLS.FULL
     if not _deprecation_emitted:
         profile_name = profile.value if hasattr(profile, "value") else str(profile)
         _DEPRECATION_LOG.info(
