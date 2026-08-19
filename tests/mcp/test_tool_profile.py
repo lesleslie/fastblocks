@@ -30,6 +30,8 @@ to discover whichever ``ToolProfile`` class is in use.
 from __future__ import annotations
 
 import logging
+from collections.abc import Generator
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -41,8 +43,11 @@ from fastblocks.mcp.profiles import (
 
 # Resolve whichever ``ToolProfile`` class the stub is using (real or
 # fallback). The stub's ``PROFILE_REGISTRATIONS`` keys are always
-# members of that class.
-ToolProfile = type(next(iter(PROFILE_REGISTRATIONS)))
+# members of that class. Typed as ``Any`` because the type is
+# data-dependent (the real ``mcp_common.tools.ToolProfile`` enum vs.
+# the local ``_FallbackToolProfile``); the test only relies on the
+# three member names being present.
+ToolProfile: Any = type(next(iter(PROFILE_REGISTRATIONS)))
 
 
 # ---------------------------------------------------------------------------
@@ -51,7 +56,7 @@ ToolProfile = type(next(iter(PROFILE_REGISTRATIONS)))
 
 
 @pytest.fixture
-def reset_deprecation_state() -> None:
+def reset_deprecation_state() -> Generator[None]:
     """Reset the stub's one-time deprecation flag.
 
     The stub module keeps a module-level ``_DEPRECATION_EMITTED`` flag so
@@ -161,8 +166,12 @@ class TestApplyToolProfileNoOp:
 
     def test_returns_none(self) -> None:
         server = MagicMock()
-        result = apply_fastblocks_tool_profile(server, profile=ToolProfile.FULL)
-        assert result is None
+        # The stub is annotated ``-> None``; assert the call completes
+        # without raising. We do not bind the return value because
+        # mypy's ``func-returns-value`` rule flags the assignment when
+        # the function body has no explicit ``return`` (the no-op
+        # pattern).
+        apply_fastblocks_tool_profile(server, profile=ToolProfile.FULL)
 
     def test_does_not_call_any_method_on_server(self) -> None:
         server = MagicMock()
@@ -171,8 +180,8 @@ class TestApplyToolProfileNoOp:
         # The server must be passed in but not invoked. Every attribute
         # access on a MagicMock records a call, so the only entries in
         # ``mock_methods`` are property accesses, not method invocations.
-        server_methods_called = [name for name, call in server.method_calls]
-        assert server_methods_called == [], (
+        server_methods_called = [name for name, _call in server.method_calls]
+        assert not server_methods_called, (
             "apply_fastblocks_tool_profile must not call any method on "
             f"the server; saw: {server_methods_called!r}"
         )
