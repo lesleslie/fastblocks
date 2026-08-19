@@ -13,7 +13,7 @@
 
 ## Code Quality & Style
 
-- **Use Static Typing Everywhere**
+- **Use Static Typing Everywhere** (new code only; existing usage grandfathered)
 
   - Always include comprehensive type hints
   - Use modern typing syntax with the pipe operator (`|`) for unions instead of `Optional[T]`
@@ -34,7 +34,7 @@
 - **Clean Code Architecture**
 
   - Write modular functions that do one thing well
-  - **NO DOCSTRINGS**: Never add docstrings to any code - the codebase standard is to have no docstrings (they are automatically removed by the `-x` flag)
+  - **NO DOCSTRINGS** (new code only; existing module docstrings grandfathered): Never add docstrings to new code - the codebase standard is to have no docstrings (they are automatically removed by the `-x` flag). Existing module docstrings in `fastblocks/cli.py`, `fastblocks/mcp/tools.py`, and `fastblocks/mcp/profiles.py` are grandfathered.
   - Avoid unnecessary line comments - use them sparingly only for complex logic
   - Use protocols (`t.Protocol`) instead of abstract base classes
   - Choose clear, descriptive variable and function names that make the code self-documenting (even in map/filter functions)
@@ -151,7 +151,7 @@ def _should_process(self, data: dict) -> bool:
     - Autotyping for type annotation
     - Refurb for Python code modernization
     - Bandit for security vulnerabilities
-  - Run quality checks with `python -m crackerjack run -t --ai-fix` during development
+  - Run quality checks with `uv run crackerjack run` during development
   - All tools configured in crackerjack with proper settings
   - Ensure all code passes crackerjack checks before submitting
 
@@ -230,8 +230,8 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
 
 - **Code Quality Validation**
 
-  - Code should pass all quality checks when run through fastblocks
-  - The ultimate goal is to run `python -m fastblocks -x -t` without any errors
+  - Code should pass all quality checks when run through crackerjack
+  - The ultimate goal is to run `uv run crackerjack run` without any errors
   - This validates proper typing, formatting, linting, and test success
   - Consider code incomplete until it passes this validation
 
@@ -289,7 +289,7 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
 
 - **Test Coverage Improvement (MANDATORY)**
 
-  - **Target 42% milestone coverage**: Work toward 42% milestone (current: 21.6%, baseline: 19.6%).
+  - **Floor: 49.13% (pyproject.toml `[tool.coverage.report].fail_under`)**. Coverage must remain at or above this floor; the CI gate fails below it.
   - **Always improve coverage incrementally** when working on projects with pytest coverage below the target
   - **Check coverage first**: Run `uv run pytest --cov=<package_name> --cov-report=term-missing` to see current status
   - **Target 2-5% improvement per session**: Add 1-3 focused tests that cover uncovered lines
@@ -336,8 +336,7 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
 
 - **Session Progress Tracking**
 
-  - Progress tracking is now handled automatically by the MCP WebSocket server
-  - Real-time progress monitoring available at `ws://localhost:8675`
+  - Progress tracking is now handled automatically by the MCP WebSocket server (see `fastblocks/websocket/` for the actual bind host and port)
   - Use `--resume-from` to continue interrupted sessions rather than starting over
 
 ## AI Agent Integration
@@ -358,8 +357,8 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
 
   - Use standard orchestrator for MCP compatibility (not advanced orchestrator)
   - WebSocket progress reporting requires proper iteration boundaries
-  - Real-time progress available at `ws://localhost:8675/ws/progress/{job_id}`
-  - MCP tools: `execute_fastblocks`, `get_job_progress`, `get_comprehensive_status`
+  - Real-time progress is exposed via the MCP WebSocket server (see `fastblocks/websocket/` for the actual bind host and path; do not hardcode URLs)
+  - MCP tools: see `fastblocks/mcp/tools/` for the current registered tool list (do not hardcode tool names in docs)
 
 ## AI Assistant Self-Maintenance
 
@@ -368,7 +367,7 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
   - AI assistants should update CLAUDE.md and RULES.md weekly or after quality check failures
   - Learn from new Refurb rules (FURB codes), Pyright errors (reportXxx), and Complexipy thresholds
   - Add newly discovered error patterns to documentation with code examples
-  - Test all documentation updates by running `python -m fastblocks --comprehensive`
+  - Test all documentation updates by running `uv run crackerjack run`
   - Prioritize frequently occurring error patterns as **CRITICAL** standards
 
 - **Self-Learning Protocol**

@@ -16,11 +16,11 @@
 
 FastBlocks is an asynchronous web application framework, inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines modern Python async capabilities with server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
 
-> **Note on this README:** The narrative below still describes FastBlocks as built on [ACB](https://github.com/lesleslie/acb). That is stale. The codebase moved to [Oneiric](https://github.com/lesleslie/oneiric) in Phase 3.1 of the 0.8.0 release; the `acb` extra was removed from `pyproject.toml` entirely. Treat the deep-dive sections below as historical reference for the ACB API; for the current dependency-injection surface, see `CLAUDE.md` ("Big Architectural Picture") and `docs/migrations/0.7-to-0.8.md` for the Oneiric migration.
+FastBlocks is built on **[Oneiric](https://github.com/lesleslie/oneiric)** for dependency injection, configuration management, and pluggable adapters. Oneiric replaced the legacy ACB dependency in Phase 3.1 of the 0.8.0 release; the `acb` extra was removed from `pyproject.toml` entirely. For the current dependency-injection surface, see `CLAUDE.md` ("Big Architectural Picture") and `docs/migrations/0.7-to-0.8.md` for the Oneiric migration.
 
-Unlike monolithic frameworks or micro-frameworks that require extensive configuration, FastBlocks offers a modular, component-based architecture that provides batteries-included functionality while maintaining exceptional flexibility. Built on the **[Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb)** framework, FastBlocks leverages ACB's powerful adapter pattern for seamless component swapping, cloud provider migrations, and tailored customizations without extensive code changes.
+Unlike monolithic frameworks or micro-frameworks that require extensive configuration, FastBlocks offers a modular, component-based architecture that provides batteries-included functionality while maintaining exceptional flexibility. Built on Oneiric's powerful adapter pattern, FastBlocks enables seamless component swapping, cloud provider migrations, and tailored customizations without extensive code changes.
 
-FastBlocks serves as a prime example of ACB's capabilities, showcasing how ACB's dependency injection, configuration management, and pluggable adapter system can create enterprise-grade applications. All FastBlocks adapters (templates, auth, admin, routing, storage) follow ACB's standardized interfaces, ensuring consistency and interoperability.
+FastBlocks leverages Oneiric's dependency injection, configuration management, and pluggable adapter system to create enterprise-grade applications. All FastBlocks adapters (templates, auth, admin, routing, storage) follow Oneiric's standardized interfaces, ensuring consistency and interoperability.
 
 ## Key Concepts
 
@@ -42,7 +42,7 @@ If you're new to FastBlocks, here are the key concepts to understand:
 
 - **Starlette Foundation**: Built on the [Starlette](https://www.starlette.io/) ASGI framework for high performance, extending its application class and middleware system
 - **Native HTMX Integration**: Built-in HTMX support (not a dependency) for creating dynamic interfaces with server-side rendering
-- **Asynchronous Architecture**: Built on [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb), providing dependency injection, configuration management, and pluggable components
+- **Asynchronous Architecture**: Built on [Oneiric](https://github.com/lesleslie/oneiric), providing dependency injection, configuration management, and pluggable components
 - **Dual Template Systems**: Advanced asynchronous Jinja2 template system with fragments and partials support using `[[` and `]]` delimiters, plus HTMY for type-safe Python-based component creation
 - **Async Template Stack**: Powered by [jinja2-async-environment](https://github.com/lesleslie/jinja2-async-environment) and [starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja) for true non-blocking rendering, template inheritance safety, and HTMX-friendly block streaming
 - **Modular Design**: Pluggable adapters for authentication, admin interfaces, routing, templates, and sitemap generation
@@ -62,16 +62,16 @@ If you're new to FastBlocks, here are the key concepts to understand:
 - [Actions Library](./fastblocks/actions/README.md) – minification, gathering, query utilities, and more
 - [Adapters Reference](./fastblocks/adapters/README.md) – overview of pluggable adapters
 - [Templates Adapter Guide](./fastblocks/adapters/templates/README.md) – async Jinja stack and filters
-- [Technical Docs Index](./docs/README.md) – ACB guide, migration notes, archived docs
+- [Technical Docs Index](./docs/README.md) – Oneiric migration notes, archived docs
 - [Async Jinja Troubleshooting](./docs/JINJA2_ASYNC_ENVIRONMENT_USAGE.md) – inheritance-safe rendering guidance
-- [Architecture Guide](./docs/ARCHITECTURE.md) – Starlette + ACB layering, SSR pipeline, and project layout
+- [Architecture Guide](./docs/ARCHITECTURE.md) – Starlette + Oneiric layering, SSR pipeline, and project layout
 - [Comparisons & Decision Guide](./docs/COMPARISONS.md) – framework comparisons and key advantages
 - [Template Examples](./docs/examples/TEMPLATE_EXAMPLES.md) – snippets for layout, fragments, and HTMX swaps
 - [Testing Guide](./tests/TESTING.md) – instructions for running the FastBlocks test suite
 
 ## Why Choose FastBlocks?
 
-FastBlocks pairs server-side rendering with HTMX-first workflows, a flexible adapter ecosystem, and the familiarity of Starlette + ACB. Teams typically choose FastBlocks when they want:
+FastBlocks pairs server-side rendering with HTMX-first workflows, a flexible adapter ecosystem, and the familiarity of Starlette + Oneiric. Teams typically choose FastBlocks when they want:
 
 - **HTML-first iteration speed** without giving up async performance or modern tooling
 - **Composable infrastructure** thanks to adapters for templates, auth, routes, admin, and storage
@@ -166,22 +166,20 @@ Here's the core of every FastBlocks app:
 
 ```python
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-Templates = import_adapter("templates")
-App = import_adapter("app")
+depends = get_resolver()
 
 
-@depends.inject
-async def homepage(request, templates: Inject[Templates]):
+async def homepage(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
 
 
 routes = [Route("/", endpoint=homepage)]
-app = depends.get(App)
+app = await resolve_component_async(depends, "fastblocks", "app")
 ```
 
 Next steps:
@@ -193,13 +191,13 @@ Next steps:
 
 ## Architecture Overview
 
-FastBlocks extends Starlette’s ASGI runtime with HTMX-aware requests and middleware, and relies on ACB for dependency injection plus the adapter pattern. The end result is a layered architecture where:
+FastBlocks extends Starlette's ASGI runtime with HTMX-aware requests and middleware, and relies on Oneiric for dependency injection plus the adapter pattern. The end result is a layered architecture where:
 
 - Starlette provides routing, middleware, and ASGI lifecycle
 - FastBlocks augments it with SSR-friendly helpers, template streaming, and HTMX ergonomics
-- ACB supplies dependency injection, configuration, and pluggable adapters
+- Oneiric supplies dependency injection, configuration, and pluggable adapters
 
-For a detailed walkthrough—including Starlette integration points, modern `Inject[Type]` usage, HTMX SSR rationale, and the full project structure diagram—see the [Architecture Guide](./docs/ARCHITECTURE.md).
+For a detailed walkthrough—including Starlette integration points, the Oneiric resolver API, HTMX SSR rationale, and the full project structure diagram—see the [Architecture Guide](./docs/ARCHITECTURE.md).
 
 ## Core Components
 
@@ -235,14 +233,13 @@ Because both projects are maintained alongside FastBlocks, upgrades stay in lock
 #### Basic Template Usage
 
 ```python
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-Templates = import_adapter("templates")
+depends = get_resolver()
 
 
-@depends.inject
-async def homepage(request, templates: Inject[Templates]):
+async def homepage(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     # Render a full template
     return await templates.app.render_template(
         request,
@@ -331,11 +328,13 @@ Create template blocks specifically for HTMX responses:
 ```
 
 ```python
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
+
+depends = get_resolver()
 
 
-@depends.inject
-async def counter_block(request, templates: Inject[Templates]):
+async def counter_block(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     count = request.session.get("count", 0)
     if request.method == "POST":
         count += 1
@@ -355,9 +354,10 @@ async def counter_block(request, templates: Inject[Templates]):
 FastBlocks includes several built-in filters and you can add your own:
 
 ```python
-from acb.adapters import import_adapter
+from fastblocks.core.resolver import get_resolver, resolve_component
 
-Templates = import_adapter("templates")
+depends = get_resolver()
+Templates = resolve_component(depends, "fastblocks", "templates")
 
 
 # Register a custom filter
@@ -405,21 +405,20 @@ FastBlocks supports Starlette's routing patterns with additional features:
 
 ```python
 from starlette.routing import Route, Mount
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-Templates = import_adapter("templates")
+depends = get_resolver()
 
 
-@depends.inject
-async def homepage(request, templates: Inject[Templates]):
+async def homepage(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
 
 
-@depends.inject
-async def about(request, templates: Inject[Templates]):
+async def about(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     return await templates.app.render_template(
         request, "about.html", context={"title": "About Us"}
     )
@@ -440,14 +439,13 @@ FastBlocks can automatically discover and register routes from your application:
 ```python
 # routes.py
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-Templates = import_adapter("templates")
+depends = get_resolver()
 
 
-@depends.inject
-async def homepage(request, templates: Inject[Templates]):
+async def homepage(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
@@ -677,7 +675,7 @@ FastBlocks includes **native HTMX support** built directly into the framework. T
 
 FastBlocks' HTMX support is provided through:
 
-- **`fastblocks.htmx` module**: Core HTMX functionality with ACB integration
+- **`fastblocks.htmx` module**: Core HTMX functionality with Oneiric integration
 - **HTMX Middleware**: Automatically processes HTMX headers in the middleware stack
 - **No external dependencies**: All HTMX support is built into FastBlocks
 
@@ -696,14 +694,13 @@ FastBlocks extends Starlette's request object with HTMX-specific properties:
 
 ```python
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-Templates = import_adapter("templates")
+depends = get_resolver()
 
 
-@depends.inject
-async def product_detail(request, templates: Inject[Templates]):
+async def product_detail(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     product_id = request.path_params["product_id"]
 
     # Check if this is an HTMX request
@@ -737,14 +734,13 @@ FastBlocks makes it easy to set HTMX-specific response headers:
 ```python
 from starlette.responses import Response
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-Templates = import_adapter("templates")
+depends = get_resolver()
 
 
-@depends.inject
-async def search_results(request, templates: Inject[Templates]):
+async def search_results(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     query = request.query_params.get("q", "")
 
     # Render the search results
@@ -888,15 +884,14 @@ class LoadMoreCard:
 
 ```python
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 from templates.components.user_card import UserCard
 
-Templates = import_adapter("templates")
+depends = get_resolver()
 
 
-@depends.inject
-async def user_profile(request, templates: Inject[Templates]):
+async def user_profile(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     # Create component with type safety and IDE autocomplete
     user_card = UserCard(
         name="Jane Doe",
@@ -915,15 +910,14 @@ Combine both template systems for maximum flexibility:
 
 ```python
 # Use HTMY component within Jinja2 template
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 from templates.components.user_card import UserCard
 
-Templates = import_adapter("templates")
+depends = get_resolver()
 
 
-@depends.inject
-async def dashboard(request, templates: Inject[Templates]):
+async def dashboard(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     # Create HTMY components
     user_card = UserCard(name="John Doe", email="john@example.com")
 
@@ -989,29 +983,26 @@ FastBlocks uses a pluggable adapter system for modular integration with external
 
 ### Adapter Architecture
 
-All adapters follow ACB 0.19.0+ patterns with:
+All adapters follow Oneiric patterns with:
 
 - **MODULE_ID**: Static UUID7 for unique identification
 - **MODULE_STATUS**: Adapter stability status (stable, beta, alpha, experimental)
 - **Protocol-Based Design**: Standardized interfaces for consistent behavior
-- **Dependency Injection**: Automatic registration via ACB's `depends.set()`
+- **Dependency Injection**: Resolver-based lookup via `get_resolver()`
 
 ### Using Adapters
 
-Adapters are accessed through ACB's dependency injection system:
+Adapters are accessed through Oneiric's resolver-based dependency injection:
 
 ```python
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-# Get adapter instances
-Templates = import_adapter("templates")
-Images = import_adapter("images")
+depends = get_resolver()
 
-
-# Use in route handlers with modern @depends.inject decorator and Inject[Type] pattern
-@depends.inject
-async def my_view(request, templates: Inject[Templates]):
+# Use in route handlers
+async def my_view(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
+    images = await resolve_component_async(depends, "fastblocks", "images")
     return await templates.app.render_template(request, "index.html")
 ```
 
@@ -1030,7 +1021,7 @@ See the [**Adapters Documentation**](./fastblocks/adapters/README.md).
 
 ## Database Models and Queries
 
-FastBlocks provides comprehensive database support through ACB's universal model and query system:
+FastBlocks provides comprehensive database support through Oneiric's universal model and query system:
 
 ### Supported Model Types
 
@@ -1054,7 +1045,9 @@ FastBlocks automatically detects and supports multiple model frameworks:
 FastBlocks provides multiple query patterns that work consistently across all database types:
 
 ```python
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver
+
+resolver = get_resolver()
 
 # Modern pattern: Type-safe dependency access
 query = depends.get(Query)
@@ -1097,14 +1090,13 @@ For more information about actions, see the [Actions Documentation](./fastblocks
 
 ## Configuration
 
-FastBlocks uses ACB's configuration system based on Pydantic, which provides a unified way to manage settings from multiple sources:
+FastBlocks uses Oneiric's configuration system based on Pydantic, which provides a unified way to manage settings from multiple sources:
 
 ```python
-from acb.config import Config
-from acb.depends import Inject, depends
+from oneiric.core.config import OneiricSettings
 
-# Modern pattern: Type-safe dependency access
-config = depends.get(Config)
+# OneiricSettings is the configuration model — import directly
+config = OneiricSettings()
 
 # Access configuration values
 secret_key = config.app.secret_key
@@ -1119,7 +1111,7 @@ debug_mode = config.debug.fastblocks
 
 ### FastBlocks-Specific Configuration
 
-FastBlocks extends ACB's configuration system with web-specific settings for templates, routing, middleware, and more. These settings are automatically loaded and validated using Pydantic models.
+FastBlocks extends Oneiric's configuration system with web-specific settings for templates, routing, middleware, and more. These settings are automatically loaded and validated using Pydantic models.
 
 ## Command-Line Interface (CLI)
 
@@ -1183,7 +1175,7 @@ python -m fastblocks dev
 
 The development server includes enhanced features:
 
-- **Optimized Logging**: Uvicorn logging is integrated with ACB's InterceptHandler for cleaner output
+- **Optimized Logging**: Uvicorn logging is integrated with Oneiric's InterceptHandler for cleaner output
 - **Smart Reloading**: Excludes `tmp/*`, `settings/*`, and `templates/*` directories from reload monitoring for better performance
 - **Template Development**: Templates are excluded from reload to prevent unnecessary restarts during template development
 
@@ -1241,7 +1233,7 @@ Show available FastBlocks components and their status.
 
 ### Updating from Version 0.13.1 to 0.13.2
 
-Version 0.14.0 introduces ACB 0.19.0 compatibility with adapter metadata requirements and continues the simplified dependency management with direct ACB imports. While existing code will continue to work, we recommend updating to the new patterns for better performance and maintainability.
+Version 0.14.0 introduced ACB 0.19.0 compatibility with adapter metadata requirements and continued the simplified dependency management with direct ACB imports. The later Phase 3.1 migration (v0.20.0) removed ACB entirely in favor of Oneiric; the historical patterns below document the intermediate steps. For the current Oneiric resolver API, see the [Architecture Guide](./docs/ARCHITECTURE.md).
 
 #### Import Pattern Changes
 
@@ -1256,27 +1248,23 @@ from fastblocks.config import config
 **After (v0.13.2 - v0.24.x):**
 
 ```python
-# Direct ACB imports with depends.get()
-from acb.adapters import import_adapter
-from acb.depends import depends
-from acb.config import Config
-
-Templates = import_adapter("templates")
-App = import_adapter("app")
-config = depends.get(Config)
+# Historical ACB pattern — removed when ACB was migrated to Oneiric in v0.20.0.
+# See docs/migrations/0.7-to-0.8.md for the migration history.
+# (Code snippet intentionally omitted; do not copy-paste — superseded by Oneiric.)
 ```
 
-**Modern (ACB 0.25.1+):**
+**Modern (Oneiric 0.8+):**
 
 ```python
-# Modern Inject[Type] pattern with type safety
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
-from acb.config import Config
+# Modern resolver-based pattern
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-Templates = import_adapter("templates")
-App = import_adapter("app")
-config = depends.get(Config)
+depends = get_resolver()
+
+
+async def my_view(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
+    app = await resolve_component_async(depends, "fastblocks", "app")
 ```
 
 #### Route Handler Updates
@@ -1297,12 +1285,17 @@ async def homepage(request, templates: Templates = depends()):
     return await templates.app.render_template(request, "index.html")
 ```
 
-**Modern (ACB 0.25.1+):**
+**Modern (Oneiric 0.8+):**
 
 ```python
-# Requires @depends.inject decorator with Inject[Type]
-@depends.inject
-async def homepage(request, templates: Inject[Templates]):
+# Resolver-based handler with no decorator
+from fastblocks.core.resolver import get_resolver, resolve_component_async
+
+depends = get_resolver()
+
+
+async def homepage(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     return await templates.app.render_template(request, "index.html")
 ```
 
@@ -1331,25 +1324,22 @@ The CLI now includes:
 
 ```python
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-# Import adapters
-Templates = import_adapter("templates")
-App = import_adapter("app")
+depends = get_resolver()
 
 counter = 0
 
 
-@depends.inject
-async def get_counter(request, templates: Inject[Templates]):
+async def get_counter(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     return await templates.app.render_template(
         request, "blocks/counter.html", context={"count": counter}
     )
 
 
-@depends.inject
-async def increment_counter(request, templates: Inject[Templates]):
+async def increment_counter(request):
+    templates = await resolve_component_async(depends, "fastblocks", "templates")
     global counter
     counter += 1
     return await templates.app.render_template(
@@ -1361,9 +1351,6 @@ routes = [
     Route("/block/counter", endpoint=get_counter, methods=["GET"]),
     Route("/block/counter", endpoint=increment_counter, methods=["POST"]),
 ]
-
-# Create the application with modern pattern
-app = depends.get(App)
 ```
 
 ## Documentation
@@ -1392,7 +1379,7 @@ Special thanks to the following open-source projects that power FastBlocks:
 ### Foundation
 
 - [Starlette](https://www.starlette.io/) - The ASGI framework that FastBlocks directly extends, providing the web application foundation
-- [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb) - The core infrastructure providing dependency injection, configuration, and component architecture
+- [Oneiric](https://github.com/lesleslie/oneiric) - The dependency injection, configuration, and pluggable adapter framework that replaced ACB in v0.20.0
 
 ### Frontend & Templates
 
@@ -1428,7 +1415,7 @@ Special thanks to the following open-source projects that power FastBlocks:
 - [Granian](https://github.com/emmett-framework/granian) - Alternative high-performance ASGI server
 - [Typer](https://typer.tiangolo.com/) - Modern CLI framework for building command-line interfaces
 - [icecream](https://github.com/gruns/icecream) - Enhanced debugging utilities
-- [bevy](https://github.com/bevyengine/bevy) - Rust game engine inspiration for ACB architecture
+- [bevy](https://github.com/bevyengine/bevy) - Rust game engine inspiration for the Oneiric adapter architecture
 - [msgspec](https://github.com/jcrist/msgspec) - High-performance serialization library
 - [attrs](https://github.com/python-attrs/attrs) - Classes without boilerplate
 
@@ -1440,6 +1427,6 @@ Special thanks to the following open-source projects that power FastBlocks:
 
 **FastAPI Inspiration**: FastBlocks draws significant inspiration from [FastAPI](https://fastapi.tiangolo.com/) by Sebastián Ramírez. FastAPI's elegant approach to modern Python web development, type safety, automatic validation, and developer experience served as a guiding light for FastBlocks' design philosophy. While FastBlocks focuses on server-side rendering with HTMX rather than API development, it embraces FastAPI's commitment to developer productivity, type safety, and modern Python features.
 
-FastBlocks incorporates enhanced versions of **asgi-htmx** by Marcelo Trylesinski and **asgi-sitemaps** by Florian Dahlitz. These excellent libraries provided the foundation for FastBlocks' native HTMX and sitemap functionality. The original implementations have been enhanced with ACB integration, improved error handling, caching capabilities, and FastBlocks-specific optimizations while maintaining the quality and design principles of the original work.
+FastBlocks incorporates enhanced versions of **asgi-htmx** by Marcelo Trylesinski and **asgi-sitemaps** by Florian Dahlitz. These excellent libraries provided the foundation for FastBlocks' native HTMX and sitemap functionality. The original implementations have been enhanced with Oneiric integration, improved error handling, caching capabilities, and FastBlocks-specific optimizations while maintaining the quality and design principles of the original work.
 
 We extend our sincere gratitude to all the maintainers and contributors of these outstanding open-source projects that make FastBlocks possible.

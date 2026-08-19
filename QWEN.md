@@ -4,13 +4,13 @@
 
 FastBlocks is an asynchronous web application framework built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines modern Python async capabilities with server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
 
-The framework is built on the **Asynchronous Component Base (ACB)** framework (now migrated to Oneiric), leveraging ACB's powerful adapter pattern for seamless component swapping, cloud provider migrations, and tailored customizations without extensive code changes.
+The framework is built on **[Oneiric](https://github.com/lesleslie/oneiric)** for dependency injection, configuration management, and pluggable adapters. Oneiric replaces the legacy ACB dependency that was removed in v0.20.0 of FastBlocks.
 
 ### Key Features
 
 - **Starlette Foundation**: Built on the Starlette ASGI framework for high performance
 - **Native HTMX Integration**: Built-in HTMX support for creating dynamic interfaces with server-side rendering
-- **Asynchronous Architecture**: Built on Asynchronous Component Base (ACB) / Oneiric, providing dependency injection, configuration management, and pluggable components
+- **Asynchronous Architecture**: Built on Oneiric, providing dependency injection, configuration management, and pluggable components
 - **Dual Template Systems**: Advanced asynchronous Jinja2 template system with fragments and partials support, plus HTMY for type-safe Python-based component creation
 - **Modular Design**: Pluggable adapters for authentication, admin interfaces, routing, templates, and sitemap generation
 - **Cloud Flexibility**: Easily switch between cloud providers or create hybrid deployments by swapping adapters
@@ -27,15 +27,15 @@ The framework is built on the **Asynchronous Component Base (ACB)** framework (n
 - `fastblocks/decorators.py`: Framework-specific decorators
 - `fastblocks/actions/`: Contains reusable action components
 - `fastblocks/adapters/`: Pluggable adapter implementations
-- `fastblocks/mcp/`: MCP (Middleware Communication Protocol) related components
+- `fastblocks/mcp/`: MCP (Model Context Protocol) related components
 
 ### Dependency Injection System
 
-The framework uses Oneiric (migrated from ACB) for dependency injection, with a resolver system that manages component lifecycle and dependencies. The `depends` object provides access to injected services throughout the application.
+The framework uses Oneiric for dependency injection, with a resolver system that manages component lifecycle and dependencies. The `get_resolver()` helper returns the singleton resolver that resolves adapter instances throughout the application.
 
 ### Migration Status
 
-The project has completed a migration from ACB to Oneiric for the dependency injection system. The codebase reflects this transition with migration comments indicating the change.
+The project has migrated from ACB to Oneiric for the dependency injection system. The codebase reflects this transition with the ACB dependency removed from `pyproject.toml` entirely as of v0.20.0.
 
 ## Building and Running
 
@@ -50,7 +50,7 @@ The project has completed a migration from ACB to Oneiric for the dependency inj
 uv sync
 
 # Run the demo application
-uv run python -m fastblocks serve
+uv run granian fastblocks.applications:app
 
 # Run tests
 uv run python -m pytest
@@ -68,7 +68,7 @@ uv run ruff check --fix .
 ### Development Commands
 
 - `uv run python -m fastblocks --help`: Show CLI options
-- `uv run python -m crackerjack -t --ai-fix`: Run quality gate with auto-fixes
+- `uv run crackerjack run`: Run quality gate with auto-fixes
 - `uv build`: Create distribution packages
 
 ## Development Conventions
@@ -102,7 +102,7 @@ uv run ruff check --fix .
 fastblocks/
 ├── actions/          # Reusable action components
 ├── adapters/         # Pluggable adapter implementations
-├── mcp/              # Middleware Communication Protocol components
+├── mcp/              # Model Context Protocol components
 ├── applications.py   # Main application class
 ├── caching.py        # Caching utilities
 ├── cli.py           # Command-line interface
@@ -117,7 +117,7 @@ README.md           # Main project documentation
 
 ## Important Notes
 
-- The project has undergone a significant migration from ACB to Oneiric for dependency injection
+- The project has migrated from ACB to Oneiric for dependency injection (migration completed in v0.20.0)
 - The framework supports both traditional Jinja2 templates and HTMY (Python-based templates)
 - HTMX integration is a core feature, enabling server-side rendered dynamic interfaces
 - The adapter pattern enables pluggable components for different implementations (auth, templates, etc.)
