@@ -395,8 +395,8 @@ export FASTBLOCKS_WS_PORT="8684"
 export FASTBLOCKS_WS_TLS_ENABLED="true"
 
 # Authentication
-export FASTBLOCKS_WS_JWT_SECRET="your-secret"
-export FASTBLOCKS_WS_AUTH_REQUIRED="true"
+export FASTBLOCKS_JWT_SECRET="your-secret"
+export FASTBLOCKS_AUTH_ENABLED="true"
 
 # Metrics
 export FASTBLOCKS_WS_METRICS_ENABLED="true"
