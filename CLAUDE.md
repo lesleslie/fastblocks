@@ -154,6 +154,38 @@ To configure an adapter from Python, use the typed API:
 `AdapterRegistry.configure(adapter_name: str, **fields: Any)`, which validates
 field names against the per-adapter settings schema and rejects unknown keys.
 
+### Tool Profile System (opted out — see rationale)
+
+FastBlocks is a **library**, not a standalone production MCP server. The
+seven read-only tools it exposes are catalog/inspection helpers that are
+embedded in a consumer application's MCP surface (e.g. SplashStand). The
+production servers that genuinely need `mcp_common` profile-based dispatch
+(`MINIMAL` / `STANDARD` / `FULL`) live in the consumer app, not here.
+
+For that reason, the framework **opts out** of `mcp_common.tools.apply_tool_profile()`
+and ships a no-op stub at `fastblocks/mcp/profiles.py`:
+
+- `FASTBLOCKS_TOOLS`: the seven tool names, in registration order.
+- `PROFILE_REGISTRATIONS`: a `{ToolProfile.MINIMAL: ALL, STANDARD: ALL, FULL: ALL}`
+  mapping. Every profile maps to the full set — nothing is filtered.
+- `apply_fastblocks_tool_profile(server, profile=...)`: a no-op that
+  accepts a server and a profile, emits a one-time deprecation log, and
+  returns `None` without touching the server.
+
+The signature mirrors `mcp_common.tools.apply_tool_profile`, so the
+migration path to the full pattern is a drop-in change once
+`mcp-common~=0.18` becomes available. The regression test at
+`tests/mcp/test_tool_profile.py` pins all three invariants.
+
+**Do not wire the framework's MCP server to `apply_tool_profile()`.**
+**Do not import `apply_fastblocks_tool_profile` from a consumer app.**
+SplashStand (W4.10) is a fastblocks consumer with its own MCP server
+and mutating tools; it needs the full pattern. The framework's no-op
+stub is for the framework's read-only server only.
+
+Full justification, decision matrix, and a note for the W4.10 splashstand
+wave: `docs/architecture/tool-profile-rationale.md`.
+
 ### Async / sync boundaries
 
 All I/O in the orchestration layer is async. The two places this gets violated:
