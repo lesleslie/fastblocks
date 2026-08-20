@@ -24,7 +24,7 @@
 
 ## Testing Guidelines
 
-- Use `pytest` markers (`@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.benchmark`) to classify coverage; keep slow tests opt-in.
+- Use `pytest` markers (`@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.performance`) to classify coverage; keep slow tests opt-in.
 - Mirror runtime structure inside `tests/`, and lean on the provided mock adapters and `MockAsyncPath` helpers to avoid filesystem I/O.
 - Target at least the configured `fail_under` 31% coverage and document intentional gaps in the PR description.
 - When adding async code, include both happy-path and cancellation tests to satisfy `pytest-asyncio`'s strict mode.

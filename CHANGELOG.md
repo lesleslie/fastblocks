@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   top level, are rejected at load time. If you shipped a component that relied
   on import-time side effects, refactor it to a class body.
 
-- **`fastblocks.mcp.websocket_tools` is being removed** (slated for 0.8.0). The
+- **`fastblocks.mcp.websocket_tools` is being removed** **Removed in 0.8.0**. The
   seven WebSocket control tools (`fastblocks_start_websocket`,
   `fastbands_stop_websocket`, `fastblocks_broadcast_ui`, etc.) are product
   operations and belong in a consumer app's MCP server, not in the framework.
@@ -76,11 +76,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Python APIs are unchanged.
 
 - **`fastblocks.mcp.tools.create_template` and `fastblocks.mcp.tools.create_component`
-  MCP wrappers are being removed** (slated for 0.8.0). The underlying Python
+  MCP wrappers are being removed** **Removed in 0.8.0**. The underlying Python
   APIs in `fastblocks/adapters/templates/_htmy_components.py` and the CLI
   commands (`fastblocks create template`, `fastblocks create app`) stay.
 
-- **MCP `configure_adapter` tool removed (slated for 0.8.0).** The replacement
+- **MCP `configure_adapter` tool removed **Removed in 0.8.0**.** The replacement
   is the typed Python API `AdapterRegistry.configure(adapter_name: str, **fields: Any)`,
   which rejects unknown field names against the per-adapter settings schema.
 

@@ -21,7 +21,7 @@ uv run pytest
 uv run pytest tests/test_htmx.py::TestHtmxDetails::test_specific -v
 uv run pytest tests/adapters/templates/ -k "test_loader"
 
-# Coverage (target 80%; floor 10% with --cov-fail-under)
+# Coverage (floor: 49.13% — pyproject.toml [tool.coverage.report].fail_under; gate fails below this)
 uv run pytest --cov=fastblocks --cov-report=term-missing
 uv run pytest --cov=fastblocks --cov-report=html  # htmlcov/
 
@@ -35,8 +35,6 @@ uv run ruff format fastblocks tests
 uv run mypy fastblocks
 uv run pyright fastblocks
 
-# Pre-commit hooks
-pre-commit run --all-files
 ```
 
 ## Project Structure (the parts that need context)
@@ -84,7 +82,7 @@ fastblocks/
 │                          #     render_template, list_components, validate_component,
 │                          #     check_adapter_health.
 │                          #   - Resources: template_syntax, template_filters,
-│                          #     htmy_component_catalog, settings_documentation,
+│                          #     component_catalog, adapter_schemas, settings_docs,
 │                          #     best_practices, htmx_patterns.
 │                          #   The dangerous tools (create_template,
 │                          #   create_component, configure_adapter,
@@ -103,7 +101,7 @@ fastblocks/
 └── cli/grammars/          # vim.vim, emacs.el (extracted from cli.py in Phase 4).
 
 tests/
-├── conftest.py            # 3,410 LOC. The mcp_common.websocket stub installer
+├── conftest.py            # 406 LOC. The mcp_common.websocket stub installer
 │                          #   lives here at session scope. Marker-based
 │                          #   gating only (per-test stubs blocked by module-level
 │                          #   `from mcp_common.websocket import ...` at collection).
@@ -168,6 +166,11 @@ and ships a no-op stub at `fastblocks/mcp/profiles.py`:
 - `FASTBLOCKS_TOOLS`: the seven tool names, in registration order.
 - `PROFILE_REGISTRATIONS`: a `{ToolProfile.MINIMAL: ALL, STANDARD: ALL, FULL: ALL}`
   mapping. Every profile maps to the full set — nothing is filtered.
+  Keys are members of the runtime-resolved enum (`_TOOL_PROFILE_CLS`) —
+  the same `ToolProfile.MINIMAL` / `STANDARD` / `FULL` names when
+  `mcp-common` is on the import path, the local `_FallbackToolProfile`
+  mirror otherwise. See `fastblocks/mcp/profiles.py:91-134` for the
+  resolution logic.
 - `apply_fastblocks_tool_profile(server, profile=...)`: a no-op that
   accepts a server and a profile, emits a one-time deprecation log, and
   returns `None` without touching the server.
