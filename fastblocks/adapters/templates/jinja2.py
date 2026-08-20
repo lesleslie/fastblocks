@@ -132,24 +132,9 @@ def _try_resolve_sync(key: str) -> t.Any:
     This is needed for __init__ methods that can't be async.
     """
     try:
-        # For fallback and testing - use depends.get if it exists
-        if hasattr(depends, "get"):
-            return depends.get(key)
-
-        # Try to await the resolve call synchronously
-        import asyncio
-
-        result = depends.resolve("fastblocks", key)
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(result)
-        except Exception as exc:  # noqa: BLE001
-            _log.warning(
-                "jinja2._try_resolve_sync(%r): inner loop failed: %s", key, exc
-            )
-            return None
+        return resolve_instance(depends, "fastblocks", key)
     except Exception as exc:  # noqa: BLE001
-        _log.warning("jinja2._try_resolve_sync(%r): outer failed: %s", key, exc)
+        _log.warning("jinja2._try_resolve_sync(%r): failed: %s", key, exc)
         return None
 
 
