@@ -170,3 +170,10 @@ tests/archived/
 .cov_qual
 # Coverage data file
 .coverage
+
+# ============================================================================
+# Refactor Backup Artifacts
+# ============================================================================
+# Refactor backup files (created by tooling during code rewrites)
+*.backup.json
+*.bak
