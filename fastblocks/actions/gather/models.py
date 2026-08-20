@@ -556,7 +556,7 @@ async def _gather_admin_models(
 
     debug(f"Found {len(admin_models)} admin-enabled models")
 
-    return admin_models
+    return t.cast("list[type]", admin_models)
 
 
 def _is_sql_model(model_class: type) -> bool:

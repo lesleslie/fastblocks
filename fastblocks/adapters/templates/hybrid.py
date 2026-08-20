@@ -39,7 +39,7 @@ from oneiric.core.resolution import Resolver
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
-from ..oneiric_helper import register_candidate
+from ..oneiric_helper import register_candidate, resolve_instance
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -70,7 +70,7 @@ class HybridTemplates:
 
         # Get or create base templates
         try:
-            self.base_templates = depends.resolve("fastblocks", "templates")
+            self.base_templates = resolve_instance(depends, "fastblocks", "templates")
         except Exception as exc:  # noqa: BLE001
             # No templates registered yet -- construct a fresh one.
             # Logged because this is a structural mismatch the

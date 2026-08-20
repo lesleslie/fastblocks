@@ -299,7 +299,7 @@ class AsyncTemplateRenderer:
         try:
             # Get template source
             env = self.base_templates.app.env  # type: ignore[union-attr]
-            source, _ = env.loader.get_source(env, render_context.template_name)
+            source, _, _ = env.loader.get_source(env, render_context.template_name)
 
             return await self.hybrid_manager.validate_template(
                 source, render_context.template_name, render_context.context
@@ -662,7 +662,7 @@ class AsyncTemplateRenderer:
         """Check if template has changed since last render."""
         with suppress(Exception):
             env = self.base_templates.app.env  # type: ignore[union-attr]
-            _, filename = env.loader.get_source(env, template_name)
+            _, filename, _ = env.loader.get_source(env, template_name)
 
             if filename:
                 # Check file modification time

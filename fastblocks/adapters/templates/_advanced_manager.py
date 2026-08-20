@@ -324,7 +324,7 @@ class HybridTemplatesManager:
     async def _initialize_base_templates(self) -> None:
         """Initialize base templates instance."""
         try:
-            self.base_templates = depends.resolve("fastblocks", "templates")
+            self.base_templates = resolve_instance(depends, "fastblocks", "templates")
         except Exception as exc:  # noqa: BLE001
             # Fallback path: no templates registered, so create one
             # ourselves. Logged because this is a structural mismatch

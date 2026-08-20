@@ -677,7 +677,7 @@ def get_event_publisher() -> FastBlocksEventPublisher | None:
     Returns:
         Event publisher instance
     """
-    return FastBlocksEventPublisher()
+    return t.cast(FastBlocksEventPublisher, FastBlocksEventPublisher())
 
 
 # Module metadata for Oneiric compatibility
