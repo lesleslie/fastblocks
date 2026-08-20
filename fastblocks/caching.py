@@ -51,8 +51,8 @@ def get_adapter(adapter_name: str) -> t.Any:
         # If not found, try to get it from the registry
         if hasattr(resolver, "registry"):
             registry = resolver.registry
-            if adapter_name in registry:
-                return registry[adapter_name]
+            if adapter_name in registry:  # ty: ignore[unsupported-operator]
+                return registry[adapter_name]  # ty: ignore[not-subscriptable]
 
     # Fallback: try to import the adapter directly
     with suppress(Exception):

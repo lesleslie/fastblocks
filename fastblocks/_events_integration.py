@@ -71,7 +71,7 @@ class Event:
         event_type: str,
         source: str,
         payload: dict[str, t.Any],
-        priority: EventPriority,
+        priority: int,
     ):
         self.event_type = event_type
         self.source = source

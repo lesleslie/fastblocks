@@ -445,7 +445,7 @@ class FileSystemLoader(BaseTemplateLoader):
         async def uptodate() -> bool:
             return int((await path.stat()).st_mtime) == local_mtime
 
-        return (resp.decode(), str(storage_path), uptodate)  # type: ignore[return-value]
+        return (resp.decode(), str(storage_path), uptodate)  # type: ignore[return-value]  # ty: ignore[invalid-return-type]
 
     async def list_templates_async(self) -> list[str]:
         return await self._list_templates_for_extensions(
@@ -730,8 +730,8 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
                 # ``mock('name', 'name')`` for downstream
                 # ``AsyncMock`` children whose contract is
                 # single-arg.
-                result = await loader.get_source_async(str(template))  # type: ignore[arg-type,call-arg]  # ty: ignore[missing-argument]
-                return result  # type: ignore[return-value]
+                result = await loader.get_source_async(str(template))  # type: ignore[arg-type,call-arg,invalid-argument-type]  # ty: ignore[missing-argument,invalid-argument-type]
+                return result  # type: ignore[return-value]  # ty: ignore[invalid-return-type]
             except TemplateNotFound:
                 # The next loader may have it; only "missing template"
                 # is a recoverable signal at this level. Loader
@@ -990,7 +990,7 @@ class Templates(TemplatesBase):
 
     def _log_loader_info(self) -> None:
         if self.app and self.app.env.loader and hasattr(self.app.env.loader, "loaders"):
-            for loader in self.app.env.loader.loaders:
+            for loader in self.app.env.loader.loaders:  # ty: ignore[not-iterable]
                 self.logger.debug(f"{loader.__class__.__name__} initialized")  # type: ignore[attr-defined]
 
     def _log_extension_info(self) -> None:

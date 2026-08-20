@@ -231,7 +231,7 @@ async def _ensure_async_iterator[T](items: ItemsTypes[T]) -> AsyncIterator[T]:
         elif inspect.isawaitable(items):
             items_awaitable = items
             resolved_items = await items_awaitable
-            for item in resolved_items:
+            for item in cast("Iterable[T]", resolved_items):
                 yield item
         else:
             items_sync = items
