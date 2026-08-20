@@ -54,9 +54,7 @@ from pydantic import Field
 
 _log = get_logger("fastblocks.adapters.templates.jinja2")
 
-# Add parent directory to path for helper import
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from oneiric_helper import register_candidate, resolve_instance
+from ..oneiric_helper import register_candidate, resolve_instance
 
 # Import event tracking decorator (with fallback if unavailable)
 try:

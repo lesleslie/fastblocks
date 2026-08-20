@@ -467,7 +467,7 @@ async def create_application_manager(
     gather_result: ApplicationGatherResult,
 ) -> t.Any:
     try:
-        from fastblocks.applications import (
+        from fastblocks.applications import (  # type: ignore[unresolved-import]
             ApplicationManager,
         )
     except ImportError:
