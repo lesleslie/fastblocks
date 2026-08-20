@@ -4,6 +4,11 @@
 >
 > _Last reviewed: 2025-11-19_
 
+> ⚠️ **Stale content:** This README still references the pre-0.13.x
+> ACB-based architecture. ACB was removed in Phase 3.1; FastBlocks
+> now uses Oneiric. See `docs/migrations/0.7-to-0.8.md` and
+> `CLAUDE.md` for the current truth. Rewriting in progress.
+
 Font adapters centralize how web fonts are loaded and referenced across layouts. They implement `FontsBase`/`FontsProtocol`, expose async helpers for imports, and register themselves under the `"fonts"` dependency key so both sync and async template filters can reuse the same configuration.
 
 ## Available Implementations
@@ -40,7 +45,7 @@ The template layer exposes both sync and async helpers:
 In Python, you can always access the adapter directly:
 
 ```python
-from acb.depends import depends
+from oneiric.core.depends import depends
 
 Fonts = depends.get_sync("fonts")
 font_css = await Fonts.get_font_import()

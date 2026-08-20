@@ -2,16 +2,21 @@
 
 > **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
 
+> ⚠️ **Stale content:** This README still references the pre-0.13.x
+> ACB-based architecture. ACB was removed in Phase 3.1; FastBlocks
+> now uses Oneiric. See `docs/migrations/0.7-to-0.8.md` and
+> `CLAUDE.md` for the current truth. Rewriting in progress.
+
 The Routes adapter manages route discovery and registration in FastBlocks applications.
 
-## Relationship with ACB
+## Relationship with Oneiric
 
-The Routes adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+The Routes adapter is a FastBlocks-specific extension that uses Oneiric for component resolution:
 
-- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **Oneiric Foundation**: Provides component resolution, configuration loading, and dependency injection
 - **FastBlocks Extension**: Implements web-specific route management for Starlette/ASGI
 
-Unlike some other adapters, the Routes adapter is unique to FastBlocks and doesn't have a direct counterpart in ACB. It uses ACB's dependency injection system to integrate with other components like Templates and App.
+Unlike some other adapters, the Routes adapter is unique to FastBlocks. It uses the Oneiric resolver to integrate with other components like Templates and App.
 
 ## Overview
 
@@ -25,23 +30,23 @@ The Routes adapter allows you to:
 
 | Implementation | Description |
 |----------------|-------------|
-| `default` | Default routes implementation |
+| `default` | Default routes implementation (`default.py`) |
 
 ## Usage
 
 ### Basic Setup
 
 ```python
-from acb.depends import depends, Inject
-from acb.adapters import import_adapter
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component, resolve_component_async
 from fastblocks.applications import FastBlocks
 from starlette.routing import Route
 
-Templates = import_adapter("templates")
+Templates = resolve_component(depends, "fastblocks", "templates")
 
 
 @depends.inject
-async def homepage(request, templates: Inject[Templates]) -> object:
+async def homepage(request, templates=Templates) -> object:
     return await templates.app.render_template(
         request, "index.html", context={"title": "FastBlocks Demo"}
     )
@@ -54,7 +59,7 @@ routes = [Route("/", endpoint=homepage)]
 app = FastBlocks(routes=routes)
 
 # Get the routes adapter
-Routes = import_adapter("routes")
+Routes = await resolve_component_async(depends, "fastblocks", "routes")
 routes_adapter = depends.get(Routes)
 
 # Access all routes
@@ -66,7 +71,7 @@ all_routes = routes_adapter.routes
 FastBlocks provides specialized endpoints for HTMX interactions:
 
 ```python
-from fastblocks.adapters.routes.main import Index, Block
+from fastblocks.adapters.routes.default import Index, Block
 from starlette.routing import Route
 
 # Index endpoint handles both full page and HTMX partial requests
@@ -85,14 +90,14 @@ The Routes adapter can automatically discover routes from modules:
 ```python
 # myapp/routes.py
 from starlette.routing import Route
-from acb.depends import depends, Inject
-from acb.adapters import import_adapter
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component
 
-Templates = import_adapter("templates")
+Templates = resolve_component(depends, "fastblocks", "templates")
 
 
 @depends.inject
-async def about(request, templates: Inject[Templates]) -> object:
+async def about(request, templates=Templates) -> object:
     return await templates.app.render_template(request, "about.html")
 
 
@@ -106,18 +111,18 @@ These routes will be automatically discovered and registered with your applicati
 The Routes adapter is implemented in the following files:
 
 - `_base.py`: Defines the base class and settings
-- `main.py`: Provides the default implementation
+- `default.py`: Provides the default implementation (renamed from the legacy default module).
 
 ### Base Class
 
 ```python
-from acb.config import Settings
+from oneiric.core.config import OneiricSettings
 
 
-class RoutesBaseSettings(Settings): ...
+class RoutesBaseSettings(OneiricSettings): ...
 
 
-class RoutesBase(AdapterBase): ...
+class RoutesBase: ...
 ```
 
 ### Default Implementation
@@ -140,15 +145,14 @@ import typing as t
 from starlette.endpoints import HTTPEndpoint
 from starlette.responses import Response
 from starlette.exceptions import HTTPException
-from acb.depends import depends
-from acb.config import Config
+from oneiric.core.depends import depends
 from jinja2.exceptions import TemplateNotFound
 
 
 class Index(HTTPEndpoint):
     @depends.inject
     async def get(
-        self, request: t.Any, config: Inject[Config], templates: Inject[Templates]
+        self, request: t.Any, templates=Templates
     ) -> Response:
         page = request.path_params.get("page") or "home"
         template = "index.html"
@@ -173,13 +177,13 @@ import typing as t
 from starlette.endpoints import HTTPEndpoint
 from starlette.responses import Response
 from starlette.exceptions import HTTPException
-from acb.depends import depends
+from oneiric.core.depends import depends
 from jinja2.exceptions import TemplateNotFound
 
 
 class Block(HTTPEndpoint):
     @depends.inject
-    async def get(self, request: t.Any, templates: Inject[Templates]) -> Response:
+    async def get(self, request: t.Any, templates=Templates) -> Response:
         block = f"blocks/{request.path_params['block']}.html"
         try:
             return await self.templates.app.render_template(request, block)

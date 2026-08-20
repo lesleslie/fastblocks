@@ -2,16 +2,27 @@
 
 > **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
 
+> ⚠️ **Stale content:** This README still references the pre-0.13.x
+> ACB-based architecture. ACB was removed in Phase 3.1; FastBlocks
+> now uses Oneiric. See `docs/migrations/0.7-to-0.8.md` and
+> `CLAUDE.md` for the current truth. Rewriting in progress.
+
+> **Migrated to Oneiric:** As of Phase 3.1, the Auth adapter no
+> longer uses ACB. All adapter lookups now go through the Oneiric
+> resolver (`from fastblocks.core.resolver import
+> resolve_component_async`). The shipped `basic` implementation
+> remains unchanged in behavior.
+
 The Auth adapter provides authentication mechanisms for FastBlocks applications.
 
-## Relationship with ACB
+## Relationship with Oneiric
 
-The Auth adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+The Auth adapter is a FastBlocks-specific extension that uses Oneiric for component resolution and configuration:
 
-- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **Oneiric Foundation**: Provides component resolution, configuration loading, and dependency injection
 - **FastBlocks Extension**: Implements web-specific authentication mechanisms
 
-The Auth adapter uses ACB's configuration system for settings management and leverages ACB's dependency injection for integration with other components like the Templates adapter.
+The Auth adapter uses Oneiric settings for configuration and the Oneiric resolver for integration with other components like the Templates adapter.
 
 ## Overview
 
@@ -43,17 +54,17 @@ auth:
 ### Basic Authentication
 
 ```python
-from acb.depends import depends, Inject
-from acb.adapters import import_adapter
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component_async
 from starlette.routing import Route
 from starlette.responses import RedirectResponse
 
-Auth = import_adapter("auth")
-Templates = import_adapter("templates")
+Auth = resolve_component(depends, "fastblocks", "auth")
+Templates = resolve_component(depends, "fastblocks", "templates")
 
 
 @depends.inject
-async def login(request, auth: Inject[Auth], templates: Inject[Templates]):
+async def login(request, auth=Auth, templates=Templates):
     if request.method == "POST":
         form = await request.form()
         username = form.get("username")
@@ -89,17 +100,17 @@ routes = [
 FastBlocks' auth adapter works seamlessly with HTMX for dynamic authentication without page reloads:
 
 ```python
-from acb.depends import depends, Inject
-from acb.adapters import import_adapter
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component
 from starlette.routing import Route
 from starlette.responses import Response
 
-Auth = import_adapter("auth")
-Templates = import_adapter("templates")
+Auth = resolve_component(depends, "fastblocks", "auth")
+Templates = resolve_component(depends, "fastblocks", "templates")
 
 
 @depends.inject
-async def htmx_login(request, auth: Inject[Auth], templates: Inject[Templates]):
+async def htmx_login(request, auth=Auth, templates=Templates):
     """Handle HTMX login form submission."""
     if request.method == "POST":
         form = await request.form()
@@ -193,15 +204,15 @@ The Auth adapter is implemented in the following files:
 ### Base Class
 
 ```python
-from acb.config import Settings
+from oneiric.core.config import OneiricSettings
 
 
-class AuthBaseSettings(Settings):
+class AuthBaseSettings(OneiricSettings):
     token_id: str | None = None
     token_lifetime: int = 86400  # 24 hours
 
 
-class AuthBase(AdapterBase):
+class AuthBase:
     async def authenticate(
         self, username: str, password: str
     ) -> dict[str, object] | None:

@@ -2,16 +2,21 @@
 
 > **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
 
+> ⚠️ **Stale content:** This README still references the pre-0.13.x
+> ACB-based architecture. ACB was removed in Phase 3.1; FastBlocks
+> now uses Oneiric. See `docs/migrations/0.7-to-0.8.md` and
+> `CLAUDE.md` for the current truth. Rewriting in progress.
+
 The Admin adapter provides an administrative interface for FastBlocks applications.
 
-## Relationship with ACB
+## Relationship with Oneiric
 
-The Admin adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+The Admin adapter is a FastBlocks-specific extension that uses Oneiric for component resolution and configuration:
 
-- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **Oneiric Foundation**: Provides component resolution, configuration loading, and dependency injection
 - **FastBlocks Extension**: Implements admin interface integration with SQLAlchemy
 
-The Admin adapter integrates with ACB's SQL adapter for database access and leverages ACB's dependency injection system to connect with other components like Templates and Models.
+The Admin adapter uses the Oneiric resolver to look up other components (Templates, Models) and the FastBlocks settings layer for configuration.
 
 ## Overview
 
@@ -45,8 +50,8 @@ admin:
 ### Basic Setup
 
 ```python
-from acb.depends import depends
-from acb.adapters import import_adapter
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component_async
 from fastblocks.applications import FastBlocks
 from sqlmodel import SQLModel, Field
 
@@ -62,9 +67,8 @@ class User(SQLModel, table=True):
 # Create your application
 app = FastBlocks()
 
-# Get the admin adapter
-Admin = import_adapter("admin")
-admin = depends.get(Admin)
+# Get the admin adapter via the Oneiric resolver
+admin = await resolve_component_async(depends, "fastblocks", "admin")
 
 # Register your models with the admin interface
 admin.register_model(User)
@@ -151,18 +155,7 @@ admin.register_model(UserAdmin)
 
 ## Theme Customization
 
-The admin interface supports two built-in themes:
-
-1. **Bootstrap Theme** (default): Clean, responsive design based on Bootstrap 5
-1. **Material Theme**: Material Design-inspired theme with cards and elevated components
-
-### Changing the Theme
-
-```yaml
-# settings/admin.yml
-admin:
-  style: "material"  # or "bootstrap" (default)
-```
+The admin interface ships with a single Bootstrap theme (`fastblocks/adapters/admin/_templates/bootstrap/sqladmin/`). There is no Material theme — the only shipped template variant is Bootstrap.
 
 ### Custom Styling
 
@@ -219,17 +212,17 @@ The Admin adapter is implemented in the following files:
 ### Base Class
 
 ```python
-from acb.config import Settings
+from oneiric.core.config import OneiricSettings
 
 
-class AdminBaseSettings(Settings):
+class AdminBaseSettings(OneiricSettings):
     enabled: bool = True
     title: str = "FastBlocks Admin"
     logo_url: str | None = None
     style: str = "default"
 
 
-class AdminBase(AdapterBase):
+class AdminBase:
     def register_model(self, model: type[object]) -> None:
         """Register a model with the admin interface"""
         raise NotImplementedError()
@@ -418,12 +411,11 @@ if self.settings.secure_environments and app_env in self.settings.secure_environ
 # In your FastBlocks app setup
 app = FastBlocks()
 
-# Get auth and admin adapters
-Auth = import_adapter("auth")
-Admin = import_adapter("admin")
+# Get auth and admin adapters via the Oneiric resolver
+from fastblocks.core.resolver import resolve_component_async
 
-auth = depends.get(Auth)
-admin = depends.get(Admin)
+auth = await resolve_component_async(depends, "fastblocks", "auth")
+admin = await resolve_component_async(depends, "fastblocks", "admin")
 
 # Link authentication to admin
 admin.set_auth_handler(auth.authenticate_admin)

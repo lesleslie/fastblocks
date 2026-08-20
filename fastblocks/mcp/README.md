@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
 ## MCP Tools
 
-The server exposes 10+ MCP tools for interacting with FastBlocks:
+The server exposes 10 MCP tools for interacting with FastBlocks:
 
 ### Template Tools
 
@@ -405,10 +405,10 @@ python -m pytest tests/mcp/test_mcp_server.py --cov=fastblocks.mcp
 
 **Issue**: `ModuleNotFoundError: No module named 'acb.mcp'`
 
-**Solution**: Ensure ACB >= 0.23.0 is installed:
+**Solution**: FastBlocks no longer depends on ACB (it was removed in Phase 3.1). The `acb.mcp` module should never be imported. If you see this error, a third-party plugin is still pulling ACB in; pin the offending dependency or remove the plugin. Ensure the FastBlocks MCP server is installed directly:
 
 ```bash
-uv add 'acb>=0.23.0'
+uv add fastblocks
 ```
 
 ### Tools Return Errors

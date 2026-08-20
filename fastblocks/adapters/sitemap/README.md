@@ -2,16 +2,21 @@
 
 > **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
 
+> ⚠️ **Stale content:** This README still references the pre-0.13.x
+> ACB-based architecture. ACB was removed in Phase 3.1; FastBlocks
+> now uses Oneiric. See `docs/migrations/0.7-to-0.8.md` and
+> `CLAUDE.md` for the current truth. Rewriting in progress.
+
 The Sitemap adapter generates XML sitemaps for FastBlocks applications.
 
-## Relationship with ACB
+## Relationship with Oneiric
 
-The Sitemap adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+The Sitemap adapter is a FastBlocks-specific extension that uses Oneiric for component resolution:
 
-- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **Oneiric Foundation**: Provides component resolution, configuration loading, and dependency injection
 - **FastBlocks Extension**: Implements sitemap generation for web applications
 
-The Sitemap adapter is unique to FastBlocks and leverages ACB's Cache adapter for caching generated sitemaps and ACB's dependency injection system to integrate with other components like Routes.
+The Sitemap adapter is unique to FastBlocks. It uses the FastBlocks cache helper for caching generated sitemaps and the Oneiric resolver to integrate with other components like Routes.
 
 ## Overview
 
@@ -24,9 +29,16 @@ The Sitemap adapter allows you to:
 
 ## Available Implementations
 
+The Sitemap adapter ships with six implementations (see `git ls-files fastblocks/adapters/sitemap/`):
+
 | Implementation | Description |
 |----------------|-------------|
-| `asgi` | Default sitemap implementation using asgi-sitemaps |
+| `asgi` | **Default.** ASGI-based sitemap serving via the `asgi-sitemaps` package. |
+| `cached` | Cached sitemap implementation backed by the FastBlocks cache helper. |
+| `core` | Core sitemap generation with no ASGI transport. |
+| `dynamic` | Dynamic sitemap that re-computes URLs on every request. |
+| `native` | Native FastBlocks sitemap renderer (no `asgi-sitemaps` dependency). |
+| `static` | Static sitemap served from a pre-built XML file. |
 
 ## Configuration
 
@@ -135,7 +147,15 @@ routes = [Route("/custom-sitemap.xml", endpoint=get_sitemap)]
 The Sitemap adapter is implemented in the following files:
 
 - `_base.py`: Defines the base class and settings
-- `sitemap.py`: Provides the default implementation
+- `asgi.py`: Provides the default implementation (replaces the older `sitemap.py`)
+- `_routes.py`: ASGI route glue
+- `cached.py`: Caching wrapper implementation
+- `core.py`: Core generation logic
+- `dynamic.py`: Dynamic URL generation
+- `native.py`: Native renderer (no `asgi-sitemaps`)
+- `static.py`: Static-file-backed implementation
+
+> **Note:** `.backup.json` files may exist in this directory from earlier migrations; they are not part of the public surface. The Phase 8 `.gitignore` cleanup is responsible for removing them.
 
 ### Base Class
 

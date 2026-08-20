@@ -4,16 +4,21 @@
 >
 > _Last reviewed: 2025-11-19_
 
+> ⚠️ **Stale content:** This README still references the pre-0.13.x
+> ACB-based architecture. ACB was removed in Phase 3.1; FastBlocks
+> now uses Oneiric. See `docs/migrations/0.7-to-0.8.md` and
+> `CLAUDE.md` for the current truth. Rewriting in progress.
+
 The Templates adapter provides template rendering capabilities for FastBlocks applications.
 
-## Relationship with ACB
+## Relationship with Oneiric
 
-The Templates adapter is a FastBlocks-specific extension that builds on ACB's adapter pattern:
+The Templates adapter is a FastBlocks-specific extension that uses Oneiric for component resolution:
 
-- **ACB Foundation**: Provides the adapter pattern, configuration loading, and dependency injection
+- **Oneiric Foundation**: Provides component resolution, configuration loading, and dependency injection
 - **FastBlocks Extension**: Implements template rendering specifically for web applications
 
-Unlike some other adapters, the Templates adapter is unique to FastBlocks and doesn't have a direct counterpart in ACB. It leverages ACB's Storage adapter for template loading from various sources.
+Unlike some other adapters, the Templates adapter is unique to FastBlocks and doesn't have a direct counterpart in Oneiric. It uses Oneiric settings for template loader configuration.
 
 ## Overview
 
@@ -35,9 +40,13 @@ This stack gives FastBlocks a consistent async story from template discovery to 
 
 ## Available Implementations
 
-| Implementation | Description |
-|----------------|-------------|
-| `jinja2` | Asynchronous Jinja2 template engine |
+Three implementations ship in this directory (see `git ls-files fastblocks/adapters/templates/`):
+
+| Implementation | Module | Description |
+|----------------|--------|-------------|
+| `jinja2` | `jinja2.py` | **Default.** Asynchronous Jinja2 template engine built on `jinja2-async-environment`. |
+| `htmy` | `htmy.py` | Component-based template engine (HTMY). |
+| `hybrid` | `hybrid.py` | Hybrid renderer that mixes Jinja2 and HTMY. |
 
 ## Configuration
 
@@ -66,11 +75,11 @@ templates:
 ### Basic Template Rendering
 
 ```python
-from acb.depends import depends
-from acb.adapters import import_adapter
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component
 from starlette.routing import Route
 
-Templates = import_adapter("templates")
+Templates = resolve_component(depends, "fastblocks", "templates")
 templates = depends.get(Templates)
 
 
@@ -317,13 +326,13 @@ The Templates adapter is implemented in the following files:
 ### Base Class
 
 ```python
-from acb.config import Settings
+from oneiric.core.config import OneiricSettings
 
 
-class TemplatesBaseSettings(Settings): ...
+class TemplatesBaseSettings(OneiricSettings): ...
 
 
-class TemplatesBase(AdapterBase): ...
+class TemplatesBase: ...
 ```
 
 ### Jinja2 Implementation
@@ -379,10 +388,10 @@ You can add custom filters in several ways:
 
 ```python
 import typing as t
-from acb.depends import depends
-from acb.adapters import import_adapter
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component
 
-Templates = import_adapter("templates")
+Templates = resolve_component(depends, "fastblocks", "templates")
 templates = depends.get(Templates)
 
 

@@ -2,16 +2,21 @@
 
 > **FastBlocks Documentation**: [Main](../../../README.md) | [Core Features](../../../README.md) | [Actions](../../actions/README.md) | [Adapters](../README.md)
 
+> ⚠️ **Stale content:** This README still references the pre-0.13.x
+> ACB-based architecture. ACB was removed in Phase 3.1; FastBlocks
+> now uses Oneiric. See `docs/migrations/0.7-to-0.8.md` and
+> `CLAUDE.md` for the current truth. Rewriting in progress.
+
 The App adapter manages application configuration and initialization in FastBlocks.
 
-## Relationship with ACB
+## Relationship with Oneiric
 
-The App adapter extends ACB's configuration system with web application specific settings:
+The App adapter extends Oneiric's configuration system with web application specific settings:
 
-- **ACB Foundation**: Provides the core configuration system and application settings structure
+- **Oneiric Foundation**: Provides the core configuration system and application settings structure
 - **FastBlocks Extension**: Adds web-specific settings and integrates with Starlette/ASGI
 
-The App adapter inherits from ACB's `AdapterBase` and extends `AppSettings` from ACB's configuration system, adding web-specific functionality while maintaining compatibility with ACB's core infrastructure.
+The App adapter inherits from `OneiricSettings` and adds web-specific functionality.
 
 ## Overview
 
@@ -20,6 +25,19 @@ The App adapter provides settings for your application, including:
 - Application name
 - UI style (e.g., Kelp, Vanilla)
 - Theme (light/dark)
+
+## Template Variants
+
+The App adapter ships with five named template variants under `fastblocks/adapters/app/_templates/`:
+
+- `base/` — minimal baseline templates
+- `bulma/` — Bulma CSS framework
+- `fastblocks_ui/` — FastBlocks first-party UI components
+- `kelp/` — Kelp UI library
+- `vanilla/` — Vanilla CSS with semantic classes
+- `webawesome/` — Web Awesome (Font Awesome 7)
+
+The available variant directories are listed by `git ls-files fastblocks/adapters/app/_templates/`.
 
 ## Configuration
 
@@ -38,13 +56,11 @@ app:
 ### Basic Access
 
 ```python
-from acb.depends import depends, Inject
-from acb.adapters import import_adapter
-
-App = import_adapter("app")
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component_async
 
 # Module-level access
-app = depends.get(App)
+app = await resolve_component_async(depends, "fastblocks", "app")
 app_name: str = app.settings.name
 app_style: str = app.settings.style
 app_theme: str = app.settings.theme
@@ -53,16 +69,16 @@ app_theme: str = app.settings.theme
 ### Using in Route Handlers
 
 ```python
-from acb.depends import depends, Inject
-from acb.adapters import import_adapter
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component_async
 from starlette.routing import Route
 
-App = import_adapter("app")
-Templates = import_adapter("templates")
+App = resolve_component(depends, "fastblocks", "app")
+Templates = resolve_component(depends, "fastblocks", "templates")
 
 
 @depends.inject
-async def homepage(request, app: Inject[App], templates: Inject[Templates]):
+async def homepage(request, app=App, templates=Templates):
     """Homepage with app settings in context."""
     return await templates.app.render_template(
         request,
@@ -76,7 +92,7 @@ async def homepage(request, app: Inject[App], templates: Inject[Templates]):
 
 
 @depends.inject
-async def settings_page(request, app: Inject[App], templates: Inject[Templates]):
+async def settings_page(request, app=App, templates=Templates):
     """Display current application settings."""
     return await templates.app.render_template(
         request,
@@ -122,15 +138,15 @@ App settings are automatically available in template context through the `app` v
 ### Dynamic Theme Switching
 
 ```python
-from acb.depends import depends, Inject
-from acb.adapters import import_adapter
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component
 from starlette.responses import RedirectResponse
 
-App = import_adapter("app")
+App = resolve_component(depends, "fastblocks", "app")
 
 
 @depends.inject
-async def toggle_theme(request, app: Inject[App]):
+async def toggle_theme(request, app=App):
     """Toggle between light and dark theme."""
     current_theme = app.settings.theme
 
@@ -159,22 +175,21 @@ async def toggle_theme(request, app: Inject[App]):
 The App adapter is implemented in the following files:
 
 - `_base.py`: Defines the base class and settings
-- `main.py`: Provides the default implementation
+- `default.py`: Provides the default implementation (renamed from the legacy default module).
 
 ### Base Class
 
 ```python
-from acb.config import AdapterBase
-from acb.config import AppSettings as AppConfigSettings
+from oneiric.core.config import OneiricSettings
 
 
-class AppBaseSettings(AppConfigSettings):
+class AppBaseSettings(OneiricSettings):
     name: str = "fastblocks"
     style: str = "vanilla"
     theme: str = "light"
 
 
-class AppBase(AdapterBase): ...
+class AppBase: ...
 ```
 
 ## Customization

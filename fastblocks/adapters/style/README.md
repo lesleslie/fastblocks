@@ -4,6 +4,11 @@
 >
 > _Last reviewed: 2025-11-19_
 
+> ⚠️ **Stale content:** This README still references the pre-0.13.x
+> ACB-based architecture. ACB was removed in Phase 3.1; FastBlocks
+> now uses Oneiric. See `docs/migrations/0.7-to-0.8.md` and
+> `CLAUDE.md` for the current truth. Rewriting in progress.
+
 The style adapters provide pluggable CSS frameworks for FastBlocks. Each adapter exposes the same protocol (`StyleBase`/`StyleProtocol`) so templates can ask for component class names and stylesheet links without caring which framework backs the UI.
 
 ## Available Implementations

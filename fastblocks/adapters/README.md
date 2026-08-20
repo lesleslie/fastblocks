@@ -2,7 +2,12 @@
 
 > **FastBlocks Documentation**: [Main](../../README.md) | [Core Features](../../README.md) | [Actions](../actions/README.md)
 
-This directory contains the adapter system for FastBlocks, providing modular integration with external services and frameworks using protocol-based design and ACB 0.19.0+ compliance.
+> ⚠️ **Stale content:** This README still references the pre-0.13.x
+> ACB-based architecture. ACB was removed in Phase 3.1; FastBlocks
+> now uses Oneiric. See `docs/migrations/0.7-to-0.8.md` and
+> `CLAUDE.md` for the current truth. Rewriting in progress.
+
+This directory contains the adapter system for FastBlocks, providing modular integration with external services and frameworks using protocol-based design and Oneiric-based dependency injection.
 
 ## Table of Contents
 
@@ -56,6 +61,32 @@ Manage web font loading and optimization:
 - **Secondary Modules**: Font Squirrel (self-hosted)
 - **Capabilities**: Font loading, family management, optimization, preloading
 
+## admin
+
+SQLAlchemy-backed admin dashboard with a single shipped implementation (`sqladmin`) backed by Bootstrap templates. See [admin/README.md](admin/README.md).
+
+## app
+
+Application-level settings (name, style, theme) exposed to templates via the `app` context variable. Ships with template variants in `_templates/`: `base/`, `bulma/`, `fastblocks_ui/`, `kelp/`, `vanilla/`, `webawesome/`. See [app/README.md](app/README.md).
+
+## auth
+
+Basic username/password authentication adapter (`basic.py`) and middleware. See [auth/README.md](auth/README.md).
+
+## routes
+
+Route discovery and registration adapter. Default implementation lives in `default.py` and exposes `Index`/`Block` HTMX-aware endpoints. See [routes/README.md](routes/README.md).
+
+## sitemap
+
+XML sitemap generation with six implementations (`asgi`, `cached`, `core`, `dynamic`, `native`, `static`); `asgi.py` is the default. See [sitemap/README.md](sitemap/README.md).
+
+## templates
+
+Template engine adapters with three implementations: `htmy.py` (component-based), `hybrid.py`, and `jinja2.py` (default). See [templates/README.md](templates/README.md).
+
+> **Note:** The `style/` directory is singular while the configuration file is `settings/adapters/styles.yml` (plural). This is intentional — the directory holds a single category of adapters, but the YAML key follows the Oneiric namespace convention.
+
 ## Architecture
 
 ### Base Classes
@@ -71,12 +102,14 @@ from fastblocks.adapters.fonts._base import FontsBase, FontsProtocol
 
 ### ACB Integration
 
-All adapters follow ACB 0.25.1+ patterns:
+> **Replaced by Oneiric.** All adapters now use Oneiric's component
+> resolver rather than ACB's adapter registry. See the Oneiric docs
+> and `fastblocks/core/resolver.py` for the current API.
 
 - **MODULE_ID**: Static UUID7 for adapter identification
 - **MODULE_STATUS**: Adapter stability status (stable, beta, alpha, experimental)
-- **Dependency Injection**: Modern `Inject[Type]` pattern with `@depends.inject` decorator
-- **Settings Management**: YAML-based configuration with environment variable support
+- **Dependency Injection**: Oneiric's `Resolver` (`from fastblocks.core.resolver import get_resolver, resolve_component_async`); sync code uses `resolve_component`.
+- **Settings Management**: Oneiric settings via `from oneiric.core.config import OneiricSettings`.
 
 ### Configuration
 
@@ -125,11 +158,12 @@ All adapters follow a consistent structure pattern:
 ```python
 from contextlib import suppress
 from uuid import UUID
-from acb.config import AdapterBase, Settings
-from acb.depends import depends
+from oneiric.core.config import OneiricSettings
+from oneiric.core.depends import depends
+from fastblocks.core.resolver import resolve_component, get_resolver
 
 
-class MyAdapterSettings(Settings):
+class MyAdapterSettings(OneiricSettings):
     """Adapter-specific settings."""
 
     api_key: str = ""
@@ -137,30 +171,29 @@ class MyAdapterSettings(Settings):
     default_quality: int = 80
 
 
-class MyAdapter(AdapterBase):
+class MyAdapter:
     """My custom adapter implementation."""
 
-    # Required ACB 0.25.1+ metadata
+    # Required Oneiric metadata
     MODULE_ID: UUID = UUID("01937d86-4f2a-7b3c-8d9e-f3b4d3c2b1a1")  # Static UUID7
     MODULE_STATUS = "stable"  # stable, beta, alpha, experimental
 
     def __init__(self) -> None:
         """Initialize adapter."""
-        super().__init__()
         self.settings = MyAdapterSettings()
 
-        # Register with ACB dependency system
+        # Register with Oneiric resolver
         with suppress(Exception):
             depends.set(self)
 ```
 
 ### Required Components
 
-1. **Settings Class**: Inherits from `acb.config.Settings` with configuration options
-1. **Adapter Class**: Inherits from `acb.config.AdapterBase` with protocol implementation
+1. **Settings Class**: Inherits from `oneiric.core.config.OneiricSettings` with configuration options
+1. **Adapter Class**: Implements the protocol defined in the adapter's `_base.py`
 1. **MODULE_ID**: Static UUID7 for unique adapter identification
 1. **MODULE_STATUS**: Current stability status (stable, beta, alpha, experimental)
-1. **ACB Registration**: Self-registration in dependency system using `depends.set()`
+1. **Oneiric Registration**: Self-registration in the Oneiric resolver via `depends.set(self)` (or via `resolve_component_async(depends, "fastblocks", "<name>")` for async callers).
 
 ## Creating Custom Adapters
 
@@ -169,10 +202,10 @@ Follow these steps to create a custom adapter that integrates with the FastBlock
 ### Step 1: Define Settings
 
 ```python
-from acb.config import Settings
+from oneiric.core.config import OneiricSettings
 
 
-class CustomImageSettings(Settings):
+class CustomImageSettings(OneiricSettings):
     """Settings for custom image adapter."""
 
     api_endpoint: str = "https://api.example.com"
@@ -200,11 +233,10 @@ class CustomImageProtocol(Protocol):
 ```python
 from contextlib import suppress
 from uuid import UUID
-from acb.config import AdapterBase
-from acb.depends import depends
+from oneiric.core.depends import depends
 
 
-class CustomImageAdapter(AdapterBase):
+class CustomImageAdapter:
     """Custom image processing adapter."""
 
     # Required metadata
@@ -213,7 +245,6 @@ class CustomImageAdapter(AdapterBase):
 
     def __init__(self) -> None:
         """Initialize custom image adapter."""
-        super().__init__()
         self.settings = CustomImageSettings()
 
         with suppress(Exception):
@@ -389,7 +420,7 @@ class UserProfile:
 ### 2. Dependency Injection
 
 ```python
-from acb.depends import depends
+from oneiric.core.depends import depends
 
 # Get adapter instance
 images = depends.get("images")
@@ -518,7 +549,7 @@ Coverage ratchet system maintains test coverage above the current baseline (31%)
 Adapters are automatically initialized based on configuration and accessed through ACB dependency injection:
 
 ```python
-from acb.depends import depends
+from oneiric.core.depends import depends
 
 # Access adapters through dependency injection
 images = depends.get("images")
