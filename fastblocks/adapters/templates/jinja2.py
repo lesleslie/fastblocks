@@ -270,7 +270,7 @@ class LoaderProtocol(t.Protocol):
     config: t.Any
     storage: t.Any
 
-    async def get_source_async(
+    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -412,7 +412,7 @@ class FileSystemLoader(BaseTemplateLoader):
         if self.cache is not None:
             await self.cache.set(Templates.get_cache_key(storage_path), resp)
 
-    async def get_source_async(
+    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -509,7 +509,7 @@ class StorageLoader(BaseTemplateLoader):
             stat = await self.storage.templates.stat(storage_path)
             return resp, round(stat.get("mtime").timestamp())
 
-    async def get_source_async(
+    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -574,7 +574,7 @@ class StorageLoader(BaseTemplateLoader):
 
 
 class RedisLoader(BaseTemplateLoader):
-    async def get_source_async(
+    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -663,7 +663,7 @@ class PackageLoader(BaseTemplateLoader):
             )
         self._template_root = AsyncPath(template_root)
 
-    async def get_source_async(
+    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -712,7 +712,7 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
         super().__init__(searchpath or AsyncPath("templates"))
         self.loaders = loaders
 
-    async def get_source_async(
+    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,

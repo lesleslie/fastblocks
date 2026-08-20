@@ -89,7 +89,7 @@ class TwicPicsImages(ImagesBase):
             )
         return self._client
 
-    async def upload_image(self, file_data: bytes, filename: str) -> str:
+    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:
         """Upload image to TwicPics (or return reference path)."""
         # Note: TwicPics typically works with existing images via URL references
         # For upload scenarios, you'd typically upload to your own storage
@@ -107,8 +107,8 @@ class TwicPicsImages(ImagesBase):
 
         # Return the path that will be used with TwicPics
         if self.settings.path_prefix:
-            return f"{self.settings.path_prefix}/{clean_filename}"
-        return clean_filename
+            return {"path": f"{self.settings.path_prefix}/{clean_filename}"}
+        return {"path": clean_filename}
 
     def _build_transform_parts(self, transformations: dict[str, Any]) -> list[str]:
         """Build transformation parameter list for TwicPics."""

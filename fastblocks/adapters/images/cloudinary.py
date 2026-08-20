@@ -49,7 +49,7 @@ class CloudinaryImages(ImagesBase):
             },
         )
 
-    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:  # type: ignore[override]
+    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:
         """Upload image to Cloudinary and return result dict."""
         try:
             import cloudinary.api  # type: ignore[import-not-found]

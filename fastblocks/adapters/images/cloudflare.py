@@ -83,7 +83,7 @@ class CloudflareImages(ImagesBase):
             )
         return self._client
 
-    async def upload_image(self, file_data: bytes, filename: str) -> str:
+    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:
         """Upload image to Cloudflare Images."""
         if not self.settings:
             self.settings = CloudflareImagesSettings()
@@ -114,7 +114,7 @@ class CloudflareImages(ImagesBase):
 
         # Return the image ID for future reference
         uploaded_image_id: str = result["result"]["id"]
-        return uploaded_image_id
+        return {"image_id": uploaded_image_id}
 
     async def get_image_url(
         self, image_id: str, transformations: dict[str, Any] | None = None

@@ -31,7 +31,7 @@ class ImagesBaseSettings(OneiricSettings):  # type: ignore[misc]
 class ImagesProtocol(Protocol):
     """Protocol for image adapter implementations."""
 
-    async def upload_image(self, file_data: bytes, filename: str) -> str: ...
+    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]: ...
     async def get_image_url(
         self, image_id: str, transformations: dict[str, Any] | None = None
     ) -> str: ...
@@ -59,8 +59,8 @@ class ImagesBase:
             },
         )
 
-    async def upload_image(self, file_data: bytes, filename: str) -> str:
-        """Upload image and return image ID."""
+    async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:
+        """Upload image and return adapter-specific result dict."""
         raise NotImplementedError()
 
     async def get_image_url(
