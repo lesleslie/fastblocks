@@ -6,19 +6,14 @@ from contextlib import suppress
 from pathlib import Path
 from uuid import UUID
 
-from acb.config import Settings
-from acb.depends import depends
+from oneiric.core.config import OneiricSettings
 
 from .language_server import FastBlocksLanguageClient
 from .syntax_support import FastBlocksSyntaxSupport
 
 
-class SyntaxDemoSettings(Settings):
+class SyntaxDemoSettings(OneiricSettings):
     """Settings for syntax demo."""
-
-    # Required ACB 0.19.0+ metadata
-    MODULE_ID: UUID = UUID("01937d87-3456-789a-bcde-123456789def")
-    MODULE_STATUS: str = "stable"
 
     # Demo settings
     demo_templates_dir: str = "templates/demo"
@@ -435,7 +430,10 @@ async def run_comprehensive_demo():
 
 
 if __name__ == "__main__":
-    with suppress(Exception):
-        depends.set(SyntaxDemoSettings())
+    # In Oneiric-based FastBlocks (v0.20.0+), settings are loaded
+    # via oneiric.config.OneiricSettings' default layer mechanism
+    # (defaults → settings/mahavishnu.yaml → settings/local.yaml →
+    # env vars). Construct directly for ad-hoc demo runs.
+    SyntaxDemoSettings()
 
     asyncio.run(run_comprehensive_demo())

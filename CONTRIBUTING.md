@@ -10,7 +10,7 @@
 ## Build, Test, and Development Commands
 
 - `uv sync` installs locked dependencies; run after modifying `pyproject.toml` or `uv.lock`.
-- `uv run python -m fastblocks --help` surfaces the Typer CLI; use `uv run python -m fastblocks serve` to launch the demo app.
+- `uv run python -m fastblocks --help` surfaces the Typer CLI; use `uv run granian fastblocks.applications:app` to launch the dev server.
 - `uv run python -m pytest` executes the full test suite; add `--cov=fastblocks` to respect the default coverage gate.
 - `uv run python -m crackerjack -t --ai-fix` runs the house quality gate (pytest, lint, type checks) and auto-applies safe fixes.
 - `uv build` produces distributable wheels and source archives in `dist/`.
@@ -26,7 +26,7 @@
 
 - Use `pytest` markers (`@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.performance`) to classify coverage; keep slow tests opt-in.
 - Mirror runtime structure inside `tests/`, and lean on the provided mock adapters and `MockAsyncPath` helpers to avoid filesystem I/O.
-- Target at least the configured `fail_under` 31% coverage and document intentional gaps in the PR description.
+- Target at least the configured `fail_under` 49.13% coverage and document intentional gaps in the PR description.
 - When adding async code, include both happy-path and cancellation tests to satisfy `pytest-asyncio`'s strict mode.
 
 ## Commit & Pull Request Guidelines

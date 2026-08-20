@@ -5,6 +5,41 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-08-19
+
+### Documentation Remediation Wave
+
+Remediated all ~75 findings from the 2026-08-19 four-agent doc audit.
+Full plan at `docs/superpowers/plans/2026-08-19-fastblocks-doc-remediation.md`.
+
+Critical safety:
+- `WEBSOCKET_GUIDE.md:398` env-var names corrected (silent prod JWT
+  failure risk closed).
+
+ACB → Oneiric narrative rewritten across top-level docs (README, QWEN,
+RULES), 8 user-facing guides (ONEIRIC_GUIDE, ONEIRIC_DEPENDS_PATTERNS,
+GETTING_STARTED, ARCHITECTURE, COMPARISONS, SECURITY, NOTES,
+LESSONS_LEARNED), and 12 adapter READMEs. ~50 `from acb.*` import
+blocks replaced with verified Oneiric equivalents.
+
+CI guard added at `tests/docs/test_doc_accuracy.py` with 30 assertions
+covering: ACB import prohibitions, fabricated CLI/MCP tool names,
+phantom ports, phantom filenames, env-var parity, coverage target
+parity, and `.backup.json` leak detection. Word-boundary regex
+prevents substring false-positives (e.g. `broadcast_ui_update` does
+not match `broadcast_ui_updated`).
+
+Other fixes: 7 small accuracy fixes in CLAUDE.md / CHANGELOG.md /
+CONTRIBUTING.md; 4 phantom WS env-vars removed from WEBSOCKET_GUIDE.md
+(source had no references); 16 `.backup.json` files removed from git
+history; `.gitignore` updated with `*.backup.json` and `*.bak` patterns;
+3 phantom filename references replaced in `docs/README.md`; 4 stale
+coverage %s aligned with the 49.13% pyproject floor.
+
+CHANGELOG.md, `docs/TYPE_SYSTEM_MIGRATION.md`, and `docs/LESSONS_LEARNED.md`
+are exempted from the coverage and prohibited-import scans because they
+are historical records documenting past code. User-authorized 2026-08-19.
+
 ## [0.20.0] - 2026-06-18
 
 ### Added
@@ -203,7 +238,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `_workflows_integration.py`, `caching.py`, `cli.py`. `Optional[X]` →
   `X | None` in `_htmy_components.py:165`.
 
-- **Coverage ratchet +1.47%** (88.93% → 90.40%) on the targeted modules
+- **Coverage ratchet +1.47%** on the targeted modules
   that received new tests in Phases 1-4.
 
 - **Security test consolidation (Phase 2.4).** XSS, SQL injection, and

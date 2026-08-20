@@ -542,7 +542,7 @@ This adapter system is part of the FastBlocks 8-week implementation plan:
 
 Comprehensive test coverage using pytest with mock fixtures for each adapter category. See `tests/adapters/` for adapter-specific tests and `tests/conftest.py` for shared fixtures.
 
-Coverage ratchet system maintains test coverage above the current baseline (31%).
+Coverage ratchet system maintains test coverage above the current baseline (49.13%, per `[tool.coverage.report].fail_under` in pyproject.toml).
 
 ## Usage
 

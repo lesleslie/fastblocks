@@ -87,7 +87,7 @@ uv run ruff check --fix .
 
 - Use pytest with appropriate markers (`@pytest.mark.unit`, `@pytest.mark.integration`, `@pytest.mark.benchmark`)
 - Mirror runtime structure inside `tests/` directory
-- Target at least 31% coverage (as configured)
+- Target at least 49.13% coverage (the pyproject.toml floor in `[tool.coverage.report].fail_under`)
 - Include both happy-path and cancellation tests for async code
 
 ### Commit Guidelines

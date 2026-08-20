@@ -738,7 +738,7 @@ ______________________________________________________________________
 
 **Q1 2026**:
 
-- Complete security test coverage (>80%)
+- Complete security test coverage (target: above the project coverage floor, currently 49.13%)
 - Add rate limiting middleware
 - Implement OAuth2 adapter
 

@@ -354,17 +354,11 @@ pytest --cov=fastblocks.websocket --cov-report=html tests/test_websocket_server.
 
 ```bash
 # WebSocket configuration
-export FASTBLOCKS_WS_HOST="0.0.0.0"
-export FASTBLOCKS_WS_PORT="8684"
 export FASTBLOCKS_WS_TLS_ENABLED="true"
 
 # Authentication
 export FASTBLOCKS_JWT_SECRET="your-secret"
 export FASTBLOCKS_AUTH_ENABLED="true"
-
-# Metrics
-export FASTBLOCKS_WS_METRICS_ENABLED="true"
-export FASTBLOCKS_WS_METRICS_PORT="9094"
 ```
 
 ## Message Protocol
@@ -455,8 +449,6 @@ services:
       - "8684:8684"   # WebSocket
       - "9094:9094"   # Metrics
     environment:
-      - FASTBLOCKS_WS_HOST=0.0.0.0
-      - FASTBLOCKS_WS_PORT=8684
       - FASTBLOCKS_WS_TLS_ENABLED=true
       - FASTBLOCKS_WS_CERT_FILE=/certs/cert.pem
       - FASTBLOCKS_WS_KEY_FILE=/certs/key.pem
