@@ -4,13 +4,11 @@ from __future__ import annotations
 
 from contextlib import suppress
 
-from oneiric.core.resolution import register_pkg
-
 from . import exceptions
 
 # Register package with Oneiric
 with suppress(Exception):
-    register_pkg()  # type: ignore[call-arg]
+    pass
 
 from . import actions, applications, caching, cli, middleware
 
