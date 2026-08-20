@@ -1,3 +1,13 @@
+# Scratchpad Notes
+
+> ⚠️ **Scratchpad / brainstorming — not user documentation.** This file
+> collects live-action notes, half-formed ideas, and historical fragments
+> from earlier phases of the project (notably the pre-Oneiric ACB era).
+> It is intentionally not rewritten for the 0.20.0 doc pass; treat the
+> contents as personal notes rather than canonical FastBlocks guidance.
+
+______________________________________________________________________
+
 need to await calls to depends.get() now
 
 are there any services, layers, adapters, etc that are architecturally out │

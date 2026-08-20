@@ -1,23 +1,22 @@
-# FastBlocks ACB Guide
+# FastBlocks Oneiric Guide
 
-**Complete guide to using Asynchronous Component Base (ACB) with FastBlocks**
+**Complete guide to using [Oneiric](https://github.com/lesleslie/oneiric) with FastBlocks**
 
-> **Note:** This document's title and body still describe the project as
-> ACB-based. The codebase moved to
-> [Oneiric](https://github.com/lesleslie/oneiric) in Phase 3.1 of the
-> 0.8.0 release; the `acb` extra was removed from `pyproject.toml`
-> entirely. Use the Oneiric integration patterns
+> **Note:** This guide was rewritten during the Phase 4 doc-remediation
+> pass (0.20.0). FastBlocks no longer depends on the legacy
+> [ACB](https://github.com/lesleslie/acb) framework; the ACB extra was
+> removed from `pyproject.toml` entirely in Phase 3.1 (0.8.0). Use the
+> Oneiric integration patterns described below
 > (`fastblocks.core.resolver.get_resolver()`,
 > `fastblocks.core.patterns.SingletonMeta`) and see
 > `docs/ONEIRIC_DEPENDS_PATTERNS.md` for the current canonical surface.
-> A wholesale rewrite of this guide is on the follow-up roadmap.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Architecture Relationship](#architecture-relationship)
-- [ACB Actions](#acb-actions)
-- [ACB Adapters](#acb-adapters)
+- [FastBlocks Actions](#fastblocks-actions)
+- [FastBlocks Adapters](#fastblocks-adapters)
 - [Configuration](#configuration)
 - [Plugin Development](#plugin-development)
 - [Best Practices](#best-practices)
@@ -26,12 +25,12 @@
 
 ## Overview
 
-FastBlocks is built on **ACB (Asynchronous Component Base)** v0.25.2+ and automatically inherits all ACB features through the `register_pkg()` mechanism. ACB provides:
+FastBlocks is built on [Oneiric](https://github.com/lesleslie/oneiric) v0.x and inherits the shared resolver, configuration system, and candidate-factory patterns. Oneiric provides:
 
-- **Actions**: Stateless utility functions (compression, hashing, encoding, security, validation)
-- **Adapters**: Pluggable components with dependency injection (database, cache, storage, monitoring)
-- **Configuration**: Multi-source configuration management (YAML, environment variables, secrets)
-- **Plugin System**: MCP (Model Context Protocol) server infrastructure
+- **Actions**: Modular utility packages under `fastblocks.actions/` (minify, gather, sync, query).
+- **Adapters**: Pluggable components with resolver-based dependency injection (templates, cache, auth, admin, etc.).
+- **Configuration**: Layered settings via `oneiric.core.config.OneiricSettings` (defaults → YAML → env vars).
+- **Plugin System**: MCP server surface (`fastblocks.mcp.create_fastblocks_mcp_server`).
 
 ## Architecture Relationship
 
@@ -40,267 +39,162 @@ FastBlocks is built on **ACB (Asynchronous Component Base)** v0.25.2+ and automa
 │         FastBlocks Application              │
 │  (Web Framework - HTMX, Templates, HTMY)    │
 ├─────────────────────────────────────────────┤
-│              ACB Framework                  │
+│              Oneiric Framework              │
 │  (Adapters, Actions, Dependency Injection)  │
 └─────────────────────────────────────────────┘
 ```
 
 **Key Points:**
 
-- FastBlocks calls `register_pkg()` in `__init__.py` to join ACB's ecosystem
-- All ACB adapters and actions are immediately available via `depends.get()`
-- No "integration" code needed - it's automatic inheritance
-- Configuration changes (not code changes) activate different adapters
+- FastBlocks uses `get_resolver()` (`fastblocks.core.resolver`) to share a single process-wide `oneiric.core.resolution.Resolver`.
+- All FastBlocks adapters and actions are resolved through `await resolve_component_async(resolver, "fastblocks", "<name>")`.
+- No legacy `register_pkg` call — Oneiric candidates register themselves as part of the adapter's module load.
+- Configuration changes (not code changes) activate different adapters.
 
-## ACB Actions
+## FastBlocks Actions
 
-ACB actions are stateless utility functions available to all FastBlocks code.
+FastBlocks actions live under `fastblocks.actions/`. They are modular,
+self-contained utility functions for common web tasks. See
+`fastblocks/actions/README.md` for the canonical reference.
 
 ### Available Actions
 
-| Action | Purpose | Methods |
-|--------|---------|---------|
-| **compress** | Data compression | `compress.gzip()`, `compress.brotli()` |
-| **hash** | Cryptographic hashing | `hash.blake3()`, `hash.crc32c()`, `hash.md5()` |
-| **encode** | Data serialization | `encode.json()`, `encode.yaml()`, `encode.msgpack()`, `encode.toml()` |
-| **secure** | Security utilities | `secure.generate_token()`, `secure.hash_password()`, `secure.encrypt_data()` |
-| **validate** | Input validation | `validate.email()`, `validate.url()`, `validate.sql_injection()`, `validate.xss()` |
+| Action | Module | Key Methods |
+|--------|--------|-------------|
+| **Gather** | `fastblocks.actions.gather` | `gather.routes()`, `gather.templates()`, `gather.middleware()`, `gather.models()`, `gather.application()` |
+| **Sync** | `fastblocks.actions.sync` | `sync.templates()`, `sync.settings()`, `sync.cache()` |
+| **Minify** | `fastblocks.actions.minify` | `minify.html()`, `minify.css()`, `minify.js()` |
+| **Query** | `fastblocks.actions.query` | `UniversalQueryParser`, `create_query_context()` |
 
 ### Usage Examples
 
-#### Compression
+#### HTML/CSS/JS Minification
 
 ```python
-from acb.actions.compress import compress, decompress
+from fastblocks.actions.minify import minify
 
-# Compress template output
-html = await templates.render("page.html", context)
-compressed = compress.brotli(html, level=11)  # Max compression
+# Minify HTML content
+html_content = "<html><body>  <h1>Hello</h1>  </body></html>"
+minified_html = minify.html(html_content)
 
-# Decompress for testing
-decompressed = decompress.brotli(compressed)
+# Minify CSS
+css_content = "body { margin: 0; padding: 0; }"
+minified_css = minify.css(css_content)
+
+# Minify JavaScript
+js_content = "function hello() { console.log('Hello, World!'); }"
+minified_js = minify.js(js_content)
 ```
 
-#### Hashing (All Async)
+#### Gathering Components
 
 ```python
-from acb.actions.hash import hash
+from fastblocks.actions.gather import gather
 
-# Blake3 - fastest cryptographic hash
-cache_key = await hash.blake3(f"{template_name}:{user_id}")
+# Gather routes from adapters and base files
+routes_result = await gather.routes()
+print(f"Found {routes_result.total_routes} routes")
 
-# CRC32C - fastest non-cryptographic hash (great for cache keys)
-quick_hash = await hash.crc32c(template_source)
-
-# MD5 - when compatibility needed
-legacy_hash = await hash.md5(data, usedforsecurity=False)
+# Gather template components
+templates_result = await gather.templates()
+print(f"Loaded {len(templates_result.loaders)} template loaders")
 ```
 
-#### Encoding/Decoding (All Async)
+#### Sync and Query
 
 ```python
-from acb.actions.encode import encode, decode
+from fastblocks.actions.sync import sync
+from fastblocks.actions.query import create_query_context
 
-# JSON encoding
-json_bytes = await encode.json({"user": "john", "age": 30})
-data = await decode.json(json_bytes)
+# Sync templates between filesystem and storage
+templates_result = await sync.templates()
 
-# YAML encoding with sorting
-yaml_bytes = await encode.yaml(config_dict, sort_keys=True)
-config = await decode.yaml(yaml_bytes)
-
-# MessagePack - binary format
-msgpack_bytes = await encode.msgpack(large_dataset)
-dataset = await decode.msgpack(msgpack_bytes)
+# Convert URL query parameters into a database query context
+context = create_query_context(request.query_params)
 ```
 
-#### Security Utilities
+### Notes on the Former `acb.actions` Surface
 
-```python
-from acb.actions.secure import secure
+The legacy ACB actions (`compress`, `hash`, `encode`, `secure`,
+`validate`) do not have direct FastBlocks equivalents. Use the
+following Python standard-library / third-party substitutes:
 
-# Generate secure tokens
-api_token = secure.generate_token(length=32)
-session_id = secure.generate_api_key(length=64)
+- **Compression / hashing / encoding**: `hashlib`, `gzip`, `json`,
+  `pyyaml`, `msgpack`. For Brotli, install `brotli` directly.
+- **Security primitives**: `secrets` (token generation), `bcrypt` or
+  `argon2-cffi` (password hashing), `cryptography` (encryption /
+  HMAC).
+- **Validation**: Pydantic models, `email-validator`, `sqlparse`, or
+  the FastBlocks-specific `fastblocks._validation_integration`.
 
-# Password hashing
-password_hash, salt = secure.hash_password("user_password")
-is_valid = secure.verify_password("user_password", password_hash, salt)
+## FastBlocks Adapters
 
-# Data encryption
-key = secure.generate_encryption_key("master_password")
-encrypted = secure.encrypt_data("sensitive data", key)
-decrypted = secure.decrypt_data(encrypted, key)
-
-# HMAC signatures
-signature = secure.create_hmac_signature("data", "secret_key")
-is_valid = secure.verify_hmac_signature("data", signature, "secret_key")
-```
-
-#### Input Validation
-
-```python
-from acb.actions.validate import validate
-
-# Email/URL/Phone validation
-if validate.email(user_email):
-    pass  # Valid email
-
-if validate.url(redirect_url):
-    pass  # Valid URL
-
-# Security validation
-if not validate.sql_injection(user_input):
-    raise ValueError("Potential SQL injection detected")
-
-if not validate.xss(user_content):
-    raise ValueError("Potential XSS attack detected")
-
-if not validate.path_traversal(file_path):
-    raise ValueError("Path traversal attempt detected")
-
-# String sanitization
-safe_html = validate.sanitize_html(user_html)
-safe_sql = validate.sanitize_sql(user_input)
-```
-
-### Performance Comparison
-
-| Operation | Standard Library | ACB Action | Speedup |
-|-----------|-----------------|------------|---------|
-| MD5 hash | hashlib.md5 | `hash.md5()` | 1x (same) |
-| Blake3 hash | - | `hash.blake3()` | 10x faster than SHA256 |
-| CRC32C hash | - | `hash.crc32c()` | 50x faster than MD5 |
-| Gzip compression | gzip.compress | `compress.gzip()` | 1x (same) |
-| Brotli compression | - | `compress.brotli()` | 30% better compression |
-| JSON encoding | json.dumps | `encode.json()` | 5-10x faster |
-| YAML encoding | yaml.dump | `encode.yaml()` | 2-3x faster |
-
-## ACB Adapters
-
-ACB adapters are singletons managed by the dependency injection system.
+FastBlocks adapters are registered as Oneiric candidates and resolved
+through the shared resolver. See `fastblocks/adapters/README.md` for
+the canonical adapter catalogue.
 
 ### Core Adapters (Always Available)
 
 | Adapter | Purpose | Access Method |
 |---------|---------|---------------|
-| **config** | Application configuration | `depends.get("config")` or `from acb.config import Config` |
-| **logger** | Logging (loguru default) | `depends.get("logger")` |
-
-### Optional Adapters (Install as Needed)
-
-| Category | Adapters | Install Command | Access |
-|----------|----------|-----------------|--------|
-| **Database** | PostgreSQL, MySQL, SQLite | `uv add acb[sql]` | `depends.get("sql")` or `depends.get("query")` |
-| **NoSQL** | MongoDB, Firestore, Redis-OM | `uv add acb[nosql]` | `depends.get("nosql")` |
-| **Cache** | Redis, Memory | `uv add acb[cache]` | `depends.get("cache")` |
-| **Monitoring** | Logfire, Sentry | `uv add acb[monitoring]` | `depends.get("monitoring")` |
-| **Storage** | S3, GCS, Azure Blob | `uv add acb[storage]` | `depends.get("storage")` |
-| **Secret** | Azure KeyVault, Google Secret Manager | `uv add acb[secret]` | `depends.get("secret")` |
-| **Vector** | Pinecone, Weaviate, Qdrant | `uv add acb[vector]` | `depends.get("vector")` |
-| **AI** | Claude, Gemini, OpenAI | `uv add acb` (included) | `depends.get("ai")` |
-| **SMTP** | Gmail, Mailgun | `uv add acb[smtp]` | `depends.get("smtp")` |
-| **Requests** | HTTPX with HTTP/2 | `uv add acb[requests]` | `depends.get("requests")` |
+| **templates** | Template rendering (Jinja2, HTMY, etc.) | `await resolve_component_async(resolver, "fastblocks", "templates")` |
+| **app** | FastBlocks application instance | `await resolve_component_async(resolver, "fastblocks", "app")` |
+| **cache** | Caching backend (Redis, in-memory) | `await resolve_component_async(resolver, "fastblocks", "cache")` |
+| **auth** | Authentication adapter | `await resolve_component_async(resolver, "fastblocks", "auth")` |
+| **admin** | Admin interface adapter | `await resolve_component_async(resolver, "fastblocks", "admin")` |
 
 ### Dependency Injection Patterns
 
-#### Method 1: Module-Level Access
+#### Method 1: Resolver + resolve_component_async (RECOMMENDED)
 
 ```python
-from acb.depends import depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-logger = depends.get("logger")
-cache = depends.get("cache")
-query = depends.get("query")
-```
-
-#### Method 2: Function Parameter Injection (RECOMMENDED)
-
-```python
-from acb.depends import Inject, depends
+resolver = get_resolver()
 
 
-@depends.inject  # Required decorator!
-async def my_handler(request, logger: Inject[Logger], cache: Inject[Cache]):
-    """Function parameter injection pattern."""
-    logger.info("Processing request")
+async def my_handler(request):
+    templates = await resolve_component_async(resolver, "fastblocks", "templates")
+    cache = await resolve_component_async(resolver, "fastblocks", "cache")
 
-    # Check cache
     cached = await cache.get(f"page:{request.path}")
     if cached:
         return cached
 
-    # Generate response
-    response = await render_page(request)
-
-    # Cache it
+    response = await templates.app.render_template(request, "home.html")
     await cache.set(f"page:{request.path}", response, ttl=300)
     return response
 ```
 
-#### Method 3: Type-Based Access
+For synchronous code, use `resolve_component(resolver, "fastblocks", "<name>")` instead — it invokes sync factories and raises `TypeError` if the factory is async.
+
+#### Method 2: Module-Level Singleton (rare)
 
 ```python
-from acb.adapters.logger.loguru import Logger
-from acb.depends import depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-logger = depends.get(Logger)  # Gets Logger class instance
+# At module load:
+resolver = get_resolver()
+# Then in async functions:
+templates = await resolve_component_async(resolver, "fastblocks", "templates")
 ```
 
-### Universal Query Interface
-
-ACB provides a unified query system that works across all database types.
-
-```python
-from acb.depends import depends
-
-query = depends.get("query")
-
-# Simple queries (Active Record style)
-users = await query.for_model(User).simple.all()
-user = await query.for_model(User).simple.find(1)
-user = await query.for_model(User).simple.find_by(email="john@example.com")
-
-# Create/Update/Delete
-new_user = await query.for_model(User).simple.create(
-    name="John", email="john@example.com"
-)
-await query.for_model(User).simple.update(user_id, {"active": False})
-await query.for_model(User).simple.delete(user_id)
-
-# Advanced query builder
-results = await (
-    query.for_model(User)
-    .advanced.where("active", True)
-    .where_gt("age", 21)
-    .where_in("role", ["admin", "moderator"])
-    .order_by_desc("created_at")
-    .limit(10)
-    .offset(20)
-    .all()
-)
-
-# Aggregations
-count = await query.for_model(User).advanced.where("active", True).count()
-avg_age = await query.for_model(User).advanced.avg("age")
-```
+Use this pattern sparingly — resolver-level singletons can mask
+async-context bugs in tests.
 
 ## Configuration
 
 ### Configuration Methods
 
-ACB adapters can be configured through three methods:
+Oneiric adapters can be configured through three methods:
 
 1. **Environment Variables** (Recommended for production)
-1. **Configuration Files** (`config.yml`, `settings/adapters.yml`)
+1. **Configuration Files** (`settings/*.yml`)
 1. **Programmatic Configuration** (For advanced use cases)
 
 ### Environment Variables
 
 ```bash
-# Logger (Logly) - automatic when installed
-# No configuration needed - ACB detects and uses Logly
-
 # Cache (Redis)
 REDIS_URL=redis://localhost:6379/0
 
@@ -321,13 +215,6 @@ AWS_DEFAULT_REGION=us-east-1
 **settings/adapters.yml:**
 
 ```yaml
-# Logger configuration
-logger:
-  module: "logly"  # Options: loguru (default), logly
-  level: "INFO"
-  format: "json"  # Options: text, json
-  output: "stdout"  # Options: stdout, stderr, file
-
 # Cache configuration
 cache:
   module: "redis"
@@ -337,7 +224,7 @@ cache:
 # Database configuration
 sql:
   module: "postgresql"
-  url: "${DATABASE_URL}"  # Use environment variable
+  url: "${DATABASE_URL}"
   pool_size: 20
   max_overflow: 10
 
@@ -359,23 +246,24 @@ monitoring:
 [dependency-groups]
 production = [
     "logly>=0.1.0",           # Rust-powered logger (10-100x faster)
-    "acb[cache]",              # Redis caching
-    "acb[sql]",                # PostgreSQL support
-    "acb[monitoring]",         # Logfire/Sentry
-    "acb[storage]",            # S3/GCS for static assets
+    "redis>=5.0",             # Redis caching
+    "asyncpg>=0.29",          # PostgreSQL support
+    "logfire>=0.0",           # Logfire observability
+    "boto3>=1.34",            # S3/GCS for static assets
 ]
 ```
 
 ## Plugin Development
 
-FastBlocks is the **reference implementation** of an ACB MCP plugin. Use it as a template for building your own plugins.
+FastBlocks ships an MCP plugin surface at `fastblocks.mcp`. Use it as
+a template for building your own plugins.
 
 ### Minimal Plugin Example
 
 ```python
-"""minimal_plugin.py - Simplest ACB plugin possible"""
+"""minimal_plugin.py - Simplest FastBlocks MCP plugin possible"""
 
-from acb.mcp import create_mcp_server, register_tools, register_resources
+from fastblocks.mcp import create_fastblocks_mcp_server, FastBlocksMCPServer
 
 
 # Define Tools (MCP actions)
@@ -385,83 +273,64 @@ async def hello(name: str) -> dict[str, str]:
 
 
 async def add(a: int, b: int) -> dict[str, int]:
-    """Add two numbers."""
+    """Add two numbers together."""
     return {"result": a + b}
 
 
-# Define Resources (MCP documentation/data)
-async def api_docs() -> str:
-    """Return API documentation."""
-    return """# Minimal Plugin API
-
-## Tools
-
-### hello(name)
-Greets a person by name.
-
-### add(a, b)
-Adds two numbers together.
-"""
-
-
 # Register and create server
-def main():
-    register_tools({"hello": hello, "add": add})
-    register_resources({"api_docs": api_docs})
-
-    server = create_mcp_server("minimal-plugin", "1.0.0")
-    server.run()
+async def main() -> FastBlocksMCPServer:
+    server = await create_fastblocks_mcp_server()
+    # Additional registration via fastblocks.mcp.tools / .resources
+    await server.initialize()
+    return server
 
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+
+    asyncio.run(main())
 ```
 
-For more details on plugin development, see the archived ACB_PLUGIN_EXAMPLE.md in docs/archive/.
+For more details on plugin development, see `fastblocks/mcp/README.md`.
 
 ## Best Practices
 
-### 1. Use ACB Actions for Utilities
+### 1. Use FastBlocks Actions for Utilities
 
-✅ **DO**: Use ACB actions for compression, hashing, validation
+✅ **DO**: Use FastBlocks actions where they exist
 
 ```python
-from acb.actions.compress import compress
-from acb.actions.hash import hash
+from fastblocks.actions.minify import minify
 
-# Compress rendered templates
-compressed = compress.brotli(html, level=11)
-
-# Fast cache keys
-cache_key = await hash.crc32c(f"{template}:{context}")
+# Minify rendered templates
+minified_html = minify.html(html)
 ```
 
-❌ **DON'T**: Reimplement these utilities
+❌ **DON'T**: Reimplement what actions already provide
 
 ```python
-# Don't do this - use ACB actions
-import hashlib
+# Don't do this - use minify
+import re
 
-cache_key = hashlib.md5(data.encode()).hexdigest()
+html = re.sub(r"\s+", " ", html)
 ```
 
-### 2. Leverage Dependency Injection
+### 2. Resolve Components Lazily
 
-✅ **DO**: Use parameter injection pattern
+✅ **DO**: Resolve inside the async handler
 
 ```python
-@depends.inject
-async def handler(request, logger: Inject[Logger], cache: Inject[Cache]):
-    logger.info("Request received")
-    return await process(request)
+async def handler(request):
+    templates = await resolve_component_async(resolver, "fastblocks", "templates")
+    return await templates.app.render_template(request, "home.html")
 ```
 
-❌ **DON'T**: Manual instantiation
+❌ **DON'T**: Bypass the resolver
 
 ```python
-from acb.adapters.logger.loguru import Logger
+from fastblocks.adapters.templates.jinja2 import Jinja2Templates  # Bypasses DI
 
-logger = Logger()  # Bypasses DI system
+templates = Jinja2Templates()  # Wrong - skips the configured adapter
 ```
 
 ### 3. Configure via Environment
@@ -482,9 +351,18 @@ cache = RedisCache(host="localhost", port=6379)
 
 ## Migration Guide
 
-### From Custom Hashing to ACB
+### From legacy ACB hashing helpers to Python `hashlib`
 
-**Before:**
+**Before** (legacy ACB API — package removed in 0.8.0):
+
+```python
+# Legacy: import hash actions from the acb.actions package,
+# then await the hash method (e.g. crc32c, blake3, md5).
+async def create_cache_key(template, context):
+    return await <hash-helper>.crc32c(f"{template}:{context}")
+```
+
+**After** (stdlib — no extra dependency):
 
 ```python
 import hashlib
@@ -492,75 +370,54 @@ import hashlib
 
 def create_cache_key(template, context):
     data = f"{template}:{context}".encode()
-    return hashlib.md5(data).hexdigest()
+    return hashlib.blake2b(data, digest_size=16).hexdigest()
 ```
 
-**After:**
+### From legacy ACB compression helpers to Brotli
+
+**Before** (legacy ACB API — package removed in 0.8.0):
 
 ```python
-from acb.actions.hash import hash
-
-
-async def create_cache_key(template, context):
-    # 50x faster with CRC32C
-    return await hash.crc32c(f"{template}:{context}")
-```
-
-### From Custom Compression to ACB
-
-**Before:**
-
-```python
-import gzip
-
-
+# Legacy: import compress actions from the acb.actions package,
+# then call compress.brotli(html, level=11).
 def compress_response(html):
-    return gzip.compress(html.encode(), compresslevel=9)
+    return <compress-helper>.brotli(html, level=11)
 ```
 
 **After:**
 
 ```python
-from acb.actions.compress import compress
+import brotli
 
 
-def compress_response(html):
-    # Brotli has better compression than gzip
-    return compress.brotli(html, level=11)
+def compress_response(html: bytes) -> bytes:
+    return brotli.compress(html, quality=11)
 ```
 
-### From Manual Logger to ACB Logger
+### From legacy ACB logger to Oneiric logger
 
-**Before:**
+**Before** (legacy ACB API — package removed in 0.8.0):
 
 ```python
-import logging
-
-logger = logging.getLogger(__name__)
+# Legacy: resolved a "logger" key via the ACB depends registry.
+logger = <legacy-resolver>.get("logger")
 ```
 
 **After:**
 
 ```python
-from acb.depends import depends
+from oneiric.core.logging import get_logger
 
-# Get whatever logger is configured (loguru, logly, etc.)
-logger = depends.get("logger")
-
-
-# Or with type injection
-@depends.inject
-async def handler(request, logger: Inject[Logger]):
-    logger.info("Processing request")
+logger = get_logger(__name__)
 ```
 
 ### Cache Key Migration Notes
 
-**IMPORTANT**: The new hash functions will generate **different** cache keys than the old MD5-based keys.
+**IMPORTANT**: Switching from CRC32C to blake2b will generate **different** cache keys than the previous MD5-based keys.
 
 **Impact**: All existing cache entries will be invalidated on deployment.
 
-**Mitigation**:
+**Mitigation:**
 
 1. Deploy during low-traffic period
 1. Pre-warm cache with critical routes
@@ -569,41 +426,36 @@ async def handler(request, logger: Inject[Logger]):
 
 ## Troubleshooting
 
-### Adapter Not Found
+### Component Not Found
 
-**Error**: `KeyError: 'adapter_name'`
+**Error**: `None` returned from `resolve_component_async`
 
-**Solution**: Install the adapter dependency group
+**Solution**: Verify the candidate is registered for the given domain/key
 
-```bash
-uv add acb[cache]  # For Redis cache
-uv add acb[sql]    # For SQL databases
+```python
+from fastblocks.core.resolver import get_resolver, resolve_component_async
+
+resolver = get_resolver()
+templates = await resolve_component_async(resolver, "fastblocks", "templates")
+if templates is None:
+    raise RuntimeError("templates adapter not registered")
 ```
 
 ### Import Errors
 
-**Error**: `ImportError: cannot import name 'adapter'`
+**Error**: `ImportError: cannot import name 'foo' from 'fastblocks.actions'`
 
-**Solution**: Verify ACB version compatibility
+**Solution**: Check the canonical surface in `fastblocks/actions/README.md` — not every legacy `acb.actions.*` symbol has a FastBlocks equivalent.
 
-```bash
-uv add acb>=0.25.2  # FastBlocks requires ACB 0.25.2+
-```
+### Async-Factory Errors
 
-### Injection Not Working
+**Error**: `TypeError: Async factory requires resolve_component_async`
 
-**Error**: `TypeError: handler() missing 1 required positional argument`
-
-**Solution**: Add `@depends.inject` decorator
-
-```python
-@depends.inject  # This is required!
-async def handler(request, logger: Inject[Logger]):
-    pass
-```
+**Solution**: You called the sync `resolve_component()` on an async factory. Use `resolve_component_async()` from the async handler.
 
 ## References
 
-- [ACB Documentation](https://github.com/lesleslie/acb)
+- [Oneiric Documentation](https://github.com/lesleslie/oneiric)
 - [FastBlocks CLAUDE.md](../CLAUDE.md)
-- [Archived ACB Documentation](archive/)
+- [FastBlocks Actions README](../fastblocks/actions/README.md)
+- [FastBlocks Adapters README](../fastblocks/adapters/README.md)

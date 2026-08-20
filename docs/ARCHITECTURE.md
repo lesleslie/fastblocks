@@ -2,27 +2,14 @@
 
 > **FastBlocks Documentation**: [Main](../README.md) | [Core Features](../README.md#fastblocks) | [Actions](../fastblocks/actions/README.md) | [Adapters](../fastblocks/adapters/README.md)
 >
-> _Last reviewed: 2025-11-19_
-
-> **Stale-content warning:** The body of this document still describes
-> FastBlocks as built on ACB. The codebase moved to
-> [Oneiric](https://github.com/lesleslie/oneiric) in Phase 3.1 of the
-> 0.8.0 release. The four integration modules
-> (`_events_integration`, `_health_integration`,
-> `_validation_integration`, `_workflows_integration`) now share a
-> single process-wide resolver via
-> `fastblocks.core.resolver.get_resolver()`. The
-> `acb` extra is gone from `pyproject.toml`. A full rewrite of
-> this architecture guide is on the follow-up roadmap; for the
-> current architectural truth, see `CLAUDE.md` ("Big
-> Architectural Picture") and `docs/migrations/0.7-to-0.8.md`.
+> _Last reviewed: 2026-08-19_
 
 ## Layered Overview
 
-FastBlocks sits between Starlette and application code: Starlette delivers the ASGI runtime, while FastBlocks layers on HTMX-friendly rendering, request helpers, and middleware. Underneath, [Asynchronous Component Base (ACB)](https://github.com/lesleslie/acb) provides dependency injection, configuration management, and the adapter pattern that powers FastBlocks’ pluggable components.
+FastBlocks sits between Starlette and application code: Starlette delivers the ASGI runtime, while FastBlocks layers on HTMX-friendly rendering, request helpers, and middleware. Underneath, [Oneiric](https://github.com/lesleslie/oneiric) provides dependency injection, configuration management, and the adapter pattern that powers FastBlocks' pluggable components.
 
 ```
-User App → FastBlocks → Starlette + ACB → Python Standard Library
+User App → FastBlocks → Starlette + Oneiric → Python Standard Library
 ```
 
 ## Relationship with Starlette
@@ -35,20 +22,20 @@ FastBlocks extends Starlette instead of reinventing the ASGI stack:
 - **Template Integration**: Async template rendering slots into Starlette responses without custom ASGI glue, thanks to `starlette-async-jinja`.
 - **Error Handling**: Template-aware exception responses build on Starlette’s exception handlers for SSR friendliness.
 
-## Relationship with ACB
+## Relationship with Oneiric
 
-ACB supplies the infrastructure glue that keeps adapters swappable and dependencies explicit:
+Oneiric supplies the infrastructure glue that keeps adapters swappable and dependencies explicit:
 
-- **Dependency Injection**: `@depends.inject` and `Inject[Type]` hints come directly from ACB, giving FastBlocks type-safe DI with automatic fallbacks.
-- **Configuration System**: Settings files and environment overrides flow through ACB’s configuration loader.
-- **Adapter Pattern**: FastBlocks’ adapters (templates, auth, admin, routes, sitemap, etc.) are ACB adapters under the hood.
-- **Component Boundaries**: ACB’s adapter registry lets FastBlocks’ components evolve independently or be replaced entirely.
+- **Dependency Injection**: `get_resolver()` and `resolve_component_async()` are the canonical Oneiric entry points (see `fastblocks/core/resolver.py`).
+- **Configuration System**: Settings files and environment overrides flow through Oneiric's configuration loader (`oneiric.core.config.OneiricSettings`).
+- **Adapter Pattern**: FastBlocks' adapters (templates, auth, admin, routes, sitemap, etc.) are registered as Oneiric candidates and resolved via the shared resolver.
+- **Component Boundaries**: Oneiric's resolver lets FastBlocks' components evolve independently or be replaced entirely.
 
-### Modern ACB Integration (v0.14.0+, ACB 0.25.1+)
+### Modern Oneiric Integration (v0.20.0+, Oneiric 0.x)
 
-- Use `import_adapter("templates")` (or similar) to obtain adapter classes.
-- Annotate dependencies with `Inject[MyAdapter]` inside `@depends.inject` endpoints for type safety.
-- When migrating from legacy patterns, see `docs/migrations/MIGRATION-0.17.0.md` for modern DI examples and dependency-group notes.
+- Use `get_resolver()` to obtain the shared `oneiric.core.resolution.Resolver` singleton.
+- Resolve components with `await resolve_component_async(resolver, "fastblocks", "templates")` from async code (use `resolve_component` from sync code).
+- For migration notes from earlier versions, see `docs/migrations/0.7-to-0.8.md`.
 
 ## Server-Side Rendering with HTMX
 
@@ -62,7 +49,7 @@ FastBlocks is optimized for SSR-first applications that enhance progressively wi
 
 ## Project Structure
 
-The repository follows a component-based layout that mirrors ACB’s adapter model:
+The repository follows a component-based layout that mirrors Oneiric's adapter model:
 
 ```
 fastblocks/
@@ -79,4 +66,4 @@ fastblocks/
 └── ...
 ```
 
-Refer back to this document whenever you need to explain how FastBlocks layers on Starlette + ACB, or when onboarding teammates who need the architectural context before diving into adapters and actions.
+Refer back to this document whenever you need to explain how FastBlocks layers on Starlette + Oneiric, or when onboarding teammates who need the architectural context before diving into adapters and actions.

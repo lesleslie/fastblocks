@@ -61,7 +61,7 @@ FastHX provides HTMX utilities for FastAPI, while FastBlocks is a complete frame
 | **Development Workflow** | Integrated HTMX + templates | Add-on to existing FastAPI |
 | **Performance Optimization** | Built-in caching, compression, minification | Manual optimization required |
 | **Admin Interface** | Integrated SQLAlchemy admin | External admin interface needed |
-| **Configuration Management** | ACB-based configuration system | FastAPI configuration |
+| **Configuration Management** | Oneiric-based configuration system | FastAPI configuration |
 
 **Choose FastBlocks when:** You want a complete HTMX-focused framework, need built-in admin interfaces, or want comprehensive infrastructure adapters.
 
@@ -80,7 +80,7 @@ FastHTMX is another HTMX integration library, while FastBlocks is a complete fra
 | **Development Tools** | Full CLI, project generation, testing | Limited tooling |
 | **Performance Features** | Caching, compression, minification | Basic HTMX support |
 | **Admin Interface** | Integrated SQLAlchemy admin | No admin interface |
-| **Dependency Injection** | ACB-based DI system | Manual dependency management |
+| **Dependency Injection** | Oneiric-based DI system | Manual dependency management |
 
 **Choose FastBlocks when:** You want a batteries-included framework, need enterprise-grade features, or want rapid application development.
 

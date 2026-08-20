@@ -1,168 +1,180 @@
-# ACB Depends Patterns - depends.get() Behavior
+# Oneiric Depends Patterns - `resolve_component_async()` Behavior
 
 **Created**: 2025-11-18
+**Updated**: 2026-08-19 (Phase 4 — Oneiric migration)
 **Author**: FastBlocks Audit
-**Purpose**: Document correct usage of `depends.get()` to prevent coroutine access errors
+**Purpose**: Document correct usage of `resolve_component_async()` and
+its sync sibling `resolve_component()` to prevent common async-context
+and coroutine-access errors.
 
 ______________________________________________________________________
 
-## Critical Understanding: depends.get() is Async
+## Critical Understanding: Async resolution
 
 ### The Problem
 
-**`depends.get()` returns a coroutine, NOT the actual object.**
+**Calling the resolver from a sync context (or without `await`) returns
+either `None`, a coroutine, or raises `TypeError` depending on the
+factory's signature.**
 
 ```python
-# ❌ WRONG - Returns coroutine
-config = depends.get("config")
-print(type(config))  # <class 'coroutine'>
-config.deployed  # AttributeError: coroutine has no 'deployed'
+# ❌ WRONG - forgot to await in async handler
+templates = resolve_component_async(resolver, "fastblocks", "templates")
+templates.app.render_template(...)  # AttributeError on coroutine
 
-# ✅ CORRECT - Await to get object
-config = await depends.get("config")
-print(type(config))  # <class 'acb.config.Config'>
-config.deployed  # Works!
+# ✅ CORRECT - await to get the resolved object
+templates = await resolve_component_async(resolver, "fastblocks", "templates")
+templates.app.render_template(...)  # Works!
 ```
 
-### Test Results
+### Factory Return Types
 
 ```
-depends.get('config')     → <coroutine object>  (must await)
-depends.get('templates')  → <coroutine object>  (must await)
-depends.get('cache')      → <coroutine object>  (must await)
-depends.get('query')      → <coroutine object>  (must await)
+resolve_component_async(..., sync_factory)        → object            (awaitable)
+resolve_component_async(..., async_factory)       → object            (awaitable, awaits internally)
+resolve_component(..., sync_factory)              → object
+resolve_component(..., async_factory)             → TypeError raised + coroutine closed
+resolve_component_async(..., unknown key)         → None
 ```
 
-**All `depends.get()` calls return coroutines and MUST be awaited.**
+**Always `await` `resolve_component_async()`. Use `resolve_component()`
+only in sync code paths where the factory is known to be sync.**
 
 ______________________________________________________________________
 
 ## Correct Usage Patterns
 
-### Pattern 1: Module-Level Access in Async Functions
+### Pattern 1: Module-Level Resolver + Per-Handler Resolution
 
 ```python
-# ✅ CORRECT - Async function
+# ✅ CORRECT - Async handler
+from fastblocks.core.resolver import get_resolver, resolve_component_async
+
+resolver = get_resolver()  # process-wide singleton
+
+
 async def my_handler(request):
-    config = await depends.get("config")  # Await the coroutine
-    templates = await depends.get("templates")
-
-    if config.deployed:
-        return await templates.app.render_template(request, "prod.html")
-    return await templates.app.render_template(request, "dev.html")
+    templates = await resolve_component_async(resolver, "fastblocks", "templates")
+    return await templates.app.render_template(request, "home.html")
 ```
 
-### Pattern 2: Function Parameter Injection (Preferred)
-
-```python
-from acb.depends import Inject, depends
-
-
-# ✅ BEST - Modern ACB 0.25.1+ pattern
-@depends.inject
-async def my_handler(request, config: Inject[Config], templates: Inject[Templates]):
-    # config and templates are already resolved objects!
-    if config.deployed:
-        return await templates.app.render_template(request, "prod.html")
-```
-
-**Benefits:**
-
-- No manual `await depends.get()` needed
-- Type hints work correctly
-- IDE autocomplete works
-- Cleaner, more testable code
-
-### Pattern 3: Class Initialization
-
-```python
-from acb.depends import Inject, depends
-
-
-class MyService:
-    @depends.inject
-    def __init__(self, config: Inject[Config]):
-        # config is already resolved
-        self.config = config
-        self.is_prod = config.deployed
-```
-
-### Pattern 4: Conditional Access with Error Handling
+### Pattern 2: Resolver + Conditional Access with Error Handling
 
 ```python
 async def get_templates_safely():
-    """Get templates with graceful fallback."""
+    """Resolve templates with graceful fallback."""
+    from fastblocks.core.resolver import get_resolver, resolve_component_async
+
+    resolver = get_resolver()
     try:
-        templates = await depends.get("templates")
+        templates = await resolve_component_async(
+            resolver, "fastblocks", "templates"
+        )
         return templates
     except Exception:
         return None
 ```
 
-______________________________________________________________________
-
-## Common Anti-Patterns (Causing 501 Errors)
-
-### Anti-Pattern 1: Missing await
+### Pattern 3: Sync Code Path
 
 ```python
-# ❌ WRONG - 150+ instances in codebase
-def get_config():
-    config = depends.get("config")  # Returns coroutine!
-    return config.deployed  # Error: coroutine has no 'deployed'
+from fastblocks.core.resolver import get_resolver, resolve_component
+
+
+def build_settings() -> dict[str, object]:
+    """Sync helper — uses the sync resolver helper."""
+    resolver = get_resolver()
+    config = resolve_component(resolver, "fastblocks", "config")
+    return {"deployed": bool(config and getattr(config, "deployed", False))}
+```
+
+If the registered factory returns a coroutine, `resolve_component()`
+raises `TypeError("Async factory requires resolve_component_async: ...")`
+and closes the unawaited coroutine — never silently discards it.
+
+### Pattern 4: Class Initialization
+
+```python
+from fastblocks.core.resolver import get_resolver, resolve_component_async
+
+
+class MyService:
+    def __init__(self) -> None:
+        # Resolve inside __init__ — caller must be async or pre-await.
+        self.resolver = get_resolver()
+
+    async def setup(self) -> None:
+        self.templates = await resolve_component_async(
+            self.resolver, "fastblocks", "templates"
+        )
+```
+
+______________________________________________________________________
+
+## Common Anti-Patterns (Causing 500 / TypeError)
+
+### Anti-Pattern 1: Missing `await`
+
+```python
+# � WRONG - 150+ instances in legacy codebase
+async def get_config():
+    config = resolve_component_async(resolver, "fastblocks", "config")  # coroutine!
+    return config.deployed  # AttributeError
 
 
 # ✅ CORRECT
 async def get_config():
-    config = await depends.get("config")
+    config = await resolve_component_async(resolver, "fastblocks", "config")
     return config.deployed
 ```
 
 ### Anti-Pattern 2: Accessing Coroutine Attributes
 
 ```python
-# ❌ WRONG - Found in middleware.py, initializers.py, etc.
-templates = depends.get("templates")  # Coroutine
-templates.app.render_template(...)  # Error!
+# ❌ WRONG
+templates = resolve_component_async(resolver, "fastblocks", "templates")  # coroutine
+templates.app.render_template(...)  # AttributeError!
+
 
 # ✅ CORRECT
-templates = await depends.get("templates")
+templates = await resolve_component_async(resolver, "fastblocks", "templates")
 await templates.app.render_template(...)
 ```
 
-### Anti-Pattern 3: Comparison with None
+### Anti-Pattern 3: Comparison with `None` Before Awaiting
 
 ```python
-# ❌ WRONG - Coroutine is never None
-config = depends.get("config")  # Coroutine
+# ❌ WRONG - coroutine is never None
+config = resolve_component_async(resolver, "fastblocks", "config")
 if config is None:  # Always False - coroutine != None
     ...
 
+
 # ✅ CORRECT
-config = await depends.get("config")
+config = await resolve_component_async(resolver, "fastblocks", "config")
 if config is None:
     ...
 ```
 
-### Anti-Pattern 4: Non-Async Function Context
+### Anti-Pattern 4: Sync Function Context
 
 ```python
 # ❌ WRONG - Can't await in sync function
 def sync_function():
-    config = depends.get("config")  # Can't await here!
+    config = resolve_component_async(resolver, "fastblocks", "config")  # can't await
     return config.deployed
 
 
 # ✅ CORRECT - Make function async
 async def async_function():
-    config = await depends.get("config")
+    config = await resolve_component_async(resolver, "fastblocks", "config")
     return config.deployed
 
 
-# OR use injection (preferred)
-@depends.inject
-def sync_with_injection(config: Inject[Config]):
-    return config.deployed  # Works in sync function!
+# OR use the sync helper (preferred for sync code paths)
+def sync_function():
+    config = resolve_component(resolver, "fastblocks", "config")
+    return config and config.deployed
 ```
 
 ______________________________________________________________________
@@ -171,7 +183,7 @@ ______________________________________________________________________
 
 ### Step 1: Identify Problematic Calls
 
-Search for: `depends.get\(["\']`
+Search for: `resolve_component_async\(` (or `resolve_component\(`).
 
 Check if the result is:
 
@@ -183,25 +195,25 @@ Check if the result is:
 
 ```python
 # Before
-config = depends.get("config")
+config = resolve_component_async(resolver, "fastblocks", "config")
 
 # After
-config = await depends.get("config")
+config = await resolve_component_async(resolver, "fastblocks", "config")
 ```
 
 ### Step 3: Ensure Async Context
 
-Function must be `async def`:
+The calling function must be `async def`:
 
 ```python
 # Before
 def my_function():
-    config = depends.get("config")  # Can't await!
+    config = resolve_component_async(resolver, "fastblocks", "config")  # Can't await!
 
 
 # After
 async def my_function():
-    config = await depends.get("config")  # Can await!
+    config = await resolve_component_async(resolver, "fastblocks", "config")
 ```
 
 ### Step 4: Update Function Callers
@@ -218,32 +230,13 @@ result = await my_function()
 
 ______________________________________________________________________
 
-## Locations Requiring Fixes
+## Locations Requiring Fixes (historical — pre-Oneiric audit)
 
-### High Priority (Integration Files - ~60 errors)
-
-1. **`fastblocks/_health_integration.py`** - 30+ coroutine access errors
-1. **`fastblocks/_events_integration.py`** - 15+ errors
-1. **`fastblocks/_validation_integration.py`** - 10+ errors
-1. **`fastblocks/_workflows_integration.py`** - 15+ errors
-
-Pattern: All missing `await` on `depends.get()` calls
-
-### Medium Priority (Actions - ~30 errors)
-
-1. **`fastblocks/actions/gather/middleware.py`** - 2 errors
-1. **`fastblocks/actions/gather/routes.py`** - 2 errors
-1. **`fastblocks/actions/gather/templates.py`** - 5 errors
-1. **`fastblocks/actions/query/parser.py`** - 6 errors
-1. **`fastblocks/actions/sync/*.py`** - 15+ errors
-
-### Lower Priority (Adapters - ~60 errors)
-
-1. **`fastblocks/middleware.py`** - 15 errors
-1. **`fastblocks/adapters/app/default.py`** - 10 errors
-1. **`fastblocks/adapters/admin/sqladmin.py`** - 1 error
-1. **`fastblocks/adapters/auth/*.py`** - 6 errors
-1. **`fastblocks/adapters/icons/*.py`** - 50+ errors (type stub issues)
+The legacy ACB codebase had ~150 missing-await errors. The Oneiric
+migration in 0.8.0 surfaced them and most were fixed in
+`_events_integration`, `_health_integration`,
+`_validation_integration`, and `_workflows_integration`. New code
+should follow the patterns above from the start.
 
 ______________________________________________________________________
 
@@ -283,15 +276,15 @@ ______________________________________________________________________
 
 ```python
 # ❌ SLOW - Sequential
-config = await depends.get("config")
-templates = await depends.get("templates")
-cache = await depends.get("cache")
+templates = await resolve_component_async(resolver, "fastblocks", "templates")
+cache = await resolve_component_async(resolver, "fastblocks", "cache")
+config = await resolve_component_async(resolver, "fastblocks", "config")
 
 # ✅ FAST - Parallel (if dependencies are independent)
-config, templates, cache = await asyncio.gather(
-    depends.get("config"),
-    depends.get("templates"),
-    depends.get("cache"),
+templates, cache, config = await asyncio.gather(
+    resolve_component_async(resolver, "fastblocks", "templates"),
+    resolve_component_async(resolver, "fastblocks", "cache"),
+    resolve_component_async(resolver, "fastblocks", "config"),
 )
 ```
 
@@ -299,14 +292,17 @@ config, templates, cache = await asyncio.gather(
 
 ```python
 # Cache at module level for repeated access
-_config_cache = None
+_templates_cache: object | None = None
 
 
-async def get_config():
-    global _config_cache
-    if _config_cache is None:
-        _config_cache = await depends.get("config")
-    return _config_cache
+async def get_templates():
+    global _templates_cache
+    if _templates_cache is None:
+        resolver = get_resolver()
+        _templates_cache = await resolve_component_async(
+            resolver, "fastblocks", "templates"
+        )
+    return _templates_cache
 ```
 
 ______________________________________________________________________
@@ -315,23 +311,19 @@ ______________________________________________________________________
 
 **Key Takeaways:**
 
-1. ✅ **`depends.get()` ALWAYS returns a coroutine**
-1. ✅ **MUST use `await` to get the actual object**
-1. ✅ **Prefer `@depends.inject` with `Inject[Type]` parameters**
-1. ✅ **Functions using `depends.get()` must be `async def`**
-1. ✅ **Update all callers to `await` the function**
+1. ✅ **`resolve_component_async()` returns the resolved object directly when awaited**
+1. ✅ **Always `await` it; never access attributes on the coroutine**
+1. ✅ **Use `resolve_component()` only in sync code paths**
+1. ✅ **Functions using the resolver must be `async def`**
+1. ✅ **Update all callers to `await` async functions**
 
 **Impact:**
 
-- Fixes ~150 of 501 Pyright errors
 - Prevents runtime AttributeErrors
 - Enables proper type checking
 - Improves IDE support
 
 **Next Steps:**
 
-1. Fix integration files (highest error density)
-1. Fix actions module
-1. Fix adapters
-1. Verify with `uv run pyright fastblocks`
-1. Run tests to ensure no breakage
+1. Run `uv run pyright fastblocks` to surface any remaining coroutine-access bugs
+2. Run tests to ensure no breakage

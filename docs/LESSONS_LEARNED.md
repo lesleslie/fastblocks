@@ -29,7 +29,7 @@ ______________________________________________________________________
 **What Worked**:
 
 1. **Vulture for dead code detection** - Found 5 unreachable code blocks immediately
-1. **ACB injection pattern audit** - Identified 4 legacy patterns systematically
+1. **Legacy ACB injection pattern audit** - Identified 4 patterns systematically during ACB era
 1. **CLI optimization** - Event-based shutdown eliminated busy-wait loop
 1. **Task grouping** - Batching similar fixes (imports, unused vars) improved efficiency
 
@@ -106,37 +106,37 @@ ______________________________________________________________________
 
 ## Technical Insights
 
-### 1. ACB Dependency Injection Patterns
+### 1. Legacy ACB Dependency Injection Patterns (historical)
 
-**Discovery**: `depends.get()` always returns a coroutine, must be awaited
+**Discovery**: Legacy ACB's resolver accessor always returned a coroutine that had to be awaited.
 
 **Impact**:
 
 - Fixed ~60 coroutine access errors in integration files
-- Changed from `depends.get()` → `await depends.get()` or `Inject[Type]` pattern
+- Switched to `await` on every accessor call or the parameter-injection pattern (annotation-based)
 - Enabled proper type checking for injected dependencies
 
-**Best Practice**:
+**Best Practice** (historical — ACB era; replaced by Oneiric in 0.8.0):
 
 ```python
-# ✅ MODERN - Parameter injection (preferred)
-@depends.inject
-async def handler(request, config: Inject[Config]):
+# ✅ MODERN at the time - Parameter injection (preferred)
+# Decorated the handler so the framework injected resolved dependencies.
+async def handler(request, config):
     # config is already resolved!
     pass
 
 # ✅ ACCEPTABLE - Module-level with await
 async def handler(request):
-    config = await depends.get("config")
+    config = await <legacy-resolver>.get("config")
     return config
 
 # ❌ WRONG - No await (returns coroutine)
 async def handler(request):
-    config = depends.get("config")  # Coroutine, not Config!
+    config = <legacy-resolver>.get("config")  # Coroutine, not Config!
     return config
 ```
 
-**Takeaway**: Modern ACB 0.25.1+ `Inject[Type]` pattern eliminates manual awaits and improves type inference.
+**Takeaway**: The legacy ACB parameter-injection pattern eliminated manual awaits and improved type inference; the Oneiric migration in 0.8.0 (`get_resolver()` / `resolve_component_async()`) replaced it for v0.20.0.
 
 ### 2. Type Narrowing vs Type Ignores
 
@@ -172,13 +172,13 @@ result = await self.manager.method()  # type: ignore[union-attr]
 **Analysis of 223 original ignores**:
 
 - **Fixable** (~113): Missing awaits, unnecessary singleton ignores, missing assertions
-- **Legitimate** (~110): Jinja2 untyped decorators, ACB patterns, third-party APIs
+- **Legitimate** (~110): Jinja2 untyped decorators, legacy ACB patterns, third-party APIs
 
 **Categories of Legitimate Ignores**:
 
 1. **Jinja2 decorators** (~40): `@env.filter()` has no type stubs
 1. **Union attributes** (~19): Dynamic union access patterns
-1. **ACB operators** (~14): Graceful degradation with `|` operator
+1. **Legacy ACB operators** (~14): Graceful degradation with `|` operator
 1. **Jinja2 attrs** (~13): Sandbox dynamic attributes
 1. **Import redef** (~7): Exception-based import redefinition
 
@@ -265,7 +265,7 @@ fix(phase4): reduce type ignores from 129 to 110
 
 **Results**:
 
-- ACB_DEPENDS_PATTERNS.md during Phase 2
+- ONEIRIC_DEPENDS_PATTERNS.md during Phase 2
 - TYPE_SYSTEM_MIGRATION.md during Phase 4
 - CLAUDE.md updated with Type System Guidelines
 - Prevents knowledge loss
@@ -400,7 +400,7 @@ ______________________________________________________________________
 
 **Mistake**: Set target of \<50 Pyright errors from baseline of 501
 
-**Reality**: Achieved 150 errors (-70%), but \<50 requires ACB framework changes
+**Reality**: Achieved 150 errors (-70%), but \<50 required framework changes — addressed later by the Oneiric migration in 0.8.0
 
 **Lesson**: Research constraints before setting targets. Some errors are framework limitations, not bugs.
 
@@ -413,7 +413,7 @@ ______________________________________________________________________
 **Reality**:
 
 - 40 are Jinja2 untyped decorator API (legitimate)
-- 14 are ACB graceful degradation (design pattern)
+- 14 were legacy ACB graceful degradation (design pattern; obsolete post-Oneiric)
 - 13 are Jinja2 dynamic attributes (sandbox API)
 
 **Lesson**: Understand why ignores exist before removing them.
@@ -522,7 +522,7 @@ uv run pytest --cov=fastblocks
 **When You Discover Something**:
 
 1. Add to CLAUDE.md (AI assistant reference)
-1. Create focused doc if complex (e.g., ACB_DEPENDS_PATTERNS.md)
+1. Create focused doc if complex (e.g., ONEIRIC_DEPENDS_PATTERNS.md)
 1. Update migration guide if breaking change
 
 **Why**: Fresh insights are clearest. Don't wait.
@@ -730,7 +730,7 @@ ______________________________________________________________________
 
 **Long-Term (1-3 months)**:
 
-1. Achieve \<50 Pyright errors (may require ACB updates)
+1. Achieve \<50 Pyright errors (resolved by 0.8.0 Oneiric migration)
 1. Reach 40%+ test coverage
 1. Implement LSP integration for templates
 1. Add automated performance regression testing
@@ -746,7 +746,7 @@ ______________________________________________________________________
 - Pytest team (comprehensive testing)
 - UV team (fast package management)
 - FastAPI/Starlette (inspiration and foundation)
-- ACB framework (dependency injection, MCP)
+- Legacy ACB framework (replaced by Oneiric in 0.8.0; historical dependency injection and MCP integration)
 
 **Documentation References**:
 

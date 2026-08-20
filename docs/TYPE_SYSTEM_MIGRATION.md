@@ -153,14 +153,14 @@ def my_filter(value: str) -> str:
 ```
 
 ```python
-# ✅ CORRECT - ACB graceful degradation pattern
+# ✅ CORRECT - Oneiric graceful degradation pattern
 try:
-    from acb.workflows import WorkflowEngine
+    from fastblocks._workflows_integration import BasicWorkflowEngine
 except ImportError:
-    WorkflowEngine = None
+    BasicWorkflowEngine = None
 
 # Engine might be None (graceful degradation)
-engine = WorkflowEngine()  # type: ignore[operator]  # Optional ACB module
+engine = BasicWorkflowEngine()  # type: ignore[operator]  # Optional Oneiric module
 ```
 
 **Rule**: All remaining type ignores MUST have explanatory comments
@@ -202,22 +202,22 @@ def format_date(date: datetime) -> str:
 
 ### Operator Ignores (14 remaining, all legitimate)
 
-**Legitimate**: ACB graceful degradation with `|` operator
+**Legitimate**: Oneiric graceful degradation with `|` operator
 
 ```python
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from acb.events import EventHandler
+    from fastblocks._events_integration import CacheInvalidationHandler
 else:
     try:
-        from acb.events import EventHandler
+        from fastblocks._events_integration import CacheInvalidationHandler
     except ImportError:
-        EventHandler = object  # Fallback
+        CacheInvalidationHandler = object  # Fallback
 
 
-# type: ignore[operator]  # ACB graceful degradation pattern
-class MyHandler(EventHandler):
+# type: ignore[operator]  # Oneiric graceful degradation pattern
+class MyHandler(CacheInvalidationHandler):
     pass
 ```
 
@@ -442,7 +442,7 @@ ______________________________________________________________________
 ## Reference
 
 - **Phase 4 Completion**: See `IMPROVEMENT_PLAN.md` Tasks 4.1-4.2
-- **ACB Patterns**: See `docs/ACB_DEPENDS_PATTERNS.md`
+- **ACB Patterns**: See `docs/ONEIRIC_DEPENDS_PATTERNS.md`
 - **Type Guidelines**: See `CLAUDE.md` → Type System Guidelines
 - **MCP Integration**: See `fastblocks/mcp/README.md`
 
@@ -453,6 +453,6 @@ ______________________________________________________________________
 For questions about type system patterns:
 
 1. Check `CLAUDE.md` Type System Guidelines
-1. Review `docs/ACB_DEPENDS_PATTERNS.md`
+1. Review `docs/ONEIRIC_DEPENDS_PATTERNS.md`
 1. See Phase 4 commits for examples
 1. Open GitHub discussion for complex cases

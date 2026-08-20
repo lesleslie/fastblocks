@@ -2,9 +2,9 @@
 
 > **FastBlocks Documentation**: [Main](../README.md) | [Core Features](../README.md#fastblocks) | [Actions](../fastblocks/actions/README.md) | [Adapters](../fastblocks/adapters/README.md)
 >
-> _Last reviewed: 2025-11-19_
+> _Last reviewed: 2026-08-19_
 
-This guide consolidates the Quick Start walkthrough and the Common Patterns examples that previously lived in `README.md`. Use it to bootstrap a project, explore HTMX block rendering, and learn the modern `Inject[Type]` dependency injection style.
+This guide consolidates the Quick Start walkthrough and the Common Patterns examples that previously lived in `README.md`. Use it to bootstrap a project, explore HTMX block rendering, and learn the modern `resolve_component_async()` dependency resolution style.
 
 ## Quick Start
 
@@ -16,20 +16,16 @@ Create a file named `myapp.py` with the following code:
 
 ```python
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-# Import adapters - these are pluggable components that FastBlocks uses
-# The Templates adapter handles rendering Jinja2 templates
-# The App adapter provides the FastBlocks application instance
-Templates = import_adapter("templates")  # Get the configured template adapter
-App = import_adapter("app")  # Get the configured app adapter
+# Resolve adapters through the shared Oneiric resolver.
+# The Templates adapter handles rendering Jinja2 templates;
+# the App adapter provides the FastBlocks application instance.
+resolver = get_resolver()
 
 
-# Define a route handler for the homepage
-# Modern ACB 0.25.1+ uses @depends.inject decorator with Inject[Type] type hints
-@depends.inject
-async def homepage(request, templates: Inject[Templates]):
+async def homepage(request):
+    templates = await resolve_component_async(resolver, "fastblocks", "templates")
     # Render a template and return the response
     # This is similar to Flask's render_template but async
     return await templates.app.render_template(
@@ -45,8 +41,8 @@ routes = [
 
 # Create a counter endpoint that demonstrates HTMX functionality
 # This will handle both GET and POST requests
-@depends.inject
-async def counter_block(request, templates: Inject[Templates]):
+async def counter_block(request):
+    templates = await resolve_component_async(resolver, "fastblocks", "templates")
     # Get the current count from the session or default to 0
     count = request.session.get("count", 0)
 
@@ -65,8 +61,7 @@ async def counter_block(request, templates: Inject[Templates]):
 routes.append(Route("/block/counter", endpoint=counter_block, methods=["GET", "POST"]))
 
 # Get the FastBlocks application instance
-# For module-level dependency injection, use depends.get()
-app = depends.get(App)
+app = await resolve_component_async(resolver, "fastblocks", "app")
 ```
 
 ### 2. Create a Basic Template
@@ -152,14 +147,13 @@ One of the most common patterns in FastBlocks is rendering specific template blo
 
 ```python
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-Templates = import_adapter("templates")
+resolver = get_resolver()
 
 
-@depends.inject
-async def user_profile_block(request, templates: Inject[Templates]):
+async def user_profile_block(request):
+    templates = await resolve_component_async(resolver, "fastblocks", "templates")
     user_id = request.path_params["user_id"]
 
     # Fetch user data (in a real app, this would come from a database)
@@ -208,14 +202,13 @@ Handling form submissions with HTMX is straightforward in FastBlocks:
 
 ```python
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
-Templates = import_adapter("templates")
+resolver = get_resolver()
 
 
-@depends.inject
-async def contact_form(request, templates: Inject[Templates]):
+async def contact_form(request):
+    templates = await resolve_component_async(resolver, "fastblocks", "templates")
     if request.method == "POST":
         # Get form data
         form_data = await request.form()
@@ -273,26 +266,22 @@ Template (`templates/contact/form.html`):
 
 ### 3. Using Dependency Injection
 
-FastBlocks leverages ACB's dependency injection system to make components easily accessible:
+FastBlocks leverages Oneiric's dependency injection system to make components easily accessible:
 
 ```python
 from starlette.routing import Route
-from acb.adapters import import_adapter
-from acb.depends import Inject, depends
-from acb.config import Config
+from fastblocks.core.resolver import get_resolver, resolve_component_async
+from oneiric.core.config import OneiricSettings
 
-# Import adapters using the modern ACB 0.25.1+ pattern
-Templates = import_adapter("templates")
-Cache = import_adapter("cache")
+# Resolve adapters through the shared Oneiric resolver
+resolver = get_resolver()
 
 
-@depends.inject
-async def dashboard(
-    request,
-    templates: Inject[Templates],
-    cache: Inject[Cache],
-    config: Inject[Config],
-):
+async def dashboard(request):
+    templates = await resolve_component_async(resolver, "fastblocks", "templates")
+    cache = await resolve_component_async(resolver, "fastblocks", "cache")
+    config = OneiricSettings()
+
     # Get cached data or compute it
     cache_key = "dashboard_stats"
     stats = await cache.get(cache_key)
@@ -315,7 +304,7 @@ async def dashboard(
 routes = [Route("/dashboard", endpoint=dashboard)]
 ```
 
-This example demonstrates the modern ACB 0.25.1+ `Inject[Type]` pattern for type-safe dependency injection with automatic fallbacks.
+This example demonstrates the modern Oneiric `get_resolver()` / `resolve_component_async()` pattern for type-safe dependency resolution.
 
 ## Next Steps
 

@@ -68,7 +68,7 @@ await server.start()
 ### With JWT Authentication
 
 ```python
-from mcp_common.websocket import WebSocketAuthenticator
+from mcp_common.websocket.auth import WebSocketAuthenticator
 
 # Create authenticator
 authenticator = WebSocketAuthenticator(
@@ -318,42 +318,6 @@ async def connect_secure():
 asyncio.run(connect_secure())
 ```
 
-## MCP Tools Integration
-
-The Fastblocks WebSocket server provides MCP tools for server management:
-
-```python
-from fastblocks.mcp.websocket_tools import (
-    start_websocket_server,
-    stop_websocket_server,
-    get_websocket_status,
-    broadcast_ui_update,
-    broadcast_component_render,
-    broadcast_state_change,
-)
-
-# Start server
-result = await start_websocket_server(
-    host="127.0.0.1",
-    port=8684,
-    tls_enabled=True
-)
-
-# Get status
-status = await get_websocket_status()
-
-# Broadcast updates
-await broadcast_component_render(
-    component_id="navbar",
-    page_id="home",
-    html="<nav>...</nav>",
-    state={"active": "home"}
-)
-
-# Stop server
-await stop_websocket_server()
-```
-
 ## Testing
 
 ```bash
@@ -483,7 +447,6 @@ CMD ["python", "-m", "fastblocks", "websocket", "start"]
 ### Docker Compose
 
 ```yaml
-version: '3.8'
 
 services:
   fastblocks-ws:

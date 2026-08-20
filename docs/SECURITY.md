@@ -151,11 +151,12 @@ class CustomAuth(AuthBase):
 **Integration**:
 
 ```python
-from acb.depends import Inject, depends
+from fastblocks.core.resolver import get_resolver, resolve_component_async
 
 
-@depends.inject
-async def protected_route(request, auth: Inject[Auth]):
+async def protected_route(request):
+    resolver = get_resolver()
+    auth = await resolve_component_async(resolver, "fastblocks", "auth")
     user = await auth.authenticate(request)
     if not user:
         return Response("Unauthorized", status_code=401)
@@ -186,11 +187,11 @@ async def protected_route(request, auth: Inject[Auth]):
 **Usage**:
 
 ```python
-from acb.depends import Inject, depends
+from fastblocks._validation_integration import get_validation_service
 
 
-@depends.inject
-async def create_user(request, validator: Inject[ValidationService]):
+async def create_user(request):
+    validator = get_validation_service()
     data = await request.json()
 
     # Sanitize input
@@ -206,7 +207,7 @@ async def create_user(request, validator: Inject[ValidationService]):
 
 ```python
 try:
-    from acb.services.validation import ValidationService
+    from fastblocks._validation_integration import ValidationService
 
     validation_available = True
 except ImportError:
