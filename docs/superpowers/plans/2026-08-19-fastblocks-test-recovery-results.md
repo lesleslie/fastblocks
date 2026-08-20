@@ -16,7 +16,7 @@ and the residual-gather follow-up (Task 28), as re-verified by Task 12.
 | Pre-plan baseline anchor (parent worktree) | `99ff1fd34478ee031989d1eed1116cf01e84c877` |
 | Original `main` HEAD when worktree was forked | `eec8c2b` (merge-base of recovery branch with `main`) |
 | Brief-supplied "base" (parent-worktree task-28 SHA) | `2be0049d59ccdf79957d96c9dbb3dfc6c355d14d` (unreachable in this worktree) |
-| Final current HEAD (this worktree) | `5739ccbc5fb4fbef1e06a16f0cde6357a13d9677` |
+| Final current HEAD (this worktree) | `Sanitized handoff commit | 5739ccb...; metadata update commit | fb34178...` |
 | Pre-rewrite task-28 HEAD (this worktree) | `174abb022e219cb992283eccf96d4921eba6974e` |
 | Plan reference (per design spec) | `docs/superpowers/plans/2026-08-19-fastblocks-test-recovery.md` |
 | Plan reference (per baseline manifest) | `docs/superpowers/plans/2026-08-19-fastblocks-test-recovery-baseline.md` |
@@ -47,6 +47,13 @@ rewritten ancestry. The original checkout
 (`/Users/les/Projects/fastblocks`, branch `main` @
 `4cd782f6175872b056ea926b7d8407f0f7b88313`) was not touched by the
 rewrite.
+
+**Note on final branch HEAD:** The exact final branch HEAD for this
+handoff is recorded in the separate consistency report at
+`.superpowers/sdd/2026-08-19-fastblocks-test-recovery/final-handoff-consistency-report.md`,
+not asserted inside this handoff file. The "Final current HEAD" row
+above uses an accurate non-self-referential label to avoid stale
+self-references inside the handoff itself.
 
 ---
 
