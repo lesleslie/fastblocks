@@ -445,7 +445,7 @@ class FileSystemLoader(BaseTemplateLoader):
         async def uptodate() -> bool:
             return int((await path.stat()).st_mtime) == local_mtime
 
-        return (resp.decode(), str(storage_path), uptodate)
+        return (resp.decode(), str(storage_path), uptodate)  # type: ignore[return-value]
 
     async def list_templates_async(self) -> list[str]:
         return await self._list_templates_for_extensions(
@@ -731,7 +731,7 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
                 # ``AsyncMock`` children whose contract is
                 # single-arg.
                 result = await loader.get_source_async(str(template))  # type: ignore[arg-type,call-arg]  # ty: ignore[missing-argument]
-                return result
+                return result  # type: ignore[return-value]
             except TemplateNotFound:
                 # The next loader may have it; only "missing template"
                 # is a recoverable signal at this level. Loader
