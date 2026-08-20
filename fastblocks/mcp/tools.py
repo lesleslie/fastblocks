@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import operator
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, cast
 
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
@@ -121,7 +121,7 @@ async def validate_template(template_path: str) -> dict[str, Any]:
                 "success": False,
                 "error": "Syntax support not available",
             }
-        syntax_support = syntax_candidate.factory()
+        syntax_support = cast(Callable[..., Any], syntax_candidate.factory)()
 
         # Check syntax
         errors = syntax_support.check_syntax(content, path)
@@ -277,7 +277,7 @@ async def render_template(
                 "success": False,
                 "error": "Template adapter not available",
             }
-        templates = templates_candidate.factory()
+        templates = cast(Callable[..., Any], templates_candidate.factory)()
 
         # Render template
         context = context or {}
@@ -324,7 +324,7 @@ async def create_component(
                 "success": False,
                 "error": "HTMY adapter not available",
             }
-        htmy_adapter = htmy_candidate.factory()
+        htmy_adapter = cast(Callable[..., Any], htmy_candidate.factory)()
 
         from fastblocks.adapters.templates._htmy_components import ComponentType
 
@@ -374,7 +374,7 @@ async def list_components() -> dict[str, Any]:
                 "success": False,
                 "error": "HTMY adapter not available",
             }
-        htmy_adapter = htmy_candidate.factory()
+        htmy_adapter = cast(Callable[..., Any], htmy_candidate.factory)()
 
         components = await htmy_adapter.discover_components()
 
@@ -415,7 +415,7 @@ async def validate_component(component_name: str) -> dict[str, Any]:
                 "success": False,
                 "error": "HTMY adapter not available",
             }
-        htmy_adapter = htmy_candidate.factory()
+        htmy_adapter = cast(Callable[..., Any], htmy_candidate.factory)()
 
         metadata = await htmy_adapter.validate_component(component_name)
 
@@ -464,7 +464,7 @@ async def configure_adapter(
                 "success": False,
                 "error": f"Adapter '{adapter_name}' not found",
             }
-        adapter = adapter_candidate.factory()
+        adapter = cast(Callable[..., Any], adapter_candidate.factory)()
 
         # Update adapter settings
         for key, value in settings.items():

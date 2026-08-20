@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable, cast
 
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
@@ -205,7 +205,7 @@ async def get_htmy_component_catalog() -> dict[str, Any]:
                 "success": False,
                 "error": "HTMY adapter not available",
             }
-        htmy_adapter = htmy_candidate.factory()
+        htmy_adapter = cast(Callable[..., Any], htmy_candidate.factory)()
 
         components = await htmy_adapter.discover_components()
 

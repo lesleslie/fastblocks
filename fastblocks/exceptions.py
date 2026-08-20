@@ -1,5 +1,6 @@
 import typing as t
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import StrEnum
@@ -146,7 +147,7 @@ async def safe_depends_get(
         try:
             candidate = depends.resolve("fastblocks", key)
             instance = (
-                candidate.factory()
+                t.cast(Callable[..., t.Any], candidate.factory)()
                 if candidate is not None and callable(candidate.factory)
                 else default
             )

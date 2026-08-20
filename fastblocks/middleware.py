@@ -30,7 +30,7 @@ def _get_adapter_or_none(domain: str, key: str) -> t.Any:
     try:
         candidate = depends.resolve(domain, key)
         if candidate is not None and callable(candidate.factory):
-            return candidate.factory()
+            return t.cast(t.Callable[..., t.Any], candidate.factory)()
         return None
     except (KeyError, AttributeError, RuntimeError, TypeError):
         return None

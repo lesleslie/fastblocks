@@ -1,7 +1,7 @@
 """Central registry for FastBlocks adapter management."""
 
 from contextlib import suppress
-from typing import Any
+from typing import Any, Callable, cast
 from uuid import UUID
 
 from oneiric.core.resolution import Resolver
@@ -71,7 +71,7 @@ class AdapterRegistry:
                 candidate is not None
                 and callable(candidate.factory)
             ):
-                adapter = candidate.factory()
+                adapter = cast(Callable[..., Any], candidate.factory)()
                 if adapter:
                     self._active_adapters[adapter_name] = adapter
                     return adapter
