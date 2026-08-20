@@ -253,7 +253,7 @@ def get_rule_matching_request(
 ) -> Rule | None:
     method = CacheRules.get_rule_matching_request
     result = method(rules, request=request)
-    return t.cast(Rule | None, result)
+    return result
 
 
 def get_rule_matching_response(
@@ -264,19 +264,19 @@ def get_rule_matching_response(
 ) -> Rule | None:
     method = CacheRules.get_rule_matching_response
     result = method(rules, request=request, response=response)
-    return t.cast(Rule | None, result)
+    return result
 
 
 def request_matches_rule(rule: Rule, *, request: Request) -> bool:
     method = CacheRules.request_matches_rule
     result = method(rule, request=request)
-    return t.cast(bool, result)
+    return result
 
 
 def response_matches_rule(rule: Rule, *, request: Request, response: Response) -> bool:
     method = CacheRules.response_matches_rule
     result = method(rule, request=request, response=response)
-    return t.cast(bool, result)
+    return result
 
 
 class CacheDirectives(t.TypedDict, total=False):

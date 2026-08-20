@@ -388,7 +388,7 @@ class AsyncTemplateRenderer:
             template = env.get_template(render_context.template_name)
 
         rendered = await template.render_async(render_context.context)
-        return t.cast(str, rendered)
+        return rendered
 
     async def _render_fragment(self, render_context: RenderContext) -> str:
         """Render template fragment for HTMX."""
