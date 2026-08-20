@@ -10,7 +10,7 @@ Created: 2025-12-31
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Candidate, CandidateSource, Resolver
@@ -81,3 +81,47 @@ def register_candidate(
 
     resolver.register(candidate)
     return True
+
+
+def resolve_instance(resolver: Resolver, domain: str, key: str) -> Any:
+    """Resolve a registered Candidate and return its factory output.
+
+    Oneiric's Resolver.resolve() returns either a Candidate (whose
+    ``factory()`` yields the resolved instance) or ``None`` when no
+    candidate is registered for the given domain/key. This helper
+    unwraps that contract so callers receive the underlying object.
+
+    Args:
+        resolver: Oneiric Resolver instance.
+        domain: Candidate domain (e.g. "fastblocks").
+        key: Candidate key (e.g. "templates").
+
+    Returns:
+        The result of calling ``Candidate.factory()`` for the resolved
+        candidate, or ``None`` when no candidate is registered.
+        Resolver implementation errors outside the documented swallow
+        set propagate to the caller -- a hard failure of the resolver
+        is not a graceful-degradation case.
+
+    Example:
+        >>> from oneiric.core.resolution import Resolver
+        >>> depends = Resolver()
+        >>> register_candidate(
+        ...     depends,
+        ...     domain="fastblocks",
+        ...     key="templates",
+        ...     factory=lambda: Templates(),
+        ... )
+        >>> resolve_instance(depends, "fastblocks", "templates")  # Returns the Templates instance.
+    """
+    try:
+        candidate = resolver.resolve(domain, key)
+    except (KeyError, AttributeError, RuntimeError, TypeError):
+        return None
+    if candidate is None:
+        return None
+    factory = candidate.factory
+    try:
+        return cast("Any", factory)()
+    except (KeyError, AttributeError, RuntimeError, TypeError):
+        return None
