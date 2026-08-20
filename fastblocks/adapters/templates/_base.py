@@ -144,6 +144,9 @@ class TemplatesBase:
             if hasattr(depends, "root_path")
             else AsyncPath("/")
         )
+
+        if adapter and hasattr(adapter, "category"):
+            searchpaths.extend(
                 self.get_searchpath(
                     adapter, base_root / "templates" / adapter.category
                 ),
