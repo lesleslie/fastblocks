@@ -40,7 +40,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from oneiric.core.logging import get_logger
-from fastblocks.adapters.oneiric_helper import register_candidate
+from fastblocks.adapters.oneiric_helper import register_candidate, resolve_instance
 from fastblocks.core.patterns import SingletonMeta
 from fastblocks.core.resolver import get_resolver
 
@@ -127,10 +127,19 @@ class ValidationConfig:
 class FastBlocksValidationService(metaclass=SingletonMeta):
     """FastBlocks validation service with Oneiric integration."""
 
+    # Shared config — kept as ClassVar so every consumer sees the same policy.
     _config: t.ClassVar[ValidationConfig] = ValidationConfig()
 
     def __init__(self) -> None:
-        """Initialize validation service with Oneiric integration."""
+        """Initialize validation service with Oneiric integration.
+
+        Note: instance attributes (``_service``, ``_sanitizer``, ``_validator``,
+        ``_initialized``) are intentionally NOT declared at class level. The
+        ``hasattr`` guard relies on these living exclusively in
+        ``self.__dict__`` after the first ``__init__`` call; declaring them as
+        class attributes with default values would short-circuit the guard
+        (via class-attribute lookup) and silently skip sanitizer construction.
+        """
         if not hasattr(self, "_initialized"):
             self._service = ValidationService()  # Oneiric-compatible validation service
             self._sanitizer = self._service.sanitizer
@@ -764,7 +773,7 @@ async def _log_template_validation_errors(
         return
 
     with suppress(Exception):
-        logger = await depends.resolve("fastblocks", "logger")
+        logger = resolve_instance(depends, "fastblocks", "logger")
         if logger:
             logger.warning(
                 f"Template context validation warnings for {template}: {errors}"
@@ -876,7 +885,7 @@ async def _handle_form_validation_errors(
 
     if errors and service._config.log_validation_failures:
         with suppress(Exception):
-            logger = await depends.resolve("fastblocks", "logger")
+            logger = resolve_instance(depends, "fastblocks", "logger")
             if logger:
                 logger.warning(f"Form validation errors: {errors}")
 
@@ -988,7 +997,7 @@ async def _validate_response(
 
     if not is_valid:
         with suppress(Exception):
-            logger = await depends.resolve("fastblocks", "logger")
+            logger = resolve_instance(depends, "fastblocks", "logger")
             if logger:
                 logger.error(f"Response validation failed: {errors}")
 

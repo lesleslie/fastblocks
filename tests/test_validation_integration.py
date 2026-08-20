@@ -68,6 +68,45 @@ class TestValidationServiceBasics:
 
 
 @pytest.mark.integration
+class TestSingletonSanitizerState:
+    """Regression: singleton must initialize sanitizer state on first use."""
+
+    @pytest.mark.asyncio
+    async def test_singleton_sanitizer_persists_across_calls(self):
+        """Sanitizer must be initialized and reused across validation calls.
+
+        Regression: prior to fix, ``_initialized: bool = False`` was a class
+        attribute, so ``hasattr(self, "_initialized")`` returned True on the
+        first ``__init__`` and the sanitizer was never created. Subsequent
+        calls (and any test exercising XSS prevention) silently returned the
+        raw payload.
+        """
+        service = get_validation_service()
+
+        # First call — exercises sanitizer through the public validation API.
+        _, first_sanitized, _ = await service.validate_template_context(
+            context={"payload": "<script>alert('XSS')</script>"},
+            template_name="first.html",
+            strict=False,
+        )
+
+        # Second call — same singleton instance must reuse initialized sanitizer.
+        _, second_sanitized, _ = await service.validate_template_context(
+            context={"payload": "<img src=x onerror=alert(1)>"},
+            template_name="second.html",
+            strict=False,
+        )
+
+        # Both calls must have produced sanitized output — proves init ran and
+        # state persists for the lifetime of the singleton.
+        assert "<script>" not in str(first_sanitized.get("payload", ""))
+        assert "<img" not in str(second_sanitized.get("payload", ""))
+
+        # Singleton identity preserved across the two calls.
+        assert get_validation_service() is service
+
+
+@pytest.mark.integration
 class TestTemplateContextValidation:
     """Test template context validation functionality."""
 
