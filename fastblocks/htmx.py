@@ -165,10 +165,10 @@ def _get_header(scope: "Scope", key: bytes) -> str | None:
     value: str | None = None
     should_unquote = False
 
-    # Extract header value and autoencoding flag; first match wins for the value
+    # Extract header value and autoencoding flag; last match wins (HTTP convention)
     try:
         for k, v in scope["headers"]:
-            if k.lower() == key_lower and value is None:
+            if k.lower() == key_lower:
                 value = v.decode("latin-1")
             if k.lower() == b"%s-uri-autoencoded" % key_lower and v == b"true":
                 should_unquote = True

@@ -128,11 +128,20 @@ class TestHtmxDetailsProperties:
         """Test that HtmxRequest detection works correctly."""
         details = HtmxDetails(scope)
 
-        # If header is set to "true" (any casing), is_htmx should be True
-        if any(h[0].lower() == b"hx-request" and h[1].lower() == b"true" for h in scope["headers"]):
+        # Duplicate headers: last match wins (HTTP convention).
+        # If the last HX-Request header is "true" (any casing), is_htmx should be True.
+        last_value = next(
+            (
+                h[1]
+                for h in reversed(scope["headers"])
+                if h[0].lower() == b"hx-request"
+            ),
+            None,
+        )
+        if last_value is not None and last_value.lower() == b"true":
             assert details.__bool__() is True
         else:
-            # If no "true" header, should be False
+            # Otherwise should be False
             assert details.__bool__() is False
 
     @given(htmx_scope_strategy())
