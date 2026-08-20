@@ -1,7 +1,9 @@
 """Tests for the FastBlocks HTMX module."""
 
+import asyncio
 import json
-from unittest.mock import patch
+import warnings
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from starlette.responses import HTMLResponse
@@ -13,6 +15,7 @@ with patch("fastblocks.htmx.debug") as mock_debug:
         HtmxDetails,
         HtmxResponse,
         _get_header,
+        _run_async_safely,
         htmx_push_url,
         htmx_redirect,
         htmx_refresh,
@@ -504,3 +507,155 @@ class TestIsHtmx:
 
 # Skip HtmxRequest tests as they require Starlette.Request which is complex to mock
 # In a real test environment, we would test this with integration tests
+
+
+@pytest.mark.unit
+class TestHtmxAsyncFallback:
+    """Regression coverage for the safe async boundary used by HTMX decorators.
+
+    Pins two contracts documented in ``fastblocks/CLAUDE.md``::
+
+      * The sync fallback must execute the publish coroutine to completion
+        and close its event loop — no coroutine is silently dropped.
+      * An async caller must not run a blocking loop from inside an
+        active event loop — ``_run_async_safely`` must refuse and surface
+        a clear ``RuntimeError`` so the caller can await natively.
+    """
+
+    def test_htmx_trigger_publishes_and_completes(self) -> None:
+        """htmx_trigger must await publish_htmx_trigger to completion."""
+        publisher = AsyncMock(return_value=True)
+        # Track whether the coroutine was awaited
+        awaited = {"value": False}
+
+        async def fake_publish(trigger_name, trigger_data=None, target=None):
+            awaited["value"] = True
+            return await publisher(trigger_name=trigger_name, trigger_data=trigger_data)
+
+        with patch(
+            "fastblocks.adapters.templates._events_wrapper.publish_htmx_trigger",
+            side_effect=fake_publish,
+        ):
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", RuntimeWarning)
+                response = htmx_trigger({"showMessage": "Hello"})
+
+        assert isinstance(response, HtmxResponse)
+        assert response.headers["HX-Trigger"] == json.dumps({"showMessage": "Hello"})
+        assert awaited["value"] is True
+
+    def test_htmx_redirect_publishes_and_completes(self) -> None:
+        """htmx_redirect must await publish_htmx_update to completion."""
+        publisher = AsyncMock(return_value=True)
+        awaited = {"value": False}
+
+        class _Stub:
+            async def publish_htmx_update(
+                self, update_type, target=None, **_kwargs
+            ):
+                awaited["value"] = True
+                return await publisher(update_type=update_type, target=target)
+
+        # Note: htmx.py calls ``get_event_publisher()`` without ``await``,
+        # so the stub factory must be synchronous.
+        with patch(
+            "fastblocks._events_integration.get_event_publisher",
+            return_value=_Stub(),
+        ):
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", RuntimeWarning)
+                response = htmx_redirect("/login")
+
+        assert isinstance(response, HtmxResponse)
+        assert response.headers["HX-Redirect"] == "/login"
+        assert awaited["value"] is True
+
+    def test_htmx_refresh_publishes_and_completes(self) -> None:
+        """htmx_refresh must await publish_htmx_refresh to completion."""
+        publisher = AsyncMock(return_value=True)
+        awaited = {"value": False}
+
+        async def fake_publish(target, swap_method=None):
+            awaited["value"] = True
+            return await publisher(target=target, swap_method=swap_method)
+
+        with patch(
+            "fastblocks.adapters.templates._events_wrapper.publish_htmx_refresh",
+            side_effect=fake_publish,
+        ):
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", RuntimeWarning)
+                response = htmx_refresh()
+
+        assert isinstance(response, HtmxResponse)
+        assert response.headers["HX-Refresh"] == "true"
+        assert awaited["value"] is True
+
+    def test_htmx_decorators_do_not_warn_on_no_publisher(self) -> None:
+        """No RuntimeWarning must leak when the event publisher is unavailable.
+
+        Regression for the four ``RuntimeWarning: coroutine ... was never
+        awaited`` warnings previously emitted by every HTMX decorator path
+        in pytest-asyncio's auto-managed event loop.
+        """
+        # Force the publisher lookup to fail/return None so we exercise the
+        # real short-circuit inside the publish helpers.
+        with patch(
+            "fastblocks._events_integration.get_event_publisher",
+            return_value=None,
+        ):
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                htmx_trigger("showMessage")
+                htmx_redirect("/login")
+                htmx_refresh()
+
+        coroutine_warnings = [
+            w
+            for w in caught
+            if issubclass(w.category, RuntimeWarning)
+            and "was never awaited" in str(w.message)
+        ]
+        assert coroutine_warnings == []
+
+
+@pytest.mark.unit
+class TestRunAsyncSafely:
+    """Direct coverage for the ``_run_async_safely`` helper."""
+
+    def test_runs_coroutine_to_completion_when_no_loop(self) -> None:
+        """Sync callers get the coroutine result with no leaked loop."""
+        result = _run_async_safely(asyncio.sleep(0, result="ok"))
+        assert result == "ok"
+
+    def test_propagates_coroutine_exceptions(self) -> None:
+        """Exceptions from the coroutine surface to the caller."""
+
+        async def _boom() -> None:
+            raise RuntimeError("kaboom")
+
+        with pytest.raises(RuntimeError, match="kaboom"):
+            _run_async_safely(_boom())
+
+    def test_refuses_inside_running_loop(self) -> None:
+        """Already inside a loop -> RuntimeError points at native async path."""
+        ran = {"value": False}
+
+        async def _outer() -> None:
+            nonlocal ran
+            ran["value"] = True
+            # Build the inner coroutine here so the test's RuntimeError
+            # path can ``close()`` it before it would be GC'd.
+            inner = asyncio.sleep(0, result="should-not-run")
+            try:
+                with pytest.raises(
+                    RuntimeError,
+                    match="use the native async path inside an active event loop",
+                ):
+                    _run_async_safely(inner)
+            finally:
+                # Prevent RuntimeWarning leak from the never-awaited inner.
+                inner.close()
+
+        asyncio.run(_outer())
+        assert ran["value"] is True

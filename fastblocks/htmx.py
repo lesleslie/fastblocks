@@ -19,9 +19,39 @@ The FastBlocks implementation extends the original with:
 import asyncio
 import json
 import typing as t
+from collections.abc import Coroutine
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
-from typing import Any
+from typing import Any, TypeVar
 from urllib.parse import unquote
+
+_T = TypeVar("_T")
+
+
+def _run_async_safely(coro: Coroutine[t.Any, t.Any, _T]) -> _T:
+    """Run an awaitable from a synchronous fallback without leaking its loop.
+
+    Contract (per ``fastblocks/CLAUDE.md``):
+
+    - When no event loop is running in the current thread (the typical
+      sync fallback path), execute ``coro`` to completion in an isolated
+      thread and return its result. ``asyncio.run`` owns the loop and
+      closes it before returning, so callers never see a leaked loop.
+    - When an event loop **is** already running in the current thread,
+      refuse to block it with ``asyncio.run`` — raise so the caller can
+      reach for ``run_async_native`` (or just ``await`` directly) on the
+      native async path.
+
+    Errors raised inside ``coro`` propagate to the caller. This helper
+    does **not** swallow exceptions; the existing ``with suppress(...)``
+    wrappers at the call sites preserve their current tolerance.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            return executor.submit(asyncio.run, coro).result()
+    raise RuntimeError("use the native async path inside an active event loop")
 
 # Oneiric imports
 from oneiric.core.logging import get_logger
@@ -294,37 +324,18 @@ def htmx_trigger(
         trigger_name = trigger_events
         trigger_data = {}
 
-    # Schedule event publishing in background
-    def _run_publish_event() -> None:
-        async def _publish_event(
-            trigger_name: str, trigger_data: dict[str, t.Any]
-        ) -> None:
-            from .adapters.templates._events_wrapper import publish_htmx_trigger
+    async def _publish_event(
+        trigger_name: str, trigger_data: dict[str, t.Any]
+    ) -> None:
+        from .adapters.templates._events_wrapper import publish_htmx_trigger
 
-            await publish_htmx_trigger(
-                trigger_name=trigger_name,
-                trigger_data=trigger_data,
-            )
-
-        # Create and schedule the task to run the async function
-        try:
-            asyncio.create_task(_publish_event(trigger_name, trigger_data))
-        except RuntimeError:
-            # If not in an event loop, run in a new one
-            import threading
-
-            if threading.current_thread() is threading.main_thread():
-                # In main thread, run in new event loop
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(_publish_event(trigger_name, trigger_data))
-            else:
-                # In a different thread, we can't easily start an event loop
-                # Just run the function synchronously (though this won't be truly async)
-                pass
+        await publish_htmx_trigger(
+            trigger_name=trigger_name,
+            trigger_data=trigger_data,
+        )
 
     with suppress(Exception):
-        _run_publish_event()
+        _run_async_safely(_publish_event(trigger_name, trigger_data))
 
     return HtmxResponse(
         content=content,
@@ -335,37 +346,18 @@ def htmx_trigger(
 
 
 def htmx_redirect(url: str, **kwargs: t.Any) -> HtmxResponse:
-    # Schedule event publishing in background
-    def _run_publish_event() -> None:
-        async def _publish_event(url: str) -> None:
-            from ._events_integration import get_event_publisher
+    async def _publish_event(url: str) -> None:
+        from ._events_integration import get_event_publisher
 
-            publisher = get_event_publisher()
-            if publisher:
-                await publisher.publish_htmx_update(
-                    update_type="redirect",
-                    target=url,
-                )
-
-        # Create and schedule the task to run the async function
-        try:
-            asyncio.create_task(_publish_event(url))
-        except RuntimeError:
-            # If not in an event loop, run in a new one
-            import threading
-
-            if threading.current_thread() is threading.main_thread():
-                # In main thread, run in new event loop
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(_publish_event(url))
-            else:
-                # In a different thread, we can't easily start an event loop
-                # Just run the function synchronously (though this won't be truly async)
-                pass
+        publisher = get_event_publisher()
+        if publisher:
+            await publisher.publish_htmx_update(
+                update_type="redirect",
+                target=url,
+            )
 
     with suppress(Exception):
-        _run_publish_event()
+        _run_async_safely(_publish_event(url))
 
     return HtmxResponse(redirect=url, **kwargs)
 
@@ -378,32 +370,13 @@ def htmx_refresh(**kwargs: t.Any) -> HtmxResponse:
     if target is None:
         target = "#body"
 
-    # Schedule event publishing in background
-    def _run_publish_event() -> None:
-        async def _publish_event(target: str) -> None:
-            from .adapters.templates._events_wrapper import publish_htmx_refresh
+    async def _publish_event(target: str) -> None:
+        from .adapters.templates._events_wrapper import publish_htmx_refresh
 
-            await publish_htmx_refresh(target=target)
-
-        # Create and schedule the task to run the async function
-        try:
-            asyncio.create_task(_publish_event(target))
-        except RuntimeError:
-            # If not in an event loop, run in a new one
-            import threading
-
-            if threading.current_thread() is threading.main_thread():
-                # In main thread, run in new event loop
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(_publish_event(target))
-            else:
-                # In a different thread, we can't easily start an event loop
-                # Just run the function synchronously (though this won't be truly async)
-                pass
+        await publish_htmx_refresh(target=target)
 
     with suppress(Exception):
-        _run_publish_event()
+        _run_async_safely(_publish_event(target))
 
     # Pass target through to HtmxResponse as retarget, so the
     # ``HX-Retarget`` response header is set in addition to ``HX-Refresh``.
@@ -436,6 +409,7 @@ __all__ = [
     "HtmxDetails",
     "HtmxRequest",
     "HtmxResponse",
+    "_run_async_safely",
     "htmx_push_url",
     "htmx_redirect",
     "htmx_refresh",
