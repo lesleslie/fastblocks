@@ -5,6 +5,7 @@ from typing import Any
 
 from oneiric.core.resolution import Resolver
 
+from ..oneiric_helper import resolve_instance
 from ._filters import FASTBLOCKS_FILTERS
 
 # Migration from ACB to Oneiric
@@ -47,22 +48,22 @@ def get_global_template_context() -> dict[str, Any]:
 
     # Add adapter instances to global context
     with suppress(Exception):
-        images = depends.get_sync("images")
+        images = resolve_instance(depends, "fastblocks", "images")
         if images:
             context["images_adapter"] = images
 
     with suppress(Exception):
-        styles = depends.get_sync("styles")
+        styles = resolve_instance(depends, "fastblocks", "styles")
         if styles:
             context["styles_adapter"] = styles
 
     with suppress(Exception):
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if icons:
             context["icons_adapter"] = icons
 
     with suppress(Exception):
-        fonts = depends.get_sync("fonts")
+        fonts = resolve_instance(depends, "fastblocks", "fonts")
         if fonts:
             context["fonts_adapter"] = fonts
 
