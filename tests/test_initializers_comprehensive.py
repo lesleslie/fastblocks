@@ -1,12 +1,10 @@
 """Comprehensive tests for FastBlocks initializers module."""
 
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+import inspect
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from starlette.applications import Starlette
-from starlette.exceptions import HTTPException
 from starlette.responses import Response
-from starlette.types import ASGIApp, Receive, Scope, Send
 
 
 @pytest.mark.unit
@@ -50,17 +48,48 @@ class TestDependencyResolution:
         """Test _get_dependency_sync returns None for unknown dependency."""
         from fastblocks.initializers import _get_dependency_sync, _resolver
 
-        with patch.object(_resolver, "resolve", new_callable=AsyncMock, return_value=None):
+        with patch.object(_resolver, "resolve", return_value=None):
             result = _get_dependency_sync("nonexistent")
         assert result is None
 
     def test_get_dependency_sync_with_resolver(self) -> None:
-        """Test _get_dependency_sync forwards to resolver."""
+        """Test _get_dependency_sync forwards domain and key to the resolver."""
         from fastblocks.initializers import _get_dependency_sync, _resolver
 
-        with patch.object(_resolver, "resolve", new_callable=AsyncMock, return_value="test_value"):
+        candidate = MagicMock()
+        candidate.factory = Mock(return_value="test_value")
+
+        with patch.object(_resolver, "resolve", return_value=candidate) as mock_resolve:
             result = _get_dependency_sync("test_dependency")
-            assert result == "test_value"
+
+        assert result == "test_value"
+        mock_resolve.assert_called_once_with("fastblocks", "test_dependency")
+
+    def test_resolver_candidate_is_consumed_without_coroutine_leak(self) -> None:
+        """Pin the installed Oneiric resolver contract used by the bridge.
+
+        ``oneiric.core.resolution.Resolver.resolve`` is a *synchronous*
+        method returning ``Candidate | None``; the resolved object is
+        produced by calling ``Candidate.factory``. This regression guards
+        against reintroducing a coroutine-shaped bridge, which previously
+        surfaced as ``'coroutine' object has no attribute 'factory'``.
+        """
+        from oneiric.core.resolution import Resolver
+        from fastblocks.initializers import _get_dependency_sync, _resolver
+
+        # Contract asserted against the installed API, not against a mock.
+        assert not inspect.iscoroutinefunction(Resolver.resolve)
+
+        instance = object()
+        candidate = MagicMock()
+        candidate.factory = Mock(return_value=instance)
+
+        with patch.object(_resolver, "resolve", return_value=candidate):
+            result = _get_dependency_sync("example")
+
+        assert result is instance
+        assert not inspect.iscoroutine(result)
+        candidate.factory.assert_called_once_with()
 
 
 @pytest.mark.unit
@@ -78,7 +107,7 @@ class TestGetInstalledAdapter:
 
     def test_get_installed_adapter_with_registry(self) -> None:
         """Test get_installed_adapter with registry."""
-        from fastblocks.initializers import get_installed_adapter, _resolver
+        from fastblocks.initializers import _resolver, get_installed_adapter
 
         with patch.object(_resolver, "registry", MagicMock(get=Mock(return_value=True))):
             result = get_installed_adapter("test_adapter")
@@ -101,7 +130,7 @@ class TestLoadAcbModules:
         initializer._load_acb_modules()
 
         assert isinstance(initializer._acb_modules, tuple)
-        assert len(initializer._acb_modules) == 7
+        assert len(initializer._acb_modules) == 6
 
     def test_load_acb_modules_contains_expected_elements(self) -> None:
         """Test _load_acb_modules contains expected elements."""
@@ -111,7 +140,6 @@ class TestLoadAcbModules:
             ApplicationInitializer,
             Config,
             get_installed_adapter,
-            register_pkg,
         )
 
         app = FastBlocks()
@@ -120,7 +148,6 @@ class TestLoadAcbModules:
         initializer._load_acb_modules()
 
         modules = initializer._acb_modules
-        assert register_pkg in modules
         assert get_installed_adapter in modules
         assert Config in modules
         assert AdapterBase in modules
@@ -219,9 +246,9 @@ class TestInitializeStarlette:
 
     def test_initialize_starlette_with_middleware(self) -> None:
         """Test _initialize_starlette with middleware."""
+        from starlette.middleware import Middleware
         from fastblocks.applications import FastBlocks
         from fastblocks.initializers import ApplicationInitializer
-        from starlette.middleware import Middleware
 
         app = FastBlocks()
         mock_middleware = [Middleware(MagicMock())]
@@ -371,9 +398,9 @@ class TestInitializeSequence:
 
     def test_initialize_with_all_parameters(self) -> None:
         """Test initialize with all parameters."""
+        from starlette.middleware import Middleware
         from fastblocks.applications import FastBlocks
         from fastblocks.initializers import ApplicationInitializer
-        from starlette.middleware import Middleware
 
         mock_config = MagicMock()
         mock_logger = MagicMock()
@@ -417,7 +444,7 @@ class TestEdgeCases:
         from fastblocks.initializers import ApplicationInitializer
 
         app = FastBlocks()
-        initializer = ApplicationInitializer(app, **{})
+        initializer = ApplicationInitializer(app)
 
         initializer.initialize()
 
@@ -445,8 +472,8 @@ class TestConfigAndAdapterBase:
 
     def test_config_is_oneiric_settings(self) -> None:
         """Test that Config is OneiricSettings."""
-        from fastblocks.initializers import Config
         from oneiric.core.config import OneiricSettings
+        from fastblocks.initializers import Config
 
         assert Config == OneiricSettings
 
@@ -478,13 +505,14 @@ class TestConcurrencySafety:
         """Test _get_dependency async function."""
         from fastblocks.initializers import _get_dependency, _resolver
 
-        with patch.object(_resolver, "resolve", new_callable=AsyncMock) as mock_resolve:
-            mock_resolve.return_value = "test_value"
+        candidate = MagicMock()
+        candidate.factory = Mock(return_value="test_value")
 
+        with patch.object(_resolver, "resolve", return_value=candidate) as mock_resolve:
             result = await _get_dependency("test_dependency")
 
             assert result == "test_value"
-            mock_resolve.assert_awaited_once_with("test_dependency")
+            mock_resolve.assert_called_once_with("fastblocks", "test_dependency")
 
 
 @pytest.mark.unit

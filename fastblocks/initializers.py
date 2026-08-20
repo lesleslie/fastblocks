@@ -12,7 +12,8 @@ import typing as t
 from oneiric.core.config import OneiricSettings
 from oneiric.core.logging import get_logger
 from oneiric.core.logging import get_logger as oneiric_get_logger
-from oneiric.core.resolution import Resolver, register_pkg
+from oneiric.core.resolution import Resolver
+from fastblocks.adapters.oneiric_helper import resolve_instance
 
 # Create resolver instance
 _resolver = Resolver()
@@ -20,7 +21,7 @@ _resolver = Resolver()
 
 async def _get_dependency(name: str) -> t.Any:
     """Get dependency using Oneiric resolver."""
-    return await _resolver.resolve(name)
+    return resolve_instance(_resolver, "fastblocks", name)
 
 
 def _get_dependency_sync(name: str) -> t.Any:
@@ -32,12 +33,16 @@ def _get_dependency_sync(name: str) -> t.Any:
 
 # Oneiric adapter resolution
 def get_installed_adapter(adapter_name: str) -> str | None:
-    """Oneiric adapter resolution."""
+    """Oneiric adapter resolution.
+
+    Oneiric does not expose the underlying ``_registry`` dict; the public
+    API is ``Resolver.list_active``, which returns the registered
+    ``Candidate`` list. We use that to check for adapter presence.
+    """
     try:
-        # Try to get adapter metadata
-        adapter_metadata = _resolver.registry.get(adapter_name)
-        if adapter_metadata:
-            return adapter_name
+        for candidate in _resolver.list_active("fastblocks"):
+            if candidate.key == adapter_name:
+                return adapter_name
         return None
     except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: adapter registry lookup must never break caller code.
         return None
@@ -89,7 +94,6 @@ class ApplicationInitializer:
         depends_resolver = None
 
         self._acb_modules = (
-            register_pkg,
             get_installed_adapter,
             Config,
             AdapterBase,
@@ -175,7 +179,7 @@ class ApplicationInitializer:
             from logfire import instrument_starlette
 
             instrument_starlette(self.app)
-        interceptor_class = self._acb_modules[4]
+        interceptor_class = self._acb_modules[3]
         if interceptor_class:
             for logger_name in (
                 "uvicorn",
@@ -187,7 +191,6 @@ class ApplicationInitializer:
                 server_logger.handlers.clear()
                 server_logger.addHandler(interceptor_class())
                 server_logger.setLevel(10)
-                server_logger.propagate = False
 
     def _register_integrations_async(self) -> None:
         """Run async integration registration in background."""

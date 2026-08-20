@@ -7,7 +7,8 @@ from oneiric.adapters.bootstrap import (
     register_adapter_metadata,  # type: ignore[attr-defined]
     register_builtin_adapters,  # type: ignore[attr-defined]
 )
-from oneiric.core.resolution import Resolver, register_pkg
+from oneiric.core.resolution import Resolver
+from fastblocks.adapters.oneiric_helper import resolve_instance
 
 # Create resolver instance for dependency resolution
 _resolver = Resolver()
@@ -15,7 +16,7 @@ _resolver = Resolver()
 
 async def _get_dependency(name: str) -> t.Any:
     """Get dependency using Oneiric resolver."""
-    return await _resolver.resolve(name)
+    return resolve_instance(_resolver, "fastblocks", name)
 
 
 # Use Path(__file__).parent.parent as root_path
@@ -47,7 +48,7 @@ async def _handle_registration() -> None:
     """Handle adapter registration using Oneiric."""
     # Oneiric: Register builtin adapters
     try:
-        await register_builtin_adapters()
+        register_builtin_adapters(_resolver)
     except Exception as e:
         msg = f"Failed to register builtin adapters: {e}"
         raise RuntimeError(msg) from e
@@ -55,9 +56,11 @@ async def _handle_registration() -> None:
 
 async def _handle_adapter_registration() -> None:
     """Handle adapter registration using Oneiric."""
-    # Oneiric: Register adapter metadata
+    # Oneiric: Register adapter metadata for the fastblocks package.
+    # The current call site predates the metadata discovery API and is
+    # wrapped in suppress so a missing registry never breaks startup.
     with suppress(Exception):
-        await register_adapter_metadata(root_path)
+        register_adapter_metadata(_resolver, "fastblocks", str(root_path), ())
 
 
 async def _get_app_instance() -> t.Any:
@@ -89,13 +92,6 @@ async def get_app() -> t.Any:
     global _app_instance, _logger_instance
     if _app_instance is None:
         _check_dev_mode()
-
-        try:
-            register_pkg()
-        except Exception as e:
-            msg = f"Failed to register FastBlocks adapters: {e}"
-            raise RuntimeError(msg) from e
-
         await _handle_registration()
         await _handle_adapter_registration()
 

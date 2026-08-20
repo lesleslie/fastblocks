@@ -14,7 +14,6 @@ import logging
 from unittest import mock
 
 import pytest
-
 from fastblocks import main
 
 
@@ -150,19 +149,18 @@ class TestGetApp:
 
         with mock.patch.object(main, "_get_dependency", side_effect=mock_get_app_dependency):
             with mock.patch.object(main, "_check_dev_mode"):
-                with mock.patch.object(main, "register_pkg"):
+                with mock.patch.object(
+                    main, "_handle_registration"
+                ):  # Mock this to avoid actual registration
                     with mock.patch.object(
-                        main, "_handle_registration"
-                    ):  # Mock this to avoid actual registration
+                        main, "_handle_adapter_registration"
+                    ):  # Mock this too
                         with mock.patch.object(
-                            main, "_handle_adapter_registration"
-                        ):  # Mock this too
-                            with mock.patch.object(
-                                main, "_get_logger_instance", return_value=mock_logger
-                            ):
-                                app = await main.get_app()
-                                assert app == mock_app
-                                assert main._app_instance == mock_app
+                            main, "_get_logger_instance", return_value=mock_logger
+                        ):
+                            app = await main.get_app()
+                            assert app == mock_app
+                            assert main._app_instance == mock_app
 
     @pytest.mark.asyncio
     async def test_get_app_cached(self) -> None:
@@ -184,23 +182,47 @@ class TestGetApp:
         async def mock_handle_registration():
             raise RuntimeError("Registration failed")
 
-        with mock.patch.object(main, "_check_dev_mode"):
-            with mock.patch.object(main, "register_pkg"):
-                with mock.patch.object(
-                    main, "_handle_registration", side_effect=mock_handle_registration
-                ):
-                    with pytest.raises(RuntimeError, match="Registration failed"):
-                        await main.get_app()
+        with mock.patch.object(main, "_check_dev_mode"), mock.patch.object(
+            main, "_handle_registration", side_effect=mock_handle_registration
+        ), pytest.raises(RuntimeError, match="Registration failed"):
+            await main.get_app()
 
     @pytest.mark.asyncio
     async def test_get_app_package_registration_failure(self) -> None:
-        """Test get_app() when package registration fails."""
-        with mock.patch.object(main, "_check_dev_mode"):
-            with mock.patch.object(
-                main, "register_pkg", side_effect=RuntimeError("Package registration failed")
+        """Test get_app() tolerates adapter-metadata registration failure.
+
+        ``_handle_adapter_registration`` wraps ``register_adapter_metadata``
+        in ``contextlib.suppress`` so a missing or failing metadata registry
+        never blocks startup. Assert that suppression holds end-to-end
+        through ``get_app()``.
+        """
+        mock_app = mock.MagicMock()
+        mock_logger = mock.MagicMock()
+
+        async def mock_get_app_dependency(name: str):
+            if name == "app":
+                return mock_app
+            return mock_logger
+
+        main._app_instance = None
+        try:
+            with (
+                mock.patch.object(
+                    main, "_get_dependency", side_effect=mock_get_app_dependency
+                ),
+                mock.patch.object(main, "_check_dev_mode"),
+                mock.patch.object(main, "_handle_registration"),
+                mock.patch.object(
+                    main,
+                    "register_adapter_metadata",
+                    side_effect=RuntimeError("Package registration failed"),
+                ),
             ):
-                with pytest.raises(RuntimeError, match="Failed to register FastBlocks adapters"):
-                    await main.get_app()
+                app = await main.get_app()
+                assert app == mock_app
+        finally:
+            main._app_instance = None
+            main._logger_instance = None
 
 
 class TestGetLogger:
@@ -244,10 +266,16 @@ class TestGetLoggerInstance:
 
     @pytest.mark.asyncio
     async def test_get_logger_instance_fallback(self) -> None:
-        """Test _get_logger_instance() fallback to logging.getLogger()."""
+        """Test _get_logger_instance() fallback to logging.getLogger().
+
+        ``_get_logger_instance`` catches ``(ImportError, AttributeError,
+        ValueError)`` -- the errors a candidate factory can realistically
+        raise. ``resolve_instance`` already swallows resolver-level
+        ``RuntimeError``, so a RuntimeError never reaches this handler.
+        """
 
         async def mock_resolve(name: str):
-            raise RuntimeError(f"No dependency: {name}")
+            raise ImportError(f"No dependency: {name}")
 
         with mock.patch.object(main, "_get_dependency", side_effect=mock_resolve):
             logger = await main._get_logger_instance()
@@ -291,7 +319,9 @@ class TestHandleRegistration:
     async def test_handle_registration_success(self) -> None:
         """Test successful adapter registration."""
 
-        async def mock_register_builtin_adapters():
+        # ``oneiric.adapters.bootstrap.register_builtin_adapters`` is a
+        # synchronous ``(resolver) -> None`` call.
+        def mock_register_builtin_adapters(resolver):
             return None
 
         with mock.patch(
@@ -305,15 +335,14 @@ class TestHandleRegistration:
     async def test_handle_registration_failure(self) -> None:
         """Test adapter registration failure."""
 
-        async def mock_register_builtin_adapters():
+        def mock_register_builtin_adapters(resolver):
             raise RuntimeError("Registration error")
 
         with mock.patch(
             "fastblocks.main.register_builtin_adapters",
             side_effect=mock_register_builtin_adapters,
-        ):
-            with pytest.raises(RuntimeError, match="Failed to register builtin adapters"):
-                await main._handle_registration()
+        ), pytest.raises(RuntimeError, match="Failed to register builtin adapters"):
+            await main._handle_registration()
 
 
 class TestHandleAdapterRegistration:
@@ -323,21 +352,25 @@ class TestHandleAdapterRegistration:
     async def test_handle_adapter_registration_success(self) -> None:
         """Test successful adapter metadata registration."""
 
-        async def mock_register_adapter_metadata(path):
+        # ``register_adapter_metadata`` is synchronous and is called as
+        # ``(resolver, package_name, package_path, adapters)``.
+        def mock_register_adapter_metadata(resolver, package_name, package_path, adapters):
             return None
 
         with mock.patch(
             "fastblocks.main.register_adapter_metadata",
             side_effect=mock_register_adapter_metadata,
-        ):
+        ) as patched:
             # Should not raise even if it fails internally (has suppress)
             await main._handle_adapter_registration()
+
+        assert patched.call_count == 1
 
     @pytest.mark.asyncio
     async def test_handle_adapter_registration_exception(self) -> None:
         """Test adapter metadata registration with exception."""
 
-        async def mock_register_adapter_metadata(path):
+        def mock_register_adapter_metadata(resolver, package_name, package_path, adapters):
             raise RuntimeError("Metadata registration error")
 
         with mock.patch(
@@ -353,23 +386,40 @@ class TestGetDependency:
 
     @pytest.mark.asyncio
     async def test_get_dependency_success(self) -> None:
-        """Test successful dependency resolution."""
-        mock_value = mock.MagicMock()
+        """Test successful dependency resolution.
 
-        with mock.patch.object(main._resolver, "resolve", new_callable=mock.AsyncMock, return_value=mock_value):
+        ``Resolver.resolve`` is synchronous and returns a ``Candidate``;
+        the resolved object is produced by calling ``Candidate.factory``.
+        """
+        mock_value = mock.MagicMock()
+        candidate = mock.MagicMock()
+        candidate.factory = mock.Mock(return_value=mock_value)
+
+        with mock.patch.object(
+            main._resolver, "resolve", return_value=candidate
+        ) as mock_resolve:
             result = await main._get_dependency("test_dependency")
-            assert result == mock_value
+
+        assert result is mock_value
+        mock_resolve.assert_called_once_with("fastblocks", "test_dependency")
 
     @pytest.mark.asyncio
     async def test_get_dependency_failure(self) -> None:
-        """Test dependency resolution failure."""
+        """Test dependency resolution failure degrades to ``None``.
 
-        async def mock_resolve(name: str):
-            raise RuntimeError(f"No dependency: {name}")
+        ``resolve_instance`` documents that resolver implementation errors
+        are swallowed so a missing dependency does not crash the caller;
+        callers that need a hard failure (e.g. ``_get_app_instance``) raise
+        on the ``None`` themselves.
+        """
+
+        def mock_resolve(domain: str, key: str):
+            raise RuntimeError(f"No dependency: {key}")
 
         with mock.patch.object(main._resolver, "resolve", side_effect=mock_resolve):
-            with pytest.raises(RuntimeError):
-                await main._get_dependency("nonexistent_dependency")
+            result = await main._get_dependency("nonexistent_dependency")
+
+        assert result is None
 
 
 class TestModuleAttributes:
