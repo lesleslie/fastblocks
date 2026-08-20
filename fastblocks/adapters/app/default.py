@@ -109,8 +109,8 @@ class FastBlocksApp(FastBlocks):
 
     async def _display_fancy_startup(self) -> None:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
-        from aioconsole import aprint  # type: ignore[import-not-found]
-        from pyfiglet import Figlet  # type: ignore[import-not-found]
+        from aioconsole import aprint  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]
+        from pyfiglet import Figlet  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]
 
         config = resolve_instance(depends, "fastblocks", "config")
         app_name = getattr(config.app, "name", "FastBlocks")

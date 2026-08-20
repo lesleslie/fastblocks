@@ -23,7 +23,7 @@ def debug(msg: str) -> None:
 
 # Try to import Oneiric components first, fall back to ACB for compatibility
 try:
-    from oneiric.adapters.discovery import (  # type: ignore[import-not-found]
+    from oneiric.adapters.discovery import (  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]
         get_adapters,  # type: ignore[import-not-found]
     )
     from oneiric.core.resolution import Resolver
