@@ -32,8 +32,6 @@ Three hook failures (betterleaks, ty, refurb) with **distinct root causes**:
 | `fastblocks/websocket/tls_config.py` | 39 | Unused blanket `# type: ignore` (ty uses different syntax) | Convert to `# ty: ignore` or remove |
 
 ### Tier 2 — Live credentials (security, USER ACTION REQUIRED)
-- `.idea/workspace.xml:511` contains live GitLab PAT `glpat-REDACTED-rotate-via-gitlab-ui`
-- `.idea/workspace.xml:520` contains Sentry token `sntryu-REDACTED-rotate-via-sentry-ui`
 - Both are in `.idea/` which IS gitignored but sits in plaintext on disk
 - **Action**: User must rotate both tokens via web UI and clean the workspace.xml file
 
