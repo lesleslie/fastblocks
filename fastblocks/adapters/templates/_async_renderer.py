@@ -112,6 +112,10 @@ class RenderResult:
 class AsyncTemplateRenderer:
     """Enhanced async template renderer with advanced features."""
 
+    base_templates: Templates | None
+    hybrid_manager: HybridTemplatesManager | None
+    performance_optimizer: PerformanceOptimizer
+
     def __init__(
         self,
         base_templates: Templates | None = None,
@@ -296,10 +300,18 @@ class AsyncTemplateRenderer:
         if not self.hybrid_manager:
             return TemplateValidationResult(is_valid=True)
 
+        if not self.base_templates or not self.base_templates.app:
+            from ._advanced_manager import TemplateValidationError
+
+            return TemplateValidationResult(
+                is_valid=False,
+                errors=[TemplateValidationError(message="base_templates not initialized")],
+            )
+
         try:
             # Get template source
             env = self.base_templates.app.env  # type: ignore[union-attr]
-            source, _, _ = env.loader.get_source(env, render_context.template_name)
+            source, _, _ = env.loader.get_source(env, render_context.template_name)  # ty: ignore[unresolved-attribute]
 
             return await self.hybrid_manager.validate_template(
                 source, render_context.template_name, render_context.context
@@ -401,11 +413,14 @@ class AsyncTemplateRenderer:
         if not render_context.block_name:
             raise ValueError("Block name required for block rendering")
 
+        if not self.base_templates or not self.base_templates.app:
+            raise RuntimeError("base_templates not initialized")
+
         template = self.base_templates.app.env.get_template(
             render_context.template_name
         )
         # render_block exists in Jinja2 runtime but not in type stubs
-        rendered = template.render_block(
+        rendered = template.render_block(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
             render_context.block_name, render_context.context
         )
         return t.cast(str, rendered)
@@ -660,9 +675,11 @@ class AsyncTemplateRenderer:
 
     async def watch_template_changes(self, template_name: str) -> bool:
         """Check if template has changed since last render."""
+        if not self.base_templates or not self.base_templates.app:
+            return False
         with suppress(Exception):
             env = self.base_templates.app.env  # type: ignore[union-attr]
-            _, filename, _ = env.loader.get_source(env, template_name)
+            _, filename, _ = env.loader.get_source(env, template_name)  # ty: ignore[unresolved-attribute]
 
             if filename:
                 # Check file modification time

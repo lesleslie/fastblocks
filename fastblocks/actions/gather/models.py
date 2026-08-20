@@ -713,7 +713,7 @@ def get_model_info(
                 info["relationships"].append(attr_name)
 
     if hasattr(model_class, "__table__"):
-        info["table_name"] = model_class.__table__.name
+        info["table_name"] = t.cast("t.Any", model_class.__table__).name
     elif hasattr(model_class, "__tablename__"):
         info["table_name"] = model_class.__tablename__
     elif hasattr(model_class, "__collection__"):

@@ -71,7 +71,7 @@ def debug(msg: str) -> None:
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
-from ..oneiric_helper import register_candidate
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import TemplatesBase
 from ._htmy_components import (
     AdvancedHTMYComponentRegistry,
@@ -866,7 +866,7 @@ class HTMYTemplates(TemplatesBase):
     async def init(self, cache: t.Any | None = None) -> None:
         if cache is None:
             try:
-                cache = depends.resolve("fastblocks", "cache")
+                cache = resolve_instance(depends, "fastblocks", "cache")
             except Exception as exc:  # noqa: BLE001
                 # No cache registered (resolver absent or key missing).
                 # Adapter keeps going without it; logging makes the
@@ -878,7 +878,7 @@ class HTMYTemplates(TemplatesBase):
                 cache = None
         self.cache = cache
         try:
-            self.storage = depends.resolve("fastblocks", "storage")
+            self.storage = resolve_instance(depends, "fastblocks", "storage")
         except Exception as exc:  # noqa: BLE001
             # Storage layer optional -- fall back to filesystem-only.
             _log.warning(

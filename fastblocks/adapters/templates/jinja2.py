@@ -1225,9 +1225,9 @@ class Templates(TemplatesBase):
     ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
         def decorator(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             if self.app and hasattr(self.app.env, "filters"):
-                self.app.env.filters[name or f.__name__] = f
+                self.app.env.filters[name or f.__name__] = f  # ty: ignore[unresolved-attribute]
             if self.admin and hasattr(self.admin.env, "filters"):
-                self.admin.env.filters[name or f.__name__] = f
+                self.admin.env.filters[name or f.__name__] = f  # ty: ignore[unresolved-attribute]
             return f
 
         return decorator

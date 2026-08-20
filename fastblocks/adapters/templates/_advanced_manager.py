@@ -368,8 +368,8 @@ class HybridTemplatesManager:
             )
 
             # Apply security restrictions (Jinja2 sandbox API)
-            sandbox_env.allowed_tags = set(self.settings.sandbox_allowed_tags)  # type: ignore[attr-defined]
-            sandbox_env.allowed_attributes = set(  # type: ignore[attr-defined]
+            sandbox_env.allowed_tags = set(self.settings.sandbox_allowed_tags)  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+            sandbox_env.allowed_attributes = set(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
                 self.settings.sandbox_allowed_attributes
             )
 
@@ -687,7 +687,7 @@ class HybridTemplatesManager:
         """Analyze a template fragment and extract metadata."""
         with suppress(Exception):
             env = self._get_template_environment()
-            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore[union-attr]
+            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
 
             # Parse template to find blocks
             parsed = env.parse(source, template_name)
@@ -950,7 +950,7 @@ class HybridTemplatesManager:
                 template = env.get_template(fragment_info.template_path)
                 # render_block exists in Jinja2 runtime but not in type stubs
                 return str(
-                    template.render_block(  # type: ignore[attr-defined]
+                    template.render_block(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
                         fragment_info.block_name, context or {}
                     )
                 )

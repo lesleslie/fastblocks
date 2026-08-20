@@ -64,7 +64,7 @@ def resolve_component(resolver: Resolver, domain: str, key: str) -> object | Non
     if inspect.isawaitable(value):
         # Close the coroutine so it isn't garbage-collected unawaited (which
         # emits a RuntimeWarning under "auto" asyncio mode).
-        value.close()
+        value.close()  # ty: ignore[unresolved-attribute]
         raise TypeError(
             f"Async factory requires resolve_component_async: {domain}:{key}"
         )

@@ -972,7 +972,7 @@ class AdvancedHTMYComponentRegistry:
 
         metadata = await self._validate_component_exists(component_name)
 
-        source = await metadata.path.read_text()
+        source = await metadata.path.read_text()  # ty: ignore[unresolved-attribute]
         component_class = await self._load_component_from_source(source, metadata)
 
         if component_class is None:
@@ -1162,7 +1162,7 @@ class AdvancedHTMYComponentRegistry:
                 resolved_safe_root = None
             if resolved_target_pathlib is not None and resolved_safe_root is not None:
                 try:
-                    resolved_target_pathlib.relative_to(resolved_safe_root)  # type: ignore[attr-defined]
+                    resolved_target_pathlib.relative_to(resolved_safe_root)  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
                 except ValueError:
                     raise ValueError(
                         f"target_path {target_path!s} escapes the safe root "

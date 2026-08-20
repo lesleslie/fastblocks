@@ -58,9 +58,9 @@ class HybridTemplates:
     def __init__(self) -> None:
         self.settings = HybridTemplatesSettings()
         self.base_templates: Templates | None = None
-        self.hybrid_manager: HybridTemplatesManager | None = None
-        self.async_renderer: AsyncTemplateRenderer | None = None
-        self.block_renderer: BlockRenderer | None = None
+        self.hybrid_manager: HybridTemplatesManager
+        self.async_renderer: AsyncTemplateRenderer
+        self.block_renderer: BlockRenderer
         self._initialized = False
 
     async def initialize(self) -> None:

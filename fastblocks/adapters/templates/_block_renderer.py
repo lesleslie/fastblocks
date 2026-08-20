@@ -215,13 +215,13 @@ class BlockRenderer:
         if not self.async_renderer or not self.async_renderer.base_templates:
             return
 
-        env = self.async_renderer.base_templates.app.env  # type: ignore[union-attr]
+        env = self.async_renderer.base_templates.app.env  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
         if not env.loader:
             return
 
         with suppress(Exception):
             template_names = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: env.loader.list_templates()
+                None, lambda: env.loader.list_templates()  # ty: ignore[unresolved-attribute]
             )
 
             for template_name in template_names:
@@ -232,7 +232,7 @@ class BlockRenderer:
     ) -> None:
         """Analyze template and register its blocks."""
         with suppress(Exception):
-            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore[union-attr]
+            source, _, _ = env.loader.get_source(env, template_name)  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
             parsed = env.parse(source, template_name)
 
             # Find all block nodes
@@ -327,7 +327,7 @@ class BlockRenderer:
         )
 
         # Render the block
-        result = await self.async_renderer.render(render_context)  # type: ignore[union-attr]
+        result = await self.async_renderer.render(render_context)  # type: ignore[union-attr]  # ty: ignore[unresolved-attribute]
 
         # Build HTMX headers
         htmx_headers = self._build_htmx_headers(block_def, request)
