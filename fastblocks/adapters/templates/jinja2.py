@@ -33,6 +33,9 @@ from __future__ import annotations
 
 import asyncio
 import re
+
+# Import Oneiric registration helper
+import sys
 import typing as t
 from ast import literal_eval
 from contextlib import suppress
@@ -42,7 +45,6 @@ from importlib import import_module
 from importlib.util import find_spec
 from inspect import isclass
 from pathlib import Path
-from typing import Any, cast
 from uuid import UUID
 
 from oneiric.core.config import OneiricSettings
@@ -52,11 +54,9 @@ from pydantic import Field
 
 _log = get_logger("fastblocks.adapters.templates.jinja2")
 
-from fastblocks.adapters.oneiric_helper import (
-    register_candidate,
-    register_instance,
-    resolve_instance,
-)
+# Add parent directory to path for helper import
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from oneiric_helper import register_candidate
 
 # Import event tracking decorator (with fallback if unavailable)
 try:
@@ -127,17 +127,29 @@ def _get_attr_pattern(attr: str) -> re.Pattern[str]:
 
 
 def _try_resolve_sync(key: str) -> t.Any:
-    """Resolve a Oneiric dependency synchronously for ``__init__`` paths.
+    """Helper to try to get a Oneiric dependency synchronously.
 
-    Oneiric's resolver is already synchronous; this helper exists only to
-    surface a consistent ``logging`` warning when resolution fails (so the
-    caller can fall back to the legacy ``get_adapter`` chain without
-    propagating resolver exceptions).
+    This is needed for __init__ methods that can't be async.
     """
     try:
-        return resolve_instance(depends, "fastblocks", key)
+        # For fallback and testing - use depends.get if it exists
+        if hasattr(depends, "get"):
+            return depends.get(key)
+
+        # Try to await the resolve call synchronously
+        import asyncio
+
+        result = depends.resolve("fastblocks", key)
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(result)
+        except Exception as exc:  # noqa: BLE001
+            _log.warning(
+                "jinja2._try_resolve_sync(%r): inner loop failed: %s", key, exc
+            )
+            return None
     except Exception as exc:  # noqa: BLE001
-        _log.warning("jinja2._try_resolve_sync(%r): %s", key, exc)
+        _log.warning("jinja2._try_resolve_sync(%r): outer failed: %s", key, exc)
         return None
 
 
@@ -150,7 +162,7 @@ def _apply_template_replacements(source: bytes, deployed: bool = False) -> bytes
     return source
 
 
-class BaseTemplateLoader(AsyncBaseLoader):
+class BaseTemplateLoader(AsyncBaseLoader):  # type: ignore
     config: t.Any = None
     cache: t.Any = None
     storage: t.Any = None
@@ -230,7 +242,7 @@ class BaseTemplateLoader(AsyncBaseLoader):
             searchpath: AsyncPath,
         ) -> tuple[AsyncPath, AsyncPath] | None:
             path = searchpath / template
-            storage_path = TemplatesBase.get_storage_path(path)
+            storage_path = Templates.get_storage_path(path)
             if storage_path and await self.storage.templates.exists(storage_path):
                 return path, storage_path
             return None
@@ -251,7 +263,7 @@ class BaseTemplateLoader(AsyncBaseLoader):
             searchpath: AsyncPath,
         ) -> tuple[AsyncPath, AsyncPath, str] | None:
             path = searchpath / template if searchpath else AsyncPath(template)
-            storage_path = TemplatesBase.get_storage_path(path)
+            storage_path = Templates.get_storage_path(path)
             cache_key = Templates.get_cache_key(storage_path)
             if (
                 storage_path
@@ -417,7 +429,7 @@ class FileSystemLoader(BaseTemplateLoader):
         if self.cache is not None:
             await self.cache.set(Templates.get_cache_key(storage_path), resp)
 
-    async def get_source_async(  # ty: ignore[invalid-method-override]
+    async def get_source_async(
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -426,8 +438,8 @@ class FileSystemLoader(BaseTemplateLoader):
         path = await self._find_template_path_parallel(template)
         if path is None:
             raise TemplateNotFound(str(template))
-        storage_path = TemplatesBase.get_storage_path(path)
-        debug(str(path))
+        storage_path = Templates.get_storage_path(path)
+        debug(path)  # type: ignore
 
         fs_exists = await path.exists()
         storage_exists = await self._check_storage_exists(storage_path)
@@ -450,23 +462,12 @@ class FileSystemLoader(BaseTemplateLoader):
         async def uptodate() -> bool:
             return int((await path.stat()).st_mtime) == local_mtime
 
-        # The parent ``AsyncBaseLoader.get_source_async`` contract declares
-        # the uptodate callable as ``Callable[[], bool]`` (sync), but the
-        # async version here returns a coroutine. Cast to align with the
-        # parent signature — at runtime the AsyncBaseLoader caller awaits
-        # the returned value, so the coroutine is consumed correctly.
-        return cast(
-            "tuple[str | bytes, str | None, t.Callable[[], bool] | None]",
-            (resp.decode(), str(storage_path), uptodate),
-        )
+        return (resp.decode(), str(storage_path), uptodate)
 
     async def list_templates_async(self) -> list[str]:
         return await self._list_templates_for_extensions(
             self.get_supported_extensions(),
         )
-
-
-config: t.Any = None
 
 
 class StorageLoader(BaseTemplateLoader):
@@ -525,7 +526,7 @@ class StorageLoader(BaseTemplateLoader):
             stat = await self.storage.templates.stat(storage_path)
             return resp, round(stat.get("mtime").timestamp())
 
-    async def get_source_async(  # ty: ignore[invalid-method-override]
+    async def get_source_async(
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -535,7 +536,7 @@ class StorageLoader(BaseTemplateLoader):
         if result is None:
             raise TemplateNotFound(str(template))
         _, storage_path = result
-        debug(str(storage_path))
+        debug(storage_path)  # type: ignore
 
         try:
             fs_path = await self._check_filesystem_sync_opportunity(
@@ -582,18 +583,15 @@ class StorageLoader(BaseTemplateLoader):
         for searchpath in self.searchpath:
             with suppress(FileNotFoundError):
                 paths = await self.storage.templates.list(
-                    TemplatesBase.get_storage_path(searchpath),
+                    Templates.get_storage_path(searchpath),
                 )
                 found.extend(p for p in paths if p.endswith((".html", ".css", ".js")))
         found.sort()
         return found
 
 
-config: t.Any = None
-
-
 class RedisLoader(BaseTemplateLoader):
-    async def get_source_async(  # ty: ignore[invalid-method-override]
+    async def get_source_async(
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -682,7 +680,7 @@ class PackageLoader(BaseTemplateLoader):
             )
         self._template_root = AsyncPath(template_root)
 
-    async def get_source_async(  # ty: ignore[invalid-method-override]
+    async def get_source_async(
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -702,7 +700,7 @@ class PackageLoader(BaseTemplateLoader):
             return await path.is_file() and (await path.stat()).st_mtime == mtime
 
         source = _apply_template_replacements(source, self.config.deployed)
-        storage_path = TemplatesBase.get_storage_path(path)
+        storage_path = Templates.get_storage_path(path)
         _storage_path: list[str] = list(storage_path.parts)
         _storage_path[0] = "_templates"
         _storage_path.insert(1, self._adapter)
@@ -720,9 +718,6 @@ class PackageLoader(BaseTemplateLoader):
         return sorted(found)
 
 
-config: t.Any = None
-
-
 class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
     loaders: list[AsyncBaseLoader | LoaderProtocol]
 
@@ -734,7 +729,7 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
         super().__init__(searchpath or AsyncPath("templates"))
         self.loaders = loaders
 
-    async def get_source_async(  # ty: ignore[invalid-method-override]
+    async def get_source_async(
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -744,20 +739,16 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
         assert template is not None
         for loader in self.loaders:
             try:
-                # Call child loaders with the documented single-argument
-                # contract: ``get_source_async(name)``. Passing two
-                # positional args (environment, name) -- the
-                # ``AsyncBaseLoader`` abstract signature -- bypasses the
-                # child loader's own ``_normalize_template`` two-form
-                # entry point and surfaces as a duplicate-name call at
-                # the test boundary. The child classes already accept
-                # a single-arg call via their ``_normalize_template``
-                # fallback (used by the direct ``loader.get_source_async(
-                # template_name)`` test paths), so the single-arg call
-                # is the only contract that works uniformly across all
-                # loaders in this hierarchy.
+                # Pass the template name only; the parent
+                # ``environment_or_template`` is an internal
+                # ChoiceLoader adapter arg and is not part of
+                # the child loader's ``get_source_async(template)``
+                # contract. Passing both produced
+                # ``mock('name', 'name')`` for downstream
+                # ``AsyncMock`` children whose contract is
+                # single-arg.
                 result = await loader.get_source_async(str(template))
-                return cast(SourceType, result)
+                return result
             except TemplateNotFound:
                 # The next loader may have it; only "missing template"
                 # is a recoverable signal at this level. Loader
@@ -853,8 +844,6 @@ class TemplatesSettings(TemplatesBaseSettings):
 
 class Templates(TemplatesBase):
     app: AsyncJinja2Templates | None = None
-    config: t.Any = None
-    logger: t.Any = None
 
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
@@ -869,7 +858,7 @@ class Templates(TemplatesBase):
         if app_adapter is not None:
             return app_adapter
         with suppress(Exception):
-            app_adapter = resolve_instance(depends, "fastblocks", "app")
+            app_adapter = depends.get_sync("app")
             if app_adapter is not None:
                 return app_adapter
 
@@ -996,14 +985,7 @@ class Templates(TemplatesBase):
                     get_object_identifier,
                 )
             except ImportError:
-                # sqladmin is not installed; fall back to ``str``. Declared
-                # as ``Any`` because sqladmin's helper signature
-                # ``def get_object_identifier(obj: Any) -> Any`` is
-                # structurally compatible with ``str`` at runtime for the
-                # single-arg use case, but strict type checkers reject the
-                # ``str`` assignment. ``Any`` here documents the degraded
-                # fallback contract without weakening the import-path type.
-                get_object_identifier: Any = str
+                get_object_identifier = str  # type: ignore[assignment]
             globals_dict["min"] = min
             globals_dict["zip"] = zip
             globals_dict["admin"] = self
@@ -1024,10 +1006,9 @@ class Templates(TemplatesBase):
             self._admin_cache = cache
 
     def _log_loader_info(self) -> None:
-        if self.app and self.app.env.loader:
-            loaders = getattr(self.app.env.loader, "loaders", None) or []
-            for loader in loaders:
-                self.logger.debug(f"{loader.__class__.__name__} initialized")
+        if self.app and self.app.env.loader and hasattr(self.app.env.loader, "loaders"):
+            for loader in self.app.env.loader.loaders:
+                self.logger.debug(f"{loader.__class__.__name__} initialized")  # type: ignore[attr-defined]
 
     def _log_extension_info(self) -> None:
         if self.app and hasattr(self.app.env, "extensions"):
@@ -1048,7 +1029,7 @@ class Templates(TemplatesBase):
                         await cache.clear(namespace)
                 self.logger.debug("Template caches cleared")  # type: ignore[attr-defined]
                 with suppress(Exception):
-                    htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
+                    htmy_adapter = await depends.resolve("fastblocks", "htmy")
                     if htmy_adapter:
                         await htmy_adapter.clear_component_cache()
                         self.logger.debug("HTMY component caches cleared via adapter")  # type: ignore[attr-defined]
@@ -1062,7 +1043,7 @@ class Templates(TemplatesBase):
             **kwargs: t.Any,
         ) -> str:
             try:
-                htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
+                htmy_adapter = await depends.resolve("fastblocks", "htmy")
                 if htmy_adapter:
                     htmy_adapter.jinja_templates = self
 
@@ -1219,7 +1200,7 @@ class Templates(TemplatesBase):
         **kwargs: t.Any,
     ) -> t.Any:
         try:
-            htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
+            htmy_adapter = await depends.resolve("fastblocks", "htmy")
             if htmy_adapter:
                 htmy_adapter.jinja_templates = self
                 return await htmy_adapter.render_component(
@@ -1258,8 +1239,8 @@ class Templates(TemplatesBase):
     def filter(
         self,
         name: str | None = None,
-    ) -> t.Callable[[t.Any], t.Any]:
-        def decorator(f: t.Any) -> t.Any:
+    ) -> t.Callable[[t.Callable[..., t.Any]], t.Callable[..., t.Any]]:
+        def decorator(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
             if self.app and hasattr(self.app.env, "filters"):
                 self.app.env.filters[name or f.__name__] = f
             if self.admin and hasattr(self.admin.env, "filters"):
@@ -1289,12 +1270,11 @@ class Templates(TemplatesBase):
         return _extensions
 
 
-config: t.Any = None
 MODULE_ID = UUID("01937d86-4f2a-7b3c-8d9e-1234567890ab")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    register_instance(depends, Templates)
+    depends.set(Templates)
 
 # Oneiric migration indicator
 _using_oneiric = True
