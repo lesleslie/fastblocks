@@ -177,3 +177,11 @@ tests/archived/
 # Refactor backup files (created by tooling during code rewrites)
 *.backup.json
 *.bak
+
+# ============================================================================
+# Runtime Scan & Test Artifacts (added 2026-08-20)
+# ============================================================================
+# Security scan reports (betterleaks, gitleaks, etc.) — ephemeral output
+.cache/
+# Test-artifacts staging area; resolver cache leftovers that auto-clean
+docs/archive/test-artifacts/
