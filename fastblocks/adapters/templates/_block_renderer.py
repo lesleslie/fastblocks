@@ -23,9 +23,18 @@ from dataclasses import dataclass, field
 from enum import Enum
 from uuid import UUID
 
+from jinja2 import Environment, meta
+from jinja2.nodes import Block, Extends, Include
+
 # Oneiric imports
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
+
+from ..oneiric_helper import register_candidate, resolve_instance
+from ._advanced_manager import HybridTemplatesManager
+from ._async_renderer import AsyncTemplateRenderer, RenderContext, RenderMode
 
 _log = get_logger("fastblocks.adapters.templates._block_renderer")
 
@@ -42,14 +51,6 @@ class AdapterStatus:
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
-from ..oneiric_helper import register_candidate, resolve_instance
-from jinja2 import Environment, meta
-from jinja2.nodes import Block, Extends, Include
-from starlette.requests import Request
-from starlette.responses import HTMLResponse
-
-from ._advanced_manager import HybridTemplatesManager
-from ._async_renderer import AsyncTemplateRenderer, RenderContext, RenderMode
 
 
 class BlockUpdateMode(Enum):

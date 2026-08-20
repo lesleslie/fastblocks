@@ -34,12 +34,12 @@ def debug(msg: str) -> None:
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
+from ..oneiric_helper import resolve_instance
+
 _log = get_logger("fastblocks.adapters.sitemap.core")
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
-
-from ..oneiric_helper import resolve_instance
 
 if t.TYPE_CHECKING:
     from starlette.types import Scope

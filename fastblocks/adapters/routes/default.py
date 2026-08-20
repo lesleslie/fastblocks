@@ -41,8 +41,6 @@ from jinja2.exceptions import TemplateNotFound
 # Oneiric imports
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
-
-_log = get_logger("fastblocks.adapters.routes.default")
 from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
@@ -51,6 +49,11 @@ from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 from starlette.types import Receive, Scope, Send
 from fastblocks.actions.query import create_query_context
 from fastblocks.htmx import HtmxRequest
+
+from ..oneiric_helper import register_candidate, resolve_instance
+from ._base import RoutesBase, RoutesBaseSettings
+
+_log = get_logger("fastblocks.adapters.routes.default")
 
 
 # Custom implementations for ACB compatibility
@@ -75,9 +78,6 @@ def root_path() -> str:
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
-
-from ..oneiric_helper import register_candidate, resolve_instance
-from ._base import RoutesBase, RoutesBaseSettings
 
 # Placeholder for templates (will be resolved via Oneiric)
 Templates = None

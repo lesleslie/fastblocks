@@ -31,6 +31,11 @@ def debug(msg: str) -> None:
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
+from ..oneiric_helper import register_candidate, resolve_instance
+from ._base import SitemapBase, SitemapBaseSettings
+from .core import BaseSitemap as NativeSitemap
+from .core import SitemapApp
+
 _log = get_logger("fastblocks.adapters.sitemap.asgi")
 
 # Oneiric resolver for dependency injection
@@ -39,12 +44,6 @@ depends = Resolver()
 
 def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
-
-
-from ..oneiric_helper import register_candidate, resolve_instance
-from ._base import SitemapBase, SitemapBaseSettings
-from .core import BaseSitemap as NativeSitemap
-from .core import SitemapApp
 
 
 class SitemapSettings(SitemapBaseSettings):

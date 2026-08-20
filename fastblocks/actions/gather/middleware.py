@@ -5,8 +5,12 @@ from enum import Enum
 
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+from starlette.middleware import Middleware
+from starlette.middleware.errors import ServerErrorMiddleware
+from starlette.middleware.exceptions import ExceptionMiddleware
 
 from ...adapters.oneiric_helper import resolve_instance
+from .strategies import GatherStrategy, gather_with_strategy
 
 # Migration from ACB to Oneiric
 depends = Resolver()
@@ -18,13 +22,6 @@ _log = get_logger("fastblocks.actions.gather.middleware")
 def debug(msg: str) -> None:
     """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
     _log.debug(msg)
-
-
-from starlette.middleware import Middleware
-from starlette.middleware.errors import ServerErrorMiddleware
-from starlette.middleware.exceptions import ExceptionMiddleware
-
-from .strategies import GatherStrategy, gather_with_strategy
 
 
 class MiddlewarePosition(Enum):

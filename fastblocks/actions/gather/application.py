@@ -9,6 +9,7 @@ from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
 from ...adapters.oneiric_helper import register_candidate, resolve_instance
+from .strategies import GatherStrategy, gather_with_strategy
 
 # Migration from ACB to Oneiric
 # Note: This file heavily depends on ACB's adapter system which requires
@@ -26,9 +27,6 @@ def debug(msg: str) -> None:
 def get_adapters() -> list[t.Any]:
     """Adapter fallback - returns empty list for Oneiric mode."""
     return []
-
-
-from .strategies import GatherStrategy, gather_with_strategy
 
 
 class ApplicationGatherResult:

@@ -16,10 +16,10 @@ from contextlib import suppress
 # Oneiric imports
 from oneiric.core.resolution import Resolver
 
+from ..oneiric_helper import resolve_instance
+
 # Oneiric resolver for dependency injection
 depends = Resolver()
-
-from ..oneiric_helper import resolve_instance
 
 
 def track_template_render(

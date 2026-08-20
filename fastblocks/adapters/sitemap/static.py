@@ -28,17 +28,16 @@ def debug(msg: str) -> None:
 
 from oneiric.core.resolution import Resolver
 
+from ..oneiric_helper import register_candidate
+from ._base import SitemapBase, SitemapBaseSettings
+from .core import BaseSitemap, SitemapApp
+
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
 
 def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
-
-
-from ..oneiric_helper import register_candidate
-from ._base import SitemapBase, SitemapBaseSettings
-from .core import BaseSitemap, SitemapApp
 
 
 class StaticSitemapSettings(SitemapBaseSettings):

@@ -13,10 +13,14 @@ import typing as t
 from contextlib import suppress
 
 from oneiric.core.logging import get_logger
+from oneiric.core.resolution import Resolver
+from starlette.requests import Request
+from fastblocks.htmx import HtmxRequest
+
+from ...adapters.oneiric_helper import resolve_instance
 
 # Migration: ACB -> Oneiric
 # Using Oneiric for dependency injection
-from oneiric.core.resolution import Resolver
 
 
 # Create debug function for Oneiric (using logger)
@@ -27,11 +31,6 @@ def debug(msg: str) -> None:
 
 # Create depends equivalent for Oneiric
 depends = Resolver()
-
-from ...adapters.oneiric_helper import resolve_instance
-
-from starlette.requests import Request
-from fastblocks.htmx import HtmxRequest
 
 
 class UniversalQueryParser:

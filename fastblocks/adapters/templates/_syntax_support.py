@@ -12,10 +12,10 @@ from uuid import UUID
 from oneiric.core.config import OneiricSettings
 from oneiric.core.resolution import Resolver
 
+from ..oneiric_helper import register_candidate, resolve_instance
+
 # Migration from ACB to Oneiric
 depends = Resolver()
-
-from ..oneiric_helper import register_candidate, resolve_instance
 
 
 class Settings(OneiricSettings):  # type: ignore[misc]

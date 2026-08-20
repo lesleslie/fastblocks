@@ -6,10 +6,13 @@ import typing as t
 from importlib import import_module
 from inspect import isclass
 
+from anyio import Path as AsyncPath
+from jinja2.ext import Extension
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
 from ...adapters.oneiric_helper import resolve_instance
+from .strategies import GatherStrategy, gather_with_strategy
 
 _log = get_logger("fastblocks.actions.gather.templates")
 
@@ -22,12 +25,6 @@ def debug(msg: str) -> None:
 
 # Create resolver instance
 depends = Resolver()
-
-
-from anyio import Path as AsyncPath
-from jinja2.ext import Extension
-
-from .strategies import GatherStrategy, gather_with_strategy
 
 
 class TemplateGatherResult:

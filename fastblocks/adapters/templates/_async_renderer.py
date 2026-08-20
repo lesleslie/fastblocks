@@ -25,8 +25,20 @@ from enum import Enum
 from uuid import UUID
 
 # Oneiric imports
+from anyio import Path as AsyncPath
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
+from starlette.requests import Request
+from starlette.responses import HTMLResponse, Response, StreamingResponse
+
+from ..oneiric_helper import register_candidate, resolve_instance
+from ._advanced_manager import HybridTemplatesManager, TemplateValidationResult
+from ._performance_optimizer import (
+    PerformanceMetrics,
+    PerformanceOptimizer,
+    get_performance_optimizer,
+)
+from .jinja2 import Templates
 
 _log = get_logger("fastblocks.adapters.templates._async_renderer")
 
@@ -43,18 +55,6 @@ class AdapterStatus:
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
-from ..oneiric_helper import register_candidate, resolve_instance
-from anyio import Path as AsyncPath
-from starlette.requests import Request
-from starlette.responses import HTMLResponse, Response, StreamingResponse
-
-from ._advanced_manager import HybridTemplatesManager, TemplateValidationResult
-from ._performance_optimizer import (
-    PerformanceMetrics,
-    PerformanceOptimizer,
-    get_performance_optimizer,
-)
-from .jinja2 import Templates
 
 
 class RenderMode(Enum):

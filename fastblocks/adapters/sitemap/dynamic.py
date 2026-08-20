@@ -30,6 +30,10 @@ def debug(msg: str) -> None:
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
+from ..oneiric_helper import register_candidate
+from ._base import SitemapBase, SitemapBaseSettings
+from .core import BaseSitemap, SitemapApp
+
 _log = get_logger("fastblocks.adapters.sitemap.dynamic")
 
 # Oneiric resolver for dependency injection
@@ -38,11 +42,6 @@ depends = Resolver()
 
 def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
-
-
-from ..oneiric_helper import register_candidate
-from ._base import SitemapBase, SitemapBaseSettings
-from .core import BaseSitemap, SitemapApp
 
 
 class DynamicSitemapSettings(SitemapBaseSettings):
