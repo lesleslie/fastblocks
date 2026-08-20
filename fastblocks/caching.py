@@ -24,8 +24,15 @@ ImportAdapterFunc = t.Callable[[str | list[str] | None], t.Any]
 from oneiric.core.resolution import Resolver
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from fastblocks.adapters.oneiric_helper import resolve_instance
+
 # Replace ACB components with Oneiric equivalents
 depends = Resolver()
+
+
+def _resolve(key: str) -> t.Any:
+    """Resolve a Oneiric Candidate and return the unwrapped instance."""
+    return resolve_instance(depends, "fastblocks", key)
 
 
 # Simple get_adapter implementation for Oneiric
@@ -328,9 +335,9 @@ async def set_in_cache(
 def _init_cache_dependencies(cache: t.Any, logger: t.Any) -> tuple[t.Any, t.Any]:
     """Initialize cache and logger dependencies."""
     if cache is None:
-        cache = depends.resolve("fastblocks", "cache")
+        cache = _resolve("cache")
     if logger is None:
-        logger = depends.resolve("fastblocks", "logger")
+        logger = _resolve("logger")
     return cache, logger
 
 
@@ -477,9 +484,9 @@ async def delete_from_cache(
 ) -> None:
     if cache is None or logger is None:
         if cache is None:
-            cache = depends.resolve("fastblocks", "cache")
+            cache = _resolve("cache")
         if logger is None:
-            logger = depends.resolve("fastblocks", "logger")
+            logger = _resolve("logger")
 
     varying_headers_cache_key = await generate_varying_headers_cache_key(url)
     varying_headers = await cache.get(varying_headers_cache_key)
@@ -591,9 +598,9 @@ async def learn_cache_key(
 ) -> str:
     if cache is None or logger is None:
         if cache is None:
-            cache = depends.resolve("fastblocks", "cache")
+            cache = _resolve("cache")
         if logger is None:
-            logger = depends.resolve("fastblocks", "logger")
+            logger = _resolve("logger")
     logger.debug(
         f"learn_cache_key request.method={request.method!r} response.headers.Vary={response.headers.get('Vary')!r}",
     )
@@ -630,9 +637,9 @@ async def get_cache_key(
 ) -> str | None:
     if cache is None or logger is None:
         if cache is None:
-            cache = depends.resolve("fastblocks", "cache")
+            cache = _resolve("cache")
         if logger is None:
-            logger = depends.resolve("fastblocks", "logger")
+            logger = _resolve("logger")
     url = request.url
     _safe_log(
         logger,
@@ -667,7 +674,7 @@ async def generate_cache_key(
     """Generate cache key using ACB's fast CRC32C hashing."""
     if config is None:
         try:
-            config = depends.resolve("fastblocks", "config")
+            config = _resolve("config")
         except (ImportError, AttributeError, ValueError):
             # Provide a default config if resolution fails
             from fastblocks.applications import FastBlocksSettings
@@ -781,13 +788,13 @@ class CacheResponder:
         self.app = app
         self.rules = rules
         try:
-            self.logger = depends.resolve("fastblocks", "logger")
+            self.logger = _resolve("logger")
         except (ImportError, AttributeError, ValueError):
             from oneiric.core.logging import get_logger
 
             self.logger = get_logger("fastblocks.cache")
         try:
-            self.cache = depends.resolve("fastblocks", "cache")
+            self.cache = _resolve("cache")
         except (ImportError, AttributeError, ValueError):
             self.cache = None
         self.initial_message: Message = {}
@@ -871,7 +878,7 @@ class CacheControlResponder:
         self.app = app
         self.kwargs = kwargs
         try:
-            self.logger = depends.resolve("fastblocks", "logger")
+            self.logger = _resolve("logger")
         except (ImportError, AttributeError, ValueError):
             from oneiric.core.logging import get_logger
 

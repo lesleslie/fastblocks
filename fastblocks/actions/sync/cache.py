@@ -5,6 +5,7 @@ from __future__ import annotations
 import typing as t
 
 from oneiric.core.logging import get_logger
+from fastblocks.adapters.oneiric_helper import resolve_instance
 from fastblocks.core.resolver import get_resolver, resolve_component_async
 
 from .strategies import SyncResult, SyncStrategy
@@ -56,7 +57,7 @@ async def sync_cache(
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        cache = await resolve_component_async(depends, "fastblocks", "cache")
+        cache = resolve_instance(depends, "fastblocks", "cache")
 
         if not cache:
             result.record_primary_error(Exception("Cache adapter not available"))
@@ -252,7 +253,7 @@ async def _warm_template_cache(
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        storage = await resolve_component_async(depends, "fastblocks", "storage")
+        storage = resolve_instance(depends, "fastblocks", "storage")
 
         if not storage:
             debug("Storage not available for template warming")
@@ -345,7 +346,7 @@ async def invalidate_template_cache(
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        cache = await resolve_component_async(depends, "fastblocks", "cache")
+        cache = resolve_instance(depends, "fastblocks", "cache")
 
         if not cache:
             result["errors"].append("Cache adapter not available")
@@ -421,7 +422,7 @@ async def get_cache_stats(
 async def _get_cache_adapter(stats: dict[str, t.Any]) -> t.Any:
     # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-    cache = await resolve_component_async(depends, "fastblocks", "cache")
+    cache = resolve_instance(depends, "fastblocks", "cache")
     if not cache:
         stats["errors"].append("Cache adapter not available")
     return cache

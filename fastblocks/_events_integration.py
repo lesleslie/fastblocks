@@ -595,7 +595,7 @@ async def register_fastblocks_event_handlers() -> bool:
         True if registration successful, False if event system unavailable
     """
     try:
-        publisher = FastBlocksEventPublisher()
+        publisher = t.cast(FastBlocksEventPublisher, FastBlocksEventPublisher())
 
         if publisher._publisher is None:
             return False

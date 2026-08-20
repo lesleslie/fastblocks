@@ -104,7 +104,7 @@ class FastBlocksEndpoint(HTTPEndpoint):
         self.config = config
         # Resolve templates via Oneiric resolver (fail gracefully)
         with suppress(Exception):
-            self.templates = depends.resolve("fastblocks", "templates")
+            self.templates = resolve_instance(depends, "fastblocks", "templates")
 
 
 class Index(FastBlocksEndpoint):
@@ -192,7 +192,7 @@ class Component(FastBlocksEndpoint):
             # so the renderer can't distinguish "missing" from "broken"
             # and operators see the trace in logs.
             _log.exception("Component %s: not available", component_name)
-            debug("Component '%s' not found", component_name)
+            debug(f"Component '{component_name}' not found")
             raise HTTPException(status_code=404)
 
 

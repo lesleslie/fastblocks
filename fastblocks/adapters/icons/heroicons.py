@@ -111,7 +111,7 @@ class HeroiconsIcons(IconsBase):
     def __init__(self) -> None:
         """Initialize Heroicons adapter."""
         super().__init__()
-        self.settings: HeroiconsIconsSettings | None = None
+        self.settings: HeroiconsIconsSettings
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):

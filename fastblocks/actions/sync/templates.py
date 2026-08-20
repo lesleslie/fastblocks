@@ -8,6 +8,7 @@ from pathlib import Path
 import yaml
 from anyio import Path as AsyncPath
 from oneiric.core.logging import get_logger
+from fastblocks.adapters.oneiric_helper import resolve_instance
 from fastblocks.core.resolver import get_resolver, resolve_component_async
 
 from .strategies import (
@@ -198,8 +199,8 @@ async def _initialize_adapters(result: TemplateSyncResult) -> dict[str, t.Any] |
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        storage = await resolve_component_async(depends, "fastblocks", "storage")
-        cache = await resolve_component_async(depends, "fastblocks", "cache")
+        storage = resolve_instance(depends, "fastblocks", "storage")
+        cache = resolve_instance(depends, "fastblocks", "cache")
         if not storage:
             result.record_primary_error(Exception("Storage adapter not available"))
             return None
@@ -669,8 +670,8 @@ async def warm_template_cache(
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        cache = await resolve_component_async(depends, "fastblocks", "cache")
-        storage = await resolve_component_async(depends, "fastblocks", "storage")
+        cache = resolve_instance(depends, "fastblocks", "cache")
+        storage = resolve_instance(depends, "fastblocks", "storage")
 
         if not cache or not storage:
             result["errors"].append(Exception("Cache or storage not available"))
