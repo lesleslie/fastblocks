@@ -16,7 +16,8 @@ and the residual-gather follow-up (Task 28), as re-verified by Task 12.
 | Pre-plan baseline anchor (parent worktree) | `99ff1fd34478ee031989d1eed1116cf01e84c877` |
 | Original `main` HEAD when worktree was forked | `eec8c2b` (merge-base of recovery branch with `main`) |
 | Brief-supplied "base" (parent-worktree task-28 SHA) | `2be0049d59ccdf79957d96c9dbb3dfc6c355d14d` (unreachable in this worktree) |
-| Final current HEAD (this worktree) | `174abb022e219cb992283eccf96d4921eba6974e` |
+| Final current HEAD (this worktree) | `5739ccbc5fb4fbef1e06a16f0cde6357a13d9677` |
+| Pre-rewrite task-28 HEAD (this worktree) | `174abb022e219cb992283eccf96d4921eba6974e` |
 | Plan reference (per design spec) | `docs/superpowers/plans/2026-08-19-fastblocks-test-recovery.md` |
 | Plan reference (per baseline manifest) | `docs/superpowers/plans/2026-08-19-fastblocks-test-recovery-baseline.md` |
 
@@ -30,6 +31,22 @@ content of every commit is identical (verified by commit-message
 subject and `git show --stat` inspection); only the SHAs differ.
 Section 3 below records the SHAs that are actually present in this
 worktree.
+
+**Authorized local-history rewrite (post-Task-12):** A pre-existing
+WIP document that landed in the handoff commit ancestry contained
+live credential-pattern lines. Per explicit user authorization, an
+authorized sanitized local-history rewrite was performed to remove
+those credential-pattern lines from the handoff commit ancestry.
+The rewrite replaced the handoff commit at `174abb022...` with the
+current handoff commit at `5739ccbc...`; the 16 prior domain commits
+in §3 are preserved unchanged (identical subjects and `git show
+--stat` inspection). The replacement text in this commit is a
+generic note that the authorized redaction was performed; no
+credential values are reproduced anywhere in this handoff or in the
+rewritten ancestry. The original checkout
+(`/Users/les/Projects/fastblocks`, branch `main` @
+`4cd782f6175872b056ea926b7d8407f0f7b88313`) was not touched by the
+rewrite.
 
 ---
 
@@ -128,7 +145,7 @@ content is reachable under the recovery-worktree SHA).
 | Task 9 | test(fastblocks): align SQLAdmin init with sync Oneiric resolver | `82ab825` | `b3fc7ef` |
 | Task 10 | test(fastblocks): expose AsyncRedisBytecodeCache on mocked top-level jinja2_async_environment | `3ee66d6` | `fd4b2ae` |
 | Task 28 (follow-up) | test(fastblocks): sync resolver mocks in test_components no-adapter paths | `174abb0` | `2be0049d` |
-| Final HEAD | same as Task 28 | `174abb022e219cb992283eccf96d4921eba6974e` | (see above) |
+| Final HEAD | docs(fastblocks): record test recovery results (sanitized handoff commit replacing the pre-rewrite final HEAD) | `5739ccbc5fb4fbef1e06a16f0cde6357a13d9677` | `174abb022e219cb992283eccf96d4921eba6974e` |
 
 Total: 16 commits on top of the merge-base (`eec8c2b`). All task
 commits present and accounted for. Linear history, no merge-commits.
@@ -225,7 +242,7 @@ PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 \
   --no-cov -p no:cacheprovider -o addopts='' --tb=short -q
 ```
 
-### Counts (recovery HEAD `174abb0`)
+### Counts (recovery HEAD `174abb0`; pre-rewrite task-28 SHA — current HEAD `5739ccbc5fb4fbef1e06a16f0cde6357a13d9677` is the sanitized handoff-only successor with identical content, so the counts are unchanged)
 
 | Metric | Value |
 |--------|-------|
@@ -281,7 +298,7 @@ extraction of original-HEAD `4a9fab62bc654c7b31054d24c90c2e8a41f56310`,
 run from a temporary directory under
 `/Users/les/.claude/jobs/691135be/tmp/`). Not re-run in Task 12.
 
-| Metric | Clean `4a9fab6` archive | Recovery `fd4b2ae` (task 11) | Recovery `174abb0` (task 12) |
+| Metric | Clean `4a9fab6` archive | Recovery `fd4b2ae` (task 11) | Recovery `174abb0` (task 12, pre-rewrite; current HEAD `5739ccbc5fb4fbef1e06a16f0cde6357a13d9677` is the sanitized handoff-only successor) |
 |--------|--------------------------|------------------------------|------------------------------|
 | Collected | 1642 | 1656 | (not re-measured; see §6) |
 | Passed | 1562 | 1633 | 1635 |
@@ -386,9 +403,9 @@ after the final review."
 | Field | Value |
 |-------|-------|
 | Status | **PENDING_REVIEWED_MAIN_INTEGRATION** |
-| Branch ready to merge | `test/fastblocks-recovery-2026-08-19` @ `174abb022e219cb992283eccf96d4921eba6974e` |
+| Branch ready to merge | `test/fastblocks-recovery-2026-08-19` @ `5739ccbc5fb4fbef1e06a16f0cde6357a13d9677` |
 | Merge target | `main` @ `4cd782f` |
-| Merge base | `eec8c2b` (16-commit linear branch) |
+| Merge base | `eec8c2b` (16-commit linear branch + 1 sanitized handoff commit) |
 | Pre-merge checks required | Final code review (Step 6 of task-12 brief); reviewer must verify resolver ownership, test weakening (none expected), WIP preservation, and the counts in §5-§6 |
 | Per-file WIP in working tree | 86 modified tracked + 1 modified+staged + 3 untracked (carries into the reviewed main integration step; the integration is responsible for committing the WIP or scoping it out) |
 
@@ -410,9 +427,10 @@ the reviewed main integration.
 - **Commit message:** `docs(fastblocks): record test recovery results`
 - **Author:** `les@wedgwoodwebworks.com` (per memory rule:
   `.com`, not `.local`)
-- **Commit SHA:** recorded in the parent agent's reply below the
-  Task 12 turn (the commit happens immediately after this file is
-  written).
+- **Commit SHA:** `5739ccbc5fb4fbef1e06a16f0cde6357a13d9677` (the
+  sanitized handoff commit that replaced the pre-rewrite final HEAD
+  `174abb022e219cb992283eccf96d4921eba6974e`; see §1 for the
+  authorized local-history rewrite note).
 
 This is the **only** file modified by Task 12. No other test,
 production, or workflow file was touched. The original checkout
@@ -526,7 +544,7 @@ being created).
 | Step 2: re-run targeted gates 1-9 | DONE | §5: 482 passes, 0 failures across 9 commands |
 | Step 3: full read-only non-websocket suite | DONE | §6: 1635 passed, 0 failed, exit 0 |
 | Step 4: write results handoff | DONE | This file |
-| Step 5: commit results handoff | DONE | The only file modified in the commit; recorded in the parent agent's reply |
+| Step 5: commit results handoff | DONE | The only file modified in the commit; sanitized handoff commit `5739ccbc5fb4fbef1e06a16f0cde6357a13d9677` (see §1 rewrite note) |
 | Step 6: request final code review | OUT_OF_SCOPE | The coordinator will perform the reviewed main integration per §9 |
 
 No residual failure is recorded; all gates pass; WIP is preserved.
