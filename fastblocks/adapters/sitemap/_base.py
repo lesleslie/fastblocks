@@ -57,3 +57,10 @@ class SitemapBase:
     category = "sitemap"
     settings_klass = SitemapBaseSettings
     sitemap: t.Any = None
+
+    # Injected by the Oneiric adapter framework at registration time.
+    # Declared (without a value) so type checkers can resolve `self.config`
+    # in subclasses; a bare annotation creates no runtime class attribute,
+    # so dependency injection behaviour is unchanged.
+    config: t.Any
+    logger: t.Any

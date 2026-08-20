@@ -129,6 +129,15 @@ class FastBlocksValidationService(metaclass=SingletonMeta):
 
     _config: t.ClassVar[ValidationConfig] = ValidationConfig()
 
+    # Set in ``__init__`` behind a ``hasattr`` singleton guard. Declared here
+    # (without a value) so type checkers can resolve them in methods; a bare
+    # annotation creates no runtime class attribute, so the singleton
+    # re-initialisation guard behaves exactly as before.
+    _service: ValidationService
+    _sanitizer: InputSanitizer
+    _validator: OutputValidator
+    _initialized: bool
+
     def __init__(self) -> None:
         """Initialize validation service with Oneiric integration."""
         if not hasattr(self, "_initialized"):

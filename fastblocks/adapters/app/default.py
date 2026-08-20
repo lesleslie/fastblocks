@@ -194,7 +194,9 @@ class App(AppBase):
     def logger(self) -> t.Any:
         if hasattr(super(), "logger"):
             with suppress(Exception):
-                return super().logger  # type: ignore[misc]
+                parent_logger = getattr(super(), "logger", None)
+                if parent_logger is not None:
+                    return parent_logger
         # For Oneiric, we'll use a simpler approach
         # In practice, this would be replaced with actual logger resolution
         import logging

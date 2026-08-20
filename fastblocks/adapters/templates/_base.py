@@ -118,6 +118,13 @@ class TemplatesBase:
     app_searchpaths: list[AsyncPath] | None = None
     admin_searchpaths: list[AsyncPath] | None = None
 
+    # Injected by the Oneiric adapter framework at registration time.
+    # Declared (without a value) so type checkers can resolve `self.config` /
+    # `self.logger` in subclasses; a bare annotation creates no runtime class
+    # attribute, so dependency injection behaviour is unchanged.
+    config: t.Any
+    logger: t.Any
+
     def __init__(self, **kwargs: t.Any) -> None:
         for key, value in kwargs.items():
             setattr(self, key, value)
