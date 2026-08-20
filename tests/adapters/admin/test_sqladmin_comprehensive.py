@@ -102,8 +102,8 @@ async def test_admin_init_with_admin_models() -> None:
     mock_sqladmin = MagicMock()
 
     # Create mock models with get_admin_models
-    mock_models = MagicMock()
     mock_admin_models = [MagicMock(), MagicMock()]
+    mock_models = MagicMock()
     mock_models.get_admin_models.return_value = mock_admin_models
 
     # Create the Admin instance
@@ -113,9 +113,16 @@ async def test_admin_init_with_admin_models() -> None:
     ):
         admin = Admin(app=mock_app, templates=mock_templates)
 
-        # Mock depends.resolve to return our mock models
-        async def mock_resolve(domain, key):
-            return mock_models
+        # ``Admin.init`` resolves the models dependency through
+        # ``resolve_instance``, which calls ``depends.resolve`` and then
+        # ``candidate.factory()``. Stub both layers: the resolver returns
+        # a Candidate-shaped object whose factory produces our mock
+        # models.
+        candidate = MagicMock()
+        candidate.factory = MagicMock(return_value=mock_models)
+
+        def mock_resolve(domain, key):
+            return candidate
 
         with patch(
             "fastblocks.adapters.admin.sqladmin.depends.resolve", side_effect=mock_resolve
@@ -141,25 +148,29 @@ async def test_admin_init_without_admin_models() -> None:
     # Create a mock for _sqladmin
     mock_sqladmin = MagicMock()
 
-    # Create mock models without get_admin_models
+    # Create mock models whose ``get_admin_models`` attribute exists but
+    # resolves to ``None`` — the production guard checks
+    # ``hasattr(models, "get_admin_models")`` first, and iterating over
+    # ``None`` raises ``TypeError`` which the surrounding
+    # ``with suppress(Exception):`` absorbs.
     mock_models = MagicMock()
     mock_models.get_admin_models = None
 
-    # Create the Admin instance
     with patch(
         "sqladmin.Admin",
         return_value=mock_sqladmin,
     ):
         admin = Admin(app=mock_app, templates=mock_templates)
 
-        # Mock depends.resolve to return our mock models
-        async def mock_resolve(domain, key):
-            return mock_models
+        candidate = MagicMock()
+        candidate.factory = MagicMock(return_value=mock_models)
+
+        def mock_resolve(domain, key):
+            return candidate
 
         with patch(
             "fastblocks.adapters.admin.sqladmin.depends.resolve", side_effect=mock_resolve
         ):
-            # Call init
             await admin.init()
 
         # Verify add_view was not called
@@ -182,8 +193,11 @@ async def test_admin_init_handles_depends_errors() -> None:
     ):
         admin = Admin(app=mock_app, templates=mock_templates)
 
-        # Force depends.resolve to raise to ensure the suppress block handles it
-        async def mock_resolve_error(domain, key):
+        # Force depends.resolve to raise synchronously so the suppress
+        # block in ``resolve_instance`` (and ``init``) actually catches
+        # the error. ``RuntimeError`` is one of the exception types
+        # ``resolve_instance`` catches.
+        def mock_resolve_error(domain, key):
             raise RuntimeError("boom")
 
         with patch(
@@ -193,6 +207,49 @@ async def test_admin_init_handles_depends_errors() -> None:
             await admin.init()
 
     mock_sqladmin.add_view.assert_not_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.unit
+async def test_admin_init_uses_synchronous_resolver_contract() -> None:
+    """Regression: ``Admin.init`` must call the synchronous Oneiric resolver.
+
+    The pre-Oneiric-ACB migration replaced the async ``resolver.resolve``
+    contract with a synchronous ``Resolver.resolve(domain, key)`` plus
+    ``resolve_instance`` indirection. This test pins that contract so a
+    future revert to ``async def`` mocking — or a re-introduction of an
+    AsyncMock — surfaces immediately.
+    """
+    import inspect
+
+    from fastblocks.adapters.admin.sqladmin import depends
+
+    # 1. The module-level resolver is sync, not async.
+    assert not inspect.iscoroutinefunction(depends.resolve)
+
+    # 2. A synchronous mock returning a real ``Candidate``-shaped object
+    #    drives ``add_view`` for each registered admin model.
+    mock_app = MagicMock(spec=Starlette)
+    mock_templates = MagicMock()
+    mock_templates.admin = MagicMock()
+    mock_sqladmin = MagicMock()
+
+    candidate = MagicMock()
+    candidate.factory = MagicMock(return_value=MagicMock(get_admin_models=lambda: [MagicMock(), MagicMock()]))
+
+    def sync_resolve(domain, key):
+        assert (domain, key) == ("fastblocks", "models")
+        return candidate
+
+    with (
+        patch("sqladmin.Admin", return_value=mock_sqladmin),
+        patch("fastblocks.adapters.admin.sqladmin.depends.resolve", side_effect=sync_resolve),
+    ):
+        admin = Admin(app=mock_app, templates=mock_templates)
+        await admin.init()
+
+    assert mock_sqladmin.add_view.call_count == 2
+    candidate.factory.assert_called_once_with()
 
 
 @pytest.mark.asyncio
