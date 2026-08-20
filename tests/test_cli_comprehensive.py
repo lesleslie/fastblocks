@@ -22,18 +22,36 @@ def fb_cli():
     return cli
 
 
+def _candidate_resolver(instance_or_none):
+    """Resolver class mock where .resolve() returns a Candidate-shaped value.
+
+    Oneiric's Resolver.resolve is synchronous and returns either a
+    ``Candidate`` (whose ``.factory()`` yields the resolved instance) or
+    ``None`` when no candidate is registered. ``resolve_instance`` unwraps
+    that contract.
+
+    Passing ``None`` here makes ``resolve_instance`` return ``None`` (the
+    "no candidate" path); passing a non-None instance makes
+    ``resolve_instance`` return that instance (the "candidate found" path).
+    """
+    resolver_instance = MagicMock()
+    if instance_or_none is None:
+        resolver_instance.resolve = MagicMock(return_value=None)
+    else:
+        candidate = MagicMock()
+        candidate.factory = MagicMock(return_value=instance_or_none)
+        resolver_instance.resolve = MagicMock(return_value=candidate)
+    return MagicMock(return_value=resolver_instance)
+
+
+# Backwards-compatible aliases. The Oneiric resolver is synchronous across
+# every CLI path, so both names produce the same Candidate-shape mock.
 def _async_resolver(return_value):
-    """Resolver class mock where .resolve() is an AsyncMock."""
-    instance = MagicMock()
-    instance.resolve = AsyncMock(return_value=return_value)
-    return MagicMock(return_value=instance)
+    return _candidate_resolver(return_value)
 
 
 def _sync_resolver(return_value):
-    """Resolver class mock where .resolve() is a plain MagicMock (components cmd)."""
-    instance = MagicMock()
-    instance.resolve = MagicMock(return_value=return_value)
-    return MagicMock(return_value=instance)
+    return _candidate_resolver(return_value)
 
 
 @pytest.mark.unit
@@ -129,7 +147,11 @@ class TestComponentsCommand:
 
     def test_components_resolver_exception(self, runner, fb_cli):
         bad = MagicMock()
-        bad.resolve = MagicMock(side_effect=RuntimeError("boom"))
+        # ValueError is not in resolve_instance's defensive swallow set, so the
+        # exception propagates and the CLI's outer try/except prints the
+        # "No adapters found" diagnostic instead of "Adapter registry not
+        # available".
+        bad.resolve = MagicMock(side_effect=ValueError("boom"))
         with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
             result = runner.invoke(fb_cli, ["components"])
         assert result.exit_code == 0
@@ -146,7 +168,10 @@ class TestScaffoldCommand:
 
     def test_scaffold_resolver_error(self, runner, fb_cli):
         bad = MagicMock()
-        bad.resolve = AsyncMock(side_effect=Exception("adapter error"))
+        # Resolver.resolve is synchronous; use a plain MagicMock side_effect
+        # rather than AsyncMock so the exception is actually raised at the
+        # call site (and no orphan coroutine warning).
+        bad.resolve = MagicMock(side_effect=Exception("adapter error"))
         with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
             result = runner.invoke(fb_cli, ["scaffold", "my_comp"])
         assert result.exit_code == 0
@@ -203,7 +228,10 @@ class TestListCommand:
 
     def test_list_resolver_error(self, runner, fb_cli):
         bad = MagicMock()
-        bad.resolve = AsyncMock(side_effect=RuntimeError("discovery failed"))
+        # Exception (base class) is not in resolve_instance's defensive swallow
+        # set, so the resolver failure propagates and the CLI's outer
+        # try/except prints the "Error listing components: ..." diagnostic.
+        bad.resolve = MagicMock(side_effect=Exception("discovery failed"))
         with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
             result = runner.invoke(fb_cli, ["list"])
         assert result.exit_code == 0
@@ -293,7 +321,7 @@ class TestInfoCommand:
 
     def test_info_resolver_error(self, runner, fb_cli):
         bad = MagicMock()
-        bad.resolve = AsyncMock(side_effect=RuntimeError("resolver down"))
+        bad.resolve = MagicMock(side_effect=Exception("resolver down"))
         with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
             result = runner.invoke(fb_cli, ["info", "my_comp"])
         assert result.exit_code == 0
@@ -346,7 +374,7 @@ class TestSyntaxCheckCommand:
 
     def test_syntax_check_resolver_error(self, runner, fb_cli):
         bad = MagicMock()
-        bad.resolve = AsyncMock(side_effect=RuntimeError("resolver error"))
+        bad.resolve = MagicMock(side_effect=Exception("resolver error"))
         with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
             result = runner.invoke(fb_cli, ["syntax-check", "some_template.html"])
         assert result.exit_code == 0
@@ -363,7 +391,7 @@ class TestFormatTemplateCommand:
 
     def test_format_template_resolver_error(self, runner, fb_cli):
         bad = MagicMock()
-        bad.resolve = AsyncMock(side_effect=RuntimeError("resolver error"))
+        bad.resolve = MagicMock(side_effect=Exception("resolver error"))
         with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
             result = runner.invoke(fb_cli, ["format-template", "some_template.html"])
         assert result.exit_code == 0
@@ -380,7 +408,7 @@ class TestStartLanguageServerCommand:
 
     def test_start_language_server_resolver_error(self, runner, fb_cli):
         bad = MagicMock()
-        bad.resolve = AsyncMock(side_effect=RuntimeError("resolver error"))
+        bad.resolve = MagicMock(side_effect=Exception("resolver error"))
         with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
             result = runner.invoke(fb_cli, ["start-language-server"])
         assert result.exit_code == 0
