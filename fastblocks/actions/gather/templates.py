@@ -23,6 +23,12 @@ def debug(msg: str) -> None:
     _log.debug(msg)
 
 
+# Stub get_adapter for Oneiric compatibility
+def get_adapter(adapter_name: str) -> t.Any:
+    """Custom implementation for Oneiric compatibility."""
+    return None
+
+
 # Create resolver instance
 depends = Resolver()
 
@@ -219,7 +225,7 @@ async def _gather_loaders(
         try:
             # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-            enabled_admin = get_adapter("admin")  # type: ignore[name-defined]  # TODO: import get_adapter from oneiric once available
+            enabled_admin = get_adapter("admin")
             if enabled_admin:
                 loaders.append(PackageLoader(enabled_admin.name, "templates", "admin"))
         except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:

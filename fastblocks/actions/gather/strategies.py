@@ -22,6 +22,11 @@ def debug(msg: str) -> None:
     _log.debug(msg)
 
 
+def root_path() -> Path:
+    """Root path fallback - returns current directory."""
+    return Path.cwd()
+
+
 class ErrorStrategy(Enum):
     FAIL_FAST = "fail_fast"
     COLLECT_ERRORS = "collect_errors"
@@ -282,7 +287,7 @@ async def gather_files(
     if base_path is None:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        base_path = Path(root_path)  # type: ignore[name-defined]
+        base_path = Path(root_path())
 
     tasks: list[t.Coroutine[t.Any, t.Any, t.Any]] = [
         _find_files_safe(pattern, base_path) for pattern in file_patterns

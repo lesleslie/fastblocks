@@ -22,13 +22,15 @@ def debug(msg: str) -> None:
     """Oneiric-backed debug helper (legacy acb.debug is no longer imported)."""
     _log.debug(msg)
 
-    def get_adapters() -> list[t.Any]:
-        """Adapter fallback - returns empty list."""
-        return []
 
-    def root_path() -> Path:
-        """Root path fallback - returns current directory."""
-        return Path.cwd()
+def get_adapters() -> list[t.Any]:
+    """Adapter fallback - returns empty list."""
+    return []
+
+
+def root_path() -> Path:
+    """Root path fallback - returns current directory."""
+    return Path.cwd()
 
 
 from anyio import Path as AsyncPath

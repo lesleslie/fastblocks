@@ -630,9 +630,9 @@ async def _handle_settings_conflict(
 async def _reload_configuration(adapter_names: list[str]) -> None:
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
-        # MIGRATED: Removed ACB import - using Oneiric equivalent
-
-        config = await reload_config()  # type: ignore[name-defined]
+        config = await resolve_component_async(depends, "fastblocks", "config")
+        if config is None:
+            return
         depends.register(_build_config_candidate(config))
         debug(f"Reloaded configuration for adapters: {adapter_names}")
     except (OSError, ValueError, yaml.YAMLError):
