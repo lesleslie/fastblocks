@@ -104,7 +104,7 @@ class FastBlocksEndpoint(HTTPEndpoint):
         self.config = config
         # Resolve templates via Oneiric resolver (fail gracefully)
         with suppress(Exception):
-            self.templates = depends.resolve("templates")
+            self.templates = depends.resolve("fastblocks", "templates")
 
 
 class Index(FastBlocksEndpoint):

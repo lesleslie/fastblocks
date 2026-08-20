@@ -10,7 +10,7 @@ from . import exceptions
 
 # Register package with Oneiric
 with suppress(Exception):
-    register_pkg()
+    register_pkg()  # type: ignore[call-arg]
 
 from . import actions, applications, caching, cli, middleware
 
