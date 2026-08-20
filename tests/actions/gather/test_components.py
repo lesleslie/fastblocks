@@ -351,7 +351,7 @@ class TestGatherComponentDependencies:
     async def test_gather_dependencies_no_adapter(self):
         """Test dependency gathering without adapter."""
         with patch("fastblocks.actions.gather.components.depends") as mock_depends:
-            async def mock_resolve(*args, **kwargs):
+            def mock_resolve(*args, **kwargs):
                 return None
 
             mock_depends.resolve = mock_resolve
@@ -457,7 +457,7 @@ class TestAnalyzeComponentUsage:
     async def test_analyze_usage_no_adapter(self):
         """Test usage analysis without adapter."""
         with patch("fastblocks.actions.gather.components.depends") as mock_depends:
-            async def mock_resolve(*args, **kwargs):
+            def mock_resolve(*args, **kwargs):
                 return None
 
             mock_depends.resolve = mock_resolve
