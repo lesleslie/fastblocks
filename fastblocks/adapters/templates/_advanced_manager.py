@@ -698,9 +698,9 @@ class HybridTemplatesManager:
             for node in parsed.body:
                 if hasattr(node, "name") and node.name:
                     fragment = FragmentInfo(
-                        name=node.name,
+                        name=str(node.name),
                         template_path=template_name,
-                        block_name=node.name,
+                        block_name=str(node.name),
                         start_line=getattr(node, "lineno", None),
                     )
 

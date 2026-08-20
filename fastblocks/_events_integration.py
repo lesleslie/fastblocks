@@ -33,10 +33,10 @@ oneiric_events_available = True
 class EventPriority:
     """Event priority levels."""
 
-    LOW = 1
-    NORMAL = 2
-    HIGH = 3
-    CRITICAL = 4
+    LOW: int = 1
+    NORMAL: int = 2
+    HIGH: int = 3
+    CRITICAL: int = 4
 
 
 class EventHandlerResult:
@@ -146,7 +146,7 @@ class EventPublisher:
 
 
 def create_event(
-    event_type: str, source: str, payload: dict[str, t.Any], priority: EventPriority
+    event_type: str, source: str, payload: dict[str, t.Any], priority: int
 ) -> Event:
     """Create an event."""
     return Event(event_type, source, payload, priority)
@@ -468,7 +468,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
                     "invalidated_by": invalidated_by,
                     "affected_templates": affected_templates,
                 },
-                priority=EventPriority.HIGH,  # type: ignore[arg-type]
+                priority=EventPriority.HIGH,
             )
 
             await self._publisher.publish(event)
@@ -509,7 +509,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
                     "fragment_count": fragment_count,
                     "error": error,
                 },
-                priority=EventPriority.NORMAL,  # type: ignore[arg-type]
+                priority=EventPriority.NORMAL,
             )
 
             await self._publisher.publish(event)
@@ -542,7 +542,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
                     "trigger_name": trigger_name,
                     "trigger_data": trigger_data,
                 },
-                priority=EventPriority.HIGH,  # type: ignore[arg-type]
+                priority=EventPriority.HIGH,
             )
 
             await self._publisher.publish(event)
@@ -577,7 +577,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
                     "changes": changes,
                     "ip_address": ip_address,
                 },
-                priority=EventPriority.CRITICAL,  # type: ignore
+                priority=EventPriority.CRITICAL,
             )
 
             await self._publisher.publish(event)

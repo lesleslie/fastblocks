@@ -221,7 +221,7 @@ class BlockRenderer:
 
         with suppress(Exception):
             template_names = await asyncio.get_event_loop().run_in_executor(
-                None, env.loader.list_templates
+                None, lambda: env.loader.list_templates()
             )
 
             for template_name in template_names:

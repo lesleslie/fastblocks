@@ -31,10 +31,9 @@ import yaml
 from anyio import Path as AsyncPath
 from granian import Granian
 
-from fastblocks.adapters.oneiric_helper import resolve_instance
-
 # Use standard rich console instead of ACB console
 from rich.console import Console
+from fastblocks.adapters.oneiric_helper import resolve_instance
 
 console = Console()
 
@@ -1084,7 +1083,16 @@ def create_compat(
     module attribute. The Typer group ``create`` above is the active
     CLI surface — invoke ``create app`` for the same behavior.
     """
-    _run_async(create_app(app_name=app_name, style=style, domain=domain))
+    _run_async(_create_app_async(app_name=app_name, style=style, domain=domain))
+
+
+async def _create_app_async(
+    app_name: str = "myapp",
+    style: Styles = Styles.bulma,
+    domain: str = "example.com",
+) -> None:
+    """Async wrapper for the sync ``create_app`` shim."""
+    create_app(app_name=app_name, style=style, domain=domain)
 
 
 @cli.command()

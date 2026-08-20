@@ -730,7 +730,7 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
                 # ``mock('name', 'name')`` for downstream
                 # ``AsyncMock`` children whose contract is
                 # single-arg.
-                result = await loader.get_source_async(str(template))
+                result = await loader.get_source_async(str(template))  # type: ignore[arg-type]
                 return result
             except TemplateNotFound:
                 # The next loader may have it; only "missing template"

@@ -24,7 +24,7 @@ class ImagesBaseSettings(OneiricSettings):  # type: ignore[misc]
     default_transformations: dict[str, Any] = Field(default_factory=dict)
     lazy_loading: bool = True
 
-    def __init__(self, **data: dict[str, Any]) -> None:
+    def __init__(self, **data: Any) -> None:
         super().__init__(**data)
 
 
