@@ -662,7 +662,7 @@ def _register_ri_basic_filters(env: Any) -> None:
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
 
-    @env.filter("ri_class")  # type: ignore
+    @env.filter("ri_class")  # type: ignore[untyped-decorator]
     def ri_class_filter(icon_name: str, variant: str | None = None) -> str:
         """Template filter for Remix Icon classes."""
         icons = resolve_instance(depends, "fastblocks", "icons")
@@ -682,7 +682,7 @@ def _register_ri_basic_filters(env: Any) -> None:
 def _register_ri_advanced_functions(env: Any) -> None:
     """Register advanced Remix Icon functions."""
 
-    @env.global_("ri_stacked")  # type: ignore
+    @env.global_("ri_stacked")  # type: ignore[untyped-decorator]
     def ri_stacked(
         background_icon: str,
         foreground_icon: str,
@@ -702,7 +702,7 @@ def _register_ri_advanced_functions(env: Any) -> None:
             )
         return f"<!-- {background_icon} + {foreground_icon} -->"
 
-    @env.global_("ri_gradient")  # type: ignore
+    @env.global_("ri_gradient")  # type: ignore[untyped-decorator]
     def ri_gradient(
         icon_name: str,
         gradient_type: str = "primary",
@@ -720,7 +720,7 @@ def _register_ri_advanced_functions(env: Any) -> None:
 def _register_ri_button_functions(env: Any) -> None:
     """Register Remix Icon button functions."""
 
-    @env.global_("ri_button")  # type: ignore # Jinja2 decorator preserves signature
+    @env.global_("ri_button")  # type: ignore[untyped-decorator] # Jinja2 decorator preserves signature
     def ri_button(
         text: str,
         icon: str | None = None,

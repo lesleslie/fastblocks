@@ -391,7 +391,7 @@ class ComponentBase(ABC):
             if name == "_children":
                 value: list[ComponentBase] = []
             elif name == "_parent":
-                value = None  # type: ignore
+                value = None  # type: ignore[assignment]
             elif name == "_context":
                 value = {}  # type: ignore[assignment]
             else:  # type: ignore[misc]  _request

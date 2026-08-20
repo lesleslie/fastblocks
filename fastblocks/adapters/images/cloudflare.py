@@ -269,7 +269,7 @@ def register_cloudflare_filters(env: Any) -> None:
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"  # Fallback
 
-    @env.filter("cf_img_tag")  # type: ignore
+    @env.filter("cf_img_tag")  # type: ignore[untyped-decorator]
     def cf_img_tag_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for complete Cloudflare img tags."""
         images = resolve_instance(depends, "fastblocks", "images")
@@ -277,7 +277,7 @@ def register_cloudflare_filters(env: Any) -> None:
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'  # Fallback
 
-    @env.global_("cloudflare_responsive_img")  # type: ignore
+    @env.global_("cloudflare_responsive_img")  # type: ignore[untyped-decorator]
     def cloudflare_responsive_img(
         image_id: str,
         alt: str,

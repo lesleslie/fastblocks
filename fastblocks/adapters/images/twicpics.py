@@ -318,7 +318,7 @@ class TwicPicsImages(ImagesBase):
 def register_twicpics_filters(env: Any) -> None:
     """Register TwicPics filters for Jinja2 templates."""
 
-    @env.filter("twic_url")  # type: ignore
+    @env.filter("twic_url")  # type: ignore[untyped-decorator]
     async def twic_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for TwicPics URLs."""
         images = resolve_instance(depends, "fastblocks", "images")
@@ -326,7 +326,7 @@ def register_twicpics_filters(env: Any) -> None:
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"
 
-    @env.filter("twic_img")  # type: ignore
+    @env.filter("twic_img")  # type: ignore[untyped-decorator]
     def twic_img_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for TwicPics img tags."""
         images = resolve_instance(depends, "fastblocks", "images")
@@ -349,7 +349,7 @@ def register_twicpics_filters(env: Any) -> None:
             )
         return f'<img src="#{image_id}" alt="{alt}">'
 
-    @env.filter("twic_placeholder")  # type: ignore
+    @env.filter("twic_placeholder")  # type: ignore[untyped-decorator]
     async def twic_placeholder_filter(
         image_id: str, width: int = 20, quality: int = 10
     ) -> str:

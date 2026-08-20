@@ -75,7 +75,7 @@ class CloudinaryImages(ImagesBase):
                 resource_type="image",
                 public_id=filename.rsplit(".", 1)[0],
             )
-            return result  # type: ignore
+            return result  # type: ignore[no-any-return]
         except ImportError:
             # Mock implementation if cloudinary is not available
             public_id = filename.rsplit(".", 1)[0]

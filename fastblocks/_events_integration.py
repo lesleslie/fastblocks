@@ -232,7 +232,7 @@ class CacheInvalidationHandler:
 
     async def handle(self, event: Event) -> t.Any:
         """Handle cache invalidation event."""
-        if not oneiric_events_available:  # type: ignore
+        if not oneiric_events_available:
             return None
 
         try:
@@ -270,7 +270,7 @@ class TemplateRenderHandler:
 
     async def handle(self, event: Event) -> t.Any:
         """Handle template render event."""
-        if not oneiric_events_available:  # type: ignore
+        if not oneiric_events_available:
             return None
 
         try:
@@ -328,7 +328,7 @@ class HtmxUpdateHandler:
 
     async def handle(self, event: Event) -> t.Any:
         """Handle HTMX update event."""
-        if not oneiric_events_available:  # type: ignore
+        if not oneiric_events_available:
             return None
 
         try:
@@ -562,7 +562,7 @@ class FastBlocksEventPublisher(metaclass=SingletonMeta):
         ip_address: str | None = None,
     ) -> bool:
         """Publish admin action event."""
-        if not oneiric_events_available or self._publisher is None:  # type: ignore
+        if not oneiric_events_available or self._publisher is None:
             return False
 
         try:

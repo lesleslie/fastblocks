@@ -612,7 +612,7 @@ def register_heroicons_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, variant)
         return f"heroicon-{icon_name}"
 
-    @env.global_("heroicons_stylesheet_links")  # type: ignore # Jinja2 decorator preserves signature
+    @env.global_("heroicons_stylesheet_links")  # type: ignore[untyped-decorator] # Jinja2 decorator preserves signature
     def heroicons_stylesheet_links() -> str:
         """Global function for Heroicons stylesheet links."""
         icons = resolve_instance(depends, "fastblocks", "icons")
@@ -620,7 +620,7 @@ def register_heroicons_filters(env: Any) -> None:
             return "\n".join(icons.get_stylesheet_links())
         return ""
 
-    @env.global_("hero_button")  # type: ignore # Jinja2 decorator preserves signature
+    @env.global_("hero_button")  # type: ignore[untyped-decorator] # Jinja2 decorator preserves signature
     def hero_button(
         text: str,
         icon: str | None = None,
@@ -636,7 +636,7 @@ def register_heroicons_filters(env: Any) -> None:
             )
         return f"<button>{text}</button>"
 
-    @env.global_("hero_badge")  # type: ignore # Jinja2 decorator preserves signature
+    @env.global_("hero_badge")  # type: ignore[untyped-decorator] # Jinja2 decorator preserves signature
     def hero_badge(
         text: str, icon: str | None = None, variant: str = "outline", **attributes: Any
     ) -> str:

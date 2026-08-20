@@ -827,7 +827,7 @@ def _register_material_basic_filters(env: Any) -> None:
             return icons.get_icon_class(icon_name, theme)
         return "material-icons"
 
-    @env.global_("materialicons_stylesheet_links")  # type: ignore
+    @env.global_("materialicons_stylesheet_links")  # type: ignore[untyped-decorator]
     def materialicons_stylesheet_links() -> str:
         """Global function for Material Icons stylesheet links."""
         icons = resolve_instance(depends, "fastblocks", "icons")
@@ -856,7 +856,7 @@ def _register_material_fab_functions(env: Any) -> None:
 def _register_material_button_functions(env: Any) -> None:
     """Register Material Design button functions."""
 
-    @env.global_("material_button")  # type: ignore
+    @env.global_("material_button")  # type: ignore[untyped-decorator]
     def material_button(
         text: str,
         icon: str | None = None,
@@ -897,7 +897,7 @@ def _register_material_button_functions(env: Any) -> None:
 def _register_material_chip_functions(env: Any) -> None:
     """Register Material Design chip functions."""
 
-    @env.global_("material_chip")  # type: ignore
+    @env.global_("material_chip")  # type: ignore[untyped-decorator]
     def material_chip(
         text: str,
         icon: str | None = None,

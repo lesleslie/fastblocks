@@ -701,7 +701,7 @@ class FastBlocksSyntaxSupport:
 def register_syntax_filters(env: Any) -> None:
     """Register syntax support filters for Jinja2 templates."""
 
-    @env.filter("format_template")  # type: ignore
+    @env.filter("format_template")  # type: ignore[untyped-decorator]
     def format_template_filter(content: str) -> str:
         """Template filter for formatting FastBlocks templates."""
         syntax_support = resolve_instance(depends, "fastblocks", "syntax_support")

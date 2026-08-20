@@ -503,7 +503,7 @@ def _register_ph_basic_filters(env: Any) -> None:
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
 
-    @env.filter("ph_class")  # type: ignore
+    @env.filter("ph_class")  # type: ignore[untyped-decorator]
     def ph_class_filter(icon_name: str, variant: str = "regular") -> str:
         """Template filter for Phosphor icon classes."""
         icons = resolve_instance(depends, "fastblocks", "icons")
@@ -523,7 +523,7 @@ def _register_ph_basic_filters(env: Any) -> None:
 def _register_ph_duotone_functions(env: Any) -> None:
     """Register Phosphor duotone functions."""
 
-    @env.global_("ph_duotone")  # type: ignore
+    @env.global_("ph_duotone")  # type: ignore[untyped-decorator]
     def ph_duotone(
         icon_name: str,
         primary_color: str | None = None,
@@ -542,7 +542,7 @@ def _register_ph_duotone_functions(env: Any) -> None:
 def _register_ph_interactive_functions(env: Any) -> None:
     """Register Phosphor interactive functions."""
 
-    @env.global_("ph_interactive")  # type: ignore
+    @env.global_("ph_interactive")  # type: ignore[untyped-decorator]
     def ph_interactive(
         icon_name: str,
         variant: str = "regular",
@@ -561,7 +561,7 @@ def _register_ph_interactive_functions(env: Any) -> None:
 
         return icons.get_icon_tag(icon_name, variant, **attributes)
 
-    @env.global_("ph_button_icon")  # type: ignore
+    @env.global_("ph_button_icon")  # type: ignore[untyped-decorator]
     def ph_button_icon(
         icon_name: str,
         text: str | None = None,

@@ -88,7 +88,7 @@ base_routes_path = AsyncPath(root_path()) / "routes.py"
 class RoutesSettings(RoutesBaseSettings):
     """Routes settings using OneiricSettings."""
 
-    def __init__(self, **data: dict) -> None:  # type: ignore
+    def __init__(self, **data: t.Any) -> None:
         super().__init__(**data)
 
 

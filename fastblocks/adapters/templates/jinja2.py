@@ -162,7 +162,7 @@ def _apply_template_replacements(source: bytes, deployed: bool = False) -> bytes
     return source
 
 
-class BaseTemplateLoader(AsyncBaseLoader):  # type: ignore
+class BaseTemplateLoader(AsyncBaseLoader):
     config: t.Any = None
     cache: t.Any = None
     storage: t.Any = None

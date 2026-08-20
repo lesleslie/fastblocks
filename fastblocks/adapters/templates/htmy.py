@@ -353,7 +353,12 @@ class HTMYComponentRegistry:
             debug(f"Failed to load cached bytecode for {component_name}: {e}")
             return None
 
-    async def _load_from_source(self, source, component_path, component_name):  # type: ignore
+    async def _load_from_source(
+        self,
+        source: str,
+        component_path: t.Any,
+        component_name: str,
+    ) -> t.Any:
         """Load component class from source file."""
         try:
             # Import and analyze component safely
@@ -394,7 +399,7 @@ class HTMYComponentRegistry:
             ) from e
 
 
-class HTMYTemplatesSettings(OneiricSettings):  # type: ignore
+class HTMYTemplatesSettings(OneiricSettings):
     searchpaths: list[str] = Field(default_factory=list)
     cache_timeout: int = 300
     enable_bidirectional: bool = True

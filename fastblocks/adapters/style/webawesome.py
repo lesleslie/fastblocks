@@ -563,7 +563,7 @@ def _register_wa_basic_filters(env: Any) -> None:
 def _register_wa_button_functions(env: Any) -> None:
     """Register WebAwesome button component functions."""
 
-    @env.global_("wa_button")  # type: ignore
+    @env.global_("wa_button")  # type: ignore[untyped-decorator]
     def wa_button(
         text: str, variant: str = "primary", icon: str | None = None, **attributes: Any
     ) -> str:
@@ -588,7 +588,7 @@ def _register_wa_button_functions(env: Any) -> None:
 def _register_wa_card_functions(env: Any) -> None:
     """Register WebAwesome card component functions."""
 
-    @env.global_("wa_card")  # type: ignore
+    @env.global_("wa_card")  # type: ignore[untyped-decorator]
     def wa_card(
         title: str | None = None,
         content: str = "",
