@@ -12,6 +12,7 @@ from pydantic import Field
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
     add_accessibility_attributes,
@@ -151,10 +152,16 @@ class MaterialIcons(IconsBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            # Register with Oneiric resolver (fail gracefully if not supported)
-            pass
-        with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="material_icons",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     def get_stylesheet_links(self) -> list[str]:
         """Get Material Icons stylesheet links."""
@@ -807,7 +814,7 @@ def _register_material_basic_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Template filter for Material Icons."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, MaterialIcons):
             return icons.get_icon_tag(icon_name, theme=theme, size=size, **attributes)
         return f"<!-- {icon_name} -->"
@@ -815,7 +822,7 @@ def _register_material_basic_filters(env: Any) -> None:
     @env.filter("material_class")  # type: ignore[untyped-decorator]
     def material_class_filter(icon_name: str, theme: str | None = None) -> str:
         """Template filter for Material Icons classes."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, MaterialIcons):
             return icons.get_icon_class(icon_name, theme)
         return "material-icons"
@@ -823,7 +830,7 @@ def _register_material_basic_filters(env: Any) -> None:
     @env.global_("materialicons_stylesheet_links")  # type: ignore
     def materialicons_stylesheet_links() -> str:
         """Global function for Material Icons stylesheet links."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, MaterialIcons):
             return "\n".join(icons.get_stylesheet_links())
         return ""
@@ -840,7 +847,7 @@ def _register_material_fab_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate Material Design Floating Action Button."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, MaterialIcons):
             return icons.get_fab_tag(icon_name, variant, theme, **attributes)
         return f"<button class='fab'>{icon_name}</button>"
@@ -858,7 +865,7 @@ def _register_material_button_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate button with Material Icon."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if not isinstance(icons, MaterialIcons):
             return f"<button>{text}</button>"
 
@@ -899,7 +906,7 @@ def _register_material_chip_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate Material Design chip with icon."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if not isinstance(icons, MaterialIcons):
             return f"<div class='chip'>{text}</div>"
 
@@ -941,7 +948,13 @@ Icons = MaterialIcons
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Icons, "materialicons")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="material_icons",
+        factory=lambda: Icons,
+        metadata={"class": "MaterialIcons"},
+    )
 
 # ACB 0.19.0+ compatibility
 __all__ = [

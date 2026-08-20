@@ -76,6 +76,7 @@ def root_path() -> str:
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import RoutesBase, RoutesBaseSettings
 
 # Placeholder for templates (will be resolved via Oneiric)
@@ -176,7 +177,7 @@ class Component(FastBlocksEndpoint):
                 context[f"{model_name}_list"] = await parser.parse_and_execute()
                 context[f"{model_name}_count"] = await parser.get_count()
         try:
-            htmy = await depends.resolve("fastblocks", "htmy")
+            htmy = resolve_instance(depends, "fastblocks", "htmy")
             if htmy is None:
                 raise HTTPException(
                     status_code=500, detail="HTMY adapter not available"
@@ -271,4 +272,10 @@ MODULE_STATUS = AdapterStatus.STABLE
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Routes, "default")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="default_routes",
+        factory=lambda: Routes,
+        metadata={"class": "DefaultRoutes"},
+    )

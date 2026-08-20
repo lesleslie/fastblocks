@@ -6,6 +6,8 @@ from enum import Enum
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
+from ...adapters.oneiric_helper import resolve_instance
+
 # Migration from ACB to Oneiric
 depends = Resolver()
 
@@ -142,7 +144,7 @@ async def _gather_default_middleware() -> dict[MiddlewarePosition, t.Any]:
 async def _gather_custom_middleware() -> list[Middleware]:
     custom_middleware = []
     try:
-        config = await depends.resolve("fastblocks", "config")
+        config = resolve_instance(depends, "fastblocks", "config")
         if hasattr(config, "middleware") and hasattr(config.middleware, "custom"):
             for middleware_path in config.middleware.custom:
                 try:

@@ -12,6 +12,7 @@ from oneiric.core.resolution import Resolver
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate
 from ._base import IconsBase, IconsBaseSettings
 
 
@@ -116,10 +117,16 @@ class LucideIcons(IconsBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            # Register with Oneiric resolver (fail gracefully if not supported)
-            pass
-        with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="lucide",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     def get_stylesheet_links(self) -> list[str]:
         """Generate Lucide stylesheet/script link tags."""
@@ -284,6 +291,12 @@ Icons = LucideIcons
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Icons, "lucide")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="lucide",
+        factory=lambda: Icons,
+        metadata={"class": "LucideIcons"},
+    )
 
 __all__ = ["Icons", "IconsSettings", "LucideIcons", "LucideIconsSettings"]

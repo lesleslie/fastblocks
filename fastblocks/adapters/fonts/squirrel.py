@@ -10,6 +10,7 @@ from uuid import UUID
 from oneiric.core.resolution import Resolver
 from pydantic import Field
 
+from ..oneiric_helper import register_candidate
 from ._base import FontsBase, FontsBaseSettings
 
 # Oneiric resolver for dependency injection
@@ -49,7 +50,16 @@ class FontSquirrelFonts(FontsBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="font_squirrel",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     async def get_font_import(self) -> str:
         """Generate @font-face declarations for self-hosted fonts."""
@@ -379,4 +389,10 @@ Fonts = FontSquirrelFonts
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Fonts, "squirrel")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="font_squirrel",
+        factory=lambda: Fonts,
+        metadata={"class": "FontSquirrelFonts"},
+    )

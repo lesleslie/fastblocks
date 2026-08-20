@@ -12,6 +12,7 @@ from pydantic import Field
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import IconsBase, IconsBaseSettings
 
 
@@ -94,10 +95,16 @@ class PhosphorIcons(IconsBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            # Register with Oneiric resolver (fail gracefully if not supported)
-            pass
-        with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="phosphor",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     def get_stylesheet_links(self) -> list[str]:
         """Get Phosphor icons stylesheet links."""
@@ -491,7 +498,7 @@ def _register_ph_basic_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Template filter for Phosphor icons."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, PhosphorIcons):
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
@@ -499,7 +506,7 @@ def _register_ph_basic_filters(env: Any) -> None:
     @env.filter("ph_class")  # type: ignore
     def ph_class_filter(icon_name: str, variant: str = "regular") -> str:
         """Template filter for Phosphor icon classes."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, PhosphorIcons):
             return icons.get_icon_class(icon_name, variant)
         return f"ph-{icon_name}"
@@ -507,7 +514,7 @@ def _register_ph_basic_filters(env: Any) -> None:
     @env.global_("phosphor_stylesheet_links")  # type: ignore[untyped-decorator]
     def phosphor_stylesheet_links() -> str:
         """Global function for Phosphor stylesheet links."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, PhosphorIcons):
             return "\n".join(icons.get_stylesheet_links())
         return ""
@@ -524,7 +531,7 @@ def _register_ph_duotone_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate duotone Phosphor icon."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, PhosphorIcons):
             return icons.get_duotone_icon_tag(
                 icon_name, primary_color, secondary_color, **attributes
@@ -543,7 +550,7 @@ def _register_ph_interactive_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate interactive Phosphor icon with action."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if not isinstance(icons, PhosphorIcons):
             return f"<!-- {icon_name} -->"
 
@@ -563,7 +570,7 @@ def _register_ph_interactive_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate button with Phosphor icon."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if not isinstance(icons, PhosphorIcons):
             return f"<button>{text or icon_name}</button>"
 
@@ -595,7 +602,13 @@ Icons = PhosphorIcons
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Icons, "phosphor")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="phosphor",
+        factory=lambda: Icons,
+        metadata={"class": "PhosphorIcons"},
+    )
 
 # ACB 0.19.0+ compatibility
 __all__ = [

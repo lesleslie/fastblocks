@@ -10,6 +10,7 @@ from uuid import UUID
 from oneiric.core.resolution import Resolver
 from pydantic import Field
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import StyleBase, StyleBaseSettings
 
 # Oneiric resolver for dependency injection
@@ -710,7 +711,16 @@ class KelpStyle(StyleBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="kelp",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     def get_stylesheet_links(self) -> list[str]:
         """Get Kelp stylesheet links."""
@@ -841,7 +851,7 @@ def register_kelp_functions(env: Any) -> None:
     @env.global_("kelp_stylesheet_links")  # type: ignore[untyped-decorator]
     def kelp_stylesheet_links() -> str:
         """Global function for Kelp stylesheet links."""
-        styles = depends.get_sync("styles")
+        styles = resolve_instance(depends, "fastblocks", "styles")
         if isinstance(styles, KelpStyle):
             return "\n".join(styles.get_stylesheet_links())
         return ""
@@ -849,7 +859,7 @@ def register_kelp_functions(env: Any) -> None:
     @env.filter("kelp_class")  # type: ignore[untyped-decorator]
     def kelp_class_filter(component: str) -> str:
         """Filter for getting Kelp component classes."""
-        styles = depends.get_sync("styles")
+        styles = resolve_instance(depends, "fastblocks", "styles")
         if isinstance(styles, KelpStyle):
             return styles.get_component_class(component)
         return component
@@ -859,7 +869,7 @@ def register_kelp_functions(env: Any) -> None:
         component_type: str, content: str = "", **attributes: Any
     ) -> str:
         """Generate Kelp component."""
-        styles = depends.get_sync("styles")
+        styles = resolve_instance(depends, "fastblocks", "styles")
         if not isinstance(styles, KelpStyle):
             return f"<div>{content}</div>"
 
@@ -879,7 +889,13 @@ Style = KelpStyle
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Style, "kelp")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="kelp",
+        factory=lambda: Style,
+        metadata={"class": "KelpStyle"},
+    )
 
 
 # ACB 0.19.0+ compatibility

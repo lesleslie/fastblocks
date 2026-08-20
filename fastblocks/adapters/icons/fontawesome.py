@@ -9,6 +9,7 @@ from uuid import UUID
 
 from oneiric.core.resolution import Resolver
 
+from ..oneiric_helper import register_candidate
 from ._base import IconsBase, IconsBaseSettings
 
 # Oneiric resolver for dependency injection
@@ -167,7 +168,16 @@ class FontAwesomeIcons(IconsBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="fontawesome",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     def get_stylesheet_links(self) -> list[str]:
         """Generate FontAwesome stylesheet link tags."""
@@ -298,6 +308,12 @@ Icons = FontAwesomeIcons
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Icons, "fontawesome")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="fontawesome",
+        factory=lambda: Icons,
+        metadata={"class": "FontAwesomeIcons"},
+    )
 
 __all__ = ["FontAwesomeIcons", "FontAwesomeIconsSettings", "Icons", "IconsSettings"]

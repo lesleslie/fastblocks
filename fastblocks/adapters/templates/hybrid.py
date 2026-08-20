@@ -39,6 +39,7 @@ from oneiric.core.resolution import Resolver
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
+from ..oneiric_helper import register_candidate
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -508,4 +509,10 @@ MODULE_STATUS = AdapterStatus.STABLE
 
 # Register the integration
 with suppress(Exception):
-    depends.set(Templates, get_hybrid_templates)
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="templates",
+        factory=get_hybrid_templates,
+        metadata={"class": "HybridTemplates"},
+    )

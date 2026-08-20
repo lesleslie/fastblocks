@@ -13,6 +13,7 @@ from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 from pydantic import SecretStr
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import ImagesBase, ImagesBaseSettings
 
 _log = get_logger("fastblocks.adapters.images.twicpics")
@@ -60,7 +61,16 @@ class TwicPicsImages(ImagesBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="twicpics",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client."""
@@ -311,7 +321,7 @@ def register_twicpics_filters(env: Any) -> None:
     @env.filter("twic_url")  # type: ignore
     async def twic_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for TwicPics URLs."""
-        images = await depends.resolve("fastblocks", "images")
+        images = resolve_instance(depends, "fastblocks", "images")
         if isinstance(images, TwicPicsImages):
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"
@@ -319,7 +329,7 @@ def register_twicpics_filters(env: Any) -> None:
     @env.filter("twic_img")  # type: ignore
     def twic_img_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for TwicPics img tags."""
-        images = depends.get_sync("images")
+        images = resolve_instance(depends, "fastblocks", "images")
         if isinstance(images, TwicPicsImages):
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'
@@ -332,7 +342,7 @@ def register_twicpics_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate responsive image with TwicPics optimization."""
-        images = depends.get_sync("images")
+        images = resolve_instance(depends, "fastblocks", "images")
         if isinstance(images, TwicPicsImages):
             return images.get_responsive_img_tag(
                 image_id, alt, breakpoints, **attributes
@@ -344,7 +354,7 @@ def register_twicpics_filters(env: Any) -> None:
         image_id: str, width: int = 20, quality: int = 10
     ) -> str:
         """Generate ultra-low quality placeholder URL."""
-        images = await depends.resolve("fastblocks", "images")
+        images = resolve_instance(depends, "fastblocks", "images")
         if isinstance(images, TwicPicsImages):
             return await images.get_image_url(
                 image_id, {"width": width, "quality": quality}
@@ -355,7 +365,14 @@ def register_twicpics_filters(env: Any) -> None:
 ImagesSettings = TwicPicsImagesSettings
 Images = TwicPicsImages
 
-depends.set(Images, "twicpics")
+with suppress(Exception):
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="twicpics",
+        factory=lambda: Images,
+        metadata={"class": "TwicPicsImages"},
+    )
 
 # ACB 0.19.0+ compatibility
 __all__ = [

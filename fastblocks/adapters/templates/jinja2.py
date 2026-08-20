@@ -56,7 +56,7 @@ _log = get_logger("fastblocks.adapters.templates.jinja2")
 
 # Add parent directory to path for helper import
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from oneiric_helper import register_candidate
+from oneiric_helper import register_candidate, resolve_instance
 
 # Import event tracking decorator (with fallback if unavailable)
 try:
@@ -858,7 +858,7 @@ class Templates(TemplatesBase):
         if app_adapter is not None:
             return app_adapter
         with suppress(Exception):
-            app_adapter = depends.get_sync("app")
+            app_adapter = resolve_instance(depends, "fastblocks", "app")
             if app_adapter is not None:
                 return app_adapter
 
@@ -1029,7 +1029,7 @@ class Templates(TemplatesBase):
                         await cache.clear(namespace)
                 self.logger.debug("Template caches cleared")  # type: ignore[attr-defined]
                 with suppress(Exception):
-                    htmy_adapter = await depends.resolve("fastblocks", "htmy")
+                    htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
                     if htmy_adapter:
                         await htmy_adapter.clear_component_cache()
                         self.logger.debug("HTMY component caches cleared via adapter")  # type: ignore[attr-defined]
@@ -1043,7 +1043,7 @@ class Templates(TemplatesBase):
             **kwargs: t.Any,
         ) -> str:
             try:
-                htmy_adapter = await depends.resolve("fastblocks", "htmy")
+                htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
                 if htmy_adapter:
                     htmy_adapter.jinja_templates = self
 
@@ -1200,7 +1200,7 @@ class Templates(TemplatesBase):
         **kwargs: t.Any,
     ) -> t.Any:
         try:
-            htmy_adapter = await depends.resolve("fastblocks", "htmy")
+            htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
             if htmy_adapter:
                 htmy_adapter.jinja_templates = self
                 return await htmy_adapter.render_component(
@@ -1274,7 +1274,13 @@ MODULE_ID = UUID("01937d86-4f2a-7b3c-8d9e-1234567890ab")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    depends.set(Templates)
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="templates",
+        factory=lambda: Templates,
+        metadata={"class": "Jinja2Templates"},
+    )
 
 # Oneiric migration indicator
 _using_oneiric = True

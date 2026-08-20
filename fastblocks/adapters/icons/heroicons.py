@@ -12,6 +12,7 @@ from pydantic import Field
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
     add_accessibility_attributes,
@@ -114,10 +115,16 @@ class HeroiconsIcons(IconsBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            # Register with Oneiric resolver (fail gracefully if not supported)
-            pass
-        with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="heroicons",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     def get_stylesheet_links(self) -> list[str]:
         """Get Heroicons stylesheet links."""
@@ -592,7 +599,7 @@ def register_heroicons_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Template filter for Heroicons."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, HeroiconsIcons):
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
@@ -600,7 +607,7 @@ def register_heroicons_filters(env: Any) -> None:
     @env.filter("heroicon_class")  # type: ignore[untyped-decorator]
     def heroicon_class_filter(icon_name: str, variant: str = "outline") -> str:
         """Template filter for Heroicons classes."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, HeroiconsIcons):
             return icons.get_icon_class(icon_name, variant)
         return f"heroicon-{icon_name}"
@@ -608,7 +615,7 @@ def register_heroicons_filters(env: Any) -> None:
     @env.global_("heroicons_stylesheet_links")  # type: ignore # Jinja2 decorator preserves signature
     def heroicons_stylesheet_links() -> str:
         """Global function for Heroicons stylesheet links."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, HeroiconsIcons):
             return "\n".join(icons.get_stylesheet_links())
         return ""
@@ -622,7 +629,7 @@ def register_heroicons_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate button with Heroicons icon."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, HeroiconsIcons):
             return _create_hero_button(
                 text, icon, variant, icon_position, icons, **attributes
@@ -634,7 +641,7 @@ def register_heroicons_filters(env: Any) -> None:
         text: str, icon: str | None = None, variant: str = "outline", **attributes: Any
     ) -> str:
         """Generate badge with Heroicons icon."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, HeroiconsIcons):
             return _create_hero_badge(text, icon, variant, icons, **attributes)
         return f"<span class='badge'>{text}</span>"
@@ -645,7 +652,13 @@ Icons = HeroiconsIcons
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Icons, "heroicons")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="heroicons",
+        factory=lambda: Icons,
+        metadata={"class": "HeroiconsIcons"},
+    )
 
 
 # ACB 0.19.0+ compatibility

@@ -12,6 +12,7 @@ from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 from pydantic import SecretStr
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import ImagesBase, ImagesBaseSettings
 
 _log = get_logger("fastblocks.adapters.images.cloudflare")
@@ -56,7 +57,16 @@ class CloudflareImages(ImagesBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="cloudflare_images",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client."""
@@ -254,7 +264,7 @@ def register_cloudflare_filters(env: Any) -> None:
     @env.filter("cf_image_url")  # type: ignore[untyped-decorator]
     async def cf_image_url_filter(image_id: str, **transformations: Any) -> str:
         """Template filter for Cloudflare Images URLs."""
-        images = await depends.resolve("fastblocks", "images")
+        images = resolve_instance(depends, "fastblocks", "images")
         if isinstance(images, CloudflareImages):
             return await images.get_image_url(image_id, transformations)
         return f"#{image_id}"  # Fallback
@@ -262,7 +272,7 @@ def register_cloudflare_filters(env: Any) -> None:
     @env.filter("cf_img_tag")  # type: ignore
     def cf_img_tag_filter(image_id: str, alt: str = "", **attributes: Any) -> str:
         """Template filter for complete Cloudflare img tags."""
-        images = depends.get_sync("images")  # type: ignore
+        images = resolve_instance(depends, "fastblocks", "images")
         if isinstance(images, CloudflareImages):
             return images.get_img_tag(image_id, alt, **attributes)
         return f'<img src="#{image_id}" alt="{alt}">'  # Fallback
@@ -275,7 +285,7 @@ def register_cloudflare_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate responsive image with multiple sizes."""
-        images = depends.get_sync("images")  # type: ignore
+        images = resolve_instance(depends, "fastblocks", "images")
         if not isinstance(images, CloudflareImages):
             return f'<img src="#{image_id}" alt="{alt}">'
 

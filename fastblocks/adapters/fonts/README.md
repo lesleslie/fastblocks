@@ -45,9 +45,12 @@ The template layer exposes both sync and async helpers:
 In Python, you can always access the adapter directly:
 
 ```python
-from oneiric.core.depends import depends
+from oneiric.core.resolution import Resolver
+from fastblocks.adapters.oneiric_helper import resolve_instance
 
-Fonts = depends.get_sync("fonts")
+depends = Resolver()
+
+Fonts = resolve_instance(depends, "fastblocks", "fonts")
 font_css = await Fonts.get_font_import()
 ```
 

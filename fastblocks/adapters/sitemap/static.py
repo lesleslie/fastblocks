@@ -36,6 +36,7 @@ def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
 
 
+from ..oneiric_helper import register_candidate
 from ._base import SitemapBase, SitemapBaseSettings
 from .core import BaseSitemap, SitemapApp
 
@@ -86,4 +87,10 @@ MODULE_ID = UUID("01937d86-af80-7192-e453-789012345601")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    depends.set(Sitemap)
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="static_sitemap",
+        factory=lambda: Sitemap,
+        metadata={"class": "StaticSitemap"},
+    )

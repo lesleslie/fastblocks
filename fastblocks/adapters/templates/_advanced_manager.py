@@ -45,6 +45,7 @@ class AdapterStatus:
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
+from ..oneiric_helper import register_candidate, resolve_instance
 from jinja2 import (
     Environment,
     StrictUndefined,
@@ -480,7 +481,7 @@ class HybridTemplatesManager:
                 "storage",
             ):
                 with suppress(Exception):
-                    adapter = depends.get_sync(adapter_name)
+                    adapter = resolve_instance(depends, "fastblocks", adapter_name)
                     if adapter:
                         available.add(adapter_name)
 
@@ -791,7 +792,7 @@ class HybridTemplatesManager:
         """Add adapter function autocomplete items."""
         for adapter_name, functions in _ADAPTER_AUTOCOMPLETE_FUNCTIONS.items():
             with suppress(Exception):
-                adapter = depends.get_sync(adapter_name)
+                adapter = resolve_instance(depends, "fastblocks", adapter_name)
                 if adapter:
                     for func_name in functions:
                         if hasattr(adapter, func_name):
@@ -1050,4 +1051,10 @@ _using_oneiric = True
 
 # Register the advanced manager
 with suppress(Exception):
-    depends.set("hybrid_template_manager", HybridTemplatesManager)
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="hybrid_template_manager",
+        factory=lambda: HybridTemplatesManager,
+        metadata={"class": "HybridTemplatesManager"},
+    )

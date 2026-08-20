@@ -559,5 +559,6 @@ MODULE_ID = UUID("01937d88-0000-7000-8000-000000000001")
 MODULE_STATUS = "STABLE"  # Oneiric-compatible status
 
 # Auto-register health checks on module import
-# Note: Registration happens during application startup via depends.set()
+# Note: Registration happens during application startup via
+# register_candidate(depends, domain="fastblocks", key="<key>", factory=...)
 # This ensures proper async context is available

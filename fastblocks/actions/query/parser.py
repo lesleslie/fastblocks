@@ -28,6 +28,8 @@ def debug(msg: str) -> None:
 # Create depends equivalent for Oneiric
 depends = Resolver()
 
+from ...adapters.oneiric_helper import resolve_instance
+
 from starlette.requests import Request
 from fastblocks.htmx import HtmxRequest
 
@@ -281,7 +283,7 @@ class UniversalQueryParser:
 
 async def get_model_for_query(model_name: str) -> t.Any | None:
     try:
-        models = await depends.resolve("fastblocks", "models")
+        models = resolve_instance(depends, "fastblocks", "models")
         if models and hasattr(models, model_name):
             return getattr(models, model_name)
     except (ImportError, AttributeError, ValueError) as e:
@@ -312,7 +314,7 @@ async def create_query_context(
         debug(f"Model '{model_name}' not found")
         return context
 
-    query = await depends.resolve("fastblocks", "query")
+    query = resolve_instance(depends, "fastblocks", "query")
     parser = UniversalQueryParser(request, query, model_class)
 
     context.update(

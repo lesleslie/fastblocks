@@ -158,11 +158,8 @@ def register_fastblocks_ui_functions(env: t.Any) -> None:
     Constructs its own ``FastBlocksUIStyle`` instance rather than resolving
     "the active style" through the Oneiric resolver at call time: the
     pre-existing Kelp adapter's closures do a per-call
-    ``depends.get_sync("styles")`` lookup, but the real, installed
-    ``oneiric.core.resolution.Resolver`` has no ``set``/``get_sync`` methods
-    at all either (also confirmed by reading the installed 0.13.3 source) —
-    those calls would raise ``AttributeError`` the moment they actually ran,
-    too. Rather than depend on an unverified resolver contract, this adapter
+    ``resolve_instance(depends, "fastblocks", "styles")`` lookup. Rather than
+    depend on an unverified resolver contract, this adapter
     is self-contained and correct on its own terms; the instance is *also*
     registered with the shared resolver below (best-effort, using the real
     ``Resolver.register(Candidate)`` method this project's own

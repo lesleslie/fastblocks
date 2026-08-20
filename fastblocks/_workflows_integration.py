@@ -36,6 +36,7 @@ from typing import Literal
 
 # Oneiric imports for dependency injection
 from oneiric.core.logging import get_logger
+from fastblocks.adapters.oneiric_helper import register_candidate, resolve_instance
 from fastblocks.core.patterns import SingletonMeta
 from fastblocks.core.resolver import get_resolver
 
@@ -532,7 +533,7 @@ async def _warm_template_cache(
         if templates_result and hasattr(templates_result, "templates"):
             cached_count = 0
             # Pre-cache template metadata (not full rendering)
-            cache = await depends.resolve("fastblocks", "cache")
+            cache = resolve_instance(depends, "fastblocks", "cache")
             if cache:
                 for template_name in list(templates_result.templates.keys())[
                     :50
@@ -591,7 +592,7 @@ async def _cleanup_template_cache(
 ) -> dict[str, t.Any]:
     """Clean up unused template cache entries."""
     with suppress(Exception):
-        cache = await depends.resolve("fastblocks", "cache")
+        cache = resolve_instance(depends, "fastblocks", "cache")
         if cache and hasattr(cache, "clear_pattern"):
             # Clear stale template cache entries
             await cache.clear_pattern("template:*")
@@ -922,7 +923,13 @@ async def register_fastblocks_workflows() -> bool:
         workflow_service = get_workflow_service()
 
         # Register with depends
-        depends.set("fastblocks_workflows", workflow_service)
+        register_candidate(
+            depends,
+            domain="fastblocks",
+            key="fastblocks_workflows",
+            factory=lambda: workflow_service,
+            metadata={"class": type(workflow_service).__name__},
+        )
 
         return workflow_service.available
 

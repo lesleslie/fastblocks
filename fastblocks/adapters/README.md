@@ -184,7 +184,16 @@ class MyAdapter:
 
         # Register with Oneiric resolver
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="styles",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 ```
 
 ### Required Components
@@ -193,7 +202,7 @@ class MyAdapter:
 1. **Adapter Class**: Implements the protocol defined in the adapter's `_base.py`
 1. **MODULE_ID**: Static UUID7 for unique adapter identification
 1. **MODULE_STATUS**: Current stability status (stable, beta, alpha, experimental)
-1. **Oneiric Registration**: Self-registration in the Oneiric resolver via `depends.set(self)` (or via `resolve_component_async(depends, "fastblocks", "<name>")` for async callers).
+1. **Oneiric Registration**: Self-registration in the Oneiric resolver via `register_candidate(depends, domain="fastblocks", key="<category>", factory=lambda: self)`.
 
 ## Creating Custom Adapters
 
@@ -248,7 +257,16 @@ class CustomImageAdapter:
         self.settings = CustomImageSettings()
 
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="images",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     async def upload_image(self, file_data: bytes, filename: str) -> str:
         """Upload image to custom service."""

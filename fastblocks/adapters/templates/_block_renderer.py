@@ -42,6 +42,7 @@ class AdapterStatus:
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
+from ..oneiric_helper import register_candidate, resolve_instance
 from jinja2 import Environment, meta
 from jinja2.nodes import Block, Extends, Include
 from starlette.requests import Request
@@ -192,8 +193,8 @@ class BlockRenderer:
 
         if not self.hybrid_manager:
             try:
-                self.hybrid_manager = await depends.resolve(
-                    "fastblocks", "hybrid_template_manager"
+                self.hybrid_manager = resolve_instance(
+                    depends, "fastblocks", "hybrid_template_manager"
                 )
             except Exception as exc:  # noqa: BLE001
                 # No hybrid manager in scope -- construct a fresh one.
@@ -604,4 +605,10 @@ _using_oneiric = True
 
 # Register the block renderer
 with suppress(Exception):
-    depends.set("block_renderer", BlockRenderer)
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="block_renderer",
+        factory=lambda: BlockRenderer,
+        metadata={"class": "BlockRenderer"},
+    )

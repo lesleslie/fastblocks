@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from contextlib import suppress
 from typing import Any, Protocol
 from uuid import UUID
 
@@ -10,6 +9,8 @@ from uuid import UUID
 from oneiric.core.config import OneiricSettings
 from oneiric.core.resolution import Resolver
 from pydantic import Field
+
+from ..oneiric_helper import register_candidate
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
@@ -43,9 +44,17 @@ class IconsBase:
 
     def __init__(self) -> None:
         """Initialize icon adapter."""
-        # Register with Oneiric resolver (fail gracefully if not supported)
-        with suppress(Exception):
-            depends.set(self)
+        # Register with Oneiric resolver
+        register_candidate(
+            depends,
+            domain="fastblocks",
+            key="icons",
+            factory=lambda: self,
+            metadata={
+                "class": self.__class__.__name__,
+                "module": self.__class__.__module__,
+            },
+        )
 
     def get_icon_class(self, icon_name: str) -> str:
         """Get icon-specific class names."""

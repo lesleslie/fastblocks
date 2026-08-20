@@ -43,6 +43,7 @@ class AdapterStatus:
 
 # Oneiric resolver for dependency injection
 depends = Resolver()
+from ..oneiric_helper import register_candidate, resolve_instance
 from anyio import Path as AsyncPath
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response, StreamingResponse
@@ -132,7 +133,7 @@ class AsyncTemplateRenderer:
         """Initialize the async renderer."""
         if not self.base_templates:
             try:
-                self.base_templates = await depends.resolve("fastblocks", "templates")
+                self.base_templates = resolve_instance(depends, "fastblocks", "templates")
             except Exception as exc:  # noqa: BLE001
                 _log.warning(
                     "AsyncTemplateRenderer.initialize: templates fallback: %s",
@@ -143,8 +144,8 @@ class AsyncTemplateRenderer:
 
         if not self.hybrid_manager:
             try:
-                self.hybrid_manager = await depends.resolve(
-                    "fastblocks", "hybrid_template_manager"
+                self.hybrid_manager = resolve_instance(
+                    depends, "fastblocks", "hybrid_template_manager"
                 )
             except Exception as exc:  # noqa: BLE001
                 _log.warning(
@@ -352,7 +353,7 @@ class AsyncTemplateRenderer:
     ) -> RenderResult | None:
         """Check Redis cache for cached result."""
         with suppress(Exception):
-            cache = await depends.resolve("fastblocks", "cache")
+            cache = resolve_instance(depends, "fastblocks", "cache")
             if cache:
                 cached_content = await cache.get(render_context.cache_key)
                 if cached_content:
@@ -466,7 +467,7 @@ class AsyncTemplateRenderer:
 
         if self.cache_strategy in (CacheStrategy.REDIS, CacheStrategy.HYBRID):
             with suppress(Exception):
-                cache = await depends.resolve("fastblocks", "cache")
+                cache = resolve_instance(depends, "fastblocks", "cache")
                 if cache:
                     await cache.set(
                         render_context.cache_key,
@@ -689,4 +690,10 @@ _using_oneiric = True
 
 # Register the async renderer
 with suppress(Exception):
-    depends.set("async_template_renderer", AsyncTemplateRenderer)
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="async_template_renderer",
+        factory=lambda: AsyncTemplateRenderer,
+        metadata={"class": "AsyncTemplateRenderer"},
+    )

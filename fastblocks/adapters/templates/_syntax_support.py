@@ -15,6 +15,8 @@ from oneiric.core.resolution import Resolver
 # Migration from ACB to Oneiric
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate, resolve_instance
+
 
 class Settings(OneiricSettings):  # type: ignore[misc]
     """Base settings class for Oneiric compatibility."""
@@ -96,9 +98,18 @@ class FastBlocksSyntaxSupport:
         self._builtin_functions: set[str] = set()
         self._custom_components: set[str] = set()
 
-        # Register with ACB
+        # Register with Oneiric resolver
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="syntax_support",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
         self._initialize_patterns()
         self._load_builtin_definitions()
@@ -693,7 +704,7 @@ def register_syntax_filters(env: Any) -> None:
     @env.filter("format_template")  # type: ignore
     def format_template_filter(content: str) -> str:
         """Template filter for formatting FastBlocks templates."""
-        syntax_support = depends.get_sync("syntax_support")
+        syntax_support = resolve_instance(depends, "fastblocks", "syntax_support")
         if isinstance(syntax_support, FastBlocksSyntaxSupport):
             return syntax_support.format_template(content)
         return content
@@ -701,7 +712,7 @@ def register_syntax_filters(env: Any) -> None:
     @env.global_("syntax_check")  # type: ignore[untyped-decorator]
     def syntax_check_global(content: str) -> list[dict[str, Any]]:
         """Global function for syntax checking."""
-        syntax_support = depends.get_sync("syntax_support")
+        syntax_support = resolve_instance(depends, "fastblocks", "syntax_support")
         if isinstance(syntax_support, FastBlocksSyntaxSupport):
             errors = syntax_support.check_syntax(content)
             return [

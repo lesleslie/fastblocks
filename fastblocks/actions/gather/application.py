@@ -8,6 +8,8 @@ from importlib import import_module
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
+from ...adapters.oneiric_helper import register_candidate, resolve_instance
+
 # Migration from ACB to Oneiric
 # Note: This file heavily depends on ACB's adapter system which requires
 # special handling for Oneiric migration
@@ -350,7 +352,7 @@ async def _gather_config() -> t.Any:
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        config = await depends.resolve("fastblocks", "config")
+        config = resolve_instance(depends, "fastblocks", "config")
         if config:
             debug("Gathered application config from depends")
             return config
@@ -387,7 +389,13 @@ async def initialize_application_components(
 
     for dep_name, dependency in gather_result.dependencies.items():
         try:
-            depends.set(dep_name, dependency)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key=dep_name,
+                factory=lambda dep=dependency: dep,
+                metadata={"class": type(dependency).__name__},
+            )
             initialization_results["dependencies_set"].append(dep_name)
             debug(f"Set dependency: {dep_name}")
 

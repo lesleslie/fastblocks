@@ -71,6 +71,7 @@ def debug(msg: str) -> None:
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate
 from ._base import TemplatesBase
 from ._htmy_components import (
     AdvancedHTMYComponentRegistry,
@@ -428,7 +429,16 @@ class HTMYTemplates(TemplatesBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            depends.set(self, "htmy")
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="htmy",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     async def register_trusted_components(self, components: dict[str, t.Any]) -> None:
         """Register pre-imported, trusted component classes.
@@ -884,7 +894,16 @@ class HTMYTemplates(TemplatesBase):
             self.jinja_templates = None
         # Already registered in __init__, but ensure it's set (fail gracefully)
         with suppress(Exception):
-            depends.set("htmy", self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="htmy",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
         debug("HTMY Templates adapter initialized")
 
     async def render_template(
@@ -912,6 +931,12 @@ Templates = HTMYTemplates
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Templates, "htmy")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="htmy",
+        factory=lambda: Templates,
+        metadata={"class": "HTMYTemplates"},
+    )
 
 __all__ = ["HTMYTemplates", "HTMYTemplatesSettings", "Templates", "TemplatesSettings"]

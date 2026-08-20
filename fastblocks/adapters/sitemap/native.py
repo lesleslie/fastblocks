@@ -40,6 +40,7 @@ def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
 
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import SitemapBase, SitemapBaseSettings
 from .core import BaseSitemap, SitemapApp
 
@@ -53,7 +54,7 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
 
     def items(self) -> t.Any:
         try:
-            routes_adapter = depends.get_sync("routes")
+            routes_adapter = resolve_instance(depends, "fastblocks", "routes")
             if not routes_adapter or not hasattr(routes_adapter, "routes"):
                 debug("NativeSitemap: No routes adapter found")
                 return []
@@ -132,4 +133,10 @@ MODULE_ID = UUID("01937d86-9f7f-7081-d342-6789012345f0")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    depends.set(Sitemap)
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="native_sitemap",
+        factory=lambda: Sitemap,
+        metadata={"class": "NativeSitemap"},
+    )

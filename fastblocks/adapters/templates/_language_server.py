@@ -13,6 +13,7 @@ from pydantic import Field
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate
 from ._syntax_support import FastBlocksSyntaxSupport
 
 
@@ -59,9 +60,18 @@ class FastBlocksLanguageServer:
         self._documents: dict[str, str] = {}
         self._diagnostics: dict[str, list[dict[str, Any]]] = {}
 
-        # Register with ACB
+        # Register with Oneiric resolver
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="language_server",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
         # Initialize syntax support
         self.syntax_support = FastBlocksSyntaxSupport()

@@ -41,6 +41,7 @@ def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
 
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import SitemapBase, SitemapBaseSettings
 from .core import BaseSitemap as NativeSitemap
 from .core import SitemapApp
@@ -55,7 +56,7 @@ class AsgiSitemap(NativeSitemap[str], SitemapBase):
 
     def items(self) -> t.Any:
         try:
-            routes_adapter = depends.get_sync("routes")
+            routes_adapter = resolve_instance(depends, "fastblocks", "routes")
             if routes_adapter and hasattr(routes_adapter, "routes"):
                 return [r.path for r in routes_adapter.routes]
             return []
@@ -87,4 +88,10 @@ MODULE_ID = UUID("01937d86-eff0-7410-5786-a01234567890")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    depends.set(AsgiSitemap)
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="asgi_sitemap",
+        factory=lambda: AsgiSitemap,
+        metadata={"class": "AsgiSitemap"},
+    )

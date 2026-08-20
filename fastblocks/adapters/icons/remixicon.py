@@ -9,6 +9,7 @@ from uuid import UUID
 from oneiric.core.resolution import Resolver
 from pydantic import Field
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import IconsBase, IconsBaseSettings
 from ._utils import (
     add_accessibility_attributes,
@@ -114,7 +115,16 @@ class RemixIcon(IconsBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="remix_icons",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     def get_stylesheet_links(self) -> list[str]:
         """Get Remix Icon stylesheet links."""
@@ -647,7 +657,7 @@ def _register_ri_basic_filters(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Template filter for Remix Icons."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, RemixIcon):
             return icons.get_icon_tag(icon_name, variant, size, **attributes)
         return f"<!-- {icon_name} -->"
@@ -655,7 +665,7 @@ def _register_ri_basic_filters(env: Any) -> None:
     @env.filter("ri_class")  # type: ignore
     def ri_class_filter(icon_name: str, variant: str | None = None) -> str:
         """Template filter for Remix Icon classes."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, RemixIcon):
             return icons.get_icon_class(icon_name, variant)
         return f"ri-{icon_name}"
@@ -663,7 +673,7 @@ def _register_ri_basic_filters(env: Any) -> None:
     @env.global_("remixicon_stylesheet_links")  # type: ignore[untyped-decorator]
     def remixicon_stylesheet_links() -> str:
         """Global function for Remix Icon stylesheet links."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, RemixIcon):
             return "\n".join(icons.get_stylesheet_links())
         return ""
@@ -681,7 +691,7 @@ def _register_ri_advanced_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate stacked Remix Icons."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, RemixIcon):
             return icons.get_stacked_icons(
                 background_icon,
@@ -700,7 +710,7 @@ def _register_ri_advanced_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate gradient Remix Icon."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if isinstance(icons, RemixIcon):
             attributes["color"] = f"gradient-{gradient_type}"
             return icons.get_icon_tag(icon_name, variant, **attributes)
@@ -719,7 +729,7 @@ def _register_ri_button_functions(env: Any) -> None:
         **attributes: Any,
     ) -> str:
         """Generate button with Remix Icon."""
-        icons = depends.get_sync("icons")
+        icons = resolve_instance(depends, "fastblocks", "icons")
         if not isinstance(icons, RemixIcon):
             return f"<button>{text}</button>"
 
@@ -754,7 +764,13 @@ Icons = RemixIcon
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Icons, "remixicon")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="remix_icons",
+        factory=lambda: Icons,
+        metadata={"class": "RemixIcon"},
+    )
 
 
 # ACB 0.19.0+ compatibility

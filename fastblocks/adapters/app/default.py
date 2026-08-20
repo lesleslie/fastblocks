@@ -19,6 +19,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks.applications import FastBlocks
 
 from ._base import AppBase, AppBaseSettings
+from ..oneiric_helper import resolve_instance
 
 # Custom Oneiric-compatible adapter system
 depends = Resolver()
@@ -111,7 +112,7 @@ class FastBlocksApp(FastBlocks):
         from aioconsole import aprint
         from pyfiglet import Figlet
 
-        config = await depends.resolve("fastblocks", "config")
+        config = resolve_instance(depends, "fastblocks", "config")
         app_name = getattr(config.app, "name", "FastBlocks")
         startup_time = self._get_startup_time()
         debug_enabled = self._get_debug_enabled(config)
@@ -135,7 +136,7 @@ class FastBlocksApp(FastBlocks):
         with suppress(Exception):
             # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-            config = await depends.resolve("fastblocks", "config")
+            config = resolve_instance(depends, "fastblocks", "config")
             getattr(config.app, "name", "FastBlocks")
             self._get_startup_time()
 

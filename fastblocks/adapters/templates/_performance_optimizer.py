@@ -13,6 +13,8 @@ from oneiric.core.resolution import Resolver
 # Migration from ACB to Oneiric
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate
+
 
 @dataclass
 class PerformanceMetrics:
@@ -66,9 +68,18 @@ class PerformanceOptimizer:
         # and is not counted here to keep the counter meaningful.)
         self._evictions_total: int = 0
 
-        # Register with ACB
+        # Register with Oneiric resolver
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="performance_optimizer",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     @property
     def evictions_total(self) -> int:

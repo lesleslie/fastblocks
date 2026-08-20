@@ -40,6 +40,8 @@ class AdapterStatus:
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import resolve_instance
+
 
 # Cloudflare Images Filters
 def cf_image_url(image_id: str, **transformations: t.Any) -> str:
@@ -49,7 +51,7 @@ def cf_image_url(image_id: str, **transformations: t.Any) -> str:
         [[ cf_image_url('hero.jpg', width=800, quality=85, format='webp') ]]
     """
     with suppress(Exception):  # Fallback
-        cloudflare = depends.get_sync("cloudflare_images")
+        cloudflare = resolve_instance(depends, "fastblocks", "cloudflare_images")
         if cloudflare:
             result = cloudflare.get_image_url(image_id, **transformations)
             return str(result) if result is not None else image_id
@@ -134,7 +136,7 @@ def cf_responsive_image(
         }) ]]
     """
     try:
-        cloudflare = depends.get_sync("cloudflare_images")
+        cloudflare = resolve_instance(depends, "fastblocks", "cloudflare_images")
         if not cloudflare:
             return f'<img src="{image_id}" alt="{alt}">'
 
@@ -161,7 +163,7 @@ def twicpics_image(image_id: str, **transformations: t.Any) -> str:
         [[ twicpics_image('product.jpg', resize='400x300', focus='auto') ]]
     """
     with suppress(Exception):
-        twicpics = depends.get_sync("twicpics")
+        twicpics = resolve_instance(depends, "fastblocks", "twicpics")
         if twicpics:
             result = twicpics.get_image_url(image_id, **transformations)
             return str(result) if result is not None else image_id
@@ -194,7 +196,7 @@ def twicpics_smart_crop(
         [[ twicpics_smart_crop('landscape.jpg', 400, 300, 'face', class='hero-img') ]]
     """
     with suppress(Exception):
-        twicpics = depends.get_sync("twicpics")
+        twicpics = resolve_instance(depends, "fastblocks", "twicpics")
         if twicpics:
             transform_params = {
                 "resize": f"{width}x{height}",
@@ -226,7 +228,7 @@ def wa_icon(icon_name: str, **attributes: t.Any) -> str:
         [[ wa_icon('home', size='24', class='nav-icon') ]]
     """
     with suppress(Exception):  # Fallback
-        webawesome = depends.get_sync("webawesome")
+        webawesome = resolve_instance(depends, "fastblocks", "webawesome")
         if webawesome:
             result = webawesome.get_icon_tag(icon_name, **attributes)
             return str(result) if result is not None else f"[{icon_name}]"
@@ -245,7 +247,7 @@ def wa_icon_with_text(
         [[ wa_icon_with_text('save', 'Save Changes', 'left', class='btn-icon') ]]
     """
     with suppress(Exception):  # Fallback
-        webawesome = depends.get_sync("webawesome")
+        webawesome = resolve_instance(depends, "fastblocks", "webawesome")
         if webawesome and hasattr(webawesome, "get_icon_with_text"):
             result = webawesome.get_icon_with_text(
                 icon_name, text, position, **attributes
@@ -271,7 +273,7 @@ def kelp_component(component_type: str, content: str = "", **attributes: t.Any) 
         [[ kelp_component('button', 'Click Me', variant='primary', size='large') ]]
     """
     with suppress(Exception):  # Fallback
-        kelp = depends.get_sync("kelp")
+        kelp = resolve_instance(depends, "fastblocks", "kelp")
         if kelp:
             result = kelp.build_component(component_type, content, **attributes)
             return (
@@ -305,7 +307,7 @@ def kelp_card(title: str = "", content: str = "", **attributes: t.Any) -> str:
         [[ kelp_card('Card Title', '<p>Card content here</p>', variant='elevated') ]]
     """
     with suppress(Exception):
-        kelp = depends.get_sync("kelp")
+        kelp = resolve_instance(depends, "fastblocks", "kelp")
         if kelp and hasattr(kelp, "build_card"):
             result = kelp.build_card(title, content, **attributes)
             return (
@@ -348,7 +350,7 @@ def phosphor_icon(icon_name: str, weight: str = "regular", **attributes: t.Any) 
         [[ phosphor_icon('house', 'bold', size='24', class='nav-icon') ]]
     """
     with suppress(Exception):  # Fallback
-        phosphor = depends.get_sync("phosphor")
+        phosphor = resolve_instance(depends, "fastblocks", "phosphor")
         if phosphor:
             result = phosphor.get_icon_tag(icon_name, weight=weight, **attributes)
             return str(result) if result is not None else f"[{icon_name}]"
@@ -372,7 +374,7 @@ def heroicon(icon_name: str, style: str = "outline", **attributes: t.Any) -> str
         [[ heroicon('home', 'solid', size='24', class='nav-icon') ]]
     """
     with suppress(Exception):  # Fallback SVG approach
-        heroicons = depends.get_sync("heroicons")
+        heroicons = resolve_instance(depends, "fastblocks", "heroicons")
         if heroicons:
             result = heroicons.get_icon_tag(icon_name, style=style, **attributes)
             return str(result) if result is not None else f"[{icon_name}]"
@@ -396,7 +398,7 @@ def remix_icon(icon_name: str, **attributes: t.Any) -> str:
         [[ remix_icon('home-line', size='24', class='nav-icon') ]]
     """
     with suppress(Exception):  # Fallback
-        remix = depends.get_sync("remix_icons")
+        remix = resolve_instance(depends, "fastblocks", "remix_icons")
         if remix:
             result = remix.get_icon_tag(icon_name, **attributes)
             return str(result) if result is not None else f"[{icon_name}]"
@@ -417,7 +419,7 @@ def material_icon(icon_name: str, variant: str = "filled", **attributes: t.Any) 
         [[ material_icon('home', 'outlined', size='24', class='nav-icon') ]]
     """
     with suppress(Exception):  # Fallback
-        material = depends.get_sync("material_icons")
+        material = resolve_instance(depends, "fastblocks", "material_icons")
         if material:
             result = material.get_icon_tag(icon_name, variant=variant, **attributes)
             return str(result) if result is not None else f"[{icon_name}]"
@@ -441,7 +443,7 @@ async def async_optimized_font_loading(fonts: list[str], critical: bool = True) 
         [[ await async_optimized_font_loading(['Inter', 'Roboto Mono'], critical=True) ]]
     """
     with suppress(Exception):  # Fallback
-        font_adapter = await depends.resolve("fastblocks", "fonts")
+        font_adapter = resolve_instance(depends, "fastblocks", "fonts")
         if font_adapter and hasattr(font_adapter, "get_optimized_loading"):
             result = await font_adapter.get_optimized_loading(fonts, critical=critical)
             return str(result) if result is not None else ""
@@ -472,7 +474,7 @@ def font_face_declaration(
         }, weight='400', style='normal') ]]
     """
     with suppress(Exception):  # Fallback
-        font_adapter = depends.get_sync("fonts")
+        font_adapter = resolve_instance(depends, "fastblocks", "fonts")
         if font_adapter and hasattr(font_adapter, "generate_font_face"):
             result = font_adapter.generate_font_face(
                 font_name, font_files, **attributes

@@ -9,6 +9,8 @@ from inspect import isclass
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
+from ...adapters.oneiric_helper import resolve_instance
+
 _log = get_logger("fastblocks.actions.gather.templates")
 
 
@@ -270,7 +272,7 @@ async def _load_config_extensions(extensions: list[t.Any]) -> None:
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        config = await depends.resolve("fastblocks", "config")
+        config = resolve_instance(depends, "fastblocks", "config")
         if _has_template_extensions_config(config):
             _process_extension_paths(config.templates.extensions, extensions)
     except (ImportError, ModuleNotFoundError, AttributeError, ValueError) as e:
@@ -331,7 +333,7 @@ async def _gather_default_context_processors() -> list[t.Callable[..., t.Any]]:
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        config = await depends.resolve("fastblocks", "config")
+        config = resolve_instance(depends, "fastblocks", "config")
         if hasattr(config, "templates") and hasattr(
             config.templates,
             "context_processors",
@@ -428,10 +430,10 @@ async def _gather_template_globals() -> list[dict[str, t.Any]]:
     try:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
 
-        config = await depends.resolve("fastblocks", "config")
+        config = resolve_instance(depends, "fastblocks", "config")
         globals_dict["config"] = config
         try:
-            models = await depends.resolve("fastblocks", "models")
+            models = resolve_instance(depends, "fastblocks", "models")
             globals_dict["models"] = models
         except (ImportError, ModuleNotFoundError, AttributeError, ValueError):
             globals_dict["models"] = None

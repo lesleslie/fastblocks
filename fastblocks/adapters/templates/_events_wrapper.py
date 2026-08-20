@@ -19,6 +19,8 @@ from oneiric.core.resolution import Resolver
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import resolve_instance
+
 
 def track_template_render(
     func: t.Callable[..., t.Awaitable[t.Any]],
@@ -272,7 +274,7 @@ def get_template_metrics(template_name: str) -> dict[str, t.Any]:
     """
     with suppress(Exception):
         # Get the template metrics handler
-        handler = depends.get_sync("template_metrics")
+        handler = resolve_instance(depends, "fastblocks", "template_metrics")
         if handler and hasattr(handler, "get_template_stats"):
             stats: dict[str, t.Any] = handler.get_template_stats(template_name)
             return stats
@@ -291,7 +293,7 @@ def get_recent_admin_actions(limit: int = 50) -> list[dict[str, t.Any]]:
     """
     with suppress(Exception):
         # Get the admin audit handler
-        handler = depends.get_sync("admin_audit")
+        handler = resolve_instance(depends, "fastblocks", "admin_audit")
         if handler and hasattr(handler, "get_recent_actions"):
             actions: list[dict[str, t.Any]] = handler.get_recent_actions(limit=limit)
             return actions

@@ -36,6 +36,8 @@ _log = get_logger("fastblocks.adapters.templates._enhanced_cache")
 # Oneiric resolver for dependency injection
 depends = Resolver()
 
+from ..oneiric_helper import register_candidate
+
 
 class CacheTier(Enum):
     """Cache tier levels for multi-tier caching."""
@@ -166,9 +168,18 @@ class EnhancedCacheManager:
         self._maintenance_task: asyncio.Task[None] | None = None
         self._warming_task: asyncio.Task[None] | None = None
 
-        # Register with ACB
+        # Register with Oneiric resolver
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="enhanced_cache",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     async def initialize(self) -> None:
         """Initialize cache manager and start background tasks."""

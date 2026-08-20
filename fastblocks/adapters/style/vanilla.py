@@ -10,6 +10,7 @@ from uuid import UUID
 from oneiric.core.resolution import Resolver
 from pydantic import Field
 
+from ..oneiric_helper import register_candidate
 from ._base import StyleBase, StyleBaseSettings
 
 # Oneiric resolver for dependency injection
@@ -84,7 +85,16 @@ class VanillaStyle(StyleBase):
 
         # Register with Oneiric resolver (fail gracefully if not supported)
         with suppress(Exception):
-            depends.set(self)
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key="vanilla",
+                factory=lambda: self,
+                metadata={
+                    "class": self.__class__.__name__,
+                    "module": self.__class__.__module__,
+                },
+            )
 
     def get_stylesheet_links(self) -> list[str]:
         """Generate link tags for custom CSS files."""
@@ -221,6 +231,12 @@ Style = VanillaStyle
 
 # Register with Oneiric resolver (fail gracefully if not supported)
 with suppress(Exception):
-    depends.set(Style, "vanilla")
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="vanilla",
+        factory=lambda: Style,
+        metadata={"class": "VanillaStyle"},
+    )
 
 __all__ = ["Style", "StyleSettings", "VanillaStyle", "VanillaStyleSettings"]

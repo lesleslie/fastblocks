@@ -19,7 +19,7 @@ The style adapters provide pluggable CSS frameworks for FastBlocks. Each adapter
 | Kelp | `kelp.py` | First-party lightweight system with generated CSS variables, utility classes, and component builders. |
 | Vanilla | `vanilla.py` | Minimal, semantic styling intended as a starting point for bespoke themes. |
 
-Every adapter registers itself with the dependency container (`depends.set(self)`) using the `"styles"` key, so template helpers and CLI tooling can resolve whichever implementation you configure.
+Every adapter registers itself with the Oneiric resolver (`register_candidate(depends, domain="fastblocks", key="styles", factory=lambda: self)`) so template helpers and CLI tooling can resolve whichever implementation you configure.
 
 ## Configuration
 

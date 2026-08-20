@@ -40,6 +40,7 @@ def import_adapter(adapter_name: str) -> None:
     """Custom implementation for Oneiric compatibility."""
 
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import SitemapBase, SitemapBaseSettings
 from .core import BaseSitemap, SitemapApp
 
@@ -58,7 +59,7 @@ class CachedSitemap(BaseSitemap[str], SitemapBase):
 
     async def items(self) -> t.Any:
         try:
-            routes_adapter = await depends.resolve("fastblocks", "routes")
+            routes_adapter = resolve_instance(depends, "fastblocks", "routes")
             if routes_adapter and hasattr(routes_adapter, "routes"):
                 route_paths = [r.path for r in routes_adapter.routes]
                 debug(f"CachedSitemap: Cached {len(route_paths)} routes")
@@ -139,4 +140,10 @@ MODULE_ID = UUID("01937d86-cfa2-73b4-0675-901234567823")
 MODULE_STATUS = AdapterStatus.STABLE
 
 with suppress(Exception):
-    depends.set(Sitemap)
+    register_candidate(
+        depends,
+        domain="fastblocks",
+        key="cached_sitemap",
+        factory=lambda: Sitemap,
+        metadata={"class": "CachedSitemap"},
+    )
