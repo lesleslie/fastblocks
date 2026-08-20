@@ -69,17 +69,16 @@ class TestValidationServiceBasics:
 
 @pytest.mark.integration
 class TestSingletonSanitizerState:
-    """Regression: singleton must initialize sanitizer state on first use."""
+    """Regression: public validation path must sanitize across singleton calls."""
 
     @pytest.mark.asyncio
     async def test_singleton_sanitizer_persists_across_calls(self):
-        """Sanitizer must be initialized and reused across validation calls.
+        """Singleton sanitizer state must persist across validation calls.
 
-        Regression: prior to fix, ``_initialized: bool = False`` was a class
-        attribute, so ``hasattr(self, "_initialized")`` returned True on the
-        first ``__init__`` and the sanitizer was never created. Subsequent
-        calls (and any test exercising XSS prevention) silently returned the
-        raw payload.
+        Exercises the public ``validate_template_context`` path twice on the
+        same singleton instance and asserts that both calls produce sanitized
+        output. The second call verifies that state initialized on first use
+        is preserved for the lifetime of the singleton.
         """
         service = get_validation_service()
 

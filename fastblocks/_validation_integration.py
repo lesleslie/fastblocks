@@ -127,19 +127,10 @@ class ValidationConfig:
 class FastBlocksValidationService(metaclass=SingletonMeta):
     """FastBlocks validation service with Oneiric integration."""
 
-    # Shared config — kept as ClassVar so every consumer sees the same policy.
     _config: t.ClassVar[ValidationConfig] = ValidationConfig()
 
     def __init__(self) -> None:
-        """Initialize validation service with Oneiric integration.
-
-        Note: instance attributes (``_service``, ``_sanitizer``, ``_validator``,
-        ``_initialized``) are intentionally NOT declared at class level. The
-        ``hasattr`` guard relies on these living exclusively in
-        ``self.__dict__`` after the first ``__init__`` call; declaring them as
-        class attributes with default values would short-circuit the guard
-        (via class-attribute lookup) and silently skip sanitizer construction.
-        """
+        """Initialize validation service with Oneiric integration."""
         if not hasattr(self, "_initialized"):
             self._service = ValidationService()  # Oneiric-compatible validation service
             self._sanitizer = self._service.sanitizer
