@@ -7,6 +7,8 @@ from platform import system
 # Oneiric imports
 from oneiric.core.resolution import Resolver
 
+from .adapters.oneiric_helper import resolve_instance
+
 
 # Oneiric adapter structure. ``AdapterBase`` is a real class (not
 # an ``object`` alias) so that subclasses' ``__bases__`` can be
@@ -268,12 +270,12 @@ class FastBlocks(Starlette):
     def _get_dependencies(self, config: t.Any, logger: t.Any) -> tuple[t.Any, t.Any]:
         if config is None:
             try:
-                config = depends.get_sync("config")
+                config = resolve_instance(depends, "fastblocks", "config")
             except (ImportError, AttributeError, ValueError):
                 config = None
         if logger is None:
             try:
-                logger = depends.get_sync("logger")
+                logger = resolve_instance(depends, "fastblocks", "logger")
             except (ImportError, AttributeError, ValueError):
                 logger = None
         if logger is not None and not hasattr(logger, "debug"):

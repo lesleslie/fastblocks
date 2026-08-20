@@ -25,6 +25,8 @@ from typing import Any
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
+from fastblocks.adapters.oneiric_helper import resolve_instance
+
 # Migration from ACB to Oneiric
 depends = Resolver()
 
@@ -119,7 +121,7 @@ async def _get_htmy_adapter(
 ) -> tuple[Any | None, ComponentGatherResult | None]:
     """Get HTMY adapter or return error result."""
     try:
-        htmy_adapter = await depends.resolve("fastblocks", "htmy")
+        htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
         return htmy_adapter, None
     except Exception as e:  # noqa: BLE001, RUF100  # Framework-boundary: any resolver failure becomes "no adapter available".
         # Resolver may fail at any layer (load, lookup, factory invocation);
@@ -326,7 +328,7 @@ async def gather_component_dependencies(
         Dictionary with component dependency tree
     """
     if htmy_adapter is None:
-        htmy_adapter = await depends.resolve("fastblocks", "htmy")
+        htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
 
     if htmy_adapter is None:
         return {"error": "HTMY adapter not available"}
@@ -372,7 +374,7 @@ async def analyze_component_usage(
         Dictionary with usage analysis
     """
     if htmy_adapter is None:
-        htmy_adapter = await depends.resolve("fastblocks", "htmy")
+        htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
 
     if htmy_adapter is None:
         return {"error": "HTMY adapter not available"}

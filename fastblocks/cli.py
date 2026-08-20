@@ -31,6 +31,8 @@ import yaml
 from anyio import Path as AsyncPath
 from granian import Granian
 
+from fastblocks.adapters.oneiric_helper import resolve_instance
+
 # Use standard rich console instead of ACB console
 from rich.console import Console
 
@@ -190,7 +192,7 @@ def _display_adapters() -> None:
     depends = Resolver()
     try:
         # Try to get adapter registry from Oneiric
-        adapter_registry = depends.resolve("adapter_registry")
+        adapter_registry = resolve_instance(depends, "fastblocks", "adapter_registry")
         if adapter_registry:
             adapters = adapter_registry.get_all_adapters()
         else:
@@ -380,7 +382,7 @@ def scaffold(
 
             # Get HTMY adapter using Oneiric resolver
             depends = Resolver()
-            htmy_adapter = await depends.resolve("htmy")
+            htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -464,7 +466,7 @@ def list_components() -> None:
 
             # Get HTMY adapter using Oneiric resolver
             depends = Resolver()
-            htmy_adapter = await depends.resolve("htmy")
+            htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -543,7 +545,7 @@ def validate(
 
             # Get HTMY adapter using Oneiric resolver
             depends = Resolver()
-            htmy_adapter = await depends.resolve("htmy")
+            htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -604,7 +606,7 @@ def info(
 
             # Get HTMY adapter using Oneiric resolver
             depends = Resolver()
-            htmy_adapter = await depends.resolve("htmy")
+            htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
             if htmy_adapter is None:
                 console.print(
                     "[red]HTMY adapter not found. Make sure you're in a FastBlocks project.[/red]"
@@ -684,7 +686,7 @@ def syntax_check(
 
             # Get syntax support using Oneiric resolver
             depends = Resolver()
-            syntax_support = await depends.resolve("syntax_support")
+            syntax_support = resolve_instance(depends, "fastblocks", "syntax_support")
             if syntax_support is None:
                 console.print(
                     "[red]Syntax support not available. Make sure you're in a FastBlocks project.[/red]"
@@ -730,7 +732,7 @@ def format_template(
 
             # Get syntax support using Oneiric resolver
             depends = Resolver()
-            syntax_support = await depends.resolve("syntax_support")
+            syntax_support = resolve_instance(depends, "fastblocks", "syntax_support")
             if syntax_support is None:
                 console.print(
                     "[red]Syntax support not available. Make sure you're in a FastBlocks project.[/red]"
@@ -874,7 +876,7 @@ def start_language_server(
 
             # Get language server using Oneiric resolver
             depends = Resolver()
-            language_server = await depends.resolve("language_server")
+            language_server = resolve_instance(depends, "fastblocks", "language_server")
             if language_server is None:
                 console.print(
                     "[red]Language server not available. Make sure you're in a FastBlocks project.[/red]"

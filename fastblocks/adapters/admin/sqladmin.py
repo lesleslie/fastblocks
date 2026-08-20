@@ -16,7 +16,7 @@ from oneiric.core.resolution import Resolver
 from starlette.applications import Starlette
 from fastblocks.applications import FastBlocks
 
-from ..oneiric_helper import register_candidate
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import AdminBase, AdminBaseSettings
 
 # Custom Oneiric-compatible adapter system
@@ -55,7 +55,7 @@ class Admin(AdminBase):
     async def init(self) -> None:
         with suppress(Exception):
             # For Oneiric, try to get models using resolve
-            models = await depends.resolve("fastblocks", "models")
+            models = resolve_instance(depends, "fastblocks", "models")
             if models and hasattr(models, "get_admin_models"):
                 admin_models = models.get_admin_models()
                 for model in admin_models:

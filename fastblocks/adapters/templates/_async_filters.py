@@ -8,6 +8,8 @@ from typing import Any
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 
+from fastblocks.adapters.oneiric_helper import resolve_instance
+
 _log = get_logger("fastblocks.adapters.templates._async_filters")
 
 # Oneiric resolver for dependency injection
@@ -21,7 +23,7 @@ async def async_image_url(image_id: str, **transformations: Any) -> str:
         [[ await async_image_url('product.jpg', width=300, height=200, crop='fill') ]]
     """
     try:
-        images = await depends.resolve("fastblocks", "images")
+        images = resolve_instance(depends, "fastblocks", "images")
     except Exception as exc:  # noqa: BLE001
         # Resolver may not have registered the images adapter yet (test
         # harness, partial boot). Templates then receive the bare
@@ -48,7 +50,7 @@ async def async_font_import() -> str:
         [% endblock %]
     """
     try:
-        fonts = await depends.resolve("fastblocks", "fonts")
+        fonts = resolve_instance(depends, "fastblocks", "fonts")
     except Exception as exc:  # noqa: BLE001
         # Same rationale as async_image_url: missing font adapter
         # degrades to an empty string so the page renders.
@@ -101,7 +103,7 @@ async def async_image_with_transformations(
                                                   class='hero-img') ]]
     """
     try:
-        images = await depends.resolve("fastblocks", "images")
+        images = resolve_instance(depends, "fastblocks", "images")
     except Exception as exc:  # noqa: BLE001
         _log.warning(
             "async_image_with_transformations: images adapter unavailable: %s",
@@ -136,7 +138,7 @@ async def async_responsive_image(
         }) ]]
     """
     try:
-        images = await depends.resolve("fastblocks", "images")
+        images = resolve_instance(depends, "fastblocks", "images")
     except Exception as exc:  # noqa: BLE001
         _log.warning(
             "async_responsive_image: images adapter unavailable: %s",
@@ -203,7 +205,7 @@ async def async_optimized_font_stack() -> str:
         [% endblock %]
     """
     try:
-        fonts = await depends.resolve("fastblocks", "fonts")
+        fonts = resolve_instance(depends, "fastblocks", "fonts")
     except Exception as exc:  # noqa: BLE001
         _log.warning(
             "async_optimized_font_stack: fonts adapter unavailable: %s",
@@ -246,7 +248,7 @@ async def async_critical_css_fonts(critical_fonts: list[str] | None = None) -> s
         [% endblock %]
     """
     try:
-        fonts = await depends.resolve("fastblocks", "fonts")
+        fonts = resolve_instance(depends, "fastblocks", "fonts")
     except Exception as exc:  # noqa: BLE001
         _log.warning(
             "async_optimized_font_stack: fonts adapter unavailable: %s",
@@ -283,7 +285,7 @@ async def async_image_placeholder(
         [[ await async_image_placeholder(400, 300, 'Loading...') ]]
     """
     try:
-        images = await depends.resolve("fastblocks", "images")
+        images = resolve_instance(depends, "fastblocks", "images")
     except Exception as exc:  # noqa: BLE001
         _log.warning(
             "async_image_placeholder: images adapter unavailable: %s",
@@ -323,7 +325,7 @@ async def async_lazy_image(
         [[ await async_lazy_image('hero.jpg', 'Hero Image', loading='lazy') ]]
     """
     try:
-        images = await depends.resolve("fastblocks", "images")
+        images = resolve_instance(depends, "fastblocks", "images")
     except Exception as exc:  # noqa: BLE001
         _log.warning(
             "async_image_placeholder: images adapter unavailable: %s",
