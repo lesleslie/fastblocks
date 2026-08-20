@@ -27,7 +27,7 @@ This directory contains technical documentation, guides, and examples for FastBl
 
 #### ACB Integration
 
-- **ACB_GUIDE.md** - Complete guide to using Asynchronous Component Base (ACB) with FastBlocks
+- **ONEIRIC_GUIDE.md** - Complete guide to using Oneiric with FastBlocks
   - ACB Actions (compression, hashing, encoding, security, validation)
   - ACB Adapters (database, cache, storage, monitoring)
   - Configuration examples and best practices
@@ -42,7 +42,7 @@ This directory contains technical documentation, guides, and examples for FastBl
 
 ### Version Migration (docs/migrations/)
 
-- **MIGRATION-0.17.0.md** - Migration guide for v0.17.0
+- **migrations/0.7-to-0.8.md** - Migration guide for v0.7.0 → v0.8.0
   - Dependency groups migration (PEP 735)
   - Breaking changes and upgrade instructions
 
@@ -70,7 +70,7 @@ See [docs/archive/README.md](archive/README.md) for details.
 
 ### For ACB Integration
 
-1. Read ACB_GUIDE.md for comprehensive ACB usage
+1. Read ONEIRIC_GUIDE.md for comprehensive Oneiric usage
 1. Use ACB actions for utilities (hashing, compression, encoding)
 1. Use ACB adapters for infrastructure (database, cache, storage)
 
@@ -88,7 +88,7 @@ Check [migrations/](migrations/) for version-specific upgrade guides.
 
 ### File Naming
 
-- Use `SCREAMING_SNAKE_CASE` for major guides (e.g., ACB_GUIDE.md)
+- Use `SCREAMING_SNAKE_CASE` for major guides (e.g., ONEIRIC_GUIDE.md)
 - Use `kebab-case` for specific documents (e.g., pre-commit-resolution.md)
 - Use descriptive names that indicate content
 
