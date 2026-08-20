@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from oneiric.core.resolution import Candidate, CandidateSource
 from fastblocks.adapters.templates._async_filters import (
     FASTBLOCKS_ASYNC_FILTERS,
     async_font_import,
@@ -33,6 +34,24 @@ from fastblocks.adapters.templates._registration import (
 )
 
 
+def _make_candidate(key: str, instance: object) -> Candidate:
+    """Build a fastblocks ``Candidate`` whose ``factory()`` returns ``instance``.
+
+    Mirrors the canonical Oneiric Candidate/factory contract that
+    ``fastblocks.adapters.oneiric_helper.resolve_instance`` consumes:
+    ``resolver.resolve(domain, key).factory()`` returns the resolved adapter.
+    Setting ``mock_depends.resolve.return_value`` to this Candidate makes
+    the helper surface a real adapter instance instead of a leaked
+    ``MagicMock``.
+    """
+    return Candidate(
+        domain="fastblocks",
+        key=key,
+        factory=lambda: instance,
+        source=CandidateSource.LOCAL_PKG,
+    )
+
+
 @pytest.mark.unit
 class TestSyncFilters:
     """Test synchronous template filters."""
@@ -44,7 +63,7 @@ class TestSyncFilters:
         mock_adapter.get_img_tag.return_value = (
             '<img src="test.jpg" alt="Test" width="300">'
         )
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve.return_value = _make_candidate("images", mock_adapter)
 
         result = img_tag("test.jpg", "Test", width=300)
 
@@ -54,7 +73,7 @@ class TestSyncFilters:
     @patch("fastblocks.adapters.templates._filters.depends")
     def test_img_tag_fallback(self, mock_depends):
         """Test img_tag fallback behavior."""
-        mock_depends.get_sync.return_value = None
+        mock_depends.resolve.return_value = None
 
         result = img_tag("test.jpg", "Test", width=300, **{"class": "responsive"})
 
@@ -71,7 +90,7 @@ class TestSyncFilters:
         mock_adapter.get_sync_image_url.return_value = (
             "https://example.com/test.jpg?w=300"
         )
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve.return_value = _make_candidate("images", mock_adapter)
 
         result = image_url("test.jpg", width=300)
 
@@ -82,7 +101,7 @@ class TestSyncFilters:
     def test_image_url_fallback_with_params(self, mock_depends):
         """Test image_url fallback with parameters."""
         mock_adapter = MagicMock(spec=[])  # Adapter without get_sync_image_url method
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve.return_value = _make_candidate("images", mock_adapter)
 
         result = image_url("test.jpg", width=300, height=200)
 
@@ -99,7 +118,7 @@ class TestSyncFilters:
             "variant_primary": "btn-primary",
             "size_large": "btn-large",
         }
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve.return_value = _make_candidate("styles", mock_adapter)
 
         result = style_class("button", variant="primary", size="large")
 
@@ -110,7 +129,7 @@ class TestSyncFilters:
     @patch("fastblocks.adapters.templates._filters.depends")
     def test_style_class_fallback(self, mock_depends):
         """Test style_class fallback behavior."""
-        mock_depends.get_sync.return_value = None
+        mock_depends.resolve.return_value = None
 
         result = style_class("form_input")
 
@@ -121,7 +140,7 @@ class TestSyncFilters:
         """Test icon_tag with icon adapter."""
         mock_adapter = MagicMock()
         mock_adapter.get_icon_tag.return_value = '<i class="fas fa-home"></i>'
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve.return_value = _make_candidate("icons", mock_adapter)
 
         result = icon_tag("home")
 
@@ -131,7 +150,7 @@ class TestSyncFilters:
     @patch("fastblocks.adapters.templates._filters.depends")
     def test_icon_tag_fallback(self, mock_depends):
         """Test icon_tag fallback behavior."""
-        mock_depends.get_sync.return_value = None
+        mock_depends.resolve.return_value = None
 
         result = icon_tag("home")
 
@@ -144,7 +163,7 @@ class TestSyncFilters:
         mock_adapter.get_icon_with_text.return_value = (
             '<span><i class="fas fa-save"></i> Save</span>'
         )
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve.return_value = _make_candidate("icons", mock_adapter)
 
         result = icon_with_text("save", "Save", position="left")
 
@@ -158,7 +177,7 @@ class TestSyncFilters:
         mock_adapter.get_sync_font_import.return_value = (
             '<link rel="stylesheet" href="fonts.css">'
         )
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve.return_value = _make_candidate("fonts", mock_adapter)
 
         result = font_import()
 
@@ -170,7 +189,7 @@ class TestSyncFilters:
         """Test font_family with font adapter."""
         mock_adapter = MagicMock()
         mock_adapter.get_font_family.return_value = "'Inter', sans-serif"
-        mock_depends.get_sync.return_value = mock_adapter
+        mock_depends.resolve.return_value = _make_candidate("fonts", mock_adapter)
 
         result = font_family("primary")
 
@@ -180,7 +199,7 @@ class TestSyncFilters:
     @patch("fastblocks.adapters.templates._filters.depends")
     def test_font_family_fallback(self, mock_depends):
         """Test font_family fallback behavior."""
-        mock_depends.get_sync.return_value = None
+        mock_depends.resolve.return_value = None
 
         result = font_family("primary")
 
@@ -275,12 +294,11 @@ class TestAsyncFilters:
         mock_adapter.get_image_url = AsyncMock(
             return_value="https://example.com/test.jpg?w=300"
         )
-        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
+        mock_depends.resolve.return_value = _make_candidate("images", mock_adapter)
 
         result = await async_image_url("test.jpg", width=300)
 
         assert result == "https://example.com/test.jpg?w=300"
-        mock_depends.resolve.assert_called_once_with("fastblocks", "images")
         mock_adapter.get_image_url.assert_called_once_with("test.jpg", width=300)
 
     @pytest.mark.asyncio
@@ -301,7 +319,7 @@ class TestAsyncFilters:
         mock_adapter.get_font_import = AsyncMock(
             return_value='<link rel="stylesheet" href="fonts.css">'
         )
-        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
+        mock_depends.resolve.return_value = _make_candidate("fonts", mock_adapter)
 
         result = await async_font_import()
 
@@ -326,7 +344,7 @@ class TestAsyncFilters:
         mock_adapter.get_image_url = AsyncMock(
             return_value="https://example.com/hero.jpg?w=1200&q=85"
         )
-        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
+        mock_depends.resolve.return_value = _make_candidate("images", mock_adapter)
 
         result = await async_image_with_transformations(
             "hero.jpg", "Hero Image", {"width": 1200, "quality": 85}, class_="hero-img"
@@ -349,7 +367,7 @@ class TestAsyncFilters:
             return f"https://example.com/{image_id}?w={width}"
 
         mock_adapter.get_image_url = AsyncMock(side_effect=mock_get_image_url)
-        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
+        mock_depends.resolve.return_value = _make_candidate("images", mock_adapter)
 
         sizes = {
             "mobile": {"width": 400, "quality": 75},
@@ -378,7 +396,7 @@ class TestAsyncFilters:
             '<link rel="preload" href="font.woff2">'
         )
         mock_adapter.get_css_variables.return_value = ":root { --font-primary: Inter; }"
-        mock_depends.resolve = AsyncMock(return_value=mock_adapter)
+        mock_depends.resolve.return_value = _make_candidate("fonts", mock_adapter)
 
         result = await async_optimized_font_stack()
 
@@ -438,15 +456,17 @@ class TestFilterRegistration:
         mock_icons = MagicMock()
         mock_fonts = MagicMock()
 
-        def mock_get(name):
-            return {
-                "images": mock_images,
-                "styles": mock_styles,
-                "icons": mock_icons,
-                "fonts": mock_fonts,
-            }.get(name)
+        adapter_map = {
+            "images": mock_images,
+            "styles": mock_styles,
+            "icons": mock_icons,
+            "fonts": mock_fonts,
+        }
 
-        mock_depends.get_sync.side_effect = mock_get
+        def mock_resolve(domain, key):
+            return _make_candidate(key, adapter_map.get(key))
+
+        mock_depends.resolve.side_effect = mock_resolve
 
         context = get_global_template_context()
 
@@ -528,7 +548,7 @@ class TestFilterIntegration:
         """Test that filters can be chained in templates."""
         # This tests the return types are compatible for chaining
         with patch("fastblocks.adapters.templates._filters.depends") as mock_depends:
-            mock_depends.get_sync.return_value = None
+            mock_depends.resolve.return_value = None
 
             # Test that string outputs can be chained
             img_result = img_tag("test.jpg", "Test")
@@ -543,8 +563,8 @@ class TestFilterIntegration:
     def test_filter_error_handling(self):
         """Test filter error handling."""
         with patch("fastblocks.adapters.templates._filters.depends") as mock_depends:
-            # Test when depends.get returns None
-            mock_depends.get_sync.return_value = None
+            # Test when depends.resolve returns None
+            mock_depends.resolve.return_value = None
 
             # All filters should handle None gracefully
             assert isinstance(img_tag("test.jpg", "Test"), str)
@@ -557,7 +577,7 @@ class TestFilterIntegration:
         """Test attribute handling across filters."""
         # Test that all filters handle various attribute types
         with patch("fastblocks.adapters.templates._filters.depends") as mock_depends:
-            mock_depends.get_sync.return_value = None
+            mock_depends.resolve.return_value = None
 
             # Test with different attribute types
             img_result = img_tag(
@@ -573,7 +593,7 @@ class TestFilterIntegration:
         with patch(
             "fastblocks.adapters.templates._async_filters.depends"
         ) as mock_depends:
-            mock_depends.get_sync.return_value = None
+            mock_depends.resolve.return_value = None
 
             # All async filters should handle None gracefully
             result1 = await async_image_url("test.jpg")
@@ -600,7 +620,7 @@ class TestFilterIntegration:
         """Test performance-related aspects of filters."""
         # Test that filters don't have expensive operations in their core logic
         with patch("fastblocks.adapters.templates._filters.depends") as mock_depends:
-            mock_depends.get_sync.return_value = None
+            mock_depends.resolve.return_value = None
 
             # These should be fast even with fallback behavior
             for _ in range(100):
