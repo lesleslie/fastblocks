@@ -333,6 +333,88 @@ async def test_choice_loader_template_not_found(
 
 @pytest.mark.asyncio
 @pytest.mark.unit
+async def test_choice_loader_passes_single_template_arg_to_children() -> None:
+    """Regression: ChoiceLoader must call each child with ``(name,)``.
+
+    Pure-mock loaders (no AsyncBaseLoader dependency) isolate the
+    contract assertion from the loader hierarchy. Earlier production
+    code forwarded both the environment and the template name
+    (``loader.get_source_async(environment_or_template, str(template))``)
+    which surfaced at the test boundary as a duplicate-name call
+    ``mock('test.html', 'test.html')``. This test pins the
+    single-argument child-loader call AND the fallback ordering
+    (loader1 missing -> loader2 called -> loader3 would be called if
+    loader2 also missing) without depending on RedisLoader/StorageLoader
+    internals.
+    """
+    # Three independent mock loaders; no real Redis/Storage classes.
+    loader1 = MagicMock()
+    loader1.get_source_async = AsyncMock(
+        side_effect=TemplateNotFound("missing.html"),
+    )
+    loader2 = MagicMock()
+    loader2.get_source_async = AsyncMock(
+        return_value=(
+            "<html><body>Found in loader2</body></html>",
+            "loader2.html",
+            AsyncMock(return_value=True),
+        ),
+    )
+    loader3 = MagicMock()
+    loader3.get_source_async = AsyncMock(
+        return_value=(
+            "<html><body>Found in loader3</body></html>",
+            "loader3.html",
+            AsyncMock(return_value=True),
+        ),
+    )
+
+    choice_loader = ChoiceLoader([loader1, loader2, loader3])
+
+    # Contract: single positional argument, exactly the str template.
+    source, filename, _ = await choice_loader.get_source_async("missing.html")
+
+    # Fallback ordering: loader1 raises -> loader2 succeeds -> loader3
+    # is never invoked. Single-arg call shape pinned on both.
+    loader1.get_source_async.assert_called_once_with("missing.html")
+    loader2.get_source_async.assert_called_once_with("missing.html")
+    assert loader3.get_source_async.await_count == 0
+    assert source == "<html><body>Found in loader2</body></html>"
+    assert filename == "loader2.html"
+
+
+@pytest.mark.asyncio
+@pytest.mark.unit
+async def test_choice_loader_falls_through_when_all_children_missing() -> None:
+    """Regression: missing-child fallback walks every child then raises.
+
+    Pin the iteration order when *every* child loader raises
+    ``TemplateNotFound``: ChoiceLoader must continue to the next child,
+    and only raise ``TemplateNotFound`` after exhausting the list.
+    Uses bare mock loaders so the test does not depend on RedisLoader
+    or StorageLoader internals.
+    """
+    loader1 = MagicMock()
+    loader1.get_source_async = AsyncMock(
+        side_effect=TemplateNotFound("absent.html"),
+    )
+    loader2 = MagicMock()
+    loader2.get_source_async = AsyncMock(
+        side_effect=TemplateNotFound("absent.html"),
+    )
+
+    choice_loader = ChoiceLoader([loader1, loader2])
+
+    with pytest.raises(TemplateNotFound):
+        await choice_loader.get_source_async("absent.html")
+
+    # Iteration order pinned: loader1 first, loader2 second, single arg.
+    loader1.get_source_async.assert_called_once_with("absent.html")
+    loader2.get_source_async.assert_called_once_with("absent.html")
+
+
+@pytest.mark.asyncio
+@pytest.mark.unit
 async def test_choice_loader_propagates_non_template_not_found_exceptions(
     config: Config,
     mock_cache: AsyncMock,
