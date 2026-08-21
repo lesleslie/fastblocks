@@ -1227,11 +1227,12 @@ wheels = [
 
 [[package]]
 name = "fastblocks"
-version = "0.20.0"
+version = "0.21.0"
 source = { editable = "." }
 dependencies = [
     { name = "anyio" },
     { name = "brotli-asgi" },
+    { name = "fastblocks-ui" },
     { name = "granian", extra = ["reload"] },
     { name = "htmy", extra = ["lxml"] },
     { name = "mcp-common" },
@@ -1269,9 +1270,6 @@ dev = [
     { name = "pyyaml" },
     { name = "refurb" },
 ]
-fastblocks-ui = [
-    { name = "fastblocks-ui" },
-]
 images = [
     { name = "cloudinary" },
     { name = "imagekitio" },
@@ -1286,8 +1284,9 @@ monitoring = [
 requires-dist = [
     { name = "anyio", specifier = "~=4.11" },
     { name = "brotli-asgi", specifier = "~=1.5" },
+    { name = "fastblocks-ui", specifier = ">=0.8,<0.9" },
     { name = "granian", extras = ["reload"], specifier = "~=2.6" },
-    { name = "htmy", extras = ["lxml"], specifier = "~=0.9" },
+    { name = "htmy", extras = ["lxml"], specifier = ">=0.13,<0.14" },
     { name = "mcp-common", specifier = "~=0.3" },
     { name = "minify-html", specifier = "~=0.18" },
     { name = "oneiric", specifier = "~=0.3" },
@@ -1321,7 +1320,6 @@ dev = [
     { name = "pyyaml", specifier = "~=6.0" },
     { name = "refurb", specifier = "~=2.2" },
 ]
-fastblocks-ui = [{ name = "fastblocks-ui", specifier = ">=0.7,<0.8" }]
 images = [
     { name = "cloudinary", specifier = "~=1.44" },
     { name = "imagekitio", specifier = "~=4.2" },
@@ -1334,11 +1332,11 @@ monitoring = [
 
 [[package]]
 name = "fastblocks-ui"
-version = "0.7.1"
+version = "0.8.1"
 source = { registry = "https://pypi.org/simple/" }
-sdist = { url = "https://files.pythonhosted.org/packages/79/9f/3ceaad2569a547b5469ba87da5fd29da0dc004cb97d79eef2ccaffa71858/fastblocks_ui-0.7.1.tar.gz", hash = "sha256:4972cbe9775bed0f30b67fe654671926fda78bc18862d689514d624b8453ab39", size = 59127, upload-time = "2026-07-28T12:02:50.936Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/17/4ca8cc5802eb39cee8f3e0e1753f7a0de238b703e0a700ef155402028832/fastblocks_ui-0.8.1.tar.gz", hash = "sha256:14df483f16d33291f6d0b73433e9c076f5214042dc5e023272209d419817a471", size = 92489, upload-time = "2026-08-06T13:58:45.253Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/de/c1/08633d6ed6e5de0f3fc020627bcf941df661384a519ce6a5132ba6281fc4/fastblocks_ui-0.7.1-py3-none-any.whl", hash = "sha256:fafd46d219508a6a26fda44fc58d897db616a33cb86e0e93ffe4b57dbf5eea75", size = 63648, upload-time = "2026-07-28T12:02:49.878Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/4e/c7076e1f8263cbe18f8af6394d000c892d62ff4531efa1e7e319786eb0f2/fastblocks_ui-0.8.1-py3-none-any.whl", hash = "sha256:1c08bb22d89e77129800d5918e91436986b5e6fa418cef8c541d8e54a66e0c34", size = 94299, upload-time = "2026-08-06T13:58:44.141Z" },
 ]
 
 [[package]]
