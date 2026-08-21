@@ -42,7 +42,7 @@ try:
     from jinja2.sandbox import SandboxedEnvironment
 except ImportError:
     # Fallback for older Jinja2 versions
-    SandboxedEnvironment = t.cast(type, Environment)
+    SandboxedEnvironment = Environment  # type: ignore[assignment,misc]
 
 # Oneiric imports
 from oneiric.core.logging import get_logger
@@ -365,12 +365,6 @@ class HybridTemplatesManager:
                 undefined=StrictUndefined
                 if self.settings.strict_undefined
                 else RuntimeStrictUndefined,
-            )
-
-            # Apply security restrictions (Jinja2 sandbox API)
-            sandbox_env.allowed_tags = set(self.settings.sandbox_allowed_tags)  # type: ignore[attr-defined]
-            sandbox_env.allowed_attributes = set(  # type: ignore[attr-defined]
-                self.settings.sandbox_allowed_attributes
             )
 
             return sandbox_env
