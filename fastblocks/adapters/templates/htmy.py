@@ -284,119 +284,35 @@ class HTMYComponentRegistry:
             return self._component_cache[component_name]
 
         source, component_path = await self.get_component_source(component_name)
-        cached_bytecode = await self._get_cached_bytecode(component_path)
 
-        # Try to load from cached bytecode first
-        if cached_bytecode:
-            component_class = await self._load_from_cached_bytecode(  # type: ignore[no-untyped-call]
-                cached_bytecode, source, component_path, component_name
-            )
-            if component_class:
-                return component_class
+        # Phase 1A Deliverable C3: route through the AST-sandboxed loader
+        # from `_htmy_components.py`. The previous implementation called
+        # `_load_from_cached_bytecode` / `_load_from_source`, both of which
+        # used ``importlib.util.spec_from_file_location`` +
+        # ``spec.loader.exec_module`` -- the live RCE vector CLAUDE.md:130
+        # documents as removed by Phase 1.3. Those two methods are deleted
+        # entirely; do NOT re-add them under any circumstance. The
+        # AST-sandboxed path validates the source via ``ast.parse`` +
+        # import allowlist + dangerous-call check before any exec, and
+        # removes the temporary ``sys.modules`` entry in ``finally``.
+        from ._htmy_components import load_component_from_source
 
-        # Otherwise, load from source
-        return await self._load_from_source(source, component_path, component_name)  # type: ignore[no-untyped-call]
-
-    async def _load_from_cached_bytecode(  # type: ignore[no-untyped-def]
-        self,
-        cached_bytecode: t.Any,
-        source: str,
-        component_path: t.Any,
-        component_name: str,
-    ) -> t.Any:
-        """Attempt to load component class from cached bytecode."""
         try:
-            # Instead of using pickle, we'll compile the source directly
-            # Pickle is a security risk as mentioned in the semgrep error
-            compile(source, str(component_path), "exec")
-            # Create a module-like namespace to execute the compiled code
-            import importlib.util
-            import tempfile
-
-            # Create a temporary module to safely load the component
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-                f.write(source)
-                temp_module_path = f.name
-
-            try:
-                spec = importlib.util.spec_from_file_location(
-                    component_path.stem, temp_module_path
-                )
-                if spec is None or spec.loader is None:
-                    raise ComponentCompilationError(
-                        f"Could not load module from {component_path}"
-                    )
-
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-                component_class = None
-                for obj in vars(module).values():
-                    if hasattr(obj, "htmy") and callable(obj.htmy):
-                        component_class = obj
-                        break
-            finally:
-                # Clean up the temporary file
-                Path(temp_module_path).unlink()
-
-            # Cache the compiled form instead of pickle-able bytecode
-            self._component_cache[component_name] = component_class
-            return component_class
-        except Exception as e:  # noqa: BLE001
-            # Cached bytecode reload failed; the caller will fall through
-            # to the source-compile path on the next attempt.
-            _log.warning(
-                "HTMYTemplates._load_from_cached_bytecode(%s): %s",
+            component_class = load_component_from_source(source, component_name)
+        except ComponentCompilationError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            _log.exception(
+                "HTMYTemplates.get_component_class: AST-sandboxed load failed for %s: %s",
                 component_name,
-                type(e).__name__,
+                type(exc).__name__,
             )
-            debug(f"Failed to load cached bytecode for {component_name}: {e}")
-            return None
-
-    async def _load_from_source(
-        self,
-        source: str,
-        component_path: t.Any,
-        component_name: str,
-    ) -> t.Any:
-        """Load component class from source file."""
-        try:
-            # Import and analyze component safely
-            import importlib.util
-            import tempfile
-
-            # Create a temporary module to safely load the component
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-                f.write(source)
-                temp_module_path = f.name
-
-            try:
-                spec = importlib.util.spec_from_file_location(
-                    component_path.stem, temp_module_path
-                )
-                if spec is None or spec.loader is None:
-                    raise ComponentCompilationError(
-                        f"Could not load module from {component_path}"
-                    )
-
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-                component_class = None
-                for obj in vars(module).values():
-                    if hasattr(obj, "htmy") and callable(obj.htmy):
-                        component_class = obj
-                        break
-            finally:
-                # Clean up the temporary file
-                Path(temp_module_path).unlink()
-
-            self._component_cache[component_name] = component_class
-            return component_class
-        except Exception as e:
             raise ComponentCompilationError(
-                f"Failed to compile component '{component_name}': {e}"
-            ) from e
+                f"Failed to compile component '{component_name}': {exc}"
+            ) from exc
+
+        self._component_cache[component_name] = component_class
+        return component_class
 
 
 class HTMYTemplatesSettings(OneiricSettings):

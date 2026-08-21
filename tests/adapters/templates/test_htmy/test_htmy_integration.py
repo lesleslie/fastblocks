@@ -28,10 +28,15 @@ class TestHTMYIntegration:
         components_dir = temp_directory / "components"
         components_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create test component
-        test_component = '''"""Test component for HTMY integration."""
-
-from dataclasses import dataclass
+        # Create test component.
+        # Phase 1A Deliverable C3: the AST-sandboxed loader
+        # (``load_component_from_source`` in ``_htmy_components.py``)
+        # rejects top-level ``Expr`` nodes — including module docstrings.
+        # The docstring is harmless, but the loader's strict shape check
+        # rejects it. The fixture therefore omits the docstring; if a
+        # future change adds docstrings back here, the test fails fast
+        # with ``ComponentValidationError`` instead of silently passing.
+        test_component = '''from dataclasses import dataclass
 from typing import Any
 
 @dataclass
@@ -204,18 +209,24 @@ class SimpleTestComponent:
         components_dir = temp_directory / "components"
         components_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create async component
-        async_component = '''"""Async test component."""
-
-from dataclasses import dataclass
-import asyncio
+        # Create async component.
+        # Phase 1A Deliverable C3: the AST-sandboxed loader's import
+        # allowlist is {dataclasses, typing} only; ``import asyncio`` and
+        # module docstrings (top-level Expr) are both rejected. The
+        # ``async def`` keyword is still permitted at the class-method
+        # level (the walker only restricts top-level nodes), and an
+        # async method with no internal ``await`` still returns a
+        # coroutine when called, which the test's ``await instance.htmy()``
+        # then awaits. So the simulated async work is dropped.
+        async_component = '''from dataclasses import dataclass
+from typing import Any
 
 @dataclass
 class AsyncTestComponent:
     title: str = "Async Test"
+    context: Any = None
 
     async def htmy(self, context):
-        await asyncio.sleep(0)  # Simulate async work
         return f"<div class='async-component'><h3>{self.title}</h3><span>Async HTMY Success</span></div>"
 '''
 
