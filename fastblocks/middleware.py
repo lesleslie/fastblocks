@@ -1,6 +1,6 @@
 import sys
 import typing as t
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from contextvars import ContextVar
 from enum import IntEnum
 
@@ -30,7 +30,7 @@ def _get_adapter_or_none(domain: str, key: str) -> t.Any:
     try:
         candidate = depends.resolve(domain, key)
         if candidate is not None and callable(candidate.factory):
-            return t.cast(t.Callable[..., t.Any], candidate.factory)()
+            return t.cast(Callable[..., t.Any], candidate.factory)()
         return None
     except (KeyError, AttributeError, RuntimeError, TypeError):
         return None
@@ -54,7 +54,7 @@ from .caching import (
 )
 from .htmx import HtmxDetails
 
-MiddlewareCallable = t.Callable[[ASGIApp], ASGIApp]
+MiddlewareCallable = Callable[[ASGIApp], ASGIApp]
 MiddlewareClass = type[t.Any]
 MiddlewareOptions = dict[str, t.Any]
 from .exceptions import MissingCaching
