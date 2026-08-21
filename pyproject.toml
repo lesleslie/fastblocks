@@ -44,6 +44,7 @@ classifiers = [
 dependencies = [
     "anyio~=4.11",
     "brotli-asgi~=1.5",
+    "fastblocks-ui>=0.8,<0.9",
     "granian[reload]~=2.6",
     "htmy[lxml]~=0.9",
     "mcp-common~=0.3",
@@ -98,14 +99,6 @@ monitoring = [
 images = [
     "cloudinary~=1.44",
     "imagekitio~=4.2",
-]
-fastblocks_ui = [
-    # Optional dependency of the `fastblocks_ui` style adapter
-    # (fastblocks/adapters/style/fastblocks_ui.py). Not required to use
-    # fastblocks at all -- only needed to run
-    # tests/adapters/style/test_fastblocks_ui_style.py or to select
-    # `config.app.style = "fastblocks_ui"` in an app.
-    "fastblocks-ui>=0.7,<0.8",
 ]
 
 [tool.fastblocks-mcp]

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.30.0] - Unreleased
 
+### Added
+
+- **`fastblocks-ui` is now a required runtime dependency** (previously optional `fastblocks_ui` dep group). Pin: `fastblocks-ui>=0.8,<0.9`. The `AppBaseSettings.style` default flips from `"vanilla"` to `"fastblocks_ui"`. The `vanilla` style remains an explicit unstyled opt-out but the package install is now unconditional — air-gapped environments must mirror `fastblocks-ui` before upgrading.
+
 ### Removed
 
 - **`kelp`, `bulma`, `webawesome`, `custom` style adapters** (`fastblocks.adapters.style.{kelp,webawesome}` and `fastblocks.adapters.app._templates.{kelp,webawesome,bulma,custom}/`). Each carried multiple silent-failure traps — decorator-API misuse, wrong-Resolver-API calls, masked XSS surface — all swallowed by `with suppress(Exception)` at the call sites. `bulma` and `custom` lacked even a backing adapter and fell through to the silent no-op default. After upgrade, `config.app.style = "kelp"` (or `"webawesome"` / `"bulma"` / `"custom"`) fails loudly at startup with `unknown style` from `style_registry.py`. This is the desired behavior for removed APIs.

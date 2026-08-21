@@ -9,7 +9,7 @@ class AppBaseSettings(OneiricSettings):  # type: ignore[misc]
     """App base settings using OneiricSettings."""
 
     name: str = "fastblocks"
-    style: str = "vanilla"
+    style: str = "fastblocks_ui"
     theme: str = "light"
 
 
