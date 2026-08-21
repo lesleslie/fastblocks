@@ -26,7 +26,6 @@ from uuid import UUID
 from jinja2 import Environment, meta
 from jinja2.nodes import Block, Extends, Include
 
-# Oneiric imports
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
 from starlette.requests import Request

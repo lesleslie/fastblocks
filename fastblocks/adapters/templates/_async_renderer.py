@@ -24,7 +24,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from uuid import UUID
 
-# Oneiric imports
 from anyio import Path as AsyncPath
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver

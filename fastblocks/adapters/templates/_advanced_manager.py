@@ -36,17 +36,17 @@ from jinja2 import (
     UndefinedError,
     meta,
 )
-
-# Oneiric imports
-from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
+from jinja2.runtime import StrictUndefined as RuntimeStrictUndefined
 
 try:
     from jinja2.sandbox import SandboxedEnvironment
 except ImportError:
     # Fallback for older Jinja2 versions
     SandboxedEnvironment = Environment  # type: ignore[assignment,misc]
-from jinja2.runtime import StrictUndefined as RuntimeStrictUndefined
+
+# Oneiric imports
+from oneiric.core.logging import get_logger
+from oneiric.core.resolution import Resolver
 
 from ..oneiric_helper import register_candidate, resolve_instance
 from .jinja2 import Templates, TemplatesSettings
