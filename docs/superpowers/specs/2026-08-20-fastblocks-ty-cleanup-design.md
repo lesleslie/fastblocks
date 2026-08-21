@@ -184,4 +184,31 @@ When ty diagnostics reveal code calling a method that doesn't exist (e.g., `disc
 
 ## Real bugs found (running log)
 
-_To be populated as cleanup proceeds._
+### Task 3 — Phase 1c invalid-await cleanup
+
+- **`fastblocks/actions/gather/application.py:263`** — `await depends.get(dep_name)` inside `except (ImportError, ..., AttributeError)`. The `AttributeError` was silently swallowing the failure: `Resolver` has no `.get()` method, so the dependency map always stayed empty. Fixed to `resolve_instance(depends, "fastblocks", dep_name)` (sync). Tests pass (1714/0) — the dependency map was empty in tests too, but the failure mode is now correct.
+- **`fastblocks/adapters/sitemap/_routes.py:40`** — `return depends.get(adapter.sitemap)(request)` direct call would raise `AttributeError` at runtime. Fixed to `resolve_instance(..., "fastblocks", adapter.sitemap)(request)` wrapped in try/except returning a 503 with empty `<urlset/>` body.
+- **`fastblocks/adapters/templates/jinja2.py:137`** — `return depends.get(key)` with `hasattr` guard. Fixed to `resolve_instance(depends, "fastblocks", key)`; dropped the `hasattr` guard and the asyncio fallback (the canonical sync helper is the right answer).
+
+Authorised by user via AskUserQuestion option "Fix all three to resolve_instance". Commit `9c5bf6f`.
+
+---
+
+## Final tally
+
+- **Diagnostics at start**: 374
+- **Diagnostics at end**: 0 (`uv run ty check fastblocks/` → "All checks passed!")
+- **Pytest**: 1714 passed, 21 skipped, 4 xpassed, 0 fail
+- **Crackerjack ty hook**: PASS (0/50 prod gate)
+- **Real bugs found**: 1 cluster (3 sites) — `Resolver.get()` Bucket B misuse; see Task 3 above.
+- **Phase commits (chronological)**:
+  - Task 1 (Resolver API rewiring across 46 files): `9f93910`, `42584b6`, plus 3 helper-wiring commits `265e533`, `1608c42`, `d9409e1`
+  - Task 2 (suppression syntax): `35c1746`
+  - Task 3 (3 `depends.get` → `resolve_instance`): `9c5bf6f`
+  - Task 4 (4 framework-injected attr declarations): `c89f5d8`
+  - Task 5 (10 `candidate.factory` casts): `93fe7bf`
+  - Task 6 (ty phase 2a-2i, 14 commits, 119 → 10 diagnostics): `bec59ed`, `8e34a9c`, `296be3b`, `5bec6a5`, `1c3f073`, `87116ee`, `e061e23`, `6bc5e3d`, `e1eaa33`, `93855e8`, `fa52b54`, `ebb66ad`, `0c5cf2b`, `f5f6de1`
+  - Bug fix (`_get_header` last-match-wins): `818bbe0`
+  - Task 7 (6 redundant casts removed): `0d11b20`
+  - Task 8 (4 unused `ty: ignore` directives): `0bf466c`
+
