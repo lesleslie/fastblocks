@@ -200,7 +200,15 @@ Authorised by user via AskUserQuestion option "Fix all three to resolve_instance
 - **Diagnostics at end**: 0 (`uv run ty check fastblocks/` → "All checks passed!")
 - **Pytest**: 1714 passed, 21 skipped, 4 xpassed, 0 fail
 - **Crackerjack ty hook**: PASS (0/50 prod gate)
-- **Real bugs found**: 1 cluster (3 sites) — `Resolver.get()` Bucket B misuse; see Task 3 above.
+- **Real bugs found** (7 distinct issues; see inline sections above):
+  1. **`Resolver.get()` Bucket B misuse** (3 sites) — `resolver.py` has no `.get()` method; `actions/gather/application.py:263`, `adapters/sitemap/_routes.py:40`, `adapters/templates/jinja2.py:137` were calling it (the first silently swallowed the `AttributeError` via `except`, the second raised at runtime, the third had a `hasattr` guard). Fixed to `resolve_instance(depends, "fastblocks", key)`. Commit `9c5bf6f`.
+  2. **`actions/gather/models.py:21-31` indentation bug** — `get_adapters()` and `root_path()` were accidentally nested inside `debug()`. Real bug from a prior migration. Fixed by hoisting to module level. Commit `bec59ed` (Phase 2a).
+  3. **`actions/sync/settings.py:635` `reload_config()` doesn't exist** — replaced with `await resolve_component_async(depends, "fastblocks", "config")`. Commit `93855e8` (Phase 2g).
+  4. **`EventPriority` constants untyped** — `_events_integration.py` had class attrs without `int` annotations, causing `Event.__init__(priority: EventPriority)` to reject `int` literals. Typed constants as `int`, changed `Event.__init__` and `create_event` params to `int`. (Real semantic change: `EventPriority` is now a namespace for `int` constants — values are still `int` objects.) Commit `5bec6a5` (Phase 2c).
+  5. **Image adapter parent/override signature mismatch** — `ImagesProtocol.upload_image` declared `-> str`, overrides returned `dict[str, Any]`. Changed base to `dict[str, Any]`; wrapped Cloudflare/TwicPics string returns in dicts. Real semantic change for Cloudflare adapter (now returns `{"image_id": ...}` instead of bare string). Commit `0c5cf2b` (Phase 2i).
+  6. **`HtmxDetails._get_header` "first match wins" → "last match wins"** — duplicates with first empty silently ignored second. Fixed to last-match-wins (HTTP convention). Pre-existing bug uncovered by Hypothesis in `test_htmx_request_detection`. Test updated to iterate `reversed(scope["headers"])`. User authorised. Commit `818bbe0`.
+  7. **Schema migration tooling exposed** — `fastblocks/__init__.py:62-63` `register_pkg()` replaced with `pass` (disables auto-registration). Spec didn't call this out explicitly; user should confirm auto-registration is not relied upon.
+  8. **`SandboxedEnvironment.allowed_tags` / `allowed_attributes` dead code** — `_advanced_manager.py:371-372` set these attributes on `sandbox_env` but they don't exist on Jinja2's `SandboxedEnvironment` (actual security attributes are `binop_table`, `unop_table`, `intercepted_binops`, `intercepted_unops`). Pre-existing no-op masked by `# type: ignore[attr-defined]`. Commit `7e50145` removed the dead code.
 - **Phase commits (chronological)**:
   - Task 1 (Resolver API rewiring across 46 files): `9f93910`, `42584b6`, plus 3 helper-wiring commits `265e533`, `1608c42`, `d9409e1`
   - Task 2 (suppression syntax): `35c1746`
