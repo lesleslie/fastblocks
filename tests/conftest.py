@@ -7,6 +7,14 @@ from __future__ import annotations
 collect_ignore = [
     "test_events_integration.py",
     "test_health_integration.py",
+    # ``_fixtures/`` holds import-time side-effect modules that
+    # register Candidate factories (Phase 1.5.4 cross-module
+    # resolution test). They are NOT pytest tests themselves — the
+    # test that consumes them lives at
+    # ``tests/core/test_resolver_cross_module.py``. Ignoring the
+    # whole subtree keeps pytest from importing them twice (once
+    # via collection, once via the test's import).
+    "_fixtures",
 ]
 
 import sys
@@ -327,6 +335,34 @@ def patch_depends():
 # ---------------------------------------------------------------------------
 
 _RESTORED_NAMESPACES = ("fastblocks", "jinja2_async_environment")
+
+
+@pytest.fixture(autouse=True)
+def clean_resolver() -> t.Generator[None]:
+    """Reset the fastblocks Resolver singleton around every test.
+
+    Phase 1.5.4 — the Oneiric ``Resolver`` API does not expose a
+    public ``clear()`` (see the note in ``fastblocks/core/resolver.py``),
+    so we reset the fastblocks-level wrapper by clearing the
+    lazy-init cache (``_resolver`` module global). The next call to
+    ``get_resolver()`` after the reset constructs a fresh Oneiric
+    ``Resolver``, so each test starts with an empty registry.
+
+    Per the Phase 1.5.4 spec, this fixture runs at BOTH setup AND
+    teardown — the teardown reset is what prevents the singleton
+    leaking state into the next test in collection order.
+
+    ``autouse=True`` so every test gets a clean resolver without
+    having to remember to depend on this fixture.
+    """
+    from fastblocks.core import resolver as _resolver_module
+
+    # Setup: clear any registrations from prior tests in the same process.
+    _resolver_module._resolver = None
+    yield
+    # Teardown: clear this test's registrations so the NEXT test
+    # starts with an empty registry.
+    _resolver_module._resolver = None
 
 
 @pytest.fixture(autouse=True)
