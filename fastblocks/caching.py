@@ -193,7 +193,7 @@ class CacheRules:
         match = (
             [rule.match]
             if isinstance(rule.match, str | re.Pattern)
-            else rule.match.copy()  # type: ignore
+            else t.cast("list[str | re.Pattern[str]]", rule.match).copy()
         )
         return _check_rule_match(match, request.url.path)
 

@@ -422,7 +422,7 @@ class FileSystemLoader(BaseTemplateLoader):
         if path is None:
             raise TemplateNotFound(str(template))
         storage_path = Templates.get_storage_path(path)
-        debug(path)  # type: ignore
+        debug(str(path))
 
         fs_exists = await path.exists()
         storage_exists = await self._check_storage_exists(storage_path)
@@ -519,7 +519,7 @@ class StorageLoader(BaseTemplateLoader):
         if result is None:
             raise TemplateNotFound(str(template))
         _, storage_path = result
-        debug(storage_path)  # type: ignore
+        debug(str(storage_path))
 
         try:
             fs_path = await self._check_filesystem_sync_opportunity(

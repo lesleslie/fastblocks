@@ -99,10 +99,10 @@ Cache, Storage, Models = None, None, None
 
 
 # Custom root_path implementation for Oneiric compatibility
-def root_path() -> None:
+def root_path() -> str:
     """Custom implementation for Oneiric compatibility."""
     # This will be implemented using Oneiric's path system
-    return "/"  # type: ignore
+    return "/"
 
 
 class ComponentNotFound(Exception):
@@ -470,7 +470,7 @@ class HTMYTemplates(TemplatesBase):
     async def get_component_searchpaths(self, app_adapter: t.Any) -> list[AsyncPath]:
         searchpaths = []
         # Use Oneiric root_path
-        base_root = AsyncPath(root_path())  # type: ignore
+        base_root = AsyncPath(root_path())
         debug(f"get_component_searchpaths: app_adapter={app_adapter}")
         if app_adapter:
             category = getattr(app_adapter, "category", "app")

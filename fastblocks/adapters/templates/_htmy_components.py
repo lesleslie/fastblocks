@@ -388,14 +388,15 @@ class ComponentBase(ABC):
         # Lazy init for the runtime-only slots that ``ComponentBase``
         # needs but ``@dataclass`` subclasses don't initialize.
         if name in ("_children", "_parent", "_context", "_request"):
+            value: t.Any
             if name == "_children":
-                value: list[ComponentBase] = []
+                value = []
             elif name == "_parent":
-                value = None  # type: ignore[assignment]
+                value = None
             elif name == "_context":
-                value = {}  # type: ignore[assignment]
-            else:  # type: ignore[misc]  _request
-                value = None  # type: ignore[assignment]
+                value = {}
+            else:
+                value = None
             object.__setattr__(self, name, value)
             return value
         raise AttributeError(name)
@@ -426,7 +427,7 @@ class ComponentBase(ABC):
         """Async version of htmy method."""
         if asyncio.iscoroutinefunction(self.htmy):
             return t.cast(str, await self.htmy(context))
-        return t.cast(str, self.htmy(context))  # type: ignore
+        return self.htmy(context)
 
     def add_child(self, child: ComponentBase) -> None:
         """Add a child component."""

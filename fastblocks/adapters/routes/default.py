@@ -166,7 +166,7 @@ class Block(FastBlocksEndpoint):
 
 class Component(FastBlocksEndpoint):
     async def get(self, request: HtmxRequest | Request) -> Response:
-        debug(request)  # type: ignore
+        debug(str(request))
         component_name = getattr(request, "path_params", {}).get("component", "default")
         query_params = getattr(request, "query_params", {})
         context = await create_query_context(request, base_context=dict(query_params))
@@ -211,7 +211,7 @@ class Routes(RoutesBase):
         if "adapters" in path.parts:
             depth = -4
         module_path = ".".join(path.parts[depth:]).removesuffix(".py")
-        debug(path, depth, module_path)  # type: ignore
+        debug(f"{path} {depth} {module_path}")
         with suppress(ModuleNotFoundError):
             module = import_module(module_path)
             module_routes = getattr(module, "routes", None)
