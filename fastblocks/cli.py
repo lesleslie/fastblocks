@@ -1030,7 +1030,7 @@ def _update_app_configs(app_path: Path, domain: str) -> None:
             content = await (settings_path / f"{settings}.yml").read_text()
             settings_dict: dict[str, object] = yaml.safe_load(content) or {}
             settings_dict.update(values)
-            (settings_path / f"{settings}.yml").write_text(  # type: ignore
+            await (settings_path / f"{settings}.yml").write_text(
                 yaml.safe_dump(settings_dict)
             )
 
@@ -1051,7 +1051,9 @@ async def update_configs(app_path: Path, domain: str) -> None:
         content = await (settings_path / f"{settings}.yml").read_text()
         settings_dict: dict[str, object] = yaml.safe_load(content) or {}
         settings_dict.update(values)
-        (settings_path / f"{settings}.yml").write_text(yaml.safe_dump(settings_dict))  # type: ignore
+        await (settings_path / f"{settings}.yml").write_text(
+            yaml.safe_dump(settings_dict)
+        )
 
     await update_settings("debug", {"fastblocks": False})
     await update_settings("adapters", default_adapters)

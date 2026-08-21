@@ -506,7 +506,7 @@ async def _extract_models_from_file(
 
 def _get_module_path_from_file(file_path: Path) -> str:
     try:
-        relative_path = file_path.relative_to(root_path)  # type: ignore
+        relative_path = file_path.relative_to(root_path())
         return str(relative_path).replace("/", ".").removesuffix(".py")
     except ValueError:
         return file_path.stem

@@ -237,8 +237,13 @@ class FastblocksWebSocketServer(WebSocketServer):
         if message.event == "subscribe":
             channel = message.data.get("channel")
 
+            # Narrow channel to str before passing to str-typed helpers;
+            # silently passing None would crash inside _can_subscribe_to_channel.
+            if not isinstance(channel, str):
+                return
+
             # Check authorization for this channel
-            if user and not self._can_subscribe_to_channel(user, channel):  # type: ignore
+            if user and not self._can_subscribe_to_channel(user, channel):
                 error = WebSocketProtocol.create_error(
                     error_code="FORBIDDEN",
                     error_message=f"Not authorized to subscribe to {channel}",
