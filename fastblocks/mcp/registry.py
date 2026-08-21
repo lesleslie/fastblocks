@@ -1,7 +1,6 @@
 """Central registry for FastBlocks adapter management."""
 
 from collections.abc import Callable
-from contextlib import suppress
 from typing import Any, cast
 from uuid import UUID
 
@@ -31,15 +30,25 @@ class AdapterRegistry:
         """Register an adapter instance in the registry."""
         try:
             # Register with the Oneiric resolver (0.13+ uses Candidate + factory).
-            with suppress(Exception):
-                from fastblocks.adapters.oneiric_helper import register_candidate
+            #
+            # Phase 1.5.6 (ONEIRIC-11): previously wrapped in
+            # ``with suppress(Exception)`` to mask registration failures
+            # — but ``register_candidate`` (oneiric_helper.py) already
+            # catches the documented exception set
+            # (``ValidationError``, ``ValueError``, ``TypeError``) and
+            # returns ``False`` on validation failure. Resolver
+            # implementation errors propagate through ``register_candidate``'s
+            # ``resolver.register(candidate)`` call — those are
+            # programming errors, not graceful-degradation cases, and
+            # must be visible to the caller.
+            from fastblocks.adapters.oneiric_helper import register_candidate
 
-                register_candidate(
-                    depends,
-                    domain="fastblocks",
-                    key=adapter_name,
-                    factory=lambda: adapter_instance,
-                )
+            register_candidate(
+                depends,
+                domain="fastblocks",
+                key=adapter_name,
+                factory=lambda: adapter_instance,
+            )
 
             # Track in our registry
             self._active_adapters[adapter_name] = adapter_instance
@@ -54,7 +63,19 @@ class AdapterRegistry:
             if adapter_name in self._active_adapters:
                 del self._active_adapters[adapter_name]
 
-            # TODO: Remove from ACB registry if possible
+            # Phase 1.5.6 (ONEIRIC-11): the previous TODO asked us to
+            # "Remove from ACB registry if possible." Oneiric's Resolver
+            # API exposes NO public ``remove_candidate`` / ``unregister``
+            # / ``clear`` method (verified 2026-08-21: public methods
+            # are ``register``, ``register_from_pkg``, ``resolve``,
+            # ``explain``, ``list_active``, ``list_shadowed`` only).
+            # The Candidate lives for the lifetime of the resolver
+            # instance; the only way to drop it is the
+            # ``clean_resolver`` test fixture's ``get_resolver().__init__()``
+            # reinit — which is a TEST-ONLY affordance, not a
+            # production API. So we remove from the local active cache
+            # only, and document the Oneiric constraint here so future
+            # contributors don't re-add the TODO.
             return True
         except (KeyError, AttributeError, RuntimeError):
             return False
@@ -66,16 +87,29 @@ class AdapterRegistry:
             return self._active_adapters[adapter_name]
 
         # Try Oneiric resolver (0.13+ sync API; factory returns the instance).
-        with suppress(Exception):
-            candidate = depends.resolve("fastblocks", adapter_name)
-            if (
-                candidate is not None
-                and callable(candidate.factory)
-            ):
+        #
+        # Phase 1.5.6 (ONEIRIC-11): previously wrapped in
+        # ``with suppress(Exception)`` to mask any failure in the
+        # resolve + factory path. ``depends.resolve()`` is graceful —
+        # it returns ``None`` on miss — so the wrap was only hiding
+        # factory invocation failures. Narrow that to the documented
+        # exception set: ``KeyError`` (factory references unknown
+        # attribute), ``AttributeError`` (factory touches missing
+        # attribute), ``TypeError`` (factory called with wrong args).
+        # Any other exception is a programming error and must
+        # propagate so callers see it.
+        candidate = depends.resolve("fastblocks", adapter_name)
+        if (
+            candidate is not None
+            and callable(candidate.factory)
+        ):
+            try:
                 adapter = cast(Callable[..., Any], candidate.factory)()
-                if adapter:
-                    self._active_adapters[adapter_name] = adapter
-                    return adapter
+            except (KeyError, AttributeError, TypeError):
+                adapter = None
+            if adapter:
+                self._active_adapters[adapter_name] = adapter
+                return adapter
 
         adapter = await self.discovery.instantiate_adapter(adapter_name)
         if adapter:
