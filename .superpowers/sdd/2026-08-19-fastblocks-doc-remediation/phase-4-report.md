@@ -31,7 +31,7 @@ fixes — items 9, 10, 11, 12 from the brief).
 ## 4. CI guard xfail count
 
 - Before: 34 xfail
-- After:  34 xfail (no change)
+- After: 34 xfail (no change)
 
 ## 5. Concerns
 
@@ -77,9 +77,7 @@ mark — not because the docs still reference the phantoms.
 The brief said to verify each replacement against source. I followed
 that rule for every translation. One subtle case:
 
-- **`docs/SECURITY.md:209`** — The original `from acb.services.validation
-  import ValidationService` was translated to `from fastblocks._validation_integration
-  import ValidationService`. The class exists in source
+- **`docs/SECURITY.md:209`** — The original `from acb.services.validation import ValidationService` was translated to `from fastblocks._validation_integration import ValidationService`. The class exists in source
   (`fastblocks/_validation_integration.py:85`) but the module is
   underscore-prefixed (private). I verified via `tests/test_validation_integration.py:1`
   that the test suite itself uses the same underscore-prefixed import
@@ -142,11 +140,11 @@ Before committing, I ran all five verification commands from the
 brief:
 
 1. **No ACB imports in the 10 in-scope docs**: zero matches.
-2. **No phantom filenames in the 10 in-scope docs**: zero matches.
-3. **WebSocket Guide dead-module reference gone**: zero matches for
+1. **No phantom filenames in the 10 in-scope docs**: zero matches.
+1. **WebSocket Guide dead-module reference gone**: zero matches for
    `fastblocks.mcp.websocket_tools`.
-4. **CI guard xfail count**: 34 (unchanged; see §5.1 for why).
-5. **Commit hygiene**: `git status --short` shows only the 10
+1. **CI guard xfail count**: 34 (unchanged; see §5.1 for why).
+1. **Commit hygiene**: `git status --short` shows only the 10
    in-scope files modified; `git diff --stat HEAD~1` lists exactly
    those 10 files.
 

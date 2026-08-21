@@ -39,20 +39,20 @@ For each, add a stale-content warning banner at the top if not present, then rew
 ```
 
 1. **`docs/ONEIRIC_GUIDE.md`** — Rename title from "FastBlocks ACB Guide" to "FastBlocks Oneiric Guide"; rename subtitle to match. Rewrite lines 29, 50-53, 371, body throughout (drop ACB; add Oneiric surface).
-2. **`docs/ONEIRIC_DEPENDS_PATTERNS.md`** — Same; title and examples throughout. Note: filename is `ONEIRIC_DEPENDS_PATTERNS.md`, but the doc may have body text still calling it "ACB patterns" — fix.
-3. **`docs/GETTING_STARTED.md`** — Update `last reviewed` stamp to 2026-08-19 alongside the rewrite.
-4. **`docs/ARCHITECTURE.md`** — Replace ACB claims (lines 22, 38-46, 65) with Oneiric. Replace `MIGRATION-0.17.0.md` phantom ref (line 51) with `migrations/0.7-to-0.8.md`.
-5. **`docs/COMPARISONS.md`** — Replace "ACB-based DI system" (lines 64, 83) with "Oneiric-based DI system".
-6. **`docs/SECURITY.md`** — Rewrite `from acb.services.validation import ValidationService` (line 209) to the actual validator import.
-7. **`docs/NOTES.md`** — Add a "scratchpad" header; don't rewrite body (this file is brainstorming). Alternative: skip this file entirely and note it in the report.
-8. **`docs/LESSONS_LEARNED.md`** — Replace `ACB_DEPENDS_PATTERNS.md` (4 references at lines 268-269, 525, 733) with `ONEIRIC_DEPENDS_PATTERNS.md`; drop other ACB mentions.
+1. **`docs/ONEIRIC_DEPENDS_PATTERNS.md`** — Same; title and examples throughout. Note: filename is `ONEIRIC_DEPENDS_PATTERNS.md`, but the doc may have body text still calling it "ACB patterns" — fix.
+1. **`docs/GETTING_STARTED.md`** — Update `last reviewed` stamp to 2026-08-19 alongside the rewrite.
+1. **`docs/ARCHITECTURE.md`** — Replace ACB claims (lines 22, 38-46, 65) with Oneiric. Replace `MIGRATION-0.17.0.md` phantom ref (line 51) with `migrations/0.7-to-0.8.md`.
+1. **`docs/COMPARISONS.md`** — Replace "ACB-based DI system" (lines 64, 83) with "Oneiric-based DI system".
+1. **`docs/SECURITY.md`** — Rewrite `from acb.services.validation import ValidationService` (line 209) to the actual validator import.
+1. **`docs/NOTES.md`** — Add a "scratchpad" header; don't rewrite body (this file is brainstorming). Alternative: skip this file entirely and note it in the report.
+1. **`docs/LESSONS_LEARNED.md`** — Replace `ACB_DEPENDS_PATTERNS.md` (4 references at lines 268-269, 525, 733) with `ONEIRIC_DEPENDS_PATTERNS.md`; drop other ACB mentions.
 
 ### Secondary (3 specific fixes in scope)
 
 9. **`docs/WEBSOCKET_GUIDE.md:322-355`** — Delete the entire "MCP Tools Integration" section. The `fastblocks.mcp.websocket_tools` module was deleted in 0.8.0; the import would crash.
-10. **`docs/WEBSOCKET_GUIDE.md:71`** — Update `from mcp_common.websocket import WebSocketAuthenticator` to `from mcp_common.websocket.auth import WebSocketAuthenticator` (matches `fastblocks/websocket/auth.py:30`).
-11. **`docs/WEBSOCKET_GUIDE.md:485`** — Drop obsolete Docker Compose `version: '3.8'` key.
-12. **`docs/TYPE_SYSTEM_MIGRATION.md`** — Replace `ACB_DEPENDS_PATTERNS.md` phantom ref with `ONEIRIC_DEPENDS_PATTERNS.md`.
+1. **`docs/WEBSOCKET_GUIDE.md:71`** — Update `from mcp_common.websocket import WebSocketAuthenticator` to `from mcp_common.websocket.auth import WebSocketAuthenticator` (matches `fastblocks/websocket/auth.py:30`).
+1. **`docs/WEBSOCKET_GUIDE.md:485`** — Drop obsolete Docker Compose `version: '3.8'` key.
+1. **`docs/TYPE_SYSTEM_MIGRATION.md`** — Replace `ACB_DEPENDS_PATTERNS.md` phantom ref with `ONEIRIC_DEPENDS_PATTERNS.md`.
 
 ## Constraints
 
@@ -115,12 +115,12 @@ Write your final report to:
 The report must contain:
 
 1. **Status:** DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED
-2. **Commit SHA** of the new commit on `docs/audit-remediation-2026-08-19`
-3. **Files changed:** list with line-count diffs (`git diff --stat HEAD~1`)
-4. **CI guard xfail count:** before / after
-5. **Concerns:** any uncertainty, anything not verified against source, anything that needs reviewer judgment
-6. **Self-review:** what you checked before committing
-7. **NOTES.md decision:** did you skip it, mark it, or rewrite it? Document which.
+1. **Commit SHA** of the new commit on `docs/audit-remediation-2026-08-19`
+1. **Files changed:** list with line-count diffs (`git diff --stat HEAD~1`)
+1. **CI guard xfail count:** before / after
+1. **Concerns:** any uncertainty, anything not verified against source, anything that needs reviewer judgment
+1. **Self-review:** what you checked before committing
+1. **NOTES.md decision:** did you skip it, mark it, or rewrite it? Document which.
 
 ## Notes on scale
 

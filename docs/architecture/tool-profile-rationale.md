@@ -56,8 +56,7 @@ The dangerous tools (`fastblocks_create_template`, `fastblocks_create_component`
 symbol names resurface. What remains is harmless introspection.
 
 A `MINIMAL` profile that hides `list_templates` from a model doesn't
-provide security: the model can still `from fastblocks.mcp.tools import
-list_templates` and call it as a Python function. Profile-gating only
+provide security: the model can still `from fastblocks.mcp.tools import list_templates` and call it as a Python function. Profile-gating only
 matters when you can credibly claim that a profile is a security
 boundary, and for a library exposing read-only helpers over stdio, it
 is not.
@@ -110,8 +109,7 @@ re-done when 0.18+ becomes the baseline. Better to wait.
 
 - `FASTBLOCKS_TOOLS`: a tuple of the seven tool names, in registration
   order. Self-documenting and importable by tests.
-- `PROFILE_REGISTRATIONS`: a `{ToolProfile.MINIMAL: ALL, STANDARD: ALL,
-  FULL: ALL}` mapping. Every profile maps to the full set. This is the
+- `PROFILE_REGISTRATIONS`: a `{ToolProfile.MINIMAL: ALL, STANDARD: ALL, FULL: ALL}` mapping. Every profile maps to the full set. This is the
   "opt out of profile-based dispatch" form: nothing is filtered
   regardless of profile.
 - `apply_fastblocks_tool_profile(server, profile=ToolProfile.FULL)`:
@@ -125,12 +123,12 @@ re-done when 0.18+ becomes the baseline. Better to wait.
 `tests/mcp/test_tool_profile.py` verifies:
 
 1. The stub module imports cleanly.
-2. `apply_fastblocks_tool_profile(server)` is a no-op: the server is
+1. `apply_fastblocks_tool_profile(server)` is a no-op: the server is
    not mutated, no methods are called, no exception is raised.
-3. The `PROFILE_REGISTRATIONS` mapping covers all three `ToolProfile`
+1. The `PROFILE_REGISTRATIONS` mapping covers all three `ToolProfile`
    values and that every value is the full tool set (the "opt out"
    invariant).
-4. The deprecation log fires exactly once per process, even on
+1. The deprecation log fires exactly once per process, even on
    repeated calls.
 
 ### The CLAUDE.md note
@@ -168,10 +166,10 @@ full `mcp_common` profile system. The W4.10 brief should:
 
 1. **Adopt the full pattern** in `splashstand/mcp/`. This is the
    "production" half of the equation.
-2. **Import fastblocks' tools via the `register_fastblocks_tools` free
+1. **Import fastblocks' tools via the `register_fastblocks_tools` free
    function** so splashstand's MCP server includes the framework's
    read-only introspection helpers as part of its own profile.
-3. **Not** import `apply_fastblocks_tool_profile` (the no-op stub) —
+1. **Not** import `apply_fastblocks_tool_profile` (the no-op stub) —
    the no-op is for the *framework's* server only. Splashstand's
    server should call `mcp_common.tools.apply_tool_profile` directly,
    not the framework's stub.

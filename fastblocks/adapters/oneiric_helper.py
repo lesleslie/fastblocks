@@ -112,7 +112,9 @@ def resolve_instance(resolver: Resolver, domain: str, key: str) -> Any:
         ...     key="templates",
         ...     factory=lambda: Templates(),
         ... )
-        >>> resolve_instance(depends, "fastblocks", "templates")  # Returns the Templates instance.
+        >>> resolve_instance(
+        ...     depends, "fastblocks", "templates"
+        ... )  # Returns the Templates instance.
     """
     try:
         candidate = resolver.resolve(domain, key)

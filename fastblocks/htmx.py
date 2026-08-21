@@ -22,13 +22,11 @@ import typing as t
 from collections.abc import Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
-from typing import Any, TypeVar
+from typing import Any, cast
 from urllib.parse import unquote
 
-_T = TypeVar("_T")
 
-
-def _run_async_safely(coro: Coroutine[t.Any, t.Any, _T]) -> _T:
+def _run_async_safely[T](coro: Coroutine[t.Any, t.Any, T]) -> T:
     """Run an awaitable from a synchronous fallback without leaking its loop.
 
     Contract (per ``fastblocks/CLAUDE.md``):
@@ -50,8 +48,9 @@ def _run_async_safely(coro: Coroutine[t.Any, t.Any, _T]) -> _T:
         asyncio.get_running_loop()
     except RuntimeError:
         with ThreadPoolExecutor(max_workers=1) as executor:
-            return executor.submit(asyncio.run, coro).result()
+            return cast(T, executor.submit(asyncio.run, coro).result())
     raise RuntimeError("use the native async path inside an active event loop")
+
 
 # Oneiric imports
 from oneiric.core.logging import get_logger
@@ -324,9 +323,7 @@ def htmx_trigger(
         trigger_name = trigger_events
         trigger_data = {}
 
-    async def _publish_event(
-        trigger_name: str, trigger_data: dict[str, t.Any]
-    ) -> None:
+    async def _publish_event(trigger_name: str, trigger_data: dict[str, t.Any]) -> None:
         from .adapters.templates._events_wrapper import publish_htmx_trigger
 
         await publish_htmx_trigger(

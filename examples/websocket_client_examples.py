@@ -259,10 +259,12 @@ async def example_request_response():
         async for message in client.websocket:
             data = json.loads(message)
 
-            if data.get("type") == "response":
-                if data.get("correlation_id") == "req_001":
-                    logger.info(f"Component Status: {data.get('data')}")
-                    break
+            if (
+                data.get("type") == "response"
+                and data.get("correlation_id") == "req_001"
+            ):
+                logger.info(f"Component Status: {data.get('data')}")
+                break
 
         await client.disconnect()
 

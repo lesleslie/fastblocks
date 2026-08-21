@@ -41,16 +41,19 @@
 | `tests/adapters/admin/test_sqladmin_comprehensive.py` | Admin model registration expectation | Admin-test domain |
 | `fastblocks/stubs/oneiric/core/resolution.pyi` | Existing untracked Oneiric type stub; do not modify unless the resolver owner proves it is the failing surface | Resolver owner only after permission |
 
----
+______________________________________________________________________
 
 ### Task 1: Lock the dirty-WIP baseline and ownership manifest
 
 **Files:**
+
 - Create: `docs/superpowers/plans/2026-08-19-fastblocks-test-recovery-baseline.md`
 - Read: `pyproject.toml`, `CLAUDE.md`, `AGENTS.md`, and the current git status
 
 **Interfaces:**
+
 - Consumes: The current original checkout at `/Users/les/Projects/fastblocks`.
+
 - Produces: A durable baseline containing HEAD, WIP file counts, test command, failure counts, and domain ownership rules for later tasks.
 
 - [ ] **Step 1: Verify the isolated worktree snapshot**
@@ -99,17 +102,20 @@ git add docs/superpowers/plans/2026-08-19-fastblocks-test-recovery-baseline.md
 git commit -m "docs(fastblocks): record test recovery baseline"
 ```
 
----
+______________________________________________________________________
 
 ### Task 2: Settle the resolver/initialization contract with one owner
 
 **Files:**
+
 - Read: `fastblocks/initializers.py`, `fastblocks/main.py`, `fastblocks/adapters/oneiric_helper.py`, `tests/test_initializers_comprehensive.py`, `tests/test_main_comprehensive.py`
 - Modify: only those direct resolver/initialization files listed above
 - Test: `tests/test_initializers_comprehensive.py` and `tests/test_main_comprehensive.py`
 
 **Interfaces:**
+
 - Consumes: The shared ownership lock from Task 1.
+
 - Produces: One canonical sync/async resolver contract consumed by later CLI, filter, security, and adapter tests.
 
 - [ ] **Step 1: Inspect the installed Oneiric API before changing code**
@@ -169,8 +175,11 @@ Adapt the exact function name and import from the current file after reading it;
 Use the evidence from Steps 1–3:
 
 - If the installed resolver is synchronous and the production code already consumes a `Candidate`, replace stale `AsyncMock`/coroutine-shaped tests with a synchronous resolver mock. Do not alter production code merely to satisfy an incorrect test mock.
+
 - If the production code is called from a genuinely async context and `Resolver.resolve` is asynchronous, make the bridge explicitly await the coroutine and add a sync helper only if an existing public sync API requires it. The implementation must not silently discard a coroutine or pass it where a value is required.
+
 - Keep the existing return type and public names unchanged unless the test proves a stale API.
+
 - Do not edit the shared files from any other task.
 
 - [ ] **Step 5: Run the resolver-focused tests**
@@ -194,16 +203,19 @@ git commit -m "fix(fastblocks): align dependency resolver contract"
 
 If the production files are unchanged, the commit may contain only the direct test and any required contract documentation.
 
----
+______________________________________________________________________
 
 ### Task 3: Repair validation/sanitizer wiring
 
 **Files:**
+
 - Modify: `fastblocks/_validation_integration.py`
 - Test: `tests/test_validation_integration.py`
 
 **Interfaces:**
+
 - Consumes: The singleton initialization behavior expected by the validation tests.
+
 - Produces: An initialized validation/sanitizer instance whose instance-level state is visible to `__init__` and reused by subsequent calls.
 
 - [ ] **Step 1: Run the security validation failures in isolation**
@@ -243,16 +255,19 @@ git add fastblocks/_validation_integration.py tests/test_validation_integration.
 git commit -m "fix(fastblocks): initialize validation sanitizer state"
 ```
 
----
+______________________________________________________________________
 
 ### Task 4: Repair HTMX async fallback and correlated caching behavior
 
 **Files:**
+
 - Modify: `fastblocks/htmx.py` and only the caching/runtime file proven by the targeted test
 - Test: `tests/test_htmx.py` and the exact affected caching test file
 
 **Interfaces:**
+
 - Consumes: The existing `_run_publish_event` coroutine and the documented async/sync boundary in FastBlocks `CLAUDE.md`.
+
 - Produces: Every fallback either awaits the coroutine on a safe loop or explicitly raises/uses a native async path; no coroutine is silently lost.
 
 - [ ] **Step 1: Run the HTMX and caching tests**
@@ -311,16 +326,19 @@ git commit -m "fix(fastblocks): complete async htmx fallbacks"
 
 If Step 1 proves a production caching defect, make a separate follow-up commit for `fastblocks/caching.py` and `tests/test_caching.py`; do not include unrelated WIP changes in that commit.
 
----
+______________________________________________________________________
 
 ### Task 5: Align the Jinja ChoiceLoader call contract
 
 **Files:**
+
 - Modify: `fastblocks/adapters/templates/jinja2.py`
 - Test: `tests/adapters/templates/test_jinja2.py`
 
 **Interfaces:**
+
 - Consumes: The Jinja loader `get_source_async` contract and the existing `ChoiceLoader` fallback tests.
+
 - Produces: A loader call that passes the documented template argument and handles `TemplateNotFound` as the existing API requires.
 
 - [ ] **Step 1: Run the two failing ChoiceLoader tests**
@@ -364,17 +382,20 @@ git add fastblocks/adapters/templates/jinja2.py tests/adapters/templates/test_ji
 git commit -m "fix(fastblocks): honor ChoiceLoader source contract"
 ```
 
----
+______________________________________________________________________
 
 ### Task 6: Migrate CLI and validation test expectations
 
 **Files:**
+
 - Modify: `tests/test_cli_comprehensive.py`
 - Modify: `tests/test_validation_integration.py` only for CLI-facing fixture changes after the production sanitizer is integrated
 - Test: both files
 
 **Interfaces:**
+
 - Consumes: The resolver contract from Task 2 and sanitizer behavior from Task 3.
+
 - Produces: CLI tests that mock the canonical async/sync resolver surface and retain output/adapter assertions.
 
 - [ ] **Step 1: Run the CLI file and capture the 16 failures**
@@ -420,16 +441,19 @@ git add tests/test_cli_comprehensive.py tests/test_validation_integration.py
 git commit -m "test(fastblocks): align CLI resolver and validation fixtures"
 ```
 
----
+______________________________________________________________________
 
 ### Task 7: Migrate template filter dependency mocks
 
 **Files:**
+
 - Modify: `tests/adapters/templates/test_filters_comprehensive.py`
 - Test: the complete filter file
 
 **Interfaces:**
+
 - Consumes: The canonical resolver surface from Task 2.
+
 - Produces: Filter tests that verify rendered output against a real dependency value, not a leaked `MagicMock`.
 
 - [ ] **Step 1: Run the filter file and classify failures**
@@ -465,16 +489,19 @@ git add tests/adapters/templates/test_filters_comprehensive.py
 git commit -m "test(fastblocks): return real values from template filters"
 ```
 
----
+______________________________________________________________________
 
 ### Task 8: Make security tests independent of implicit event-loop state
 
 **Files:**
+
 - Modify: `tests/security/test_input_validation.py`
 - Test: the complete security test file
 
 **Interfaces:**
+
 - Consumes: The async validation APIs exercised by the test file.
+
 - Produces: Tests with explicit event-loop ownership and deterministic pass/fail behavior in full-suite order.
 
 - [ ] **Step 1: Reproduce the five missing-loop failures in full suite order**
@@ -532,11 +559,12 @@ git add tests/security/test_input_validation.py
 git commit -m "test(fastblocks): isolate security async lifecycle"
 ```
 
----
+______________________________________________________________________
 
 ### Task 9: Repair proven application, initializer, and adapter expectations
 
 **Files:**
+
 - Modify: only the direct file proven by each exact failure:
   - `tests/test_initializers_comprehensive.py` and `tests/test_main_comprehensive.py` for dependency expectations
   - `tests/test_initializers_comprehensive.py` for the removed `register_pkg` expectation and tuple length
@@ -545,7 +573,9 @@ git commit -m "test(fastblocks): isolate security async lifecycle"
 - Test: the exact affected test file or node
 
 **Interfaces:**
+
 - Consumes: The central resolver contract from Task 2.
+
 - Produces: Registration, dependency, and adapter behavior that matches the current public API without deleting meaningful coverage.
 
 - [ ] **Step 1: Run the remaining application/adapter failures individually**
@@ -572,9 +602,13 @@ For each failure, assert the current public registration result and preserve a t
 Handle these exact categories:
 
 - If `register_pkg` no longer exists in `fastblocks.initializers`, update the test to assert the supported registration API; do not restore a dead public symbol.
+
 - If the tuple count is 6 because a registration was removed, update the test to assert the six current registrations and the contract that the tuple is non-empty and unique.
+
 - If SQLAdmin models are registered under the current supported configuration, fix the test to inspect the actual registered model set; do not force a count of seven.
+
 - If sanitizer failure does not raise because the sanitizer intentionally records a warning, assert the documented current behavior; do not remove the failure-path test.
+
 - If a registration genuinely fails, fix the production path and keep the error-path assertion.
 
 - [ ] **Step 4: Run the application and adapter subsets**
@@ -599,17 +633,20 @@ git commit -m "fix(fastblocks): align application and adapter contracts"
 
 Use only the files listed in the Step 3 diagnosis; if only tests changed, the commit message is `test(fastblocks): align application and adapter contracts` instead.
 
----
+______________________________________________________________________
 
 ### Task 10: Verify rendering collection and admin behavior, then resolve proven collection issues
 
 **Files:**
+
 - Modify: `tests/adapters/templates/test_rendering_jinja2.py` and/or `fastblocks/adapters/templates/_advanced_manager.py` only if collection fails
 - Modify: `tests/adapters/admin/test_sqladmin_comprehensive.py` only if Task 9 did not own it
 - Test: exact collection and affected test nodes
 
 **Interfaces:**
+
 - Consumes: The collection baseline from Task 1.
+
 - Produces: A test suite that can collect all intended modules and runs the renderer/admin contract.
 
 - [ ] **Step 1: Run collection-only for the rendering and admin modules**
@@ -647,16 +684,19 @@ git add tests/adapters/templates/test_rendering_jinja2.py fastblocks/adapters/te
 git commit -m "test(fastblocks): verify renderer and admin collection"
 ```
 
----
+______________________________________________________________________
 
 ### Task 11: Run Wave 1/2 integration gates and commit any residual fixes
 
 **Files:**
+
 - Modify: only files owned by a previously failed domain; no new structural refactor files
 - Test: the full non-websocket suite and the separately supported websocket subset
 
 **Interfaces:**
+
 - Consumes: All domain commits from Tasks 2–10.
+
 - Produces: Integrated recovery branch with a measured failure delta.
 
 - [ ] **Step 1: Confirm the integrated worktree status and commit graph**
@@ -693,16 +733,19 @@ For every remaining failure, classify it as production defect, stale expectation
 
 Use a follow-up commit per domain. Never amend a previous commit, reset the worktree, or merge clean-HEAD changes into the dirty-WIP repair.
 
----
+______________________________________________________________________
 
 ### Task 12: Final verification, review, and handoff
 
 **Files:**
+
 - Create: `docs/superpowers/plans/2026-08-19-fastblocks-test-recovery-results.md`
 - Read: all changed files, the design spec, baseline manifest, and domain reports
 
 **Interfaces:**
+
 - Consumes: Integrated commits and final test outputs from Task 11.
+
 - Produces: Reproducible handoff with exact commands, counts, remaining blockers, and commit SHAs.
 
 - [ ] **Step 1: Re-read the final diff and check WIP preservation**
@@ -732,13 +775,21 @@ Record the final counts and exit code. Compare warning count to the baseline and
 Document:
 
 - recovery worktree path and branch;
+
 - original HEAD and current branch HEAD;
+
 - every domain commit SHA;
+
 - targeted commands and pass/fail counts;
+
 - full-suite final counts and exit code;
+
 - clean-HEAD comparison;
+
 - WIP preservation manifest;
+
 - remaining blockers with exact test IDs;
+
 - deferred structural follow-up.
 
 - [ ] **Step 5: Commit the results handoff**
@@ -759,6 +810,6 @@ Plan complete and saved to `docs/superpowers/plans/2026-08-19-fastblocks-test-re
 Two execution options:
 
 1. **Subagent-Driven (recommended):** dispatch a fresh agent per task, review between tasks, and maintain the domain ledger. This directly matches the user’s fan-out request.
-2. **Inline Execution:** execute tasks in this session with checkpoints, using the same ownership and verification gates.
+1. **Inline Execution:** execute tasks in this session with checkpoints, using the same ownership and verification gates.
 
 Which approach should be used for implementation?

@@ -22,7 +22,7 @@
 - Run focused tests with `--no-cov -n 0`; project defaults enable coverage and xdist and are too noisy for red/green feedback.
 - Do not claim completion while any requested gate or an explicitly required targeted test is failing.
 
----
+______________________________________________________________________
 
 ## File Map
 
@@ -61,18 +61,21 @@
 - Modify: `fastblocks/mcp/{server,tools,cli,config_audit,config_health,config_migration,configuration,discovery,env_manager,health,registry}.py`, `fastblocks/middleware.py`, `fastblocks/websocket/{server,origin,auth,binding,tls_config}.py`.
 - Modify or create: `tests/mcp`, `tests/websocket`, `tests/test_middleware*.py`, `tests/test_websocket_auth.py`, `tests/test_websocket_server.py`, and focused MCP initialization/diagnostic tests.
 
----
+______________________________________________________________________
 
 ## Task 0: Capture the baseline and establish the Oneiric resolver contract
 
 **Files:**
+
 - Modify: `fastblocks/core/resolver.py:12-25`.
 - Modify: `fastblocks/adapters/oneiric_helper.py:15-65`.
 - Modify: all production modules listed in the resolver file map as later tasks migrate their calls.
 - Create: `tests/core/test_resolver.py`.
 
 **Interfaces:**
+
 - Consumes: `oneiric.core.resolution.Resolver`, `Candidate`, and `Candidate.factory` from Oneiric 0.16.1.
+
 - Produces: `get_resolver()`, `resolve_component()`, and `register_candidate()` contracts used by later tasks.
 
 - [ ] **Step 1: Capture the dirty-tree and Ruff baseline without fixing it.**
@@ -204,24 +207,26 @@ uv run pytest --no-cov -n 0 tests/core/test_resolver.py
 Expected pass signal: no resolver API mismatch is hidden behind a broad catch, and all affected
 callers receive a concrete component or an explicit missing-component result.
 
----
+______________________________________________________________________
 
 ## Task 1: Repair stale integration skips and deterministic compatibility rules
 
 **Files:**
+
 - Modify: `tests/test_validation_integration.py`, `tests/test_workflows_integration.py`.
 - Modify: `fastblocks/_validation_integration.py`, `_workflows_integration.py`, `_events_integration.py`, `_health_integration.py`.
 - Create or modify: `tests/test_integration_contracts.py`.
 
 **Interfaces:**
+
 - Consumes: Task 0's resolver helper and current Oneiric availability flags.
+
 - Produces: executing validation/workflow tests instead of silently skipped ACB suites; explicit integration failure contracts.
 
 - [ ] **Step 1: Replace stale ACB availability imports with current Oneiric flags.**
 
 Use the current FastBlocks integration names (`oneiric_validation_available`,
-oneiric_workflows_available`, and the corresponding event/health flags) rather than removed
-`ACB_*_AVAILABLE` imports. Do not hide an import failure with a module-level skip.
+oneiric_workflows_available`, and the corresponding event/health flags) rather than removed `ACB\_\*\_AVAILABLE\` imports. Do not hide an import failure with a module-level skip.
 
 - [ ] **Step 2: Run the suites to expose the real red phase.**
 
@@ -362,18 +367,21 @@ uv run pytest --no-cov -n 0 -rs \
 Expected pass signal: the suites execute rather than skip, fail-closed validation is covered,
 and delivery/workflow/health results preserve explicit failure state.
 
----
+______________________________________________________________________
 
 ## Task 2: Remediate gather, query, cache, CLI, and core runtime findings
 
 **Files:**
+
 - Modify: `fastblocks/actions/gather/{application,components,middleware,models,routes,strategies,templates}.py`.
 - Modify: `fastblocks/actions/query/parser.py`, `fastblocks/applications.py`, `fastblocks/caching.py`, `fastblocks/cli.py`.
 - Modify: `fastblocks/core/style_registry.py`, `fastblocks/exceptions.py`, `fastblocks/htmx.py`, `fastblocks/initializers.py`, `fastblocks/main.py`.
 - Modify tests under the corresponding `tests/actions`, `tests/core`, and root test modules.
 
 **Interfaces:**
+
 - Consumes: Task 0's resolver contract and Task 1's fail-closed integration behavior.
+
 - Produces: explicit gather/query/cache failure results, correctly bound cache closures, CLI subprocess intent, and narrow import/validation catches.
 
 - [ ] **Step 1: Add a failing closure-binding test for `B023`.**
@@ -478,16 +486,19 @@ uv run pytest --no-cov -n 0 \
 Expected pass signal: no reported rules remain in these files and the new closure/import/CLI
 regressions are covered.
 
----
+______________________________________________________________________
 
 ## Task 3: Remediate sync actions with batch-safe error semantics
 
 **Files:**
+
 - Modify: `fastblocks/actions/sync/strategies.py`, `cache.py`, `settings.py`, `static.py`, `templates.py`.
 - Modify: `tests/actions/sync`, `tests/test_actions_sync.py`.
 
 **Interfaces:**
+
 - Consumes: Task 0's component resolution helper.
+
 - Produces: sync results that preserve per-item errors, narrow internal parsing/IO catches, and do not mask primary failures with cleanup errors.
 
 - [ ] **Step 1: Add failing tests for batch isolation and primary-error preservation.**
@@ -547,17 +558,20 @@ uv run pytest --no-cov -n 0 tests/actions/sync tests/test_actions_sync.py
 Expected pass signal: all 69 originally reported sync handlers are either narrowed or justified,
 and per-item failures remain observable.
 
----
+______________________________________________________________________
 
 ## Task 4: Remediate adapters and template rendering boundaries
 
 **Files:**
+
 - Modify: all adapter files in the adapter file map, especially `adapters/oneiric_helper.py`,
   `auth/_base.py`, fonts, icons, images, routes, sitemap, style, and template modules.
 - Modify or create: focused adapter/template tests listed in the file map.
 
 **Interfaces:**
+
 - Consumes: Task 0 resolver helpers and Task 3's explicit batch error contract.
+
 - Produces: per-instance settings defaults, safe auth context state, loader/render distinction,
   cleanup-safe template behavior, and justified retained renderer boundaries.
 
@@ -660,11 +674,12 @@ PY
 Expected pass signal: all mutable defaults are isolated, failures are not fabricated as success,
 and the public template API remains intact.
 
----
+______________________________________________________________________
 
 ## Task 5: Remediate MCP, middleware, and WebSocket rules and boundaries
 
 **Files:**
+
 - Modify: `fastblocks/mcp/{server,tools,cli,config_audit,config_health,config_migration,configuration,discovery,env_manager,health,registry}.py`.
 - Modify: `fastblocks/middleware.py`, `fastblocks/websocket/{server,origin,auth,binding,tls_config}.py`.
 - Create or modify: `tests/mcp/test_initialization_completeness.py`,
@@ -673,7 +688,9 @@ and the public template API remains intact.
   `tests/websocket/test_server_exception_logging.py`.
 
 **Interfaces:**
+
 - Consumes: Task 0 resolver boundary and Task 1 explicit initialization/failure contracts.
+
 - Produces: honest MCP initialization, structured tool errors, narrow config parsing, explicit
   timezone values, and diagnostic WebSocket exception handling.
 
@@ -762,16 +779,19 @@ uv run pytest --no-cov -n 0 \
 Expected pass signal: MCP initialization failures are visible, tool failures remain structured,
 and WebSocket exceptions are logged without redundant exception formatting.
 
----
+______________________________________________________________________
 
 ## Task 6: Complete the BLE001 inventory and add justified boundary annotations
 
 **Files:**
+
 - Modify: the production paths listed in the Step 1 JSON report after Tasks 0–5; no path outside that report may be changed by this task.
 - Modify: a focused test file for each retained broad boundary that lacks a contract test.
 
 **Interfaces:**
+
 - Consumes: all previous domain contracts.
+
 - Produces: zero unclassified `BLE001` findings and a reviewable boundary inventory.
 
 - [ ] **Step 1: Re-run Ruff and generate the authoritative remaining inventory.**
@@ -827,17 +847,20 @@ rg -n 'BLE001|per-file-ignores|ignore\s*=|extend-ignore' pyproject.toml fastbloc
 
 Expected: only local, justified annotations and no project-wide/per-file BLE001 suppression.
 
----
+______________________________________________________________________
 
 ## Task 7: Run final wiring, orphan, and quality gates
 
 **Files:**
+
 - Modify only files required by failing verification.
 - Do not modify the approved design document except to record a factual implementation outcome
   after the user requests it.
 
 **Interfaces:**
+
 - Consumes: all source/test changes from Tasks 0–6.
+
 - Produces: verified lint-clean, test-validated FastBlocks remediation with explicit failure
   evidence.
 
@@ -915,7 +938,7 @@ git -C /Users/les/Projects/fastblocks diff --name-only
 Confirm every newly changed path belongs to the file map or is a focused regression test. Leave
 unrelated pre-existing modifications untouched.
 
----
+______________________________________________________________________
 
 ## Rule Inventory and Ownership Matrix
 

@@ -26,32 +26,32 @@ git diff bf989d6 516fd95
 The brief lists 12 items. Check each:
 
 1. docs/ONEIRIC_GUIDE.md — title renamed, body rewritten
-2. docs/ONEIRIC_DEPENDS_PATTERNS.md — examples rewritten
-3. docs/GETTING_STARTED.md — last reviewed stamp updated
-4. docs/ARCHITECTURE.md — ACB claims replaced; line 51 phantom ref replaced
-5. docs/COMPARISONS.md — "ACB-based DI system" replaced
-6. docs/SECURITY.md — line 209 rewritten to actual validator import
-7. docs/NOTES.md — scratchpad header added (per the agent's call documented in the report)
-8. docs/LESSONS_LEARNED.md — ACB_DEPENDS_PATTERNS phantom ref replaced
-9. docs/WEBSOCKET_GUIDE.md:322-355 — MCP Tools Integration section deleted
-10. docs/WEBSOCKET_GUIDE.md:71 — WebSocketAuthenticator import path fixed
-11. docs/WEBSOCKET_GUIDE.md:485 — Docker Compose version key dropped
-12. docs/TYPE_SYSTEM_MIGRATION.md — phantom ref replaced
+1. docs/ONEIRIC_DEPENDS_PATTERNS.md — examples rewritten
+1. docs/GETTING_STARTED.md — last reviewed stamp updated
+1. docs/ARCHITECTURE.md — ACB claims replaced; line 51 phantom ref replaced
+1. docs/COMPARISONS.md — "ACB-based DI system" replaced
+1. docs/SECURITY.md — line 209 rewritten to actual validator import
+1. docs/NOTES.md — scratchpad header added (per the agent's call documented in the report)
+1. docs/LESSONS_LEARNED.md — ACB_DEPENDS_PATTERNS phantom ref replaced
+1. docs/WEBSOCKET_GUIDE.md:322-355 — MCP Tools Integration section deleted
+1. docs/WEBSOCKET_GUIDE.md:71 — WebSocketAuthenticator import path fixed
+1. docs/WEBSOCKET_GUIDE.md:485 — Docker Compose version key dropped
+1. docs/TYPE_SYSTEM_MIGRATION.md — phantom ref replaced
 
 ### Quality
 
 1. **Stale-content warnings**: Each guide should have the 5-line warning banner near the top (or an existing equivalent). Verify.
-2. **Import verification**: Spot-check 3-5 of the `from oneiric.*` / `from fastblocks.*` imports the implementer claims are verified. The report has a comprehensive list — pick a few and confirm against source.
-3. **Migration prose rephrasing**: The implementer rephrased "Before:" blocks in docs/ONEIRIC_GUIDE.md to avoid false-positive substring matches. Verify the reader still gets the migration intent (i.e., the legacy pattern is still described in a recognizable form).
-4. **LESSONS_LEARNED.md "legacy" annotations**: Verify the annotations are sensible and don't break the historical record.
-5. **NOTES.md scratchpad header**: Verify the file is now clearly demarcated as scratchpad.
+1. **Import verification**: Spot-check 3-5 of the `from oneiric.*` / `from fastblocks.*` imports the implementer claims are verified. The report has a comprehensive list — pick a few and confirm against source.
+1. **Migration prose rephrasing**: The implementer rephrased "Before:" blocks in docs/ONEIRIC_GUIDE.md to avoid false-positive substring matches. Verify the reader still gets the migration intent (i.e., the legacy pattern is still described in a recognizable form).
+1. **LESSONS_LEARNED.md "legacy" annotations**: Verify the annotations are sensible and don't break the historical record.
+1. **NOTES.md scratchpad header**: Verify the file is now clearly demarcated as scratchpad.
 
 ### Process hygiene
 
 1. **Diff scope**: `git diff --stat bf989d6 516fd95` should show ONLY the 10 files listed in the brief (8 primary + 2 secondary files covering items 9-12). Any other file modified is an out-of-scope edit.
-2. **One commit**: `git log --oneline bf989d6..516fd95` should show exactly one commit.
-3. **Author email**: `git log -1 --format='%ae' 516fd95` must be `les@wedgwoodwebworks.com`.
-4. **CI guard xfail**: Should still be 34 (Phase 4 can't drop the count due to the module-level pytestmark — that's by design).
+1. **One commit**: `git log --oneline bf989d6..516fd95` should show exactly one commit.
+1. **Author email**: `git log -1 --format='%ae' 516fd95` must be `les@wedgwoodwebworks.com`.
+1. **CI guard xfail**: Should still be 34 (Phase 4 can't drop the count due to the module-level pytestmark — that's by design).
 
 ### Concerns to evaluate
 

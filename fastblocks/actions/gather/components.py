@@ -24,7 +24,6 @@ from typing import Any
 
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
-
 from fastblocks.adapters.oneiric_helper import resolve_instance
 
 # Migration from ACB to Oneiric

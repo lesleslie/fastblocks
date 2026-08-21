@@ -22,25 +22,32 @@
 - Author email: `les@wedgwoodwebworks.com` (NOT `.local`).
 - All work happens in an isolated worktree per Phase 0 instructions.
 
----
+______________________________________________________________________
 
 ## Phase 0: Critical Safety Fix (Same-Day, One Commit)
 
 **Why first:** The `WEBSOCKET_GUIDE.md` env-var mismatch silently disables production JWT auth. Every other finding can wait; this one cannot.
 
 **Files:**
+
 - Modify: `docs/WEBSOCKET_GUIDE.md:398` (two env-var names)
 
 **Integration Contract:**
+
 - **Triggered from:** This plan.
+
 - **Returns to / updates:** A doc that, when followed, sets the correct env vars so JWT auth actually works.
+
 - **Demonstrable by:** `git grep -n "FASTBLOCKS_WS_JWT_SECRET\|FASTBLOCKS_WS_AUTH_REQUIRED" docs/WEBSOCKET_GUIDE.md` returns zero matches. `git grep -n "FASTBLOCKS_JWT_SECRET\|FASTBLOCKS_AUTH_ENABLED" docs/WEBSOCKET_GUIDE.md` returns the rewritten lines.
+
 - **Rollback signal:** `git revert <phase-0-sha>` if a downstream consumer depends on the old (broken) names.
+
 - **Observability added:** None — this is a doc fix. The CI guard added in Phase 2 will keep it that way.
 
 - [ ] **Step 1: Edit `docs/WEBSOCKET_GUIDE.md:398`**
 
 Replace both occurrences in the env-vars section:
+
 - `FASTBLOCKS_WS_JWT_SECRET` → `FASTBLOCKS_JWT_SECRET`
 - `FASTBLOCKS_WS_AUTH_REQUIRED` → `FASTBLOCKS_AUTH_ENABLED`
 
@@ -72,22 +79,28 @@ git commit -m "fix(fastblocks): P0 correct WebSocket auth env-var names (silent 
 git -c user.email=les@wedgwoodwebworks.com commit --amend --no-edit  # safety: fix author email
 ```
 
----
+______________________________________________________________________
 
 ## Phase 1: CI Guard Scaffolding
 
 **Why:** Establish the test infrastructure so the CI guard assertions (Phase 2) can land as a single pytest module. Without this, every narrative rewrite in Phases 3-5 risks reintroducing the same drift.
 
 **Files:**
+
 - Create: `tests/docs/__init__.py` (empty)
 - Create: `tests/docs/test_doc_accuracy.py` (skeleton)
 - Create: `tests/docs/_fixtures/` (sample doc snippets to scan)
 
 **Integration Contract:**
+
 - **Triggered from:** Phase 0 completion.
+
 - **Returns to / updates:** A runnable pytest module under `tests/docs/` that the project's existing pytest discovery will pick up.
+
 - **Demonstrable by:** `uv run pytest tests/docs/ -v` runs and returns `no tests ran` or all-pass (the skeleton has 0-1 placeholder tests).
+
 - **Rollback signal:** `git revert <phase-1-sha>` if the test discovery path breaks CI.
+
 - **Observability added:** The CI guard becomes a CI signal; future drift surfaces as a failing PR.
 
 - [ ] **Step 1: Create the test package**
@@ -185,20 +198,26 @@ git add tests/docs/
 git -c user.email=les@wedgwoodwebworks.com commit -m "feat(fastblocks): P1 scaffold docs/ CI guard test module"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 2: CI Guard Assertions (8 Tests, One Per Drift Category)
 
 **Why:** Phase 1 produced an empty skeleton. Phase 2 fills it with the 8 assertions that would have caught 60-70% of the audit findings on day one.
 
 **Files:**
+
 - Modify: `tests/docs/test_doc_accuracy.py`
 
 **Integration Contract:**
+
 - **Triggered from:** Phase 1.
+
 - **Returns to / updates:** A test suite that fails CI when any of the 8 drift categories reappear.
+
 - **Demonstrable by:** `uv run pytest tests/docs/ -v` runs all 8 test functions and they pass against the *current* docs (because Phase 3-9 will have already fixed the drift). Before Phase 3-9, these tests should be expected to fail — that is correct behavior, the failures are the regression baseline.
+
 - **Rollback signal:** Any test that produces false positives on legitimately-correct prose — disable via `# noqa: P002` annotation with comment, or scope the prohibited list tighter.
+
 - **Observability added:** PR-time CI signal on all 8 drift categories.
 
 - [ ] **Step 1: Add the 8 prohibited-symbol lists and tests**
@@ -422,22 +441,28 @@ git add tests/docs/
 git -c user.email=les@wedgwoodwebworks.com commit -m "feat(fastblocks): P2 doc-accuracy CI guard with baseline xfails"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 3: ACB Narrative Rewrite — Top-Level Docs
 
 **Why:** README.md has 27 ACB import blocks; QWEN.md intro frames FastBlocks as ACB-built; RULES.md contradicts itself on typing/docstrings. Top-level files are the highest-traffic docs and the most user-facing.
 
 **Files:**
+
 - Modify: `README.md` (~30 code blocks; lines 19, 21, 45, 169-170, 238-239, 334, 358, 408-409, 443-444, 699-700, 740-741, 891-892, 918-919, 1004-1005, 1057, 1103-1104, 1260-1262, 1273-1275, 1334-1335, 1395)
 - Modify: `QWEN.md:7,13,30,34,38,53,120`
 - Modify: `RULES.md:154,211,234,292,340,361-362,371`
 
 **Integration Contract:**
+
 - **Triggered from:** Phase 2 (CI guard active).
+
 - **Returns to / updates:** Top-level docs that describe the actual Oneiric-based stack.
+
 - **Demonstrable by:** `git grep -n "from acb\.\|import acb" README.md QWEN.md RULES.md` returns zero matches. The Phase 2 CI guard tests `test_no_prohibited_imports` turn green (xfail markers removed).
+
 - **Rollback signal:** Any import-pattern that breaks a documented user-facing API.
+
 - **Observability added:** CI guard now fails the build on ACB reintroduction.
 
 - [ ] **Step 1: Rewrite README.md ACB imports to Oneiric**
@@ -473,6 +498,7 @@ Replace "Built on the **Asynchronous Component Base (ACB)** framework" with "Bui
 - [ ] **Step 4: Fix `python -m fastblocks serve` in QWEN.md:53**
 
 Replace with one of:
+
 - `uv run granian fastblocks.applications:app` (production-like)
 - `uv run python -m fastblocks create_app <name>` (scaffold-driven)
 - Or simply remove the line if no run story exists.
@@ -517,13 +543,14 @@ git add README.md QWEN.md RULES.md tests/docs/
 git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P3 ACB narrative rewrite — README/QWEN/RULES"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 4: ACB Narrative Rewrite — `docs/` Guides (8 files)
 
 **Why:** The 8 user-facing guides in `docs/` document ACB APIs that don't exist. Each guide has ~10-30 ACB import blocks. Same root cause as Phase 3, separate files.
 
 **Files:**
+
 - Modify: `docs/ONEIRIC_GUIDE.md` (lines 1, 3, 29, 50-53, 371, body throughout)
 - Modify: `docs/ONEIRIC_DEPENDS_PATTERNS.md` (title + examples throughout)
 - Modify: `docs/GETTING_STARTED.md`
@@ -534,10 +561,15 @@ git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P3 ACB na
 - Modify: `docs/LESSONS_LEARNED.md` (lines 32, 121-137, 268-269, 525, 733, 749)
 
 **Integration Contract:**
+
 - **Triggered from:** Phase 3.
+
 - **Returns to / updates:** 8 user-facing guides that import from Oneiric and reference real modules.
+
 - **Demonstrable by:** `git grep -n "from acb\.\|import acb" docs/` returns zero matches.
+
 - **Rollback signal:** Any import-pattern that doesn't actually resolve.
+
 - **Observability added:** CI guard now catches reintroduction.
 
 - [ ] **Step 1: Add stale-content warning template**
@@ -603,21 +635,27 @@ git add docs/
 git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P4 docs/ guide ACB narrative rewrite (8 files)"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 5: ACB Narrative Rewrite — Adapter READMEs
 
 **Why:** Adapter READMEs have sample code using pre-Oneiric `acb.*` imports. After Phase 5, every adapter README should use the actual import surface.
 
 **Files:**
+
 - Modify: 12 adapter READMEs (admin, app, auth, fonts, icons, images, routes, sitemap, style, templates, parent)
 - Modify: `fastblocks/mcp/README.md`
 
 **Integration Contract:**
+
 - **Triggered from:** Phase 4.
+
 - **Returns to / updates:** Adapter READMEs aligned with the Oneiric-based surface.
+
 - **Demonstrable by:** `git grep -n "from acb\.\|import acb" fastblocks/` returns zero matches.
+
 - **Rollback signal:** None — these are sample-code edits.
+
 - **Observability added:** CI guard catches reintroduction.
 
 - [ ] **Step 1: Rewrite admin/README.md ACB imports**
@@ -676,20 +714,24 @@ git add fastblocks/
 git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P5 adapter README ACB rewrite + main.py→default.py + adapter registration"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 6: Top-Level Doc Fixes — CLAUDE.md, CHANGELOG.md, CONTRIBUTING.md
 
 **Why:** After ACB cleanup (Phases 3-5), the remaining top-level doc issues are: pre-commit command (CLAUDE.md:39), conftest LOC (CLAUDE.md:106), coverage text (CLAUDE.md:24), MCP resource names (CLAUDE.md:86-87), CHANGELOG roadmap language (lines 67,71,79,83), CONTRIBUTING.md pytest marker (line 27).
 
 **Files:**
+
 - Modify: `CLAUDE.md` (lines 24, 39, 86-87, 106, 169)
 - Modify: `CHANGELOG.md` (lines 67, 71, 79, 83)
 - Modify: `CONTRIBUTING.md` (line 27)
 
 **Integration Contract:**
+
 - **Triggered from:** Phase 5.
+
 - **Demonstrable by:** `git grep -n "pre-commit run --all-files\|3,410 LOC\|@pytest.mark.benchmark\|slated for 0.8.0" .` returns zero matches.
+
 - **Rollback signal:** None — pure doc accuracy.
 
 - [ ] **Step 1: CLAUDE.md:39 — drop `pre-commit run --all-files`**
@@ -728,18 +770,21 @@ git add CLAUDE.md CHANGELOG.md CONTRIBUTING.md
 git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P6 CLAUDE.md / CHANGELOG.md / CONTRIBUTING.md accuracy"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 7: Adapter Registration + File Rename Cleanup
 
 **Why:** `fastblocks/adapters/README.md` documents a 4-adapter system for what is now a 10-adapter system. Plus the file rename from `main.py` to `default.py` is documented-but-not-shipped.
 
 **Files:**
+
 - Modify: `fastblocks/adapters/README.md` (parent — add 6 missing categories)
 - Modify: `fastblocks/adapters/admin/README.md` (drop Material Theme)
 
 **Integration Contract:**
+
 - **Demonstrable by:** `git ls-files fastblocks/adapters/` matches the categories listed in `fastblocks/adapters/README.md`. No "Material Theme" claim in admin docs.
+
 - **Rollback signal:** None.
 
 - [ ] **Step 1: Enumerate current adapter categories**
@@ -779,18 +824,21 @@ git add fastblocks/adapters/
 git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P7 adapter README registration — add 6 missing categories, drop Material/Bulma"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 8: Backup File Cleanup
 
 **Why:** 8 `.backup.json` files are leaking to git across `adapters/{sitemap,routes,icons,images,templates,style}`. `.gitignore` is missing the pattern.
 
 **Files:**
+
 - Modify: `.gitignore`
 - Delete: 8 backup files via `git rm`
 
 **Integration Contract:**
+
 - **Demonstrable by:** `git ls-files | grep '\.backup\.json$'` returns zero matches. The CI guard `test_no_backup_json_in_git` turns green.
+
 - **Rollback signal:** None — backup files are not source of truth.
 
 - [ ] **Step 1: Add `*.backup.json` to `.gitignore`**
@@ -840,13 +888,14 @@ git add .gitignore fastblocks/ tests/docs/
 git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P8 remove leaked .backup.json files; add .gitignore pattern"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 9: Phantom Filenames + Agent-Facing Convention Fixes
 
 **Why:** Three phantom filenames are referenced from docs (`ACB_GUIDE.md`, `MIGRATION-0.17.0.md`, `ACB_DEPENDS_PATTERNS.md`); `.claude/CLAUDE.md` claims a `.claude/agents/` symlink that doesn't exist; `WORKFLOW-CATALOG.md` last-reviewed stamp is 10 months stale; `RULES.md` contradicts itself on typing convention.
 
 **Files:**
+
 - Modify: `docs/README.md` (lines 30, 45, 73)
 - Modify: `docs/ARCHITECTURE.md` (line 51)
 - Modify: `docs/TYPE_SYSTEM_MIGRATION.md` (`ACB_DEPENDS_PATTERNS.md` → `ONEIRIC_DEPENDS_PATTERNS.md`)
@@ -855,25 +904,33 @@ git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P8 remove
 - Modify: `.claude/commands/workflows/WORKFLOW-CATALOG.md` (last_reviewed stamp)
 
 **Integration Contract:**
+
 - **Demonstrable by:** `git ls-files | grep -E "ACB_GUIDE|MIGRATION-0.17.0|ACB_DEPENDS_PATTERNS"` returns zero matches. CI guard `test_no_phantom_filenames` turns green.
+
 - **Rollback signal:** None.
 
 - [ ] **Step 1: Replace `ACB_GUIDE.md` with `ONEIRIC_GUIDE.md` (3 occurrences)**
 
 - `docs/README.md:30`
+
 - `docs/README.md:73`
+
 - `docs/ARCHITECTURE.md:51`
 
 - [ ] **Step 2: Replace `MIGRATION-0.17.0.md` with `migrations/0.7-to-0.8.md` (2 occurrences)**
 
 - `docs/README.md:45`
+
 - `docs/ARCHITECTURE.md:51`
 
 - [ ] **Step 3: Replace `ACB_DEPENDS_PATTERNS.md` with `ONEIRIC_DEPENDS_PATTERNS.md` (5 occurrences)**
 
 - `docs/TYPE_SYSTEM_MIGRATION.md`
+
 - `docs/LESSONS_LEARNED.md:268-269`
+
 - `docs/LESSONS_LEARNED.md:525`
+
 - `docs/LESSONS_LEARNED.md:733`
 
 - [ ] **Step 4: Remove false `.claude/agents/` symlink claim from `.claude/CLAUDE.md:7`**
@@ -892,19 +949,23 @@ git add docs/ .claude/
 git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P9 phantom filename refs + .claude/CLAUDE.md agents claim + WORKFLOW-CATALOG stamp"
 ```
 
----
+______________________________________________________________________
 
 ## Phase 10: Final Verification + Sign-Off
 
 **Why:** After 9 phases of edits, confirm: (a) every CI guard test passes without xfail markers, (b) crackerjack passes, (c) the audit's verified-accurate anchors still hold, (d) all changes are committed.
 
 **Files:**
+
 - Modify: `tests/docs/test_doc_accuracy.py` (remove all `@pytest.mark.xfail` decorators)
 - Modify: `CHANGELOG.md` (add a top-level "Documentation remediation wave" entry)
 
 **Integration Contract:**
+
 - **Demonstrable by:** `uv run pytest tests/docs/ -v` reports zero xfails and zero failures. `uv run crackerjack run` exits 0. Coverage still meets 49.13% floor.
+
 - **Rollback signal:** Any test that fails after xfail removal — investigate before merging.
+
 - **Observability added:** Documentation remediation visible in CHANGELOG.
 
 - [ ] **Step 1: Remove all `@pytest.mark.xfail` decorators**
@@ -951,7 +1012,7 @@ git -c user.email=les@wedgwoodwebworks.com commit -m "fix(fastblocks): P10 doc-a
 
 Per memory `bodai-pre-1.0-merge-policy.md`: all Bodai components merge directly to main pre-1.0. Either fast-forward 9 commits into main or open a PR with the squash. Recommended: PR for the wave so reviewers can audit the diff as one.
 
----
+______________________________________________________________________
 
 ## Self-Review Checklist (run before declaring plan complete)
 
@@ -988,6 +1049,6 @@ Plan saved to `/Users/les/Projects/fastblocks/docs/superpowers/plans/2026-08-19-
 Two execution options:
 
 1. **Subagent-Driven (recommended)** — I dispatch a fresh subagent per phase, review between phases, fast iteration. Mirrors the 4-agent audit pattern that found all 75 findings.
-2. **Inline Execution** — Execute tasks in this session using executing-plans, batch execution with checkpoints for review.
+1. **Inline Execution** — Execute tasks in this session using executing-plans, batch execution with checkpoints for review.
 
 Which approach?

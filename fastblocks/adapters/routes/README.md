@@ -151,9 +151,7 @@ from jinja2.exceptions import TemplateNotFound
 
 class Index(HTTPEndpoint):
     @depends.inject
-    async def get(
-        self, request: t.Any, templates=Templates
-    ) -> Response:
+    async def get(self, request: t.Any, templates=Templates) -> Response:
         page = request.path_params.get("page") or "home"
         template = "index.html"
         headers = dict(vary="hx-request")

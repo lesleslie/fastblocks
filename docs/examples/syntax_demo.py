@@ -2,9 +2,7 @@
 # type: ignore  # Example file - not strict type checking
 
 import asyncio
-from contextlib import suppress
 from pathlib import Path
-from uuid import UUID
 
 from oneiric.core.config import OneiricSettings
 

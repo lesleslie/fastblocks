@@ -163,7 +163,7 @@ def _get_http_app() -> Any:
             loop.run_until_complete(register_fastblocks_tools(mcp_instance))
             loop.close()
 
-        return mcp_instance.http_app
+        return mcp_instance.streamable_http_app()
 
     except Exception:
         logger.exception("Failed to create http_app")

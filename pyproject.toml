@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.20.0"
+version = "0.21.0"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -158,6 +158,13 @@ unfixable = []
 [tool.ruff.lint.isort]
 no-lines-before = [
     "first-party",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Example/demo code is intentionally defensive — broad `except Exception`
+# patterns demonstrate the failure surface for readers, not production logic.
+"examples/**/*.py" = [
+    "BLE001",
 ]
 
 [tool.ruff.lint.mccabe]

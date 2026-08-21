@@ -326,4 +326,4 @@ ______________________________________________________________________
 **Next Steps:**
 
 1. Run `uv run pyright fastblocks` to surface any remaining coroutine-access bugs
-2. Run tests to ensure no breakage
+1. Run tests to ensure no breakage

@@ -5,7 +5,7 @@ Read-only final verification + handoff for the
 end-state of the recovery worktree after the integrated gate (Task 11)
 and the residual-gather follow-up (Task 28), as re-verified by Task 12.
 
----
+______________________________________________________________________
 
 ## 1. Recovery Worktree Identity
 
@@ -39,8 +39,7 @@ authorized sanitized local-history rewrite was performed to remove
 those credential-pattern lines from the handoff commit ancestry.
 The rewrite replaced the handoff commit at `174abb022...` with the
 current handoff commit at `5739ccbc...`; the 16 prior domain commits
-in §3 are preserved unchanged (identical subjects and `git show
---stat` inspection). The replacement text in this commit is a
+in §3 are preserved unchanged (identical subjects and `git show --stat` inspection). The replacement text in this commit is a
 generic note that the authorized redaction was performed; no
 credential values are reproduced anywhere in this handoff or in the
 rewritten ancestry. The original checkout
@@ -55,7 +54,7 @@ not asserted inside this handoff file. The "Final current HEAD" row
 above uses an accurate non-self-referential label to avoid stale
 self-references inside the handoff itself.
 
----
+______________________________________________________________________
 
 ## 2. Pre-run Worktree Status (Step 1)
 
@@ -72,7 +71,7 @@ git --no-pager diff --check
 
 | Status | Count | Files |
 |--------|-------|-------|
-| ` M ` (worktree-modified) | 86 | tracked files with unstaged edits |
+| `M` (worktree-modified) | 86 | tracked files with unstaged edits |
 | `MM ` (both staged and modified) | 1 | `docs/superpowers/plans/2026-08-18-fastblocks-comprehensive-hooks-remediation.md` (2 +/+ + 2 +/- in index, 12 +/+ + 7 +/- in worktree) |
 | `?? ` (untracked) | 3 | `.cache/betterleaks-report.json`; `docs/superpowers/plans/2026-08-19-fastblocks-doc-remediation.md`; `fastblocks/stubs/` |
 | **Total** | **90** | |
@@ -124,7 +123,7 @@ eec8c2b (merge-base with main) fix(fastblocks): align PROFILE_REGISTRATIONS keys
 
 `git diff --stat` summary: **87 files changed, 2828 insertions(+), 2088 deletions(-)** (uv.lock accounts for the bulk of the +/-).
 
----
+______________________________________________________________________
 
 ## 3. Domain Commit SHAs (in this worktree)
 
@@ -157,7 +156,7 @@ content is reachable under the recovery-worktree SHA).
 Total: 16 commits on top of the merge-base (`eec8c2b`). All task
 commits present and accounted for. Linear history, no merge-commits.
 
----
+______________________________________________________________________
 
 ## 4. WIP Preservation Manifest
 
@@ -188,7 +187,7 @@ No file in the recovery worktree was modified, added, or deleted by
 Task 12 other than this results handoff (see §10 for the commit
 that adds this file).
 
----
+______________________________________________________________________
 
 ## 5. Targeted Gate Results (Step 2)
 
@@ -235,7 +234,7 @@ The 4 warnings on gate 4 and 2 warnings on gate 6 are the same
 fixture/resource warnings visible on the integrated run (see §6);
 they are unchanged from the prior task reports.
 
----
+______________________________________________________________________
 
 ## 6. Final Non-WebSocket Suite (Step 3)
 
@@ -276,8 +275,7 @@ failures (`test_gather_dependencies_no_adapter`,
 `test_analyze_usage_no_adapter`) parked by task 11 and fixed by
 task 28 (commit `174abb0`). The 2-warning reduction is the
 expected outcome of removing the two `async def mock_resolve` stubs
-that emitted the now-removed `RuntimeWarning: coroutine ... was
-never awaited` lines (one per stub) from the gather suite.
+that emitted the now-removed `RuntimeWarning: coroutine ... was never awaited` lines (one per stub) from the gather suite.
 
 ### WebSocket subset (carried from task-11 report)
 
@@ -296,7 +294,7 @@ would alter the websocket results. The 4 xpassed tests are
 pre-existing `@pytest.mark.xfail` cases that now pass; they are
 remediation residuals, not new failures.
 
----
+______________________________________________________________________
 
 ## 7. Clean-HEAD Comparison (Step 4)
 
@@ -326,7 +324,7 @@ The wave 1/2 + follow-up 28 lifted 73 tests from failure/skip/predicted-fail
 into pass and fixed all 59 outright. The original 4cd782f worktree
 audit (parent main) is unchanged.
 
----
+______________________________________________________________________
 
 ## 8. Residual Warnings and Follow-ups
 
@@ -340,41 +338,41 @@ Task 12 (read-only task).
    active ASGI event loop.** Parked in task-2 report. Belongs in a
    follow-up performance/lifecycle task; the relevant production
    code path is in `fastblocks/initializers.py`.
-2. **`resolve_instance` swallows resolver failures to `None`,
+1. **`resolve_instance` swallows resolver failures to `None`,
    making app error paths unreachable.** Parked in task-2 report.
    Production code in `fastblocks/adapters/oneiric_helper.py:120`.
    Needs a propagation / log-and-rethrow design choice.
-3. **Logger fallback does not handle `None`.** Parked in task-2
+1. **Logger fallback does not handle `None`.** Parked in task-2
    report. Production code in `fastblocks/main.py` (logger
    dependency).
-4. **Per-call `ThreadPoolExecutor` in `_run_async_safely` creates
+1. **Per-call `ThreadPoolExecutor` in `_run_async_safely` creates
    a thread and loop per call.** Parked in task-4 report.
    Performance optimisation; consider a thread-local cached-loop
    implementation with locking and teardown tests.
-5. **`_async_resolver` / `_sync_resolver` aliases remain.** Parked
+1. **`_async_resolver` / `_sync_resolver` aliases remain.** Parked
    in task-6 report. Cleanup is out of scope for the recovery wave.
-6. **Two pre-existing async fallback warnings in
+1. **Two pre-existing async fallback warnings in
    `test_filters_comprehensive.py` can be removed with a
    `KeyError` side effect in a later warning-cleanup task.**
    Parked in task-7 report.
-7. **`TestGatherComponents::test_gather_components_no_adapter`
+1. **`TestGatherComponents::test_gather_components_no_adapter`
    (line 216-227) still uses `async def mock_resolve` whose body
    is unreachable when called synchronously.** Documented in
    task-28 report; passes by accident (the surrounding
    `try/except Exception` catches the AttributeError). Parked for
    warning-cleanup.
-8. **17 ruff autofix hunks in owned test files in task 2** (minor
+1. **17 ruff autofix hunks in owned test files in task 2** (minor
    deferred diff-expansion finding). Not a correctness issue.
-9. **`inspect` import is inside the new task-9 test** rather than
+1. **`inspect` import is inside the new task-9 test** rather than
    at module level. Module-level import would be more idiomatic
    but is not a defect.
-10. **Collection-time regression is the real gate; test-time
-    `hasattr` assertion is defense-in-depth** (task-10 finding).
-    Not a defect.
-11. **`.venv` substitution carries the constraint documented in
-    the task-1 report:** the recovery worktree has no `.venv`, so
-    the original checkout's venv is reused with `PYTHONPATH=.`.
-    The brief explicitly accepts this.
+1. **Collection-time regression is the real gate; test-time
+   `hasattr` assertion is defense-in-depth** (task-10 finding).
+   Not a defect.
+1. **`.venv` substitution carries the constraint documented in
+   the task-1 report:** the recovery worktree has no `.venv`, so
+   the original checkout's venv is reused with `PYTHONPATH=.`.
+   The brief explicitly accepts this.
 
 ### Pre-existing WIP warnings unchanged
 
@@ -398,7 +396,7 @@ Task 12 (read-only task).
   concern; it is a documentation file in the WIP tree, and its
   staged+worktree state is the same as it was at task-11 audit.
 
----
+______________________________________________________________________
 
 ## 9. User-Requested Main-Integration Status
 
@@ -423,7 +421,7 @@ of the 9 targeted gates (see §5) plus the full non-websocket suite
 (§6) plus the websocket subset (carried in §6) to confirm before
 the reviewed main integration.
 
----
+______________________________________________________________________
 
 ## 10. This Handoff File
 
@@ -445,7 +443,7 @@ production, or workflow file was touched. The original checkout
 No install, sync, auto-fix, reset/checkout/stash/clean was
 performed in Task 12.
 
----
+______________________________________________________________________
 
 ## 11. Commands Executed (Task 12, all read-only)
 
@@ -521,7 +519,7 @@ PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 \
 git --no-pager status --short | wc -l
 ```
 
----
+______________________________________________________________________
 
 ## 12. Artefacts (not deleted)
 
@@ -537,11 +535,12 @@ git --no-pager status --short | wc -l
   (55451 bytes; the recovery run output)
 
 No artefacts were generated inside the worktree (the `--no-cov`
-+ `PYTHONDONTWRITEBYTECODE=1` + `-p no:cacheprovider` flags
-prevent `.coverage`, `.pytest_cache/`, and `__pycache__/` from
-being created).
 
----
+- `PYTHONDONTWRITEBYTECODE=1` + `-p no:cacheprovider` flags
+  prevent `.coverage`, `.pytest_cache/`, and `__pycache__/` from
+  being created).
+
+______________________________________________________________________
 
 ## 13. Task 12 Status: COMPLETE
 

@@ -7,7 +7,6 @@ from typing import Any
 # Oneiric imports
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Resolver
-
 from fastblocks.adapters.oneiric_helper import resolve_instance
 
 _log = get_logger("fastblocks.adapters.templates._async_filters")

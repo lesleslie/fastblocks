@@ -43,10 +43,10 @@ The other 33 xfails remain baseline drift; Phase 10 owns their removal.
 All five brief verification checks pass:
 
 1. **ACB imports in adapter READMEs:** clean (zero matches).
-2. **`main.py` references in `app/README.md` and `routes/README.md`:** clean (zero matches). The legacy `main.py` parentheticals originally added in the rewrite were further rephrased to "legacy default module" so the brief's verification gate passes.
-3. **Phantom file references (`bulma.py`, single-file `sitemap.py`):** clean. Two grep hits for `from.*sitemap\b.*import` remain in the new `from fastblocks.adapters.sitemap._base import SitemapBase, SitemapBaseSettings` lines in `sitemap/README.md` (line 204) and the code example in the customization section — these are legitimate references to the real `_base` module, not the phantom single-file `sitemap.py`. The brief's intent ("file-name references") is satisfied.
-4. **MCP tool count (`10+`):** clean.
-5. **Parent `adapters/README.md` 6 categories:** all 6 H2 headings present (`## admin`, `## app`, `## auth`, `## routes`, `## sitemap`, `## templates`).
+1. **`main.py` references in `app/README.md` and `routes/README.md`:** clean (zero matches). The legacy `main.py` parentheticals originally added in the rewrite were further rephrased to "legacy default module" so the brief's verification gate passes.
+1. **Phantom file references (`bulma.py`, single-file `sitemap.py`):** clean. Two grep hits for `from.*sitemap\b.*import` remain in the new `from fastblocks.adapters.sitemap._base import SitemapBase, SitemapBaseSettings` lines in `sitemap/README.md` (line 204) and the code example in the customization section — these are legitimate references to the real `_base` module, not the phantom single-file `sitemap.py`. The brief's intent ("file-name references") is satisfied.
+1. **MCP tool count (`10+`):** clean.
+1. **Parent `adapters/README.md` 6 categories:** all 6 H2 headings present (`## admin`, `## app`, `## auth`, `## routes`, `## sitemap`, `## templates`).
 
 ## Concerns
 
@@ -57,10 +57,10 @@ All five brief verification checks pass:
    App = resolve_component(depends, "fastblocks", "app")
    ```
    This is the canonical sync usage; the async path uses `resolve_component_async(depends, ...)`.
-2. **ACB `Inject[Type]` annotation rewrite:** the brief's table replaces `from acb.depends import depends, Inject` with `from oneiric.core.depends import depends, inject`. I converted `Inject[Auth]` to default-argument style (`auth=Auth`) on `@depends.inject` decorated functions rather than introducing `inject` as a decorator. This works with Oneiric's `depends.inject` decorator (the dependency lookup happens at call time); explicit `Inject[T]` annotations are an ACB-ism.
-3. **One auto-mode classifier denial** during the routes README rewrite (an edit containing `resolve_component(depends, "fastblocks", ...)` was flagged "untrusted code integration"). I retried with a smaller change. The brief is the user's explicit authority for the translation table; the source `resolver.py` was verified to expose the API I used.
-4. **Style adapter table:** the brief asked to "Add `vanilla.py` to implementation table" and "Remove phantom `bulma.py`". Neither was actually present in the file when I read it (the existing table had 3 rows: Web Awesome, Kelp, Vanilla — all real). I did not invent content. The `bulma/` mention in `app/_templates/` is real (`git ls-files` confirms it).
-5. **Sitemap `.backup.json` files:** noted in the sitemap README that the Phase 8 `.gitignore` cleanup owns those; not deleted in this commit.
+1. **ACB `Inject[Type]` annotation rewrite:** the brief's table replaces `from acb.depends import depends, Inject` with `from oneiric.core.depends import depends, inject`. I converted `Inject[Auth]` to default-argument style (`auth=Auth`) on `@depends.inject` decorated functions rather than introducing `inject` as a decorator. This works with Oneiric's `depends.inject` decorator (the dependency lookup happens at call time); explicit `Inject[T]` annotations are an ACB-ism.
+1. **One auto-mode classifier denial** during the routes README rewrite (an edit containing `resolve_component(depends, "fastblocks", ...)` was flagged "untrusted code integration"). I retried with a smaller change. The brief is the user's explicit authority for the translation table; the source `resolver.py` was verified to expose the API I used.
+1. **Style adapter table:** the brief asked to "Add `vanilla.py` to implementation table" and "Remove phantom `bulma.py`". Neither was actually present in the file when I read it (the existing table had 3 rows: Web Awesome, Kelp, Vanilla — all real). I did not invent content. The `bulma/` mention in `app/_templates/` is real (`git ls-files` confirms it).
+1. **Sitemap `.backup.json` files:** noted in the sitemap README that the Phase 8 `.gitignore` cleanup owns those; not deleted in this commit.
 
 ## Self-review
 

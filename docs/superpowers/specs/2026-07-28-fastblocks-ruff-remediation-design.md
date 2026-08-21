@@ -1,7 +1,7 @@
 # FastBlocks Ruff Remediation Design
 
-**Date:** 2026-07-28  
-**Status:** Draft for user review  
+**Date:** 2026-07-28
+**Status:** Draft for user review
 **Repository:** `/Users/les/Projects/fastblocks`
 
 ## Problem
@@ -27,7 +27,7 @@ classes of debt:
 
 1. mechanical rule violations such as nested conditionals, timezone-naive timestamps,
    redundant exception text, mutable class defaults, and loop-closure binding; and
-2. inconsistent error-boundary semantics, especially broad catches that do not distinguish
+1. inconsistent error-boundary semantics, especially broad catches that do not distinguish
    expected operational failures from implementation defects.
 
 The fix must address both classes without weakening the Ruff configuration.
@@ -130,9 +130,9 @@ A broad catch may remain around:
 Every retained broad boundary must:
 
 1. preserve traceback or structured failure details;
-2. identify the failed operation or item;
-3. avoid returning an unexplained truthy or success value; and
-4. include a narrowly scoped `# noqa: BLE001` justification when Ruff cannot infer the
+1. identify the failed operation or item;
+1. avoid returning an unexplained truthy or success value; and
+1. include a narrowly scoped `# noqa: BLE001` justification when Ruff cannot infer the
    boundary contract.
 
 No global or per-file `BLE001` ignore will be added.
@@ -282,9 +282,9 @@ without an explicit compatibility test.
 ## Acceptance Criteria
 
 1. The reported Ruff findings are resolved without global or per-file rule suppression.
-2. Every remaining broad catch is a justified framework boundary with diagnostics.
-3. Security-sensitive failures fail closed.
-4. Behavior-sensitive changes have focused regression tests.
-5. Public imports remain compatible.
-6. No unrelated working-tree files are absorbed into the remediation.
-7. The final verification ladder is run and reported faithfully.
+1. Every remaining broad catch is a justified framework boundary with diagnostics.
+1. Security-sensitive failures fail closed.
+1. Behavior-sensitive changes have focused regression tests.
+1. Public imports remain compatible.
+1. No unrelated working-tree files are absorbed into the remediation.
+1. The final verification ladder is run and reported faithfully.

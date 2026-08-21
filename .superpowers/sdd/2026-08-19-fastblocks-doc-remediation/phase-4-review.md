@@ -16,6 +16,7 @@ key dropped, and the mcp_common.websocket import path corrected.
 ## Verifications Performed
 
 ### Scope compliance
+
 - Diff between `bf989d6..516fd95` matches the 10 files listed in the brief:
   8 primary ACB rewrites + WebSocket Guide (covers items 9, 10, 11) +
   TYPE_SYSTEM_MIGRATION.md (covers item 12).
@@ -23,6 +24,7 @@ key dropped, and the mcp_common.websocket import path corrected.
 - `git show 516fd95 --stat` confirms 10 files modified, single commit.
 
 ### Brief item-by-item
+
 - **Item 1 (ONEIRIC_GUIDE.md)**: title and subtitle renamed to Oneiric;
   ACB actions table replaced with fastblocks.actions.gather/sync/minify/query;
   ACB adapters table replaced with Oneiric resolver pattern; migration
@@ -58,6 +60,7 @@ key dropped, and the mcp_common.websocket import path corrected.
   `fastblocks._events_integration.CacheInvalidationHandler`.
 
 ### Out-of-scope touch verification
+
 - `docs/examples/syntax_demo.py` still has `from acb.*` imports. This is
   a Python file, not in the 10-file scope. Flagged as a follow-up
   candidate (not a Phase 4 defect).
@@ -66,7 +69,9 @@ key dropped, and the mcp_common.websocket import path corrected.
   All explicitly excluded from Phase 4 scope per the brief.
 
 ### Source-verification (per brief: "Verify each `from oneiric.*` or
+
 `from fastblocks.*` import via `git grep` against source")
+
 - `get_resolver`, `resolve_component`, `resolve_component_async` —
   `fastblocks/core/resolver.py:31,57,74` ✓
 - `ValidationService` — `fastblocks/_validation_integration.py:85` ✓
@@ -80,33 +85,37 @@ key dropped, and the mcp_common.websocket import path corrected.
 - `minify` — `fastblocks/actions/minify/__init__.py:32` ✓
 
 ### CI guard outcome
+
 - `uv run pytest tests/docs/test_doc_accuracy.py --no-cov -q` → 34 xfailed.
   Unchanged from before. The module-level `pytestmark = pytest.mark.xfail`
   prevents the count from dropping until Phase 10 removes the mark.
   This matches the implementer's report (§5.1) and is by design.
 
 ### Verification commands (from brief)
+
 1. ACB imports in docs/ (excluding archive/baselines/notes): zero matches
    in the 10 in-scope files. Out-of-scope matches exist in
    `docs/examples/syntax_demo.py`, `fastblocks/adapters/README.md` (Phase 5),
    `CHANGELOG.md` (Phase 6), `README.md` (Phase 3), `docs/README.md`.
-2. Phantom filenames in in-scope files: zero matches. Out-of-scope matches
+1. Phantom filenames in in-scope files: zero matches. Out-of-scope matches
    in `CHANGELOG.md`, `README.md`, `docs/README.md`, `docs/archive/README.md`.
-3. `fastblocks.mcp.websocket_tools` in WEBSOCKET_GUIDE.md: zero matches ✓
-4. `broadcast_ui_update` / `broadcast_component_render` in WEBSOCKET_GUIDE.md:
+1. `fastblocks.mcp.websocket_tools` in WEBSOCKET_GUIDE.md: zero matches ✓
+1. `broadcast_ui_update` / `broadcast_component_render` in WEBSOCKET_GUIDE.md:
    the deleted section had both. Remaining references are
    `broadcast_ui_updated()` and `broadcast_component_rendered()` —
    real methods on `fastblocks/websocket/server.py:364` and `:381`. The
    CI guard's substring match is over-greedy (matches the prohibited
    prefix in the real method names). The test file is out of scope
    (Phase 10). Implementer's §5.5 correctly identifies this.
-5. CI guard xfail count: 34 (unchanged, see above).
-6. Commit hygiene: clean working tree (only untracked plan file).
+1. CI guard xfail count: 34 (unchanged, see above).
+1. Commit hygiene: clean working tree (only untracked plan file).
 
 ## Findings (minor — none blocking)
 
 ### F1 — `docs/examples/syntax_demo.py` still imports `from acb.config`,
+
 ### `from acb.depends` (lines 9-10)
+
 - Out of Phase 4 scope (the brief lists 10 markdown files; this is a Python
   example file).
 - Will still trigger `test_no_prohibited_imports` because the test scans
@@ -115,6 +124,7 @@ key dropped, and the mcp_common.websocket import path corrected.
   `docs/` matches this file. Phase 4 did not introduce it; it's pre-existing.
 
 ### F2 — `LESSONS_LEARNED.md` ACB mentions annotated, not deleted
+
 - The brief said "drop other ACB mentions"; the implementer instead
   annotated them with "legacy" / "(historical)" prefixes.
 - Justification in §5.6 of the report is sound: the file is titled
@@ -125,6 +135,7 @@ key dropped, and the mcp_common.websocket import path corrected.
   alternative (full deletion) loses historical record.
 
 ### F3 — `docs/README.md` phantom-filename references not in scope
+
 - Lines 30, 45, 73, 91 still mention `ACB_GUIDE.md`, `MIGRATION-0.17.0.md`.
 - The brief did not list this file in scope.
 - Implementer correctly identified this in §5.7 and left it for a
@@ -132,6 +143,7 @@ key dropped, and the mcp_common.websocket import path corrected.
 - Suggested fix: track as a Phase 6 or follow-up item.
 
 ### F4 — `docs/examples/syntax_demo.py` not in scope but flagged by grep
+
 - Same file as F1. CI guard's `DOCS_TO_SCAN` includes the `docs/` directory
   recursively, so `.py` files inside it are scanned. The implementer's
   verification grep used a markdown-only implicit assumption; the test
@@ -140,7 +152,9 @@ key dropped, and the mcp_common.websocket import path corrected.
   test scanning logic, not a Phase 4 defect.
 
 ### F5 — `ONEIRIC_GUIDE.md:51` contains literal `register_pkg` (no
+
 ### open paren) in a "No legacy `register_pkg` call" note
+
 - The prohibited pattern in the test is `register_pkg(` (with open paren).
 - This line has the word but no open paren after it, so the substring
   match does not trigger.

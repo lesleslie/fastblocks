@@ -5,6 +5,219 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-08-21
+
+### Added
+
+- Add JWT authentication to FastBlocks WebSocket
+- Add TLS configuration module for WebSocket
+- Add WebSocket server for UI update streams
+- fastblocks: Document tool-profile opt-out (W4.9)
+- fastblocks: P1 scaffold docs/ CI guard test module
+- fastblocks: P2 doc-accuracy CI guard with baseline xfails
+- Fix all Oneiric Candidate registrations across adapters
+- Integrate TLS/WSS support and Prometheus metrics into Fastblocks WebSocket server
+- phase4: Add security scanning infrastructure (Task 4.4 partial)
+- ratchet: Mirror fastblocks pyproject.toml to current coverage
+- rem: Phases 1-4 — security hardening, ACB→Oneiric, perf bounds, mechanical refactors
+- security: Phase 1.1 — strict WebSocket auth + origin allowlist + sanitized errors
+
+### Changed
+
+- Add CLI test skeleton (needs mocking infrastructure)
+- Apply automatic formatting from ruff-format and mdformat
+- Fastblocks (quality: 71/100) - 2025-11-19 13:24:11
+- Fastblocks (quality: 71/100) - 2026-06-18 12:32:36
+- Fastblocks (quality: 72/100) - 2026-01-03 00:26:24
+- Fastblocks (quality: 72/100) - 2026-06-15 00:34:33
+- fastblocks: Add real-bug #8 (SandboxedEnvironment dead attributes) to tally
+- fastblocks: Append ty cleanup final report (374 → 0)
+- fastblocks: Clean up stale Oneiric import comments and reorder jinja2 imports
+- fastblocks: Ty cleanup 374 → 0 — phased by cascade leverage
+- fastblocks: Ty cleanup design (374 → 0)
+- fastblocks: Use collections.abc Callable instead of typing.Callable in middleware
+- phase4-task2: Remove 1 unnecessary async for type ignore (153→152)
+- phase4-task2: Remove 17 more unnecessary type ignores (170→153)
+- phase4-task2: Remove 20 type ignores using explicit casts (152→132)
+- phase4-task2: Remove 53 unnecessary type ignores (223→170)
+- Update config, deps
+- Update core functionality
+
+### Fixed
+
+- adapters: Add missing get_stylesheet_links to IconsBase and fix font test
+- Add acb.console mock to enable CLI tests
+- Align fastblocks [tool.coverage.report].fail_under with ratchet
+- Align fastblocks ratchet with pyproject mirror (49.13%)
+- Async/await improvements - event-based wait and proper task gathering
+- Correct Oneiric Candidate registration for Templates adapter
+- Correct performance test mock setup and method calls
+- fastblocks: 3 bucket-B real bugs from ty deferred-minors
+- fastblocks: Align dependency resolver contract
+- fastblocks: Align PROFILE_REGISTRATIONS keys with real ToolProfile enum (M1)
+- fastblocks: Cast Oneiric candidate.factory to Callable[..., Any]
+- fastblocks: Complete async htmx fallbacks
+- fastblocks: Complete ruff remediation plan (Tasks 0-7)
+- fastblocks: Correct validation docstrings per reviewer feedback
+- fastblocks: Declare framework-injected and singleton-guarded attrs
+- fastblocks: Drop redundant attr-defined suppressions on sitemap self.config
+- fastblocks: Drop try/except fallback for SandboxedEnvironment import
+- fastblocks: Honor ChoiceLoader source contract
+- fastblocks: Honor ChoiceLoader source contract
+- fastblocks: Htmx duplicate header last-match-wins in _get_header
+- fastblocks: Initialize validation sanitizer state
+- fastblocks: Map wrong Resolver API calls to correct surface
+- fastblocks: Migrate Oneiric 0.13+ sync resolver API + refurb cleanup
+- fastblocks: Move oneiric_helper imports to top of file (PEP 8 I001)
+- fastblocks: P0 correct WebSocket auth env-var names (silent prod JWT failure)
+- fastblocks: P10 doc-accuracy guard live; CHANGELOG entry for remediation wave
+- fastblocks: P3 ACB narrative rewrite — README/QWEN/RULES
+- fastblocks: P4 docs/ guide ACB narrative rewrite + WebSocket MCP section deletion
+- fastblocks: P5 adapter README ACB rewrite + main.py→default.py + reg + count
+- fastblocks: P6 CLAUDE.md / CHANGELOG.md / CONTRIBUTING.md accuracy
+- fastblocks: P8 remove leaked .backup.json files; add .gitignore pattern
+- fastblocks: P9 phantom filename refs in docs/README.md
+- fastblocks: Phase 2a - unresolved-reference in gather actions
+- fastblocks: Phase 2b - unresolved-import for optional/legacy modules
+- fastblocks: Phase 2b-followup - ty ignore syntax for unresolved-imports
+- fastblocks: Phase 2c - invalid-argument-type fixes
+- fastblocks: Phase 2c-fix - repair broken indentation in _base.py
+- fastblocks: Phase 2d - missing-argument fixes
+- fastblocks: Phase 2d-followup - missing-argument via ty: ignore
+- fastblocks: Phase 2e - invalid-method-override fixes
+- fastblocks: Phase 2f - invalid-assignment fixes
+- fastblocks: Phase 2g - invalid-return-type fixes
+- fastblocks: Phase 2h-batch1 - unresolved-attribute fixes (sync + icons + events)
+- fastblocks: Phase 2h-batch2 - unresolved-attribute (templates + core)
+- fastblocks: Phase 2i - one-off errors (return-type, not-iterable, etc)
+- fastblocks: Remove 4 unused ty: ignore directives
+- fastblocks: Remove 6 redundant-cast calls
+- fastblocks: Remove dead allowed_tags/allowed_attributes setters on SandboxedEnvironment
+- fastblocks: Replace bare type:ignore with proper annotations across 5 files
+- fastblocks: Replace depends.get with resolve_instance in 3 sites
+- fastblocks: Resolve 5 ty/furb findings from rebase
+- fastblocks: Resolve final ty/furb findings from rebase merge
+- fastblocks: Restore resolve_instance helper for main integration
+- fastblocks: Satisfy ty/refurb/mypy in W4.9 tool-profile test
+- fastblocks: Scope or remove 33 blanket `# type: ignore` suppressions
+- fastblocks: Use single-rule type: ignore on SandboxedEnvironment fallback
+- fastblocks: Wire _registration get_global_template_context to resolve_instance
+- fastblocks: Wire production call sites to resolve_instance
+- Fix async mock issues in component tests
+- Fix hardcoded absolute paths in structure tests
+- Make depends.resolve() calls async for Oneiric compatibility
+- Phase 1 improvements - dead code, unused vars, ACB patterns
+- phase2: Add await to depends.get() in actions/gather module
+- phase2: Add await to depends.get() in actions/sync module
+- phase2: Add await to depends.get() in integration files
+- phase2: Correct sitemap/routes to use depends.get_sync() instead of Inject
+- phase2: Fix coroutine errors in actions/query/parser.py
+- phase2: Fix coroutine errors in adapters/app/default.py
+- phase2: Fix coroutine errors in adapters/routes/default.py
+- phase2: Fix coroutine errors in cli and template filters
+- phase2: Fix coroutine errors in filters and adapter modules
+- phase2: Fix coroutine errors in sitemap and admin adapters
+- phase2: Fix final coroutine errors in middleware.py
+- phase2: Fix remaining coroutine errors in actions module
+- phase2: Fix remaining coroutine errors in templates and mcp modules
+- phase3: Fix systematic test bugs for quick wins
+- phase4: Fix all 10 reportUnnecessaryIsInstance errors (195→182)
+- phase4: Fix all 17 reportUndefinedVariable errors (211→195)
+- phase4: Fix deprecated/unused/constant errors (10 easy wins)
+- phase4: Fix remaining sync depends.get() in MCP and templates
+- phase4: Fix sync depends.get() and class names in icon/image adapters
+- phase4: Fix sync depends.get() in initializers and template registration
+- phase4: Reduce type ignores from 129 to 110 (target <111 achieved)
+- phase4: Suppress reportUnusedFunction for template filters (182→142)
+- Post-merge cleanup and test fixes
+- Resolve test failures for filters and HTMY component discovery
+- security,correctness: RCE path, dead middleware, broken cache and MCP surface
+- source: Hoist debug shim, SQL/path-traversal detection, MockAsyncPath-safe compile, CliRunner-safe async
+- tests: Add async/await to caching test functions
+- tests: Update sync_cache mocks for resolve_instance
+- tests: Use is_success property instead of success boolean check
+- types: AI-fix pass 2 — 175 mypy errors (↓14 from 189)
+- Update cache sync tests for Oneiric depends.resolve()
+- Update config, core, deps, docs, tests
+- Update config, core, deps, docs, tests
+- Update config, core, deps, docs, tests
+- Update config, core, docs, tests
+- Update config, core, tests
+- Update deps, tests
+- Update filter test to use depends.get_sync()
+- Update remaining sync tests for Oneiric depends.resolve()
+- validation: Rename _check_sql_injection_in_context parameter 'sanitized' to 'context'
+
+### Documentation
+
+- Add JetBrains plugin iframe for custom delimiter support
+- Consolidate and cleanup documentation structure
+- fastblocks: Design test recovery plan
+- fastblocks: Plan test recovery waves
+- fastblocks: Record sanitized test recovery results
+- fastblocks: Record test recovery baseline
+- fastblocks: Record test recovery baseline
+- fastblocks: Record test recovery results
+- fastblocks: Use non-self-referential final HEAD label in handoff
+- HIGH PRIORITY README audit fixes
+- Phase 6 — regen CLAUDE.md, CHANGELOG, AGENTS additions, 0.7→0.8 migration
+- phase4: Add type system guidelines and migration guide
+- phase4: Complete Task 4.3 documentation updates
+- phase4: Complete Task 4.4 Security Hardening
+- phase4: Mark Task 4.3 complete in IMPROVEMENT_PLAN
+- phase4: Update IMPROVEMENT_PLAN with Phase 4 completion (254→142 errors)
+- phase4: Update IMPROVEMENT_PLAN with Task 4.2 completion
+- Replace iframe with GitHub-compatible plugin badges
+- Simplify README, add Kelp UI, expand HTMY info, update comparisons
+- Standardize breadcrumb navigation across all READMEs
+- Update config, deps, docs
+- Update documentation
+- Update improvement plan with Phase 1 progress
+- Update IMPROVEMENT_PLAN for Phase 3 start
+- Update IMPROVEMENT_PLAN for Phase 3 start
+- Update IMPROVEMENT_PLAN with Phase 2 completion
+- Update IMPROVEMENT_PLAN with Phase 2 progress
+- Update IMPROVEMENT_PLAN.md - Phase 3 completed (33% coverage achieved)
+- Update MEDIUM PRIORITY adapter READMEs
+- Update, cleanup, and consolidate test documentation
+
+### Testing
+
+- Add ACB depends registry cleanup fixture
+- Add comprehensive tests for actions sync modules (85 tests)
+- Add comprehensive tests for MCP configuration and tools modules
+- Comprehensive test suite improvements and enhancements
+- coverage: Add comprehensive query parser tests (0% → 43%)
+- Drop stale acb imports, fix MockAsyncPath async-iter, refresh CLI structure assertion
+- fastblocks: Align CLI resolver and validation fixtures
+- fastblocks: Align SQLAdmin init with sync Oneiric resolver
+- fastblocks: Expose AsyncRedisBytecodeCache on mocked top-level jinja2_async_environment
+- fastblocks: Isolate security async lifecycle
+- fastblocks: Return real values from template filters
+- fastblocks: Sync resolver mocks in test_components no-adapter paths
+- Fix 36 pre-existing failures (98→64, +53 passing)
+- htmy: Add comprehensive registry and templates tests
+- templates: Enhance jinja2 template adapter tests
+
+### Internal
+
+- Bump version to 0.18.1
+- Bump version to 0.18.2
+- Bump version to 0.18.3
+- Bump version to 0.18.4
+- Bump version to 0.18.5
+- Bump version to 0.18.6
+- Bump version to 0.18.7
+- Bump version to 0.19.0
+- Bump version to 0.20.0
+- deps: Phase 5 — ~= pins, drop unused session-buddy
+- deps: Resolve fastblocks-ui from PyPI
+- fastblocks: Add .betterleaks.toml to silence hook false positives
+- fastblocks: Gitignore runtime scan artifacts and resolver cache staging
+- gitignore: Add backup file patterns to silence checkpoint tool artifacts
+- Untrack and delete 1 historical *.backup/*.bak files
+- Update LICENSE copyright to 2026, standardize license field
+
 ## [Unreleased] - 2026-08-19
 
 ### Documentation Remediation Wave
@@ -13,6 +226,7 @@ Remediated all ~75 findings from the 2026-08-19 four-agent doc audit.
 Full plan at `docs/superpowers/plans/2026-08-19-fastblocks-doc-remediation.md`.
 
 Critical safety:
+
 - `WEBSOCKET_GUIDE.md:398` env-var names corrected (silent prod JWT
   failure risk closed).
 

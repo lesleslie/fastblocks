@@ -11,13 +11,14 @@ Three hook failures (betterleaks, ty, refurb) with **distinct root causes**:
 
 1. **betterleaks** — No `.betterleaks.toml` exists; betterleaks doesn't respect `.gitignore` so it scans `.idea/`, `.obsidian/`, and `dist/` despite those being gitignored. Result: ~38 findings dominated by false positives from gitignored paths + 1 real finding (live GitLab PAT in `.idea/workspace.xml`).
 
-2. **ty** — FastBlocks code uses **Oneiric 0.12- API patterns** (`await depends.resolve(...)`, `depends.get/set/get_sync`) but Oneiric 0.13+ migrated to a synchronous `Resolver.resolve()` returning a `Candidate | None` Pydantic model. The fastblocks code would crash at runtime in any path that actually exercises these calls — but most are wrapped in `except (KeyError, AttributeError, RuntimeError)` that **silently swallows the failures**. Same architectural issue affects `MCPServerCLIFactory.create_server()` (does not exist; only `create_app()` and `create_server_cli()` exist) and `register_resources()` (function does not exist anywhere).
+1. **ty** — FastBlocks code uses **Oneiric 0.12- API patterns** (`await depends.resolve(...)`, `depends.get/set/get_sync`) but Oneiric 0.13+ migrated to a synchronous `Resolver.resolve()` returning a `Candidate | None` Pydantic model. The fastblocks code would crash at runtime in any path that actually exercises these calls — but most are wrapped in `except (KeyError, AttributeError, RuntimeError)` that **silently swallows the failures**. Same architectural issue affects `MCPServerCLIFactory.create_server()` (does not exist; only `create_app()` and `create_server_cli()` exist) and `register_resources()` (function does not exist anywhere).
 
-3. **refurb** — 16 minor stylistic modernization wins, no logic bugs.
+1. **refurb** — 16 minor stylistic modernization wins, no logic bugs.
 
 ## Tier Breakdown
 
 ### Tier 1 — Real runtime bugs (must fix)
+
 | File | Line | Bug | Fix |
 |------|-----:|-----|-----|
 | `fastblocks/mcp/tools.py` | 117, 272, 318, 367, 407, 455 | `await depends.resolve(...)` (sync API, not awaitable) | Remove `await`, use sync pattern |
@@ -32,11 +33,14 @@ Three hook failures (betterleaks, ty, refurb) with **distinct root causes**:
 | `fastblocks/websocket/tls_config.py` | 39 | Unused blanket `# type: ignore` (ty uses different syntax) | Convert to `# ty: ignore` or remove |
 
 ### Tier 2 — Live credentials (security, USER ACTION REQUIRED)
+
 - Both are in `.idea/` which IS gitignored but sits in plaintext on disk
 - **Action**: User must rotate both tokens via web UI and clean the workspace.xml file
 
 ### Tier 3 — Betterleaks configuration
+
 Create `/Users/les/Projects/fastblocks/.betterleaks.toml` with `should_exclude_file` patterns:
+
 - `\.idea/.*`
 - `\.obsidian/.*`
 - `dist/.*`
@@ -46,6 +50,7 @@ Create `/Users/les/Projects/fastblocks/.betterleaks.toml` with `should_exclude_f
 - `node_modules/.*`
 
 ### Tier 4 — Refurb cleanup (minor)
+
 16 stylistic fixes, all in `fastblocks/adapters/sitemap/*.py`, `fastblocks/mcp/{config_audit,discovery,env_manager}.py`. No bugs, just modernization.
 
 ## Working Tree State
@@ -67,15 +72,15 @@ M uv.lock
 ## Verification Plan
 
 1. After Tier 1+4 implementer: `crackerjack run` must pass ty + refurb hooks
-2. After Tier 3 implementer: `betterleaks` hook must pass with the new config
-3. Manual smoke test: `python -c "from fastblocks.mcp import tools, resources, server, registry, health"` must not raise import errors
+1. After Tier 3 implementer: `betterleaks` hook must pass with the new config
+1. Manual smoke test: `python -c "from fastblocks.mcp import tools, resources, server, registry, health"` must not raise import errors
 
 ## Execution Order
 
 1. **Tier 3 implementer** (parallel, low risk) — `.betterleaks.toml` config
-2. **Tier 1 + Tier 4 implementer** (parallel) — source code fixes
-3. **Tier 2 — User action** — rotate credentials and clean `.idea/workspace.xml`
-4. **Verification** — read-only check of implementer work
+1. **Tier 1 + Tier 4 implementer** (parallel) — source code fixes
+1. **Tier 2 — User action** — rotate credentials and clean `.idea/workspace.xml`
+1. **Verification** — read-only check of implementer work
 
 ## Risk Notes
 

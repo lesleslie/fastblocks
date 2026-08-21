@@ -9,8 +9,7 @@
 
 > **Migrated to Oneiric:** As of Phase 3.1, the Auth adapter no
 > longer uses ACB. All adapter lookups now go through the Oneiric
-> resolver (`from fastblocks.core.resolver import
-> resolve_component_async`). The shipped `basic` implementation
+> resolver (`from fastblocks.core.resolver import resolve_component_async`). The shipped `basic` implementation
 > remains unchanged in behavior.
 
 The Auth adapter provides authentication mechanisms for FastBlocks applications.

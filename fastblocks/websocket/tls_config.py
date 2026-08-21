@@ -62,9 +62,7 @@ def load_ssl_context(
             key_file = (
                 config["key_file"] if isinstance(config["key_file"], str) else None
             )
-            ca_file = (
-                config["ca_file"] if isinstance(config["ca_file"], str) else None
-            )
+            ca_file = config["ca_file"] if isinstance(config["ca_file"], str) else None
             raw_verify = config.get("verify_client", False)
             verify_client = bool(raw_verify) if raw_verify is not None else False
 

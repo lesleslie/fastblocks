@@ -19,25 +19,31 @@ Phase 6 owns 7 small accuracy fixes across 3 top-level files. These are surgical
 ### CLAUDE.md
 
 1. **Line 39** — Drop the `pre-commit run --all-files` line from daily commands.
+
    - Why: `.pre-commit-config.yaml` does not exist in this repo. Running the command exits with no hooks configured.
    - Locate the surrounding "Daily Commands" section; remove just the `pre-commit run --all-files` line. Leave surrounding lines intact.
 
-2. **Line 24** — Replace coverage text. From:
+1. **Line 24** — Replace coverage text. From:
+
    ```
    Coverage (target 80%; floor 10% with --cov-fail-under)
    ```
+
    To:
+
    ```
    Coverage (floor: 49.13% — pyproject.toml [tool.coverage.report].fail_under; gate fails below this).
    ```
 
-3. **Line 106** — Replace the wrong conftest LOC count.
+1. **Line 106** — Replace the wrong conftest LOC count.
+
    - Run `wc -l tests/conftest.py` from the worktree to get the actual line count (it's 406).
    - Replace `tests/conftest.py # 3,410 LOC` with the actual line count.
 
-4. **Lines 86-87** — Fix the resource names list. The brief expected 7 resources: `template_syntax`, `template_filters`, `component_catalog`, `adapter_schemas`, `settings_docs`, `best_practices`, `htmx_patterns`. Verify against `git grep -n "add_resource\|register_resource\|FastblocksResource" fastblocks/mcp/resources.py` to confirm exact names; replace the list with the actual registered names.
+1. **Lines 86-87** — Fix the resource names list. The brief expected 7 resources: `template_syntax`, `template_filters`, `component_catalog`, `adapter_schemas`, `settings_docs`, `best_practices`, `htmx_patterns`. Verify against `git grep -n "add_resource\|register_resource\|FastblocksResource" fastblocks/mcp/resources.py` to confirm exact names; replace the list with the actual registered names.
 
-5. **Line 169** — Add one sentence above the `PROFILE_REGISTRATIONS` dict annotating the runtime resolution:
+1. **Line 169** — Add one sentence above the `PROFILE_REGISTRATIONS` dict annotating the runtime resolution:
+
    ```
    # Keys are members of the runtime-resolved enum (`_TOOL_PROFILE_CLS`) —
    # the same `ToolProfile.MINIMAL` / `STANDARD` / `FULL` names when
@@ -124,11 +130,11 @@ Write your final report to:
 The report must contain:
 
 1. **Status:** DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED
-2. **Commit SHA** of the new commit on `docs/audit-remediation-2026-08-19`
-3. **Files changed:** line-count diffs (`git diff --stat HEAD~1`)
-4. **CI guard xfail count:** before / after
-5. **Concerns:** any uncertainty, any string you couldn't find, any line-number discrepancy
-6. **Self-review:** what you checked before committing
+1. **Commit SHA** of the new commit on `docs/audit-remediation-2026-08-19`
+1. **Files changed:** line-count diffs (`git diff --stat HEAD~1`)
+1. **CI guard xfail count:** before / after
+1. **Concerns:** any uncertainty, any string you couldn't find, any line-number discrepancy
+1. **Self-review:** what you checked before committing
 
 ## Notes on scale
 

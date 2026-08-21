@@ -4,7 +4,6 @@ from typing import Any
 
 # Oneiric imports
 from oneiric.core.resolution import Resolver
-
 from fastblocks.adapters.oneiric_helper import resolve_instance
 
 # Oneiric resolver for dependency injection

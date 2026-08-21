@@ -15,9 +15,9 @@
       "milestone": true
     },
     {
-      "date": "2026-08-11T21:22:59.064679",
-      "coverage": 49.1324200913242,
       "commit": "lower",
+      "coverage": 49.1324200913242,
+      "date": "2026-08-11T21:22:59.064679",
       "milestone": false,
       "reason": "Realign ratchet to pyproject mirror; parent plan Task 5 set 49.13% without updating ratchet"
     }

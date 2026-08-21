@@ -200,7 +200,7 @@ class AdapterDiscoveryServer:
         doc = cls.__doc__
         if doc:
             first_line = doc.split("\n")[0]
-            return first_line.strip().strip("\"'.").strip(".")
+            return first_line.strip().strip('"\'.')
         return ""
 
     def _extract_protocols(self, cls: type) -> list[str]:
@@ -246,7 +246,7 @@ class AdapterDiscoveryServer:
     async def get_adapter_instance(self, name: str) -> Any | None:
         """Get an actual adapter instance from ACB registry."""
         try:
-            return depends.get(name)
+            return depends.resolve("fastblocks", name)
         except (KeyError, AttributeError, RuntimeError):
             return None
 

@@ -774,7 +774,7 @@ class ConfigurationHealthChecker:
             variables = isolated_env_manager.extract_variables_from_configuration(
                 config
             )
-            env_file = await isolated_env_manager.generate_environment_file(  # type: ignore[misc]
+            env_file = isolated_env_manager.generate_environment_file(
                 variables, temp_path / ".env"
             )
 

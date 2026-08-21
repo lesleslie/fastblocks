@@ -36,21 +36,21 @@ For each, add a stale-content warning banner at the top if not present:
 ### Primary rewrites (ACB)
 
 1. **`fastblocks/adapters/admin/README.md`** — Rewrite ACB imports. Drop the "Material Theme" section entirely (only Bootstrap is shipped; `git ls-files fastblocks/adapters/admin/_templates/` shows only `bootstrap/sqladmin/`).
-2. **`fastblocks/adapters/app/README.md`** — Rewrite ACB imports. **Replace all `main.py` references with `default.py`** (`git ls-files fastblocks/adapters/app/` shows `default.py` is the actual file; there's no `main.py`). Add a "Template Variants" section listing the 5 named variants from `_templates/`: `base/`, `bulma/`, `fastblocks_ui/`, `kelp/`, `vanilla/`, `webawesome/`.
-3. **`fastblocks/adapters/auth/README.md`** — Rewrite ACB imports. Add a "Migrated to Oneiric" note at the top.
-4. **`fastblocks/adapters/fonts/README.md`** — Verify whether ACB imports exist. Likely clean per audit; if so, just add the stale-content warning if not present.
-5. **`fastblocks/adapters/icons/README.md`** — Same as fonts: verify, add warning if not present.
-6. **`fastblocks/adapters/images/README.md`** — Verify ACB imports. Spot-check `cf_image_url`, `cf_responsive_image`, `twicpics_image`, `twicpics_smart_crop` template helpers against `git ls-files fastblocks/adapters/images/` and `git grep -n "cf_image_url\|twicpics_image" fastblocks/adapters/templates/_enhanced_filters.py` — keep only those that resolve.
-7. **`fastblocks/adapters/routes/README.md`** — Rewrite ACB imports. **Replace all `main.py` references with `default.py`** (lines 69, 108 per the audit; verify with `git ls-files fastblocks/adapters/routes/`).
-8. **`fastblocks/adapters/sitemap/README.md`** — Rewrite ACB imports. **Replace `sitemap.py` reference with the actual 7-file inventory**: `_base.py`, `_routes.py`, `asgi.py`, `cached.py`, `core.py`, `dynamic.py`, `native.py`, `static.py`. Mark `asgi.py` as the default. Expand "Available Implementations" table to list all 6 named implementations.
-9. **`fastblocks/adapters/style/README.md`** — Rewrite ACB imports. **Add `vanilla.py` to implementation table**. **Remove phantom `bulma.py` reference** (no such file; only `kelp.py`, `vanilla.py`, `webawesome.py`, `fastblocks_ui.py` exist per `git ls-files fastblocks/adapters/style/`).
-10. **`fastblocks/adapters/templates/README.md`** — Add `htmy` and `hybrid` rows to the implementations table. (`git ls-files fastblocks/adapters/templates/` shows `htmy.py`, `hybrid.py`, `jinja2.py` — 3 implementations, not 1.)
+1. **`fastblocks/adapters/app/README.md`** — Rewrite ACB imports. **Replace all `main.py` references with `default.py`** (`git ls-files fastblocks/adapters/app/` shows `default.py` is the actual file; there's no `main.py`). Add a "Template Variants" section listing the 5 named variants from `_templates/`: `base/`, `bulma/`, `fastblocks_ui/`, `kelp/`, `vanilla/`, `webawesome/`.
+1. **`fastblocks/adapters/auth/README.md`** — Rewrite ACB imports. Add a "Migrated to Oneiric" note at the top.
+1. **`fastblocks/adapters/fonts/README.md`** — Verify whether ACB imports exist. Likely clean per audit; if so, just add the stale-content warning if not present.
+1. **`fastblocks/adapters/icons/README.md`** — Same as fonts: verify, add warning if not present.
+1. **`fastblocks/adapters/images/README.md`** — Verify ACB imports. Spot-check `cf_image_url`, `cf_responsive_image`, `twicpics_image`, `twicpics_smart_crop` template helpers against `git ls-files fastblocks/adapters/images/` and `git grep -n "cf_image_url\|twicpics_image" fastblocks/adapters/templates/_enhanced_filters.py` — keep only those that resolve.
+1. **`fastblocks/adapters/routes/README.md`** — Rewrite ACB imports. **Replace all `main.py` references with `default.py`** (lines 69, 108 per the audit; verify with `git ls-files fastblocks/adapters/routes/`).
+1. **`fastblocks/adapters/sitemap/README.md`** — Rewrite ACB imports. **Replace `sitemap.py` reference with the actual 7-file inventory**: `_base.py`, `_routes.py`, `asgi.py`, `cached.py`, `core.py`, `dynamic.py`, `native.py`, `static.py`. Mark `asgi.py` as the default. Expand "Available Implementations" table to list all 6 named implementations.
+1. **`fastblocks/adapters/style/README.md`** — Rewrite ACB imports. **Add `vanilla.py` to implementation table**. **Remove phantom `bulma.py` reference** (no such file; only `kelp.py`, `vanilla.py`, `webawesome.py`, `fastblocks_ui.py` exist per `git ls-files fastblocks/adapters/style/`).
+1. **`fastblocks/adapters/templates/README.md`** — Add `htmy` and `hybrid` rows to the implementations table. (`git ls-files fastblocks/adapters/templates/` shows `htmy.py`, `hybrid.py`, `jinja2.py` — 3 implementations, not 1.)
 
 ### Secondary fixes (registration + counts)
 
 11. **`fastblocks/adapters/README.md`** (parent) — Add one-line summaries for the 6 missing categories: `admin/`, `app/`, `auth/`, `routes/`, `sitemap/`, `templates/` with cross-links to their per-adapter READMEs. Note the `style/` (singular dir) vs `styles.yml` (plural config) asymmetry.
-12. **`fastblocks/mcp/README.md`** — Change "10+ MCP tools" to "10 MCP tools" (verified count via `git grep -c "^async def" fastblocks/mcp/tools.py`).
-13. **`fastblocks/adapters/sitemap/README.md`** — Note `.backup.json` files in the repo are not docs concern; Phase 8 owns the `.gitignore` cleanup.
+01. **`fastblocks/mcp/README.md`** — Change "10+ MCP tools" to "10 MCP tools" (verified count via `git grep -c "^async def" fastblocks/mcp/tools.py`).
+01. **`fastblocks/adapters/sitemap/README.md`** — Note `.backup.json` files in the repo are not docs concern; Phase 8 owns the `.gitignore` cleanup.
 
 ## Constraints
 
@@ -125,11 +125,11 @@ Write your final report to:
 The report must contain:
 
 1. **Status:** DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED
-2. **Commit SHA** of the new commit on `docs/audit-remediation-2026-08-19`
-3. **Files changed:** list with line-count diffs (`git diff --stat HEAD~1`)
-4. **CI guard xfail count:** before / after
-5. **Concerns:** any uncertainty, anything not verified against source
-6. **Self-review:** what you checked before committing
+1. **Commit SHA** of the new commit on `docs/audit-remediation-2026-08-19`
+1. **Files changed:** list with line-count diffs (`git diff --stat HEAD~1`)
+1. **CI guard xfail count:** before / after
+1. **Concerns:** any uncertainty, anything not verified against source
+1. **Self-review:** what you checked before committing
 
 ## Notes on scale
 

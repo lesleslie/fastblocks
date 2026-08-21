@@ -38,6 +38,7 @@ Phases 0, 1, 2 are already merged in:
 ### README.md
 
 Replace ACB-framed code with Oneiric-framed code at these line ranges:
+
 - Line 19, 21, 45: intro narrative
 - Lines 169-170, 238-239, 334, 358: narrative sections
 - Lines 408-409, 443-444, 699-700, 740-741, 891-892, 918-919, 1004-1005,
@@ -134,12 +135,12 @@ Write your final report to:
 The report must contain:
 
 1. **Status:** DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED
-2. **Commit SHA** of the new commit on `docs/audit-remediation-2026-08-19`
-3. **Files changed:** list with line-count diffs (`git diff --stat HEAD~1`)
-4. **CI guard xfail count:** before / after
-5. **Test summary:** `uv run pytest tests/docs/ --no-cov` output (xfail + pass counts)
-6. **Concerns:** any uncertainty about a translation choice, any code you couldn't verify against source, anything that needs reviewer judgment
-7. **Self-review:** what you checked yourself before committing
+1. **Commit SHA** of the new commit on `docs/audit-remediation-2026-08-19`
+1. **Files changed:** list with line-count diffs (`git diff --stat HEAD~1`)
+1. **CI guard xfail count:** before / after
+1. **Test summary:** `uv run pytest tests/docs/ --no-cov` output (xfail + pass counts)
+1. **Concerns:** any uncertainty about a translation choice, any code you couldn't verify against source, anything that needs reviewer judgment
+1. **Self-review:** what you checked yourself before committing
 
 ## Constraints
 

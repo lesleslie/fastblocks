@@ -1,8 +1,8 @@
 # FastBlocks Test Recovery Design
 
-**Date:** 2026-08-19  
-**Status:** Approved in conversation; pending written-spec review  
-**Repository:** `/Users/les/Projects/fastblocks`  
+**Date:** 2026-08-19
+**Status:** Approved in conversation; pending written-spec review
+**Repository:** `/Users/les/Projects/fastblocks`
 **Primary target:** Current dirty working tree at local HEAD `4a9fab62bc654c7b31054d24c90c2e8a41f56310`
 
 ## Context
@@ -40,12 +40,12 @@ This design excludes:
 Implementation will not run in `/Users/les/Projects/fastblocks`.
 
 1. The coordinator creates an isolated FastBlocks worktree at `/Users/les/.claude/worktrees/fastblocks-test-recovery-2026-08-19`.
-2. The current tracked WIP diff and untracked files are copied into that worktree.
-3. A manifest records the WIP file list, HEAD SHA, dirty-state count, and test baseline.
-4. Every implementation agent receives the same snapshot and a disjoint file ownership set.
-5. Agents commit their changes with descriptive messages.
-6. The coordinator integrates commits in wave order using cherry-pick or a reviewed three-way merge.
-7. A shared-file conflict pauses the affected wave. No conflict may be resolved by discarding either side automatically.
+1. The current tracked WIP diff and untracked files are copied into that worktree.
+1. A manifest records the WIP file list, HEAD SHA, dirty-state count, and test baseline.
+1. Every implementation agent receives the same snapshot and a disjoint file ownership set.
+1. Agents commit their changes with descriptive messages.
+1. The coordinator integrates commits in wave order using cherry-pick or a reviewed three-way merge.
+1. A shared-file conflict pauses the affected wave. No conflict may be resolved by discarding either side automatically.
 
 The following files are central and must have exactly one implementation owner:
 
@@ -104,9 +104,9 @@ Use the existing project virtual environment; do not install or synchronize depe
 Every agent must:
 
 1. Run its focused test file or exact test IDs before and after its change.
-2. Use bytecode/cache/coverage suppression appropriate to the isolated worktree (`PYTHONDONTWRITEBYTECODE=1`, `-p no:cacheprovider`, and `--no-cov` or equivalent).
-3. Check `git status --short` and report any generated files without deleting user work.
-4. Commit only its owned files.
+1. Use bytecode/cache/coverage suppression appropriate to the isolated worktree (`PYTHONDONTWRITEBYTECODE=1`, `-p no:cacheprovider`, and `--no-cov` or equivalent).
+1. Check `git status --short` and report any generated files without deleting user work.
+1. Commit only its owned files.
 
 The coordinator must run these gates:
 
@@ -163,10 +163,10 @@ The coordinator maintains a running table with domain, owner, commit, targeted r
 
 ## Integration Contract
 
-**Triggered from:** A pre-existing FastBlocks test baseline in the current dirty WIP, with 117 failures at local HEAD `4a9fab6`.  
-**Returns to / updates:** The FastBlocks recovery branch, the coordinator's domain ledger, and later the current dirty WIP's successor branch through reviewed commits.  
-**Demonstrable by:** Targeted pytest outputs, full-suite counts/delta, preserved WIP manifest, clean-HEAD comparison, and per-domain commit history.  
-**Rollback signal:** A domain commit causes a new failure, a shared-file conflict, or an unexpected change in security/initialization behavior.  
+**Triggered from:** A pre-existing FastBlocks test baseline in the current dirty WIP, with 117 failures at local HEAD `4a9fab6`.
+**Returns to / updates:** The FastBlocks recovery branch, the coordinator's domain ledger, and later the current dirty WIP's successor branch through reviewed commits.
+**Demonstrable by:** Targeted pytest outputs, full-suite counts/delta, preserved WIP manifest, clean-HEAD comparison, and per-domain commit history.
+**Rollback signal:** A domain commit causes a new failure, a shared-file conflict, or an unexpected change in security/initialization behavior.
 **Observability added:** Per-domain test reports, exact test IDs, commit SHAs, full-suite deltas, warning counts, and a final handoff table.
 
 ## Decisions captured
@@ -178,7 +178,8 @@ The coordinator maintains a running table with domain, owner, commit, targeted r
 - Treat resolver/async disagreement as an evidence-gated decision for one owner.
 
 `★ Insight ─────────────────────────────────────`
+
 - A shared resolver contract is the highest-leverage uncertainty, so parallelism must stop at that boundary rather than allowing contradictory fixes.
 - Targeted reproduction before editing prevents stale test expectations from being mistaken for production defects.
 - A green final suite is not enough: preserving the WIP and comparing clean HEAD are both part of the acceptance contract.
-`─────────────────────────────────────────────────`
+  `─────────────────────────────────────────────────`
