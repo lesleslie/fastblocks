@@ -343,26 +343,38 @@ def clean_resolver() -> t.Generator[None]:
 
     Phase 1.5.4 — the Oneiric ``Resolver`` API does not expose a
     public ``clear()`` (see the note in ``fastblocks/core/resolver.py``),
-    so we reset the fastblocks-level wrapper by clearing the
-    lazy-init cache (``_resolver`` module global). The next call to
-    ``get_resolver()`` after the reset constructs a fresh Oneiric
-    ``Resolver``, so each test starts with an empty registry.
+    so we reset by REINITIALIZING the singleton in place:
+    ``get_resolver().__init__()``. This replaces ``self.registry``
+    with a fresh ``CandidateRegistry`` while preserving the instance
+    identity, so callers that captured a reference at import time
+    (e.g. ``fastblocks.mcp.tools.depends = FastblocksRegistry(get_resolver())``)
+    still point at the now-empty registry.
 
-    Per the Phase 1.5.4 spec, this fixture runs at BOTH setup AND
-    teardown — the teardown reset is what prevents the singleton
-    leaking state into the next test in collection order.
+    The earlier Phase 1.5.4 implementation cleared the cache with
+    ``_resolver = None`` and let the next ``get_resolver()`` build a
+    fresh Resolver — that worked for the cross-module test (which
+    cached Candidate identity at module-import time) but caused
+    ``depends`` (captured at tools.py import) to point at a stale
+    Resolver while ``register_candidate`` ran against a new one.
+    Phase 1.5.5 surfaced this divergence via the MCP integration
+    test, which exercises live ``depends.resolve(...)`` after
+    re-registration.
+
+    This fixture runs at BOTH setup AND teardown — the teardown
+    reset is what prevents the singleton leaking state into the
+    next test in collection order.
 
     ``autouse=True`` so every test gets a clean resolver without
     having to remember to depend on this fixture.
     """
-    from fastblocks.core import resolver as _resolver_module
+    from fastblocks.core.resolver import get_resolver
 
     # Setup: clear any registrations from prior tests in the same process.
-    _resolver_module._resolver = None
+    get_resolver().__init__()
     yield
     # Teardown: clear this test's registrations so the NEXT test
     # starts with an empty registry.
-    _resolver_module._resolver = None
+    get_resolver().__init__()
 
 
 @pytest.fixture(autouse=True)
