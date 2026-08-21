@@ -270,7 +270,7 @@ class LoaderProtocol(t.Protocol):
     config: t.Any
     storage: t.Any
 
-    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
+    async def get_source_async(  # type: ignore[override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,

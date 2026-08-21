@@ -52,8 +52,8 @@ class CloudinaryImages(ImagesBase):
     async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:
         """Upload image to Cloudinary and return result dict."""
         try:
-            import cloudinary.api  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]
-            import cloudinary.uploader  # type: ignore[import-not-found,no-redef]  # ty: ignore[unresolved-import]
+            import cloudinary.api  # type: ignore[import-not-found]
+            import cloudinary.uploader  # type: ignore[import-not-found,no-redef]
 
             # Configure cloudinary if credentials are set
             if (
