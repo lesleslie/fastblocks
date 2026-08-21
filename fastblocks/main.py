@@ -98,6 +98,16 @@ async def get_app() -> t.Any:
         _app_instance = await _get_app_instance()
         _logger_instance = await _get_logger_instance()
 
+        # Phase 1.5 observability: emit the startup log line AFTER
+        # the app is fully constructed. Format matches the master
+        # plan (line 288): ``Oneiric resolver: 1 registry, N
+        # candidates, M shadowed``. Phase 6 will replace this with
+        # a Prometheus push; the log line remains as the operator-
+        # facing surface for Phase 1.5.
+        from fastblocks.core import resolver_metrics
+
+        resolver_metrics.emit_startup_log()
+
     return _app_instance
 
 

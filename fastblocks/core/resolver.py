@@ -90,6 +90,16 @@ class FastblocksRegistry:
 
     def __init__(self, resolver: Resolver) -> None:
         self._resolver = resolver
+        # Phase 1.5 observability: bump the registry-size counter
+        # on every facade construction. Post-Phase-1.5 the expected
+        # value is 1 — the consolidation invariant (see ADR 0008
+        # Rule 2 selection mechanism ownership + the singleton
+        # ownership boundary in ``fastblocks/core/resolver.py``).
+        # Phase 6 replaces this with a Prometheus exporter over
+        # the same counter.
+        from fastblocks.core import resolver_metrics
+
+        resolver_metrics.increment_registry_size()
 
     def unwrap(self) -> Resolver:
         """Return the underlying Oneiric ``Resolver``.
@@ -161,6 +171,13 @@ class FastblocksRegistry:
             )
             return False
         self._resolver.register(candidate)
+        # Phase 1.5 observability: bump per-registration counter.
+        # ``register_candidate`` is the hot path; the metrics
+        # increment is in-process under a lock (cheap), and the
+        # counter is exported by Phase 6's Prometheus integration.
+        from fastblocks.core import resolver_metrics
+
+        resolver_metrics.increment_registration_count()
         return True
 
     def resolve_instance(self, domain: str, key: str) -> Any:
