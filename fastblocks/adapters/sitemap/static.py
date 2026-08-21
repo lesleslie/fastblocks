@@ -48,7 +48,7 @@ class StaticSitemap(BaseSitemap[str], SitemapBase):
     sitemap: SitemapApp | None = None
 
     def items(self) -> list[str]:
-        strategy_options = self.config.strategy_options  # type: ignore[attr-defined]
+        strategy_options = self.config.strategy_options
         static_urls = t.cast(list[str], strategy_options.get("static_urls", []))
         debug(f"StaticSitemap: Using {len(static_urls)} static URLs")
         return static_urls
@@ -57,7 +57,7 @@ class StaticSitemap(BaseSitemap[str], SitemapBase):
         return item
 
     def changefreq(self, item: str) -> str:
-        return t.cast(str, self.config.change_freq)  # type: ignore[attr-defined]
+        return t.cast(str, self.config.change_freq)
 
     def priority(self, item: str) -> float:
         if item == "/":
@@ -70,13 +70,13 @@ class StaticSitemap(BaseSitemap[str], SitemapBase):
         return 0.4
 
     async def init(self) -> None:
-        if not self.config.domain:  # type: ignore[attr-defined]
+        if not self.config.domain:
             msg = "domain must be set in sitemap settings"
             raise ValueError(msg)
         self.sitemap = SitemapApp(
             self,
-            domain=self.config.domain,  # type: ignore[attr-defined]
-            cache_ttl=self.config.cache_ttl,  # type: ignore[attr-defined]
+            domain=self.config.domain,
+            cache_ttl=self.config.cache_ttl,
         )
 
 

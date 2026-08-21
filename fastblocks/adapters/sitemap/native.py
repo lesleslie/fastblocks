@@ -68,7 +68,7 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
             return []
 
     def _filter_routes(self, routes: list[str]) -> list[str]:
-        strategy_options = self.config.strategy_options  # type: ignore[attr-defined]
+        strategy_options = self.config.strategy_options
         include_patterns = strategy_options.get("include_patterns", [])
         exclude_patterns = strategy_options.get("exclude_patterns", [])
         filtered = routes.copy()
@@ -102,7 +102,7 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
         return item
 
     def changefreq(self, item: str) -> str:
-        return t.cast(str, self.config.change_freq)  # type: ignore[attr-defined]
+        return t.cast(str, self.config.change_freq)
 
     def priority(self, item: str) -> float:
         if item == "/":
@@ -115,15 +115,15 @@ class NativeSitemap(BaseSitemap[str], SitemapBase):
         return 0.4
 
     async def init(self) -> None:
-        if not self.config.domain:  # type: ignore[attr-defined]
+        if not self.config.domain:
             msg = "domain must be set in sitemap settings"
             raise ValueError(msg)
         self.sitemap = SitemapApp(
             self,
-            domain=self.config.domain,  # type: ignore[attr-defined]
-            cache_ttl=self.config.cache_ttl,  # type: ignore[attr-defined]
+            domain=self.config.domain,
+            cache_ttl=self.config.cache_ttl,
         )
-        debug(f"NativeSitemap: Initialized with domain={self.config.domain}")  # type: ignore[attr-defined]
+        debug(f"NativeSitemap: Initialized with domain={self.config.domain}")
 
 
 Sitemap = NativeSitemap

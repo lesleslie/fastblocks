@@ -91,19 +91,19 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
         return item.get("lastmod")
 
     def changefreq(self, item: dict[str, t.Any]) -> str:
-        return t.cast(str, item.get("changefreq", self.config.change_freq))  # type: ignore[attr-defined]
+        return t.cast(str, item.get("changefreq", self.config.change_freq))
 
     def priority(self, item: dict[str, t.Any]) -> float:
         return t.cast(float, item.get("priority", 0.5))
 
     async def init(self) -> None:
-        if not self.config.domain:  # type: ignore[attr-defined]
+        if not self.config.domain:
             msg = "domain must be set in sitemap settings"
             raise ValueError(msg)
         self.sitemap = SitemapApp(
             self,
-            domain=self.config.domain,  # type: ignore[attr-defined]
-            cache_ttl=self.config.cache_ttl,  # type: ignore[attr-defined]
+            domain=self.config.domain,
+            cache_ttl=self.config.cache_ttl,
         )
 
 
