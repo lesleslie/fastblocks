@@ -968,7 +968,9 @@ class Templates(TemplatesBase):
                     get_object_identifier,
                 )
             except ImportError:
-                get_object_identifier = str  # type: ignore[assignment]
+
+                def get_object_identifier(obj: t.Any) -> t.Any:
+                    return str(obj)
             globals_dict["min"] = min
             globals_dict["zip"] = zip
             globals_dict["admin"] = self

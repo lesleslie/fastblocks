@@ -42,7 +42,7 @@ try:
     from jinja2.sandbox import SandboxedEnvironment
 except ImportError:
     # Fallback for older Jinja2 versions
-    SandboxedEnvironment = Environment  # type: ignore[assignment,misc]
+    SandboxedEnvironment = t.cast(t.Type[Environment], Environment)
 
 # Oneiric imports
 from oneiric.core.logging import get_logger

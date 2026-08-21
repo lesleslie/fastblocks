@@ -48,7 +48,7 @@ def debug(msg: str) -> None:
 try:
     from pydantic import BaseModel
 except ImportError:
-    BaseModel = None  # type: ignore[assignment,misc]
+    BaseModel = t.cast(t.Any, None)
 
 
 class ComponentStatus(StrEnum):

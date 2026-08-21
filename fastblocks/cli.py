@@ -65,7 +65,7 @@ class Styles(StrEnum):
     custom = "custom"
 
     def __str__(self) -> str:
-        return t.cast(str, self.value)
+        return self.value
 
 
 run_args: dict[str, t.Any] = {"app": "main:app"}
