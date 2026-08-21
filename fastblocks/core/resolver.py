@@ -42,11 +42,25 @@ _resolver: Resolver | None = None
 
 
 def get_resolver() -> Resolver:
-    """Return the process-wide Oneiric Resolver singleton.
+    """Return the **fastblocks-owned** Resolver singleton.
 
-    Lazy-initialised so import-time side effects (the 4 integration
+    Ownership boundary (Phase 1.5.2): this singleton is owned by the
+    ``fastblocks`` package — not by Oneiric, not by the process. Cross-
+    component consumers (mahavishnu, akosha, dhara, session-buddy,
+    crackerjack, oneiric, mcp-common) MUST call
+    ``oneiric.core.resolver.get_resolver()`` if they need their own
+    resolver. Importing ``from fastblocks.core.resolver import
+    get_resolver`` across component boundaries is forbidden — enforced
+    by ``tests/test_ci_guard.py`` (Phase 1.5.3) and the
+    ``git grep`` audit on every release.
+
+    Lifetime: process-wide. Each Python process has exactly one
+    ``_resolver`` instance; multi-pool workers (each subprocess) get
+    their own singleton, but no state crosses pool boundaries.
+
+    Lazy-initialised so import-time side effects (the integration
     modules import this module at top of file) don't pay the
-    construction cost until first `resolve()` call.
+    construction cost until first ``resolve()`` call.
     """
     global _resolver
     if _resolver is None:

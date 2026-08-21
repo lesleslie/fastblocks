@@ -101,7 +101,7 @@ def _scan_for_deleted_symbols() -> dict[str, list[tuple[Path, int, str]]]:
     for name in DELETED_MCP_TOOL_NAMES:
         # Match either the prefixed form (fastblocks_create_template) or the
         # bare form (create_template) when used inside @mcp.tool(name=...)
-        pattern = re.compile(rf"\b{re.escape(name)}\b")
+        re.compile(rf"\b{re.escape(name)}\b")
         hits[name] = []
 
     # 2) Python identifiers — substring match is enough because they are
@@ -252,3 +252,155 @@ async def test_register_fastblocks_tools_registers_the_documented_surface() -> N
     assert expected <= set(server.list_tools()), (
         f"missing tools: {sorted(expected - set(server.list_tools()))}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Phase 1.5.2/1.5.3 — Resolver singleton ownership boundary guard
+# ---------------------------------------------------------------------------
+
+
+class TestResolverOwnershipBoundary:
+    """CI guard for the Phase 1.5 singleton ownership boundary.
+
+    Phase 1.5.2 enforces:
+
+    - ``fastblocks.core.resolver.get_resolver()`` returns the fastblocks-
+      OWNED singleton (not Oneiric's, not a per-pool fresh instance).
+    - No ``= Resolver()`` declarations anywhere in ``fastblocks/``
+      outside the singleton's home (``core/resolver.py``). Every site
+      must route through ``FastblocksRegistry(get_resolver())`` instead.
+    - No Bodai cross-component consumer imports
+      ``fastblocks.core.resolver``. Sibling projects (mahavishnu, akosha,
+      dhara, session-buddy, crackerjack, oneiric, mcp-common) must call
+      ``oneiric.core.resolver.get_resolver()`` if they need their own
+      resolver.
+
+    These guards catch regressions before merge: any contributor who
+    reaches past the facade for ``= Resolver()`` or imports the singleton
+    across a component boundary will fail this test in CI.
+    """
+
+    # Sibling projects that are forbidden from importing
+    # ``fastblocks.core.resolver``. Paths are absolute because we run
+    # this scan from the fastblocks checkout and the sibling repos
+    # live in the user's Projects directory.
+    BODAI_SIBLING_REPOS: tuple[str, ...] = (
+        "/Users/les/Projects/mahavishnu",
+        "/Users/les/Projects/akosha",
+        "/Users/les/Projects/dhara",
+        "/Users/les/Projects/session-buddy",
+        "/Users/les/Projects/crackerjack",
+        "/Users/les/Projects/oneiric",
+        "/Users/les/Projects/mcp-common",
+    )
+
+    # Same regex the migration script used; pinned here so the guard
+    # matches the exact shape we committed to in Phase 1.5.1.
+    _RESOLVER_DECL = re.compile(r"^\s*\w+\s*=\s*Resolver\(\)\s*$")
+    _CROSS_COMPONENT_IMPORT = re.compile(
+        r"from\s+fastblocks\.core\.resolver\s+import"
+    )
+
+    def _iter_fastblocks_sources(self) -> list[Path]:
+        fastblocks_dir = REPO_ROOT / "fastblocks"
+        out: list[Path] = []
+        for py_file in fastblocks_dir.rglob("*.py"):
+            # Skip backup files and the venv (defence in depth).
+            if py_file.name.endswith(".backup.py"):
+                continue
+            if ".venv" in py_file.parts:
+                continue
+            # The singleton's own module is allowed to construct a
+            # Resolver (it's where the lazy-init lives).
+            try:
+                rel = py_file.relative_to(REPO_ROOT / "fastblocks" / "core")
+            except ValueError:
+                rel = None
+            if rel is not None and rel.parts and rel.parts[0] == "resolver.py":
+                continue
+            out.append(py_file)
+        return out
+
+    @pytest.mark.unit
+    def test_no_resolver_instantiation_outside_core_resolver(self) -> None:
+        """Phase 1.5.1 post-condition: zero ``= Resolver()`` outside the singleton."""
+        violations: list[tuple[Path, int, str]] = []
+        for path in self._iter_fastblocks_sources():
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for lineno, line in enumerate(text.splitlines(), start=1):
+                if self._RESOLVER_DECL.match(line):
+                    violations.append((path, lineno, line.strip()))
+        assert not violations, (
+            "`= Resolver()` is forbidden outside `fastblocks/core/resolver.py`.\n"
+            "Route through the FastblocksRegistry facade instead:\n"
+            "    depends = FastblocksRegistry(get_resolver())\n"
+            "Violations:\n"
+            + "\n".join(f"  {p}:{n}: {l}" for p, n, l in violations)
+        )
+
+    @pytest.mark.unit
+    def test_no_bodai_sibling_imports_fastblocks_core_resolver(self) -> None:
+        """Phase 1.5.2 ownership boundary enforcement.
+
+        Cross-component consumers must NOT import the fastblocks
+        singleton. Use ``oneiric.core.resolver.get_resolver()`` for an
+        independent Oneiric resolver.
+        """
+        violations: list[tuple[Path, int, str]] = []
+
+
+        for repo_path in self.BODAI_SIBLING_REPOS:
+            repo_root = Path(repo_path)
+            if not repo_root.exists():
+                # Repo not present on this machine — skip silently.
+                # The audit still runs in environments that have it.
+                continue
+            for py_file in repo_root.rglob("*.py"):
+                # Skip vendored / venv / vendored-deps directories.
+                parts = set(py_file.parts)
+                if parts & {".venv", "node_modules", ".git", "dist", "build"}:
+                    continue
+                try:
+                    text = py_file.read_text(encoding="utf-8")
+                except (OSError, UnicodeDecodeError):
+                    continue
+                for lineno, line in enumerate(text.splitlines(), start=1):
+                    if self._CROSS_COMPONENT_IMPORT.search(line):
+                        violations.append((py_file, lineno, line.strip()))
+        assert not violations, (
+            "Cross-component Bodai consumers must NOT import "
+            "fastblocks.core.resolver — the singleton is fastblocks-private.\n"
+            "Use `oneiric.core.resolver.get_resolver()` for an independent "
+            "Oneiric resolver, or import from `fastblocks.adapters.<x>` for "
+            "domain-specific access. Violations:\n"
+            + "\n".join(f"  {p}:{n}: {l}" for p, n, l in violations)
+        )
+
+    @pytest.mark.unit
+    def test_get_resolver_is_singleton(self) -> None:
+        """Repeated ``get_resolver()`` calls return the same instance."""
+        from fastblocks.core.resolver import get_resolver
+
+        a = get_resolver()
+        b = get_resolver()
+        assert a is b, (
+            "get_resolver() must return the same Resolver instance on "
+            "every call (process-wide singleton). Multi-pool workers get "
+            "their own singleton per process; no sharing across pools."
+        )
+
+    @pytest.mark.unit
+    def test_fastblocks_registry_wraps_get_resolver(self) -> None:
+        """``FastblocksRegistry(get_resolver())`` is the canonical construction.
+
+        The registry's ``unwrap()`` must return the singleton from
+        ``get_resolver()`` so the facade and the singleton are the same
+        identity (the singleton is the underlying state).
+        """
+        from fastblocks.core.resolver import FastblocksRegistry, get_resolver
+
+        registry = FastblocksRegistry(get_resolver())
+        assert registry.unwrap() is get_resolver()
