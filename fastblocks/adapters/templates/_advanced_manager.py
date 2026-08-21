@@ -38,11 +38,7 @@ from jinja2 import (
 )
 from jinja2.runtime import StrictUndefined as RuntimeStrictUndefined
 
-try:
-    from jinja2.sandbox import SandboxedEnvironment
-except ImportError:
-    # Fallback for older Jinja2 versions
-    SandboxedEnvironment = Environment  # type: ignore[assignment]
+from jinja2.sandbox import SandboxedEnvironment
 
 # Oneiric imports
 from oneiric.core.logging import get_logger
