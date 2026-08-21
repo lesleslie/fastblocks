@@ -5,6 +5,8 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
+
 from .registry import AdapterRegistry
 
 
@@ -151,10 +153,9 @@ class HealthCheckSystem:
         warnings = []
 
         try:
-            from oneiric.core.resolution import Resolver
 
             # Use Oneiric resolver (0.13+ sync API; resolve returns Candidate).
-            depends = Resolver()
+            depends = FastblocksRegistry(get_resolver())
 
             registered_adapter = depends.resolve("fastblocks", adapter_name)
             if registered_adapter is not None:

@@ -10,12 +10,12 @@ from typing import Any
 from uuid import UUID
 
 from oneiric.core.config import OneiricSettings
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ..oneiric_helper import register_candidate, resolve_instance
 
 # Migration from ACB to Oneiric
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 class Settings(OneiricSettings):  # type: ignore[misc]

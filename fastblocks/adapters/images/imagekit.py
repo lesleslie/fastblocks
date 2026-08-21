@@ -3,13 +3,13 @@
 from typing import Any
 from uuid import UUID
 
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ..oneiric_helper import register_candidate
 from ._base import ImagesBase, ImagesBaseSettings
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 class ImageKitImagesSettings(ImagesBaseSettings):

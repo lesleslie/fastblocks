@@ -7,11 +7,11 @@ from oneiric.adapters.bootstrap import (
     register_adapter_metadata,  # type: ignore[attr-defined]
     register_builtin_adapters,  # type: ignore[attr-defined]
 )
-from oneiric.core.resolution import Resolver
 from fastblocks.adapters.oneiric_helper import resolve_instance
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 # Create resolver instance for dependency resolution
-_resolver = Resolver()
+_resolver = FastblocksRegistry(get_resolver())
 
 
 async def _get_dependency(name: str) -> t.Any:
@@ -48,7 +48,7 @@ async def _handle_registration() -> None:
     """Handle adapter registration using Oneiric."""
     # Oneiric: Register builtin adapters
     try:
-        register_builtin_adapters(_resolver)
+        register_builtin_adapters(_resolver.unwrap())
     except Exception as e:
         msg = f"Failed to register builtin adapters: {e}"
         raise RuntimeError(msg) from e
@@ -60,7 +60,7 @@ async def _handle_adapter_registration() -> None:
     # The current call site predates the metadata discovery API and is
     # wrapped in suppress so a missing registry never breaks startup.
     with suppress(Exception):
-        register_adapter_metadata(_resolver, "fastblocks", str(root_path), ())
+        register_adapter_metadata(_resolver.unwrap(), "fastblocks", str(root_path), ())
 
 
 async def _get_app_instance() -> t.Any:

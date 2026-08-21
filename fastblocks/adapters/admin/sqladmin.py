@@ -12,15 +12,15 @@ from contextlib import suppress
 from uuid import UUID
 
 # Oneiric imports
-from oneiric.core.resolution import Resolver
 from starlette.applications import Starlette
 from fastblocks.applications import FastBlocks
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import AdminBase, AdminBaseSettings
 
 # Custom Oneiric-compatible adapter system
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 _using_oneiric = True
 
 Auth = None

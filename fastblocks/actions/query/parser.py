@@ -13,8 +13,8 @@ import typing as t
 from contextlib import suppress
 
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 from starlette.requests import Request
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 from fastblocks.htmx import HtmxRequest
 
 from ...adapters.oneiric_helper import resolve_instance
@@ -30,7 +30,7 @@ def debug(msg: str) -> None:
 
 
 # Create depends equivalent for Oneiric
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 class UniversalQueryParser:

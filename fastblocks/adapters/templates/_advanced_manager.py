@@ -37,12 +37,11 @@ from jinja2 import (
     meta,
 )
 from jinja2.runtime import StrictUndefined as RuntimeStrictUndefined
-
 from jinja2.sandbox import SandboxedEnvironment
 
 # Oneiric imports
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ..oneiric_helper import register_candidate, resolve_instance
 from .jinja2 import Templates, TemplatesSettings
@@ -61,7 +60,7 @@ class AdapterStatus:
 
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 __all__ = [
     "AutocompleteItem",

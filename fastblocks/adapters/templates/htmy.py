@@ -31,7 +31,6 @@ import asyncio
 import typing as t
 from contextlib import suppress
 from enum import Enum
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -40,9 +39,9 @@ from oneiric.core.config import OneiricSettings
 from oneiric.core.logging import get_logger
 
 # Oneiric imports
-from oneiric.core.resolution import Resolver
 from pydantic import Field
 from starlette.responses import HTMLResponse
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 _log = get_logger("fastblocks.adapters.templates.htmy")
 
@@ -69,7 +68,7 @@ def debug(msg: str) -> None:
 
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import TemplatesBase
@@ -283,7 +282,7 @@ class HTMYComponentRegistry:
         if component_name in self._component_cache:
             return self._component_cache[component_name]
 
-        source, component_path = await self.get_component_source(component_name)
+        source, _component_path = await self.get_component_source(component_name)
 
         # Phase 1A Deliverable C3: route through the AST-sandboxed loader
         # from `_htmy_components.py`. The previous implementation called
@@ -301,7 +300,7 @@ class HTMYComponentRegistry:
             component_class = load_component_from_source(source, component_name)
         except ComponentCompilationError:
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             _log.exception(
                 "HTMYTemplates.get_component_class: AST-sandboxed load failed for %s: %s",
                 component_name,

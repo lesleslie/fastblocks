@@ -15,12 +15,13 @@ from typing import Any, cast
 from oneiric.core.logging import get_logger
 from oneiric.core.resolution import Candidate, CandidateSource, Resolver
 from pydantic import ValidationError
+from fastblocks.core.resolver import FastblocksRegistry
 
 _log = get_logger("fastblocks.oneiric_helper")
 
 
 def register_candidate(
-    resolver: Resolver,
+    resolver: Resolver | FastblocksRegistry,
     domain: str,
     key: str,
     factory: Callable[..., Any],
@@ -83,7 +84,9 @@ def register_candidate(
     return True
 
 
-def resolve_instance(resolver: Resolver, domain: str, key: str) -> Any:
+def resolve_instance(
+    resolver: Resolver | FastblocksRegistry, domain: str, key: str
+) -> Any:
     """Resolve a registered Candidate and return its factory output.
 
     Oneiric's Resolver.resolve() returns either a Candidate (whose

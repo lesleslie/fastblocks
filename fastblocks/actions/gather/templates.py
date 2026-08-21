@@ -9,7 +9,7 @@ from inspect import isclass
 from anyio import Path as AsyncPath
 from jinja2.ext import Extension
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ...adapters.oneiric_helper import resolve_instance
 from .strategies import GatherStrategy, gather_with_strategy
@@ -30,7 +30,7 @@ def get_adapter(adapter_name: str) -> t.Any:
 
 
 # Create resolver instance
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 class TemplateGatherResult:

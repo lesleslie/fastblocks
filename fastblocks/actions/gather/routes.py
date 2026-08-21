@@ -13,6 +13,7 @@ from pathlib import Path
 # branch (no def debug) and crashed every call with NameError.
 # Always-available Oneiric logger is the foundation of the ``debug`` shim.
 from oneiric.core.logging import get_logger
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 
 # Create debug function for Oneiric (using logger)
@@ -26,13 +27,12 @@ try:
     from oneiric.adapters.discovery import (  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]
         get_adapters,  # type: ignore[import-not-found]
     )
-    from oneiric.core.resolution import Resolver
 
     # Create root_path equivalent for Oneiric
     root_path = Path(__file__).parent.parent.parent.parent
 
     # Create depends equivalent for Oneiric
-    _resolver = Resolver()  # type: ignore[call-arg]
+    _resolver = FastblocksRegistry(get_resolver())  # type: ignore[call-arg]
     _using_oneiric = True
 except ImportError:
     # Fallback to ACB imports (legacy)

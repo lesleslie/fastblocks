@@ -4,9 +4,9 @@ import typing as t
 from contextlib import suppress
 from platform import system
 
-# Oneiric imports
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
+# Oneiric imports
 from .adapters.oneiric_helper import resolve_instance
 
 
@@ -26,7 +26,7 @@ class AdapterBase:
 
 
 # Oneiric resolver
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 from starception import add_link_template, set_editor
 from starlette.applications import Starlette

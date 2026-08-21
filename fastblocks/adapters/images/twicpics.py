@@ -10,8 +10,8 @@ from uuid import UUID
 
 import httpx
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 from pydantic import SecretStr
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import ImagesBase, ImagesBaseSettings
@@ -19,7 +19,7 @@ from ._base import ImagesBase, ImagesBaseSettings
 _log = get_logger("fastblocks.adapters.images.twicpics")
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 class TwicPicsImagesSettings(ImagesBaseSettings):

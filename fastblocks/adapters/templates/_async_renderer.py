@@ -26,9 +26,9 @@ from uuid import UUID
 
 from anyio import Path as AsyncPath
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response, StreamingResponse
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ..oneiric_helper import register_candidate, resolve_instance
 from ._advanced_manager import HybridTemplatesManager, TemplateValidationResult
@@ -53,7 +53,7 @@ class AdapterStatus:
 
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 class RenderMode(Enum):

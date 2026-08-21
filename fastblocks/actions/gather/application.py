@@ -6,7 +6,7 @@ import typing as t
 from importlib import import_module
 
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ...adapters.oneiric_helper import register_candidate, resolve_instance
 from .strategies import GatherStrategy, gather_with_strategy
@@ -14,7 +14,7 @@ from .strategies import GatherStrategy, gather_with_strategy
 # Migration from ACB to Oneiric
 # Note: This file heavily depends on ACB's adapter system which requires
 # special handling for Oneiric migration
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 _log = get_logger("fastblocks.actions.gather.application")
 

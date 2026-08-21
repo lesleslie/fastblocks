@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import operator
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from .discovery import AdapterDiscoveryServer
 from .health import HealthCheckSystem
@@ -15,7 +16,7 @@ from .health import HealthCheckSystem
 logger = get_logger(__name__)
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 # Template Management Tools

@@ -23,6 +23,7 @@ from contextlib import suppress
 from uuid import UUID
 
 from oneiric.core.logging import get_logger
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 _log = get_logger("fastblocks.adapters.templates.hybrid")
 
@@ -35,14 +36,13 @@ class AdapterStatus:
     EXPERIMENTAL = "EXPERIMENTAL"
 
 
-from oneiric.core.resolution import Resolver
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
-from ..oneiric_helper import register_candidate, resolve_instance
+depends = FastblocksRegistry(get_resolver())
 from starlette.requests import Request
 from starlette.responses import Response
 
+from ..oneiric_helper import register_candidate, resolve_instance
 from ._advanced_manager import HybridTemplatesManager, HybridTemplatesSettings
 from ._async_filters import FASTBLOCKS_ASYNC_FILTERS
 from ._async_renderer import AsyncTemplateRenderer, RenderContext, RenderMode

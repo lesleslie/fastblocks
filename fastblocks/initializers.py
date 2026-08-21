@@ -12,11 +12,11 @@ import typing as t
 from oneiric.core.config import OneiricSettings
 from oneiric.core.logging import get_logger
 from oneiric.core.logging import get_logger as oneiric_get_logger
-from oneiric.core.resolution import Resolver
 from fastblocks.adapters.oneiric_helper import resolve_instance
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 # Create resolver instance
-_resolver = Resolver()
+_resolver = FastblocksRegistry(get_resolver())
 
 
 async def _get_dependency(name: str) -> t.Any:

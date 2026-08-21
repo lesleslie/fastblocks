@@ -6,12 +6,12 @@ from abc import ABC
 from anyio import Path as AsyncPath
 from oneiric.core.config import OneiricSettings
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 from starlette.requests import Request
 from starlette.responses import Response
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 _log = get_logger("fastblocks.adapters.templates._base")
 

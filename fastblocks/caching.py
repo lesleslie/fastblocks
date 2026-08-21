@@ -17,17 +17,16 @@ from urllib.request import parse_http_list
 from starlette.datastructures import URL, Headers, MutableHeaders
 from starlette.requests import Request
 from starlette.responses import Response
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 HashFunc = t.Callable[[t.Any], str]
 GetAdapterFunc = t.Callable[[str], t.Any]
 ImportAdapterFunc = t.Callable[[str | list[str] | None], t.Any]
-from oneiric.core.resolution import Resolver
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
-
 from fastblocks.adapters.oneiric_helper import resolve_instance
 
 # Replace ACB components with Oneiric equivalents
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 def _resolve(key: str) -> t.Any:

@@ -9,15 +9,15 @@ from uuid import UUID, uuid4
 
 import httpx
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 from pydantic import SecretStr
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import ImagesBase, ImagesBaseSettings
 
 _log = get_logger("fastblocks.adapters.images.cloudflare")
 
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 class CloudflareImagesSettings(ImagesBaseSettings):

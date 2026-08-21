@@ -86,8 +86,6 @@ except ImportError:
 __version__ = "0.6.0"  # bumped per C5; tracks fastblocks-htmy 0.6.x shim release
 
 __all__ = [
-    # Base class
-    "FastBlocksComponent",
     # 32 typed component classes
     "Alert",
     "Breadcrumb",
@@ -101,15 +99,17 @@ __all__ = [
     "Dialog",
     "Drawer",
     "Dropdown",
+    # Base class
+    "FastBlocksComponent",
     "Field",
     "Footer",
     "Hero",
     "Input",
     "Level",
     "Media",
-    "Navbar",
     "NavGroups",
     "NavList",
+    "Navbar",
     "Pagination",
     "Progress",
     "Section",

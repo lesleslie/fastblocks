@@ -3,11 +3,11 @@
 from typing import Any
 
 # Oneiric imports
-from oneiric.core.resolution import Resolver
 from fastblocks.adapters.oneiric_helper import resolve_instance
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 def img_tag(image_id: str, alt: str, **attributes: Any) -> str:

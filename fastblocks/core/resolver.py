@@ -77,6 +77,18 @@ class FastblocksRegistry:
     def __init__(self, resolver: Resolver) -> None:
         self._resolver = resolver
 
+    def unwrap(self) -> Resolver:
+        """Return the underlying Oneiric ``Resolver``.
+
+        Use this ONLY for upstream APIs that strictly type their
+        ``Resolver`` parameter and reject the facade — e.g.
+        ``oneiric.adapters.bootstrap.register_builtin_adapters`` and
+        ``oneiric.adapters.metadata.register_adapter_metadata``.
+        New code should prefer the facade methods (``register_candidate``,
+        ``resolve_instance``, ``register``, ``resolve``, ``explain``).
+        """
+        return self._resolver
+
     # --- Raw Resolver passthroughs (Phase 1.5 deliverable 0 list) ---
 
     def register(self, candidate: Candidate) -> None:

@@ -33,6 +33,7 @@ from granian import Granian
 # Use standard rich console instead of ACB console
 from rich.console import Console
 from fastblocks.adapters.oneiric_helper import resolve_instance
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 console = Console()
 
@@ -179,12 +180,11 @@ def dev(granian: bool = False) -> None:
 
 def _display_adapters() -> None:
     # Replace ACB adapter discovery with Oneiric adapter registry
-    from oneiric.core.resolution import Resolver
 
     console.print("[bold green]Available Adapters:[/bold green]")
 
     # Use Oneiric resolver to discover adapters
-    depends = Resolver()
+    depends = FastblocksRegistry(get_resolver())
     try:
         # Try to get adapter registry from Oneiric
         adapter_registry = resolve_instance(depends, "fastblocks", "adapter_registry")
@@ -373,10 +373,9 @@ def scaffold(
 
     async def scaffold_component() -> None:
         try:
-            from oneiric.core.resolution import Resolver
 
             # Get HTMY adapter using Oneiric resolver
-            depends = Resolver()
+            depends = FastblocksRegistry(get_resolver())
             htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
             if htmy_adapter is None:
                 console.print(
@@ -457,10 +456,9 @@ def list_components() -> None:
 
     async def list_all_components() -> None:
         try:
-            from oneiric.core.resolution import Resolver
 
             # Get HTMY adapter using Oneiric resolver
-            depends = Resolver()
+            depends = FastblocksRegistry(get_resolver())
             htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
             if htmy_adapter is None:
                 console.print(
@@ -536,10 +534,9 @@ def validate(
 
     async def validate_component() -> None:
         try:
-            from oneiric.core.resolution import Resolver
 
             # Get HTMY adapter using Oneiric resolver
-            depends = Resolver()
+            depends = FastblocksRegistry(get_resolver())
             htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
             if htmy_adapter is None:
                 console.print(
@@ -597,10 +594,9 @@ def info(
 
     async def get_component_info() -> None:
         try:
-            from oneiric.core.resolution import Resolver
 
             # Get HTMY adapter using Oneiric resolver
-            depends = Resolver()
+            depends = FastblocksRegistry(get_resolver())
             htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
             if htmy_adapter is None:
                 console.print(
@@ -677,10 +673,9 @@ def syntax_check(
         try:
             from pathlib import Path
 
-            from oneiric.core.resolution import Resolver
 
             # Get syntax support using Oneiric resolver
-            depends = Resolver()
+            depends = FastblocksRegistry(get_resolver())
             syntax_support = resolve_instance(depends, "fastblocks", "syntax_support")
             if syntax_support is None:
                 console.print(
@@ -723,10 +718,9 @@ def format_template(
         try:
             from pathlib import Path
 
-            from oneiric.core.resolution import Resolver
 
             # Get syntax support using Oneiric resolver
-            depends = Resolver()
+            depends = FastblocksRegistry(get_resolver())
             syntax_support = resolve_instance(depends, "fastblocks", "syntax_support")
             if syntax_support is None:
                 console.print(
@@ -867,10 +861,9 @@ def start_language_server(
 
     async def start_server() -> None:
         try:
-            from oneiric.core.resolution import Resolver
 
             # Get language server using Oneiric resolver
-            depends = Resolver()
+            depends = FastblocksRegistry(get_resolver())
             language_server = resolve_instance(depends, "fastblocks", "language_server")
             if language_server is None:
                 console.print(

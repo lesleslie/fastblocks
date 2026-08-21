@@ -8,10 +8,10 @@ from enum import Enum
 from pathlib import Path
 
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 # Migration from ACB to Oneiric
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 _log = get_logger("fastblocks.actions.gather.strategies")
 

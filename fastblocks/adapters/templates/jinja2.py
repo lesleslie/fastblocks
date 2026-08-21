@@ -35,7 +35,6 @@ import asyncio
 import re
 
 # Import Oneiric registration helper
-import sys
 import typing as t
 from ast import literal_eval
 from contextlib import suppress
@@ -49,8 +48,8 @@ from uuid import UUID
 
 from oneiric.core.config import OneiricSettings
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 from pydantic import Field
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 _log = get_logger("fastblocks.adapters.templates.jinja2")
 
@@ -87,7 +86,7 @@ def debug(msg: str) -> None:
 
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 from anyio import Path as AsyncPath

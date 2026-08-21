@@ -22,7 +22,7 @@ from uuid import UUID
 
 # Oneiric imports
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 _log = get_logger("fastblocks.adapters.templates._enhanced_filters")
 
@@ -38,7 +38,7 @@ class AdapterStatus:
 
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 from ..oneiric_helper import resolve_instance
 

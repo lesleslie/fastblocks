@@ -6,13 +6,13 @@ from typing import Any
 
 # Oneiric imports
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 from fastblocks.adapters.oneiric_helper import resolve_instance
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 _log = get_logger("fastblocks.adapters.templates._async_filters")
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 async def async_image_url(image_id: str, **transformations: Any) -> str:

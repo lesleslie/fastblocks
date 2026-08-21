@@ -4,11 +4,9 @@ import typing as t
 
 from starlette.responses import Response
 from starlette.routing import Route
-
 from fastblocks.adapters.oneiric_helper import resolve_instance
-from oneiric.core.resolution import Resolver
-
 from fastblocks.adapters.sitemap._base import SitemapProtocol
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 
 # Custom implementations for ACB compatibility
@@ -27,7 +25,7 @@ def debug(msg: str) -> None:
 
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 def import_adapter(adapter_name: str) -> None:

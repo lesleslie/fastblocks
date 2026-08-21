@@ -24,6 +24,8 @@ from collections.abc import (
 from typing import TypeVar, cast
 from urllib.parse import urljoin, urlsplit
 
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
+
 
 # Custom implementations for ACB compatibility
 def debug(msg: str) -> None:
@@ -32,14 +34,13 @@ def debug(msg: str) -> None:
 
 
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 
 from ..oneiric_helper import resolve_instance
 
 _log = get_logger("fastblocks.adapters.sitemap.core")
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 if t.TYPE_CHECKING:
     from starlette.types import Scope

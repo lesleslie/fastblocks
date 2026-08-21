@@ -23,11 +23,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 from fastblocks.adapters.oneiric_helper import resolve_instance
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 # Migration from ACB to Oneiric
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 _log = get_logger("fastblocks.actions.gather.components")
 

@@ -7,14 +7,14 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID
 
-from oneiric.core.resolution import Resolver
 from pydantic import Field
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ..oneiric_helper import register_candidate
 from ._base import StyleBase, StyleBaseSettings
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 class VanillaStyleSettings(StyleBaseSettings):

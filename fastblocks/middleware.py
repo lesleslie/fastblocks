@@ -6,7 +6,7 @@ from enum import IntEnum
 
 # Oneiric imports
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 
 # Create debug function for Oneiric
@@ -16,7 +16,7 @@ def debug(msg: str) -> None:
 
 
 # Create depends equivalent for Oneiric
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 def _get_adapter_or_none(domain: str, key: str) -> t.Any:

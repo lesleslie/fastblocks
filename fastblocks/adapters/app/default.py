@@ -14,15 +14,15 @@ from time import perf_counter
 from uuid import UUID
 
 # Oneiric imports
-from oneiric.core.resolution import Resolver
 from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks.applications import FastBlocks
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
-from ._base import AppBase, AppBaseSettings
 from ..oneiric_helper import resolve_instance
+from ._base import AppBase, AppBaseSettings
 
 # Custom Oneiric-compatible adapter system
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 _using_oneiric = True
 
 main_start = perf_counter()

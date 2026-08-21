@@ -6,14 +6,14 @@ from dataclasses import dataclass
 from enum import StrEnum
 from operator import itemgetter
 
-from oneiric.core.resolution import Resolver
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, Response
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 from fastblocks.htmx import HtmxRequest
 
 # Replace ACB depends with Oneiric Resolver
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 _templates_cache = None
 

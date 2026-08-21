@@ -8,10 +8,10 @@ from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
 
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 # Migration from ACB to Oneiric
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 from ..oneiric_helper import register_candidate
 

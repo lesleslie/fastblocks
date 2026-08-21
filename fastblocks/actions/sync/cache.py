@@ -6,7 +6,7 @@ import typing as t
 
 from oneiric.core.logging import get_logger
 from fastblocks.adapters.oneiric_helper import resolve_instance
-from fastblocks.core.resolver import get_resolver, resolve_component_async
+from fastblocks.core.resolver import get_resolver
 
 from .strategies import SyncResult, SyncStrategy
 

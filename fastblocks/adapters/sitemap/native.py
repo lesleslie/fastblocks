@@ -11,6 +11,8 @@ import typing as t
 from contextlib import suppress
 from uuid import UUID
 
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
+
 
 # Custom implementations for ACB compatibility
 class AdapterStatus:
@@ -28,7 +30,6 @@ def debug(msg: str) -> None:
 
 
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 
 from ..oneiric_helper import register_candidate, resolve_instance
 from ._base import SitemapBase, SitemapBaseSettings
@@ -37,7 +38,7 @@ from .core import BaseSitemap, SitemapApp
 _log = get_logger("fastblocks.adapters.sitemap.native")
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 def import_adapter(adapter_name: str) -> None:

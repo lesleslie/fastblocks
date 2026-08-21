@@ -13,13 +13,13 @@ import time
 import typing as t
 from contextlib import suppress
 
-# Oneiric imports
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
+# Oneiric imports
 from ..oneiric_helper import resolve_instance
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 def track_template_render(

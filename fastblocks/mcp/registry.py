@@ -1,13 +1,14 @@
 """Central registry for FastBlocks adapter management."""
 
+from collections.abc import Callable
 from contextlib import suppress
-from typing import Any, Callable, cast
+from typing import Any, cast
 from uuid import UUID
 
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 from .discovery import AdapterDiscoveryServer, AdapterInfo
 

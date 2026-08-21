@@ -3,13 +3,13 @@
 from contextlib import suppress
 from typing import Any
 
-from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 from ..oneiric_helper import resolve_instance
 from ._filters import FASTBLOCKS_FILTERS
 
 # Migration from ACB to Oneiric
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 
 def register_fastblocks_filters(template_env: Any) -> None:

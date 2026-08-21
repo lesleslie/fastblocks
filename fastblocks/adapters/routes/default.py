@@ -40,7 +40,6 @@ from jinja2.exceptions import TemplateNotFound
 
 # Oneiric imports
 from oneiric.core.logging import get_logger
-from oneiric.core.resolution import Resolver
 from starlette.endpoints import HTTPEndpoint
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
@@ -48,6 +47,7 @@ from starlette.responses import PlainTextResponse, Response
 from starlette.routing import Host, Mount, Route, Router, WebSocketRoute
 from starlette.types import Receive, Scope, Send
 from fastblocks.actions.query import create_query_context
+from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 from fastblocks.htmx import HtmxRequest
 
 from ..oneiric_helper import register_candidate, resolve_instance
@@ -77,7 +77,7 @@ def root_path() -> str:
 
 
 # Oneiric resolver for dependency injection
-depends = Resolver()
+depends = FastblocksRegistry(get_resolver())
 
 # Placeholder for templates (will be resolved via Oneiric)
 Templates = None
