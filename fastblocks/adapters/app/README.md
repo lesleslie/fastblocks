@@ -28,14 +28,11 @@ The App adapter provides settings for your application, including:
 
 ## Template Variants
 
-The App adapter ships with five named template variants under `fastblocks/adapters/app/_templates/`:
+The App adapter ships with three named template variants under `fastblocks/adapters/app/_templates/`:
 
 - `base/` — minimal baseline templates
-- `bulma/` — Bulma CSS framework
 - `fastblocks_ui/` — FastBlocks first-party UI components
-- `kelp/` — Kelp UI library
 - `vanilla/` — Vanilla CSS with semantic classes
-- `webawesome/` — Web Awesome (Font Awesome 7)
 
 The available variant directories are listed by `git ls-files fastblocks/adapters/app/_templates/`.
 
@@ -185,7 +182,7 @@ from oneiric.core.config import OneiricSettings
 
 class AppBaseSettings(OneiricSettings):
     name: str = "fastblocks"
-    style: str = "vanilla"
+    style: str = "fastblocks_ui"
     theme: str = "light"
 
 

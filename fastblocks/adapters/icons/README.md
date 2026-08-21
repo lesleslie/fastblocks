@@ -54,7 +54,7 @@ Enhanced filters (see `_enhanced_filters.py`) surface each adapter in Jinja2:
 - `[[ remix_icon('home-line', class='nav__icon') | safe ]]`
 - `[[ material_icon('settings', 'outlined') | safe ]]`
 
-Pair these with the adapter-specific stylesheet helpers (e.g., `[[ webawesome_stylesheet_links() | safe ]]`) inside your `<head>` block to ensure the necessary CSS/JS assets load.
+Pair these with the adapter-specific stylesheet helpers (e.g., `[[ fastblocks_ui_stylesheet_links() | safe ]]`) inside your `<head>` block to ensure the necessary CSS/JS assets load.
 
 ## Extending
 
@@ -62,6 +62,6 @@ To add a new icon pack:
 
 1. Subclass `IconsBaseSettings` for configuration (CDN URLs, kit IDs, variant flags).
 1. Implement `IconsBase` with `get_icon_class()` and `get_icon_tag()` (returning HTML markup or SVG).
-1. Register globals/filters if the pack needs template shortcuts (see `register_webawesome_functions` for reference).
+1. Register globals/filters if the pack needs template shortcuts (see `register_fastblocks_ui_functions` for reference).
 
 Keeping adapters isolated this way makes it trivial to offer multiple icon options within a single FastBlocks application while keeping template syntax predictable.

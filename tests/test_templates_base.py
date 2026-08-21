@@ -206,7 +206,7 @@ class TestTemplatesBase:
     def mock_config(self) -> Any:
         """Create a mock config."""
         config = MagicMock()
-        config.app.style = "vanilla"
+        config.app.style = "fastblocks_ui"
         return config
 
     @pytest.fixture
@@ -236,9 +236,9 @@ class TestTemplatesBase:
         searchpaths = templates_base.get_searchpath(mock_adapter, path)
 
         assert len(searchpaths) == 4
-        assert str(searchpaths[0]).endswith("templates/vanilla/test_adapter/theme")
-        assert str(searchpaths[1]).endswith("templates/vanilla/test_adapter")
-        assert str(searchpaths[2]).endswith("templates/vanilla")
+        assert str(searchpaths[0]).endswith("templates/fastblocks_ui/test_adapter/theme")
+        assert str(searchpaths[1]).endswith("templates/fastblocks_ui/test_adapter")
+        assert str(searchpaths[2]).endswith("templates/fastblocks_ui")
         assert str(searchpaths[3]).endswith("templates/base")
 
     def test_get_searchpath_custom_style(

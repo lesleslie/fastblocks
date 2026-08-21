@@ -5,10 +5,6 @@ from uuid import UUID
 import pytest
 from fastblocks.adapters.style._base import StyleBase
 from fastblocks.adapters.style.vanilla import VanillaStyle, VanillaStyleSettings
-from fastblocks.adapters.style.webawesome import (
-    WebAwesomeStyle,
-    WebAwesomeStyleSettings,
-)
 
 
 @pytest.mark.unit
@@ -155,21 +151,22 @@ class TestStyleIntegration:
     """Test style adapter integration patterns."""
 
     def test_multiple_adapters_coexistence(self):
-        """Test multiple style adapters can coexist."""
-        webawesome = WebAwesomeStyle()
-        vanilla = VanillaStyle()
+        """Test multiple style adapter instances can coexist."""
+        vanilla_a = VanillaStyle()
+        vanilla_b = VanillaStyle()
 
-        # Both should have different MODULE_IDs
-        assert webawesome.MODULE_ID != vanilla.MODULE_ID
+        # Each instance has a stable MODULE_ID
+        assert isinstance(vanilla_a.MODULE_ID, UUID)
+        assert isinstance(vanilla_b.MODULE_ID, UUID)
 
-        # Both should implement the same protocol
-        for adapter in [webawesome, vanilla]:
+        # Both implement the same protocol
+        for adapter in [vanilla_a, vanilla_b]:
             assert hasattr(adapter, "get_component_class")
             assert hasattr(adapter, "get_stylesheet_links")
 
     def test_adapter_consistency(self):
         """Test adapter method consistency."""
-        adapters = [WebAwesomeStyle(), VanillaStyle()]
+        adapters = [VanillaStyle()]
 
         for adapter in adapters:
             # Test required methods return correct types
@@ -183,25 +180,9 @@ class TestStyleIntegration:
                 utility_classes = adapter.get_utility_classes()
                 assert isinstance(utility_classes, dict)
 
-    def test_framework_switching(self):
-        """Test framework switching capabilities."""
-        # Test that adapters can be swapped easily
-        webawesome = WebAwesomeStyle()
-        vanilla = VanillaStyle()
-
-        # Same method calls should work with different frameworks
-        webawesome_button = webawesome.get_component_class("button")
-        vanilla_button = vanilla.get_component_class("button")
-
-        assert isinstance(webawesome_button, str)
-        assert isinstance(vanilla_button, str)
-        # Results may differ but should be valid CSS classes
-        assert "wa-btn" in webawesome_button
-        assert vanilla_button == "btn"
-
     def test_protocol_compliance(self):
         """Test all adapters comply with StylesProtocol."""
-        adapters = [WebAwesomeStyle(), VanillaStyle()]
+        adapters = [VanillaStyle()]
 
         for adapter in adapters:
             # Test required methods exist and work
@@ -212,17 +193,7 @@ class TestStyleIntegration:
             assert isinstance(stylesheet_links, list)
 
     def test_settings_customization(self):
-        """Test settings customization."""
-        # Test WebAwesome customization
-        webawesome = WebAwesomeStyle()
-        webawesome.settings = WebAwesomeStyleSettings()
-        webawesome.settings.version = "6.0.0"
-        webawesome.settings.include_brands = False
-
-        assert webawesome.settings.version == "6.0.0"
-        assert webawesome.settings.include_brands is False
-
-        # Test Vanilla CSS customization
+        """Test Vanilla CSS settings customization."""
         vanilla = VanillaStyle()
         vanilla.settings.css_paths = ["/my/styles.css"]
         vanilla.settings.css_variables = {"brand-color": "#FF0000"}
@@ -248,7 +219,7 @@ class TestStyleIntegration:
 
     def test_error_handling(self):
         """Test error handling in adapters."""
-        adapters = [WebAwesomeStyle(), VanillaStyle()]
+        adapters = [VanillaStyle()]
 
         for adapter in adapters:
             # Test with invalid/empty inputs

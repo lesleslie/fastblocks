@@ -18,12 +18,11 @@ import signal
 #         logger.propagate = False
 import sys
 import typing as t
-from enum import StrEnum
 from importlib.metadata import version as get_version
 from pathlib import Path
 from subprocess import DEVNULL
 from subprocess import run as execute
-from typing import Annotated
+from typing import Annotated, Literal
 
 import typer
 import uvicorn
@@ -59,14 +58,11 @@ if Path.cwd() == fastblocks_path and not is_testing:
 cli = typer.Typer(rich_markup_mode="rich")
 
 
-class Styles(StrEnum):
-    bulma = "bulma"
-    webawesome = "webawesome"
-    custom = "custom"
-
-    def __str__(self) -> str:
-        return self.value
-
+# Style values are now a Literal type. The two surviving styles are
+# ``"vanilla"`` (explicit unstyled) and ``"fastblocks_ui"`` (the default;
+# provides CSS/JS asset paths and class lookups via the ``fastblocks-ui``
+# package). See ``fastblocks/core/style_registry.py`` for the architectural
+# rationale.
 
 run_args: dict[str, t.Any] = {"app": "main:app"}
 dev_args: dict[str, t.Any] = run_args | {"port": 8000, "reload": True}
@@ -921,12 +917,12 @@ def create_app(
         typer.Option(prompt=True, help="Name of your application"),
     ],
     style: Annotated[
-        Styles,
+        Literal["vanilla", "fastblocks_ui"],
         typer.Option(
             prompt=True,
-            help=f"The style you want to use[{','.join(Styles._member_names_)}]",
+            help="The style you want to use [vanilla,fastblocks_ui]",
         ),
-    ] = Styles.bulma,
+    ] = "vanilla",
     domain: Annotated[
         str,
         typer.Option(prompt=True, help="Application domain"),
@@ -949,12 +945,12 @@ def create_app(
 @create.command("template")
 def create_template(
     style: Annotated[
-        Styles,
+        Literal["vanilla", "fastblocks_ui"],
         typer.Option(
             prompt=True,
             help="Style for the new template subtree",
         ),
-    ] = Styles.bulma,
+    ] = "vanilla",
 ) -> None:
     """Create the template/blocks/theme directory structure for a style."""
     for p in (
@@ -964,7 +960,7 @@ def create_template(
     ):
         p.mkdir(parents=True, exist_ok=True)
     console.print(
-        f"[green]✓ Template skeleton created for style: {style.value}[/green]"
+        f"[green]✓ Template skeleton created for style: {style}[/green]"
     )
 
 
@@ -982,7 +978,7 @@ def create_ide_config(
     generate_ide_config(output_dir=output_dir, ide=ide)
 
 
-def _scaffold_app_tree(app_path: Path, app_name: str, style: Styles) -> None:
+def _scaffold_app_tree(app_path: Path, app_name: str, style: Literal["vanilla", "fastblocks_ui"]) -> None:
     """Create the app directory layout, switch into it, and touch init files."""
     app_path.mkdir(exist_ok=True)
     os.chdir(app_path)
@@ -1076,7 +1072,7 @@ def _run_setup_commands() -> None:
 
 def create_compat(
     app_name: str,
-    style: Styles = Styles.bulma,
+    style: Literal["vanilla", "fastblocks_ui"] = "vanilla",
     domain: str = "example.com",
 ) -> None:
     """Backwards-compatible shim for the original top-level ``create`` entry.
@@ -1090,7 +1086,7 @@ def create_compat(
 
 async def _create_app_async(
     app_name: str = "myapp",
-    style: Styles = Styles.bulma,
+    style: Literal["vanilla", "fastblocks_ui"] = "vanilla",
     domain: str = "example.com",
 ) -> None:
     """Async wrapper for the sync ``create_app`` shim."""

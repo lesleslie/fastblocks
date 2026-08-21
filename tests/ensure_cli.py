@@ -89,8 +89,7 @@ def ensure_cli_module():
             """Mock styles enum."""
 
             vanilla = "vanilla"
-            bootstrap = "bootstrap"
-            tailwind = "tailwind"
+            fastblocks_ui = "fastblocks_ui"
 
         # Add attributes to cli module
         cli_module.app = mock_app

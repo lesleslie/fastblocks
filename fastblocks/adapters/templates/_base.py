@@ -130,7 +130,7 @@ class TemplatesBase:
             setattr(self, key, value)
 
     def get_searchpath(self, adapter: t.Any, path: AsyncPath) -> list[AsyncPath]:
-        style = getattr(self.config.app, "style", "vanilla")  # type: ignore[attr-defined]
+        style = getattr(self.config.app, "style", "fastblocks_ui")  # type: ignore[attr-defined]
         base_path = path / "base"
         style_path = path / style
         style_adapter_path = path / style / adapter.name

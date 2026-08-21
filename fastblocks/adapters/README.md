@@ -67,7 +67,7 @@ SQLAlchemy-backed admin dashboard with a single shipped implementation (`sqladmi
 
 ## app
 
-Application-level settings (name, style, theme) exposed to templates via the `app` context variable. Ships with template variants in `_templates/`: `base/`, `bulma/`, `fastblocks_ui/`, `kelp/`, `vanilla/`, `webawesome/`. See [app/README.md](app/README.md).
+Application-level settings (name, style, theme) exposed to templates via the `app` context variable. Ships with template variants in `_templates/`: `base/`, `fastblocks_ui/`, `vanilla/`. See [app/README.md](app/README.md).
 
 ## auth
 

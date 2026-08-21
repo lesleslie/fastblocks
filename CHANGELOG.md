@@ -5,6 +5,14 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0] - Unreleased
+
+### Removed
+
+- **`kelp`, `bulma`, `webawesome`, `custom` style adapters** (`fastblocks.adapters.style.{kelp,webawesome}` and `fastblocks.adapters.app._templates.{kelp,webawesome,bulma,custom}/`). Each carried multiple silent-failure traps — decorator-API misuse, wrong-Resolver-API calls, masked XSS surface — all swallowed by `with suppress(Exception)` at the call sites. `bulma` and `custom` lacked even a backing adapter and fell through to the silent no-op default. After upgrade, `config.app.style = "kelp"` (or `"webawesome"` / `"bulma"` / `"custom"`) fails loudly at startup with `unknown style` from `style_registry.py`. This is the desired behavior for removed APIs.
+
+  **Migration:** set `config.app.style = "fastblocks_ui"` (recommended) or `"vanilla"` (explicit unstyled). User-confirmed zero external consumers of fastblocks, fastblocks-ui, or fastblocks-htmy; no deprecation-cycle intermediate release.
+
 ## [0.21.0] - 2026-08-21
 
 ### Added

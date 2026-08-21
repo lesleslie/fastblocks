@@ -419,7 +419,7 @@ class TestStartLanguageServerCommand:
 class TestCreateSubcommands:
     def test_create_template_makes_directories(self, runner, fb_cli, tmp_path, monkeypatch):
         monkeypatch.chdir(tmp_path)
-        result = runner.invoke(fb_cli, ["create", "template", "--style", "bulma"])
+        result = runner.invoke(fb_cli, ["create", "template", "--style", "fastblocks_ui"])
         assert result.exit_code == 0
         assert "Template skeleton created" in result.output
 
