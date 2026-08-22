@@ -286,14 +286,20 @@ async def get_settings_documentation() -> dict[str, Any]:
         "name": "FastBlocks Settings Documentation",
         "settings_files": {
             "app.yml": {
-                "description": "Application configuration",
-                "required_fields": {
-                    "title": "Application title",
-                    "domain": "Application domain",
-                },
-                "optional_fields": {
-                    "description": "Application description",
-                    "version": "Application version",
+                "description": "Application configuration. Schema source: "
+                "fastblocks.adapters.app._base.AppBaseSettings (canonical). "
+                "Optional — when absent, defaults from AppBaseSettings are used. "
+                "When present, Pydantic validates every field; invalid Literal "
+                "values (e.g., style: kelp) raise ValidationError at startup.",
+                "schema_source": "fastblocks.adapters.app._base.AppBaseSettings",
+                "fields": {
+                    "title": "Application title (optional)",
+                    "domain": "Application domain (optional)",
+                    "description": "Application description (optional)",
+                    "version": "Application version (optional)",
+                    "name": "App name (defaults to 'fastblocks')",
+                    "style": "Style — Literal['vanilla', 'fastblocks_ui']",
+                    "theme": "UI theme (defaults to 'light')",
                 },
             },
             "adapters.yml": {
