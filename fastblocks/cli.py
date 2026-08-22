@@ -34,7 +34,7 @@ from granian import Granian
 from rich.console import Console
 from fastblocks.adapters.oneiric_helper import resolve_instance
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
-from fastblocks.core.validators import DEFAULT_STYLE, StyleName
+from fastblocks.core.validators import StyleName
 
 console = Console()
 

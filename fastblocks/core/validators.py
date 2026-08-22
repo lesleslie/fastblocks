@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import difflib
 import typing as t
-from typing import Literal, Protocol, runtime_checkable
+from typing import Literal, runtime_checkable
 
 # ---------------------------------------------------------------------------
 # Canonical Literal: legal style values
