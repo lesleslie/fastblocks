@@ -46,6 +46,21 @@ def _check_dev_mode() -> None:
 
 async def _handle_registration() -> None:
     """Handle adapter registration using Oneiric."""
+    # Card 10 (F-L5-04 timing): emit a pre-app snapshot of the
+    # registry state at the start of registration, before
+    # ``register_builtin_adapters`` runs. Operators see the
+    # bootstrap signal BEFORE ``_get_app_instance`` returns —
+    # useful when the snapshot reveals "0 candidates registered"
+    # or "registry oversized", which would otherwise be visible
+    # only after the Starlette app is already accepting requests.
+    # The post-app ``emit_startup_log`` in ``get_app`` remains the
+    # final observability point; this is a *pre-app* signal so
+    # operators can decide to fail-fast before app construction
+    # completes.
+    from fastblocks.core import resolver_metrics
+
+    resolver_metrics.emit_startup_log(_resolver)
+
     # Oneiric: Register builtin adapters
     try:
         register_builtin_adapters(_resolver.unwrap())
