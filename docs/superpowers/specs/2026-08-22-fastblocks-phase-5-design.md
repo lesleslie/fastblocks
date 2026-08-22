@@ -34,12 +34,12 @@ strictly tests-only).
 2. **Hypothesis profile mechanics** — `dev`/`ci`/`debug` profiles registered
    in `tests/conftest.py`, env-var selector (`HYPOTHESIS_PROFILE`).
 3. **Two new shared fixtures** — `clean_axe_core_page` (function-scoped
-   Playwright page), `fastblocks_test_app` (session-scoped FastBlocks app).
+   Playwright page), `fastblocks_test_app` (function-scoped FastBlocks app).
 4. **Three new pytest markers** — `a11y`, `property`, `slow` (registered in
    `pyproject.toml`).
 5. **Property-based tests for the style × renderer matrix** — 4 cells ×
    100 Hypothesis examples.
-6. **HTMY XSS regression matrix** — all 34 absorbed components with
+6. **HTMY XSS regression matrix** — all 32 absorbed components with
    per-field assertions covering master plan §C4's three attack classes.
 7. **Jinja2 SSTI regression** — adversarial input alphabet; asserts no
    autoescape bypass in `{{ }}`, `[[ ]]`, `| safe` filters, `Markup`
@@ -47,8 +47,10 @@ strictly tests-only).
 8. **HTMY `hx_*` kwargs contract** — JSON-encoded variants
    (`hx-vals`, `hx-headers`).
 9. **MCP server integration canary** — 7-name tuple from
-   `profiles.FASTBLOCKS_TOOLS` registers cleanly; each tool is callable.
-10. **axe-core a11y on 34 components** — 0 violations of color-contrast,
+   `profiles.FASTBLOCKS_TOOLS` registers cleanly via the
+   `FastBlocksMCPServer.initialize()` path AND the ASGI
+   `_get_http_app` path; static resource catalog has 7 entries.
+10. **axe-core a11y on 32 components** — 0 violations of color-contrast,
     label, button-name, link-name, image-alt, aria-roles.
 11. **CSRF + HTMX integration** — 4 scenarios (no token → 403, valid
     header → 200, form field fallback → 200, expired token → 403).
@@ -82,7 +84,7 @@ clear prerequisites from the prior sub-phase, and a reviewer can approve
 | Sub-phase | Deliverable | Hard dependency |
 |---|---|---|
 | **5A** Foundation | `tests/strategies.py`, Hypothesis profiles, fixtures, markers, zero-collection-error verification | None |
-| **5B** Matrix coverage | Property-based matrix (4 cells × 100), HTMY XSS (34 components), Jinja2 SSTI, hx_* kwargs | 5A's `tests/strategies.py` |
+| **5B** Matrix coverage | Property-based matrix (4 cells × 100), HTMY XSS (32 components), Jinja2 SSTI, hx_* kwargs | 5A's `tests/strategies.py` |
 | **5C** Adversarial integration | MCP canary, axe-core on 34, CSRF+HTMX, static files, lifecycle | 5A's `fastblocks_test_app` fixture |
 
 **Why this ordering matters**: 5A ships the shared infrastructure (strategies,
@@ -101,16 +103,16 @@ Per master plan line 469, single top-level file with 4 custom strategies.
 
 | Strategy | Built from | Consumers |
 |---|---|---|
-| `safe_user_input` | `st.text` with HTML-safe alphabet (Lu/Ll/Nd/Pc/Pd/Zs) | 5B matrix; 5C axe-core attributes |
-| `unsafe_input` | `st.one_of(ssti_payloads_corpus, st.text)` — 15+ SSTI vectors from `tests/xss/ssti_payloads.json` plus random text with Po chars | 5B Jinja2 SSTI; 5B HTMY XSS matrix |
+| `safe_user_input` | `st.text` with alphabet (Lu/Ll/Nd/Pc/Pd/Po/Zs) — includes `&lt;&gt;"&amp;;(){}[]/=` per master plan line 469 | 5B matrix; 5C axe-core attributes |
+| `unsafe_input` | `st.one_of(st.sampled_from(_UNSAFE_PAYLOADS), st.text)` — 15+ SSTI vectors inlined as Python literal in `tests/strategies.py` plus random text with Po chars | 5B Jinja2 SSTI; 5B HTMY XSS matrix |
 | `attrs_dict` | `st.dictionaries` over **21 whitelisted HTMY attribute names** × `safe ∪ unsafe` | 5B HTMY XSS matrix |
-| `htmy_component` | `st.one_of(*st.builds(c, **field_strategies) for c in ABSORBED_COMPONENTS)` | 5B XSS matrix |
+| `htmy_component` | `st.one_of(*[st.from_type(c) for c in absorbed_components])` — enumerates 32 components via the package's `__all__` (Hypothesis auto-resolves field types via `typing.get_type_hints` — handles PEP 563) | 5B XSS matrix |
 
-**Whitelisted attrs** (21 names): class, id, role, tabindex, data-test,
+**Whitelisted attrs** (25 names): class, id, role, tabindex, data-test,
 data-id, data-state, aria-label, aria-hidden, aria-expanded,
 aria-controls, hx-get, hx-post, hx-target, hx-trigger, hx-swap, hx-vals,
 hx-headers, hx-include, hx-confirm, name, value, type, placeholder,
-title. (Counted at 21 by hand; §attrs_dict test asserts exact count.)
+title. (Counted at 25; §attrs_dict test asserts `len(WHITELIST) == 25`.)
 
 The whitelist covers master plan §C4's three attack classes:
 - (a) attrs dict-key escaping — per-field dict assertions.
@@ -150,10 +152,14 @@ from typing import TYPE_CHECKING
 from hypothesis import strategies as st
 
 if TYPE_CHECKING:
-    pass  # htmy_component imports ABSORBED_COMPONENTS lazily
+    pass
 
 
-# Curated SSTI + script payloads from tests/xss/ssti_payloads.json (15+ vectors)
+# Canonical 15-vector SSTI + script payload corpus (inlined as Python literal
+# — see ADR rationale: keeping it inline avoids a JSON-file indirection that
+# has historically been the source of stale-reference bugs). If the corpus
+# grows beyond ~30 vectors, migrate to tests/xss/ssti_payloads.json at that
+# point.
 _UNSAFE_PAYLOADS: tuple[str, ...] = (
     "{{7*7}}", "${7*7}", "#{7*7}}", "<%= 7*7 %>",
     "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}",
@@ -169,8 +175,12 @@ _UNSAFE_PAYLOADS: tuple[str, ...] = (
     "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}",
 )
 
+# Per master plan line 469: safe_user_input alphabet includes HTML delimiters
+# `<>"&;(){}[]/=` (all Punctuation-other). This is intentionally broader than
+# "no-escape-needed" — the strategy tests the rendering pipeline's handling of
+# HTML-significant characters in user input, including the escape path.
 _HTML_SAFE_CHARS = st.characters(
-    whitelist_categories=("Lu", "Ll", "Nd", "Pc", "Pd", "Zs"),
+    whitelist_categories=("Lu", "Ll", "Nd", "Pc", "Pd", "Po", "Zs"),
     max_codepoint=0xFFFF,
 )
 _UNSAFE_CHARS = st.characters(
@@ -202,29 +212,42 @@ attrs_dict: st.SearchStrategy[dict[str, str]] = st.dictionaries(
 
 
 def htmy_component() -> st.SearchStrategy:
-    """Strategy that yields an instance of one of the 34 absorbed HTMY components."""
+    """Strategy that yields an instance of one of the 32 absorbed HTMY components.
+
+    Enumerates components via the package's `__all__` (no separate
+    `ABSORBED_COMPONENTS` symbol exists in the package — verified 2026-08-22).
+    Uses Hypothesis's `st.from_type(c)` strategy which auto-resolves field
+    types via `typing.get_type_hints` (handles PEP 563 string annotations)
+    and supports nested dataclasses, Optional, Union, dict, list out of
+    the box. Replaces the manual `st.builds(...)` pattern from the v1
+    spec, which failed under `from __future__ import annotations`.
+
+    Pinning: if Phase 1B absorption grows beyond 32 components, the
+    `assert` below forces an explicit acknowledgement via test failure.
+    """
     import dataclasses
-    from fastblocks.adapters.templates.htmy_components import ABSORBED_COMPONENTS
+    from fastblocks.adapters.templates import htmy_components as _pkg
 
-    return st.one_of(*[
-        st.builds(component, **{
-            f.name: _infer_strategy(f.type)
-            for f in dataclasses.fields(component)
-        })
-        for component in ABSORBED_COMPONENTS
-        if dataclasses.is_dataclass(component)
-    ])
+    components = tuple(
+        getattr(_pkg, name)
+        for name in _pkg.__all__
+        if dataclasses.is_dataclass(getattr(_pkg, name))
+        and name != "FastBlocksComponent"
+    )
+    assert len(components) == 32, (
+        f"Expected 32 absorbed HTMY components, got {len(components)}. "
+        "Update tests that pin this count or amend the spec."
+    )
 
+    # Override Hypothesis's defaults for `str` fields: absorb unsafe_input
+    # alongside the implicit safe text. Achieved by registering the strategy
+    # at module load via `st.register_type_strategy`.
+    st.register_type_strategy(
+        str,
+        st.one_of(safe_user_input, unsafe_input),
+    )
 
-def _infer_strategy(type_hint: type) -> st.SearchStrategy:
-    """Map a dataclass field's type hint to a Hypothesis strategy."""
-    if type_hint is str:
-        return st.one_of(safe_user_input, unsafe_input)
-    if type_hint is int:
-        return st.integers(min_value=0, max_value=10_000)
-    if type_hint is bool:
-        return st.booleans()
-    return safe_user_input  # fallback for unknown types
+    return st.one_of(*[st.from_type(c) for c in components])
 ```
 
 **One decision point**: the strategy file is **flat** (`tests/strategies.py`)
@@ -233,10 +256,13 @@ sufficient for 4 strategies; a package is overkill until we cross ~10
 strategies.
 
 **Why `htmy_component()` is a function, not a module-level strategy**:
-lazy import of `ABSORBED_COMPONENTS` avoids the import chain
+lazy import of the `htmy_components` package avoids the import chain
 `tests → fastblocks.adapters.templates.htmy_components → ...` causing
-collection errors if `htmy_components` is in a broken state. The function
-form defers the import to test execution time.
+collection errors if the package is in a broken state. The function
+form defers the import to test execution time. We enumerate from
+`htmy_components.__all__` rather than importing a non-existent
+`ABSORBED_COMPONENTS` symbol — verified 2026-08-22 that no such symbol
+exists in the package.
 
 ### 5A.2 — Hypothesis profile mechanics
 
@@ -263,7 +289,7 @@ debugging helper, NOT a CI-stability feature.
 | Fixture | Scope | Purpose |
 |---|---|---|
 | `clean_axe_core_page` | function | Fresh Playwright page per test; closes browser context on teardown. Function scope is mandatory — Playwright pages aren't safe to share across tests. |
-| `fastblocks_test_app` | session | Builds a minimal FastBlocks app once per session; reused by CSRF, static-files, lifecycle, MCP canary. Cuts setup overhead from 4× ~5s to 1× ~5s. |
+| `fastblocks_test_app` | function | Builds a minimal FastBlocks app per test. Function scope (NOT session) is mandatory because the autouse `clean_resolver` fixture (Phase 1.5) wipes the resolver at both setup AND teardown of every test; a session-scoped app would have its registered candidates wiped before tests run. Per-test construction adds ~20s to total 5C runtime (4 tests × ~5s setup), which fits within the <5 min CI budget. |
 
 The existing `clean_resolver` fixture (Phase 1.5, master plan line 296)
 is unchanged. No conftest pollution beyond what's listed.
@@ -278,7 +304,7 @@ markers = [
     # ... existing markers from CLAUDE.md ...
     "a11y: axe-core integration tests (requires Playwright browser)",
     "property: Hypothesis property-based tests",
-    "slow: tests skipped in fast CI (full Hypothesis max_examples=100 + full axe-core on 34 components)",
+    "slow: tests skipped in fast CI (full Hypothesis max_examples=100 + full axe-core on 32 components)",
 ]
 ```
 
@@ -286,7 +312,7 @@ markers = [
 |---|---|
 | `a11y` | `tests/a11y/test_components_a11y.py` |
 | `property` | `tests/templates/test_style_renderer_property.py`, `tests/xss/test_htmy_component_xss_matrix.py` |
-| `slow` | Axe-core on 34 components + property-based at max-100 |
+| `slow` | Axe-core on 32 components + property-based at max-100 |
 
 ## Sub-phase 5B — Matrix coverage
 
@@ -319,13 +345,13 @@ derandomize=False)` per master plan line 469.
 supported or unsupported"): unsupported cells fail at startup (Phase 1A/2
 wiring), not in 5B. 5B only tests supported cells.
 
-### 5B.2 — HTMY XSS matrix (34 components)
+### 5B.2 — HTMY XSS matrix (32 components)
 
 Per master plan line 470: "XSS regression test covers all 34 absorbed
 components with per-field assertions."
 
 **Test structure**: one test file with a single parameterized loop. For
-each `component` in `ABSORBED_COMPONENTS`:
+each of the 32 absorbed components (enumerated via `__all__`):
 
 1. Build an instance with adversarial values for every dataclass field
    using `unsafe_input`.
@@ -334,7 +360,7 @@ each `component` in `ABSORBED_COMPONENTS`:
    (unless the field is documented as `SafeHTMLStr`).
 
 **Test file**: `tests/xss/test_htmy_component_xss_matrix.py` —
-parameterized over `ABSORBED_COMPONENTS`.
+parameterized over the 32 absorbed components (via `htmy_components.__all__`).
 
 **Per-field assertions**:
 - `str` fields → rendered output should HTML-escape the value (`<` → `&lt;`).
@@ -389,7 +415,7 @@ Per master plan line 475: "covers JSON-encoded variants: `hx-vals`,
 
 ### 5C.1 — MCP server integration canary
 
-Per master plan line 473: "spins up FastMCP server via `mcp_common`,
+Per master plan line 473: "spins up FastMCP server via `mcp.server.fastmcp`,
 asserts the registered tool list equals the 7-name tuple from
 `profiles.FASTBLOCKS_TOOLS` (catches the NameError regression history)."
 
@@ -398,19 +424,31 @@ asserts the registered tool list equals the 7-name tuple from
 **Test scenarios** (3):
 1. **Tools list tuple**: spin up `FastBlocksMCPServer`, call `list_tools()`,
    assert the result is exactly the 7-name tuple from
-   `profiles.FASTBLOCKS_TOOLS`.
-2. **Each tool is callable**: for each of the 7 names, call the tool with
-   a minimal valid argument set, assert no `NameError` (catches the
-   `tools.py:585-590` regression history).
-3. **Resource list**: call `list_resources()`, assert all 7 resources
-   per master plan line 209.
+   `profiles.FASTBLOCKS_TOOLS`. This single scenario exercises the
+   `tools.py:585-590` registration path that has historically masked
+   `NameError`s — `server.tool(...)` calls happen during `initialize()`,
+   so a NameError there surfaces as a missing name in the list.
+2. **Static resource catalog**: assert that the local `_RESOURCES` dict in
+   `fastblocks/mcp/resources.py` contains 7 entries (matches master plan
+   line 209). This is a static introspection test, NOT a server-spin-up
+   test, because `register_fastblocks_resources` (`resources.py:446-477`)
+   is currently a no-op stub — `server.resource(...)` is never called, so
+   `list_resources()` would return an empty list. The static catalog
+   check documents the expected surface area without depending on the
+   deferred wiring.
+3. **ASGI `_get_http_app` path coverage**: spin up the ASGI entry point
+   (`FastBlocksMCPServer()._get_http_app()`), inspect the resulting
+   `FastMCP` instance, assert the 7 names are registered there too. This
+   catches ADR 0011 Decision 6's `_get_http_app` orphan path where
+   `with suppress(Exception)` could mask a registration failure under
+   uvicorn.
 
 **Important caveat**: this canary validates the **current** registration
 path (Phase 1.5's `register_fastblocks_tools`), not the deferred Phase 4
 `apply_tool_profile` path. If Phase 4 is un-blocked, the canary needs to
 be rewritten to validate the new registration. Documented in ADR 0011.
 
-### 5C.2 — axe-core a11y on 34 components
+### 5C.2 — axe-core a11y on 32 components
 
 Per master plan line 472: "axe-core integration test runs against the
 output of each absorbed component's primary render path; zero violations
@@ -419,20 +457,46 @@ of color-contrast, label, button-name, link-name, image-alt, aria-roles."
 **Test file**: `tests/a11y/test_components_a11y.py`.
 
 **Test structure**: one parameterized test loop. For each `component` in
-`ABSORBED_COMPONENTS`:
+the 32 absorbed components:
 
-1. Build an instance with realistic defaults (non-adversarial).
+1. Build an instance with **realistic defaults** (non-adversarial).
 2. Render to HTML via the component's primary render path.
-3. Load into Playwright page (using `clean_axe_core_page` fixture).
-4. Run `axe-playwright-python`'s `axe.run()` with the 6 master-plan rules.
+3. **Load the rendered HTML AND the fastblocks-ui CSS bundle into the
+   Playwright page** before `axe.run()`. Without the CSS bundle, the
+   `color-contrast` rule reports "incomplete" (not "violation"), making
+   the assertion pass vacuously.
+4. Run `axe-playwright-python`'s `axe.run()` with the **expanded rule
+   subset**: `color-contrast`, `label`, `button-name`, `link-name`,
+   `image-alt`, `aria-roles`, `region`, `landmark-one-main`,
+   `page-has-heading-one`, `duplicate-id`. The first 6 are the master-plan
+   rules; the last 4 cover landmark semantics that absorbed layout
+   components (Shell, Section, Container, Footer, Navbar, NavList, Media)
+   actually trigger.
 5. Assert 0 violations.
 
-**Edge case handling**: components with HTMX interactive states (modals,
-dropdowns) may need additional props to satisfy `aria-roles` (e.g.,
-`aria-modal="true"`). Tests supply realistic defaults — they don't
-silently skip.
+**Realistic-defaults policy** for interactive components (modals,
+dropdowns, tabs, dialogs, drawers):
 
-**Largest single test in Phase 5**: ~60-90s for browser startup + 34
+| Component | Default posture | Required harness |
+|---|---|---|
+| Button | standalone, no special props | none |
+| Field | standalone, no special props | none |
+| Container / Columns / Section / Shell / Footer / Navbar / NavList / Media | landmark-style, content optional | `children` non-empty |
+| Modal / Dialog | open (rendered as `<dialog open aria-modal="true">`) | `aria-modal="true"` |
+| Dropdown | closed (panel-only — no trigger button) | none — flagged for `button-name` (see note) |
+| Tabs | rendered with default active tab | `default_active=0` |
+| Drawer | off-canvas (closed state) | none |
+| NavGroups | standalone nav landmark | non-empty `groups` |
+
+Components that legitimately cannot satisfy a rule (e.g., Dropdown
+renders only the panel and axe will always flag it for missing
+trigger button) are marked with a per-component **exclusion** documented
+inline in the test — silent skipping is not allowed.
+
+**Per-component fixture table** lives in `tests/a11y/_component_postures.py`
+(NEW), imported by the parameterized loop.
+
+**Largest single test in Phase 5**: ~60-90s for browser startup + 32
 renders.
 
 ### 5C.3 — CSRF + HTMX integration
@@ -477,7 +541,7 @@ and `app.state.jinja_env` are bound at startup, not per-request."
 
 ## Verification gate
 
-12 of 13 master-plan verification items (line 464-479) ship in Phase 5.
+13 of 14 master-plan verification items (line 464-479) ship in Phase 5.
 Item 14 (`asyncio.TaskGroup` cancellation propagation) is deferred to
 Phase 6 with rationale.
 
@@ -487,7 +551,7 @@ Phase 6 with rationale.
 | 2 | `pytest --collect-only -q -p xdist -n auto` reports 0 errors | 5A | line 467 |
 | 3 | Property-based test for every cell of style × renderer matrix | 5B | line 469 |
 | 4 | `tests/strategies.py` exists with 4 strategies | 5A | line 469 |
-| 5 | XSS regression test covers all 34 absorbed components with per-field assertions | 5B | line 470 |
+| 5 | XSS regression test covers all 32 absorbed components with per-field assertions | 5B | line 470 |
 | 6 | Accessibility contract test (axe-core on 34) | 5C | line 471-472 |
 | 7 | axe-core integration: 0 violations of 6 rules | 5C | line 472 |
 | 8 | MCP server integration test: 7-name tuple registered | 5C | line 473 |
@@ -500,8 +564,13 @@ Phase 6 with rationale.
 
 ## Coverage ratchet
 
-**Current**: 55.05% (Phase 0 baseline, master plan line 650).
-**Phase 5 target**: **65%** (+10pp).
+**Current**: 55.05% (Phase 1B post-absorption baseline, master plan line 434).
+Phase 0 baseline was 53.78% (master plan line 650). The 55.05% reflects
+absorbed fastblocks-htmy source plus its tests.
+**Phase 5 target**: **65%** (+9.95pp from current Phase 1B baseline;
++11.22pp from Phase 0 baseline). Master plan line 653 recommends
+70% by Phase 5; we stop at 65% because the remaining 5pp depends on
+Phase 6's observability hooks.
 
 The +10pp comes from:
 - 5B matrix + XSS + SSTI + hx_* → ~5pp.
@@ -522,7 +591,7 @@ Per CLAUDE.md §Process Discipline. Each commit ships with an IC block.
 
 | # | Subject | Returns | Demonstrable by |
 |---|---|---|---|
-| 1 | `chore(tests): install pytest-hypothesis, playwright, axe-playwright-python` | `pyproject.toml` dev-deps; `playwright install chromium` | `uv pip list \| grep -E "(pytest-hypothesis\|playwright\|axe-playwright)"` |
+| 1 | `chore(tests): install pytest-hypothesis, playwright, axe-playwright-python` | `pyproject.toml` dev-deps: `pytest-hypothesis ~=6.0`, `playwright ~=1.40`, `axe-playwright-python ~=0.10`; `playwright install chromium` | `uv pip list \| grep -E "(pytest-hypothesis\|playwright\|axe-playwright)"` |
 | 2 | `feat(tests): tests/strategies.py — 4 Hypothesis strategies` | `tests/strategies.py` with 4 strategies | `python -c "from tests.strategies import safe_user_input, unsafe_input, attrs_dict, htmy_component; print('OK')"` |
 | 3 | `chore(tests): zero-collection-error + Hypothesis profiles` | `tests/conftest.py` extensions + 3 new markers in `pyproject.toml` | `pytest --collect-only -q -p no:xdist` returns 0; `pytest --collect-only -q -p xdist -n auto` returns 0 |
 
@@ -531,7 +600,7 @@ Per CLAUDE.md §Process Discipline. Each commit ships with an IC block.
 | # | Subject | Returns | Demonstrable by |
 |---|---|---|---|
 | 4 | `test(templates): property-based style × renderer matrix` | `tests/templates/test_style_renderer_property.py` (4 cells × 100) | 4 property-based tests pass |
-| 5 | `test(xss): HTMY XSS matrix for all 34 absorbed components` | `tests/xss/test_htmy_component_xss_matrix.py` | 34 components × 3 attack vectors = ~100+ tests pass |
+| 5 | `test(xss): HTMY XSS matrix for all 32 absorbed components` | `tests/xss/test_htmy_component_xss_matrix.py` | 32 components × 3 attack vectors = ~100+ tests pass |
 | 6 | `test(templates): Jinja2 SSTI regression` | `tests/templates/test_jinja2_ssti.py` | 4 SSTI scenarios pass |
 | 7 | `test(adapters): HTMY hx_* kwargs contract test` | `tests/adapters/templates/test_htmy_hx_kwargs.py` | 5 hx_* scenarios pass |
 
@@ -540,7 +609,7 @@ Per CLAUDE.md §Process Discipline. Each commit ships with an IC block.
 | # | Subject | Returns | Demonstrable by |
 |---|---|---|---|
 | 8 | `test(mcp): server integration canary` | `tests/mcp/test_server_canary.py` | 3 scenarios pass (tools tuple, each callable, resources) |
-| 9 | `chore(tests): tests/a11y/ — axe-core on 34 components` | `tests/a11y/test_components_a11y.py` + `clean_axe_core_page` fixture | `pytest tests/a11y/ -v` passes; 0 axe-core violations |
+| 9 | `chore(tests): tests/a11y/ — axe-core on 32 components` | `tests/a11y/test_components_a11y.py` + `clean_axe_core_page` fixture | `pytest tests/a11y/ -v` passes; 0 axe-core violations |
 | 10 | `test(integration): CSRF + HTMX` | `tests/integration/test_csrf_htmx.py` + `fastblocks_test_app` fixture | 4 CSRF scenarios pass |
 | 11 | `test(integration): static files + lifecycle` | `tests/integration/test_static_files.py` + `tests/integration/test_lifespan.py` | 3 static + 2 lifecycle scenarios pass |
 | 12 | `chore(ci): bump coverage ratchet to 65%` | `pyproject.toml` updated with `--cov-fail-under = 65` | `pytest --cov-fail-under=65` exits 0 |
@@ -587,7 +656,7 @@ Well under the **5-min CI budget** (user decision).
 
 ## Acceptance criteria for "Phase 5 done"
 
-All 12 verification items (#1-13 minus deferred #14) pass AND:
+All 13 verification items (#1-13 minus deferred #14) pass AND:
 - Coverage ratchet at 65% (`pytest --cov-fail-under=65` exits 0).
 - All 12 commits landed on `main` per Bodai pre-1.0 merge policy
   (worktree → ff-merge into main, no PRs).
@@ -614,8 +683,11 @@ All 12 verification items (#1-13 minus deferred #14) pass AND:
 - Phase 4 deferral: `docs/adr/0011-phase-4-deferral.md`
 - CLAUDE.md §Process Discipline (Integration Contract requirement):
   `CLAUDE.md` (project root)
-- `tests/xss/ssti_payloads.json` corpus: existing Phase 1B XSS test
-  corpus (15+ vectors)
+- `_UNSAFE_PAYLOADS` tuple in `tests/strategies.py`: inlined canonical
+  15-vector SSTI corpus (no separate JSON file; rationale: avoid
+  stale-reference indirection bugs)
 - `profiles.FASTBLOCKS_TOOLS`: `fastblocks/mcp/profiles.py:113`
 - `tests/conftest.py` extensions (Hypothesis profiles): new in this design
-- `ABSORBED_COMPONENTS`: `fastblocks/adapters/templates/htmy_components/__init__.py`
+- 32 absorbed components: enumerated via
+  `fastblocks.adapters.templates.htmy_components.__all__` (no separate
+  `ABSORBED_COMPONENTS` symbol — verified 2026-08-22)
