@@ -1,5 +1,7 @@
 """MCP server for FastBlocks adapter discovery and introspection."""
 
+from __future__ import annotations
+
 import importlib
 import inspect
 from contextlib import suppress
@@ -104,45 +106,108 @@ class AdapterDiscoveryServer:
                     await self._inspect_adapter_file(adapter_file, category)
 
     async def _discover_from_acb_registry(self) -> None:
-        """Discover adapters from ACB dependency registry."""
-        with suppress(Exception):
-            # Try to get adapters from ACB registry
-            # This may not be available in all ACB versions
-            # Use existing depends resolver
+        """Discover adapters from the Oneiric dependency resolver.
 
-            # Get all registered instances that might be adapters
-            registry = getattr(depends, "_registry", {})
+        Iterates registered Candidates (not a phantom ``_registry`` of
+        instances, which Oneiric never exposed) and resolves each into
+        an adapter-shaped object. The outer try/except is intentionally
+        narrow: a single bad candidate no longer masks the whole pass.
+        """
+        try:
+            candidates = depends.list_active("fastblocks")
+        except (AttributeError, KeyError, RuntimeError, TypeError) as exc:
+            # Resolver transport failure: the registry probe itself is best-effort.
+            # We log + return rather than silently swallow.
+            self._log_registry_probe_failure(exc)
+            return
 
-            for adapter in registry.values():
-                if hasattr(adapter, "MODULE_ID") and hasattr(adapter, "MODULE_STATUS"):
-                    adapter_name = adapter.__class__.__name__.lower().replace(
-                        "adapter", ""
-                    )
+        for candidate in candidates:
+            # Per-candidate scope: a single bad candidate is logged then
+            # skipped, not silently absorbed for the whole pass.
+            try:
+                instance = self._resolve_candidate_instance(candidate)
+            except (AttributeError, KeyError, RuntimeError, TypeError, ImportError, ValueError) as exc:
+                self._log_candidate_resolution_failure(candidate.key, exc)
+                continue
 
-                    if adapter_name not in self._discovered_adapters:
-                        # Try to determine category from module path
-                        module_path = adapter.__class__.__module__
-                        category = self._extract_category_from_module(module_path)
+            if not hasattr(instance, "MODULE_ID") or not hasattr(
+                instance, "MODULE_STATUS"
+            ):
+                continue
 
-                        info = AdapterInfo(
-                            name=adapter_name,
-                            module_path=module_path,
-                            class_name=adapter.__class__.__name__,
-                            module_id=adapter.MODULE_ID,
-                            module_status=adapter.MODULE_STATUS,
-                            category=category,
-                            description=self._extract_description(adapter.__class__),
-                            protocols=self._extract_protocols(adapter.__class__),
-                            settings_class=self._extract_settings_class(
-                                adapter.__class__
-                            ),
-                        )
+            adapter_cls = instance.__class__
+            adapter_name = (
+                adapter_cls.__name__.lower().replace("adapter", "").strip("_") or candidate.key
+            )
 
-                        self._discovered_adapters[adapter_name] = info
+            if adapter_name in self._discovered_adapters:
+                continue
 
-                        if category not in self._category_map:
-                            self._category_map[category] = []
-                        self._category_map[category].append(adapter_name)
+            module_path = adapter_cls.__module__
+            category = self._extract_category_from_module(module_path)
+
+            info = AdapterInfo(
+                name=adapter_name,
+                module_path=module_path,
+                class_name=adapter_cls.__name__,
+                module_id=instance.MODULE_ID,
+                module_status=instance.MODULE_STATUS,
+                category=category,
+                description=self._extract_description(adapter_cls),
+                protocols=self._extract_protocols(adapter_cls),
+                settings_class=self._extract_settings_class(adapter_cls),
+            )
+
+            self._discovered_adapters[adapter_name] = info
+            self._category_map.setdefault(category, []).append(adapter_name)
+
+    @staticmethod
+    def _log_registry_probe_failure(exc: BaseException) -> None:
+        """Log a transport-level failure probing the registry.
+
+        Visible to operators (not swallowed) but never raised — discovery
+        is opportunistic metadata, not a hard dependency for app boot.
+        """
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "fastblocks.mcp.discovery: registry probe failed: %s", exc,
+        )
+
+    @staticmethod
+    def _log_candidate_resolution_failure(key: str, exc: BaseException) -> None:
+        """Log a per-candidate resolution failure.
+
+        Replaces the old `with suppress(Exception)` blanket. One bad
+        candidate must not silently kill discovery of the rest.
+        """
+        import logging
+
+        logging.getLogger(__name__).warning(
+            "fastblocks.mcp.discovery: skipping candidate %r: %s", key, exc,
+        )
+
+    @staticmethod
+    def _resolve_candidate_instance(candidate: Any) -> Any:
+        """Return a live instance for a registered Candidate.
+
+        Oneiric's ``Candidate.factory`` is a union of ``Callable[..., Any]``
+        and ``str`` (the latter denotes an import path the resolver
+        should resolve). For the callable branch we invoke the factory
+        directly. For the string branch we import the dotted target
+        and grab the attribute the resolver expects.
+        """
+        factory = candidate.factory
+        if isinstance(factory, str):
+            module_name, _, attr = factory.partition(":")
+            if not module_name or not attr:
+                raise ValueError(
+                    f"candidate {candidate.key!r}: string factory {factory!r}"
+                    " must be 'module.path:attribute'",
+                )
+            module = importlib.import_module(module_name)
+            return getattr(module, attr)
+        return factory()
 
     async def _inspect_adapter_file(self, adapter_file: Path, category: str) -> None:
         """Inspect a single adapter file for adapter classes."""
