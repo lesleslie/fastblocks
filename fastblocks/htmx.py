@@ -16,6 +16,8 @@ The FastBlocks implementation extends the original with:
 - Event-driven HTMX updates via ACB Events system
 """
 
+from __future__ import annotations
+
 import asyncio
 import contextvars
 import json

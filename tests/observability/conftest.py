@@ -36,6 +36,7 @@ import pytest
 try:
     from opentelemetry import trace
     from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.trace import TracerProvider as _TracerProviderBase
     from opentelemetry.trace import _TRACER_PROVIDER_SET_ONCE
 
     HAS_OTEL_SDK = True
@@ -43,7 +44,7 @@ except ImportError:  # pragma: no cover - exercised only in slim envs
     HAS_OTEL_SDK = False
 
 
-def _set_provider_silently(provider: object) -> None:
+def _set_provider_silently(provider: _TracerProviderBase) -> None:
     """Reset the OTel Once-flag and call set_tracer_provider.
 
     OTel's public ``trace.set_tracer_provider`` is one-shot per
@@ -51,9 +52,16 @@ def _set_provider_silently(provider: object) -> None:
     Resetting the flag is the only way to perform the swap-then-
     restore pattern documented for opentelemetry-test; the flag is
     itself a private API but only its boolean state is touched.
+
+    The accepted type is the API-level ``opentelemetry.trace.TracerProvider``
+    (aliased here as ``_TracerProviderBase``); both the SDK's
+    ``TracerProvider`` (the fresh test-managed provider) and the
+    ``ProxyTracerProvider`` returned by ``trace.get_tracer_provider()``
+    inherit from it, so this signature accepts the previous provider
+    and the fresh provider without a widening-to-``object`` cast.
     """
     _TRACER_PROVIDER_SET_ONCE._done = False
-    trace.set_tracer_provider(provider)  # type: ignore[arg-type]
+    trace.set_tracer_provider(provider)
 
 
 @pytest.fixture(autouse=True)
@@ -78,9 +86,12 @@ def _tracer_provider_isolation():
     # TracerProvider() is intentionally empty: no span processors,
     # no exporters — tests add their own if needed. On teardown we
     # call fresh.shutdown() to flush any pending spans before
-    # restoring the previous provider.
-    previous_provider: object | None = None
-    fresh_provider: object | None = None
+    # restoring the previous provider. Variable types are the API
+    # base ``_TracerProviderBase`` (alias of
+    # ``opentelemetry.trace.TracerProvider``); the SDK's TracerProvider
+    # and ProxyTracerProvider both inherit from it.
+    previous_provider: _TracerProviderBase | None = None
+    fresh_provider: _TracerProviderBase | None = None
     if HAS_OTEL_SDK:
         previous_provider = trace.get_tracer_provider()
         fresh_provider = TracerProvider()
@@ -94,8 +105,9 @@ def _tracer_provider_isolation():
         # test-managed provider so its background threads stop.
         if HAS_OTEL_SDK and fresh_provider is not None:
             with suppress(Exception):  # pragma: no cover - defensive
-                _set_provider_silently(previous_provider)
-                fresh_provider.shutdown()  # type: ignore[union-attr]
+                if previous_provider is not None:
+                    _set_provider_silently(previous_provider)
+                fresh_provider.shutdown()
 
         # Restore structlog contextvars to the entry-time snapshot.
         # clear_contextvars() drops any keys bound during the test;
