@@ -38,12 +38,14 @@ def load_fastblocks_settings(
     Returns:
         AppSettings populated from YAML + Oneiric defaults.
     """
-    from oneiric.core.config import load_settings  # local import — avoids module-load cycle
+    from oneiric.core.config import (
+        load_settings,  # local import — avoids module-load cycle
+    )
 
-    if path is not None and not Path(path).exists():
+    if path is not None and not Path(path).is_file():
         raise FileNotFoundError(f"app.yml not found at {path}")
     oneiric = load_settings(path=path, project_name="fastblocks")
     return AppSettings.model_validate(oneiric.model_dump(mode="python"))
 
 
-__all__ = ["load_fastblocks_settings", "_FILE_NOT_FOUND"]
+__all__ = ["_FILE_NOT_FOUND", "load_fastblocks_settings"]

@@ -6,15 +6,13 @@ from pathlib import Path
 
 import pytest
 import yaml
-
-from fastblocks.adapters.app.default import AppSettings
 from fastblocks.core.settings_loader import (
-    _FILE_NOT_FOUND,
     load_fastblocks_settings,
 )
 
 
 class TestLoadFastblocksSettings:
+    @pytest.mark.unit
     def test_loader_returns_app_settings_with_yaml_fields(
         self, tmp_path: Path
     ) -> None:
@@ -32,6 +30,7 @@ class TestLoadFastblocksSettings:
         assert s.style == "vanilla"
         assert s.version == "1.0.0"
 
+    @pytest.mark.unit
     def test_loader_raises_filenotfound_when_no_yaml(
         self, tmp_path: Path
     ) -> None:
@@ -39,6 +38,7 @@ class TestLoadFastblocksSettings:
         with pytest.raises(FileNotFoundError):
             load_fastblocks_settings(path=str(tmp_path / "nonexistent.yml"))
 
+    @pytest.mark.unit
     def test_loader_propagates_yaml_error(self, tmp_path: Path) -> None:
         """Malformed YAML propagates yaml.YAMLError."""
         bad_yaml = tmp_path / "bad.yml"
@@ -46,6 +46,7 @@ class TestLoadFastblocksSettings:
         with pytest.raises(yaml.YAMLError):
             load_fastblocks_settings(path=str(bad_yaml))
 
+    @pytest.mark.unit
     def test_loader_rejects_invalid_literal_via_pydantic(
         self, tmp_path: Path
     ) -> None:
@@ -57,6 +58,7 @@ class TestLoadFastblocksSettings:
         with pytest.raises(ValidationError):
             load_fastblocks_settings(path=str(bad_yaml))
 
+    @pytest.mark.unit
     def test_loader_ignores_extra_yaml_fields(
         self, tmp_path: Path
     ) -> None:
@@ -66,6 +68,7 @@ class TestLoadFastblocksSettings:
         s = load_fastblocks_settings(path=str(yaml_path))
         assert s.style == "vanilla"
 
+    @pytest.mark.unit
     def test_loader_falls_back_to_defaults_when_yaml_empty(
         self, tmp_path: Path
     ) -> None:
