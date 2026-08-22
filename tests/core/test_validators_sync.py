@@ -158,8 +158,8 @@ def test_cli_imports_style_name_from_validators() -> None:
         )
         return
     raise AssertionError(
-        f"cli.py does not import from fastblocks.core.validators; "
-        f"the StyleName rename has not landed"
+        "cli.py does not import from fastblocks.core.validators; "
+        "the StyleName rename has not landed"
     )
 
 
@@ -167,6 +167,7 @@ def test_cli_imports_style_name_from_validators() -> None:
 def test_default_style_is_a_style_name_member() -> None:
     """DEFAULT_STYLE in validators.py is one of StyleName's members."""
     import typing
+
     from fastblocks.core.validators import DEFAULT_STYLE, StyleName
 
     legal = typing.get_args(StyleName)
@@ -174,3 +175,31 @@ def test_default_style_is_a_style_name_member() -> None:
         f"DEFAULT_STYLE {DEFAULT_STYLE!r} is not one of StyleName's "
         f"members {legal}"
     )
+
+
+@pytest.mark.unit
+def test_validators_rejects_pep_646_starred_literal_outside_validators() -> None:
+    """Literal[*values] unpacking (PEP 646) outside validators.py is rejected.
+
+    Future drift vector: a contributor extracts the style set to
+    ``STYLES = ('vanilla', 'fastblocks_ui')`` and writes
+    ``Literal[*STYLES]``. AST must reject that pattern outside
+    ``validators.py`` because the spec mandates inline enumeration
+    (the sync test's source-of-truth is the Literal itself, not a
+    separate tuple).
+    """
+    # Scan both cli.py and _base.py for any Literal[*...] pattern
+    for path in (APP_BASE_PATH, CLI_PATH):
+        tree = ast.parse(path.read_text())
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Subscript):
+                continue
+            # The slice inside Literal[*values] is an ast.Starred
+            slice_node = node.slice
+            if isinstance(slice_node, ast.Starred):
+                raise TypeError(
+                    f"{path.name} uses Literal[*...] (PEP 646) "
+                    f"unpacking; the spec mandates inline enumeration "
+                    f"in fastblocks.core.validators.StyleName. Replace "
+                    f"with a direct Literal[...] or import StyleName."
+                )

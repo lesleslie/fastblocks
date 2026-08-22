@@ -30,13 +30,8 @@ Phase 1.5x remediation, Card 5 (F-L4-01).
 from __future__ import annotations
 
 import pytest
-from oneiric.core.resolution import Candidate, Resolver
+from oneiric.core.resolution import Candidate
 from fastblocks.core.resolver import FastblocksRegistry
-
-
-def _fresh_registry() -> FastblocksRegistry:
-    """A FastblocksRegistry over a private Resolver (no global state)."""
-    return FastblocksRegistry(Resolver())
 
 
 def _patch_resolver(
@@ -53,9 +48,11 @@ def _patch_resolver(
 
 
 @pytest.mark.unit
-def test_resolve_instance_returns_factory_result_on_hit() -> None:
+def test_resolve_instance_returns_factory_result_on_hit(
+    fresh_registry: FastblocksRegistry,
+) -> None:
     """Hit path: registered factory invoked exactly once, return value passed through."""
-    registry = _fresh_registry()
+    registry = fresh_registry
 
     calls: list[int] = []
     sentinel = object()
@@ -79,9 +76,11 @@ def test_resolve_instance_returns_factory_result_on_hit() -> None:
 
 
 @pytest.mark.unit
-def test_resolve_instance_returns_none_on_unknown_key() -> None:
+def test_resolve_instance_returns_none_on_unknown_key(
+    fresh_registry: FastblocksRegistry,
+) -> None:
     """Miss path: unknown (domain, key) yields None, never raises."""
-    registry = _fresh_registry()
+    registry = fresh_registry
 
     # Empty registry — no candidates registered under this key.
     result = registry.resolve_instance("fastblocks", "never_registered")
@@ -97,10 +96,11 @@ def test_resolve_instance_returns_none_on_unknown_key() -> None:
 )
 def test_resolve_instance_returns_none_on_resolver_exception(
     monkeypatch: pytest.MonkeyPatch,
+    fresh_registry: FastblocksRegistry,
     exc: BaseException,
 ) -> None:
     """Resolver exception path: every swallow-set exception collapses to None."""
-    registry = _fresh_registry()
+    registry = fresh_registry
     _patch_resolver(monkeypatch, registry, exc)
 
     result = registry.resolve_instance("fastblocks", "any")
@@ -115,10 +115,11 @@ def test_resolve_instance_returns_none_on_resolver_exception(
     ids=["KeyError", "AttributeError", "RuntimeError", "TypeError"],
 )
 def test_resolve_instance_returns_none_when_factory_raises(
+    fresh_registry: FastblocksRegistry,
     exc: BaseException,
 ) -> None:
     """Factory exception path: swallow-set exceptions inside the factory collapse to None."""
-    registry = _fresh_registry()
+    registry = fresh_registry
 
     def boom() -> object:
         raise exc
@@ -133,7 +134,9 @@ def test_resolve_instance_returns_none_when_factory_raises(
 
 
 @pytest.mark.unit
-def test_resolve_instance_propagates_undocumented_factory_exception() -> None:
+def test_resolve_instance_propagates_undocumented_factory_exception(
+    fresh_registry: FastblocksRegistry,
+) -> None:
     """Out-of-set factory exceptions must NOT be swallowed.
 
     ValueError is NOT in the documented swallow set. A future
@@ -141,7 +144,7 @@ def test_resolve_instance_propagates_undocumented_factory_exception() -> None:
     breaks this contract — Phase 2 callers will silently lose
     data on misconfigurations.
     """
-    registry = _fresh_registry()
+    registry = fresh_registry
 
     def boom() -> object:
         raise ValueError("intentional non-swallowed failure")
@@ -157,9 +160,10 @@ def test_resolve_instance_propagates_undocumented_factory_exception() -> None:
 @pytest.mark.unit
 def test_resolve_instance_propagates_undocumented_resolver_exception(
     monkeypatch: pytest.MonkeyPatch,
+    fresh_registry: FastblocksRegistry,
 ) -> None:
     """Out-of-set resolver exceptions must NOT be swallowed."""
-    registry = _fresh_registry()
+    registry = fresh_registry
     _patch_resolver(monkeypatch, registry, OSError("network down"))
 
     with pytest.raises(OSError, match="network down"):
@@ -167,7 +171,9 @@ def test_resolve_instance_propagates_undocumented_resolver_exception(
 
 
 @pytest.mark.unit
-def test_resolve_instance_returns_none_for_non_callable_factory() -> None:
+def test_resolve_instance_returns_none_for_non_callable_factory(
+    fresh_registry: FastblocksRegistry,
+) -> None:
     """Defensive test: a string-typed factory returns None (calls fail with TypeError).
 
     Oneiric allows ``factory`` to be either a callable or an import
@@ -178,7 +184,7 @@ def test_resolve_instance_returns_none_for_non_callable_factory() -> None:
     module handle. Phase 2 callers that need the import-path branch
     should compose ``resolver.resolve(...)`` directly.
     """
-    registry = _fresh_registry()
+    registry = fresh_registry
     registry.register(
         Candidate(
             domain="fastblocks",

@@ -140,6 +140,46 @@ def register_candidate_strict(
     resolver.register(candidate)
 
 
+def register_style_candidate(
+    depends: FastblocksRegistry,
+    style_name: str,
+    module: Any,
+) -> None:
+    """Register a style adapter module after isinstance(module, StyleAdapter).
+
+    Thin wrapper around Card 1's ``register_candidate_strict`` that
+    adds a Protocol isinstance gate. If the module lacks any of the
+    four ``StyleAdapter`` methods, raises ``TypeError`` naming the
+    missing methods. ``CandidateValidationError`` from the underlying
+    strict registration propagates.
+
+    Phase 2 ships this function but no production call site uses it
+    today — adapter registration sites will adopt it incrementally in
+    future phases. The Protocol gate exists so the contract is
+    enforceable the moment a site adopts it.
+
+    The ``module`` is wrapped in a no-arg factory lambda when handed
+    to ``register_candidate_strict`` so pydantic's ``Candidate.factory``
+    validation (callable-or-str) accepts it. Style adapter modules are
+    typically Python module objects (not callable directly); the
+    factory closure returns the module instance for downstream
+    consumers.
+    """
+    from fastblocks.core.validators import (
+        StyleAdapter,
+        _protocol_missing_methods,
+    )
+
+    if not isinstance(module, StyleAdapter):
+        missing = _protocol_missing_methods(module, StyleAdapter)
+        raise TypeError(
+            f"Style adapter {style_name!r} is missing required "
+            f"StyleAdapter methods: {missing}. See "
+            f"fastblocks/core/validators.py for the contract."
+        )
+    register_candidate_strict(depends, "style", style_name, lambda: module)
+
+
 def resolve_instance(
     resolver: Resolver | FastblocksRegistry, domain: str, key: str
 ) -> Any:

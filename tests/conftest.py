@@ -452,3 +452,25 @@ def mock_fastblocks_app(mock_config):
     app.middleware = []
     app.routes = []
     return app
+
+
+@pytest.fixture
+def fresh_registry():
+    """A private FastblocksRegistry for tests that need isolated state.
+
+    Lifted from tests/core/test_resolve_instance.py:_fresh_registry
+    during Phase 2 Commit4. Card5's helper was private (leading
+    underscore); Phase 2 promotes it to a public conftest fixture
+    consumed by both Card5's tests and Phase 2's
+    test_resolver_mismatch.py.
+
+    The fixture builds a private Resolver (not the canonical
+    singleton from get_resolver()) — Phase 1.5x Card 8's "non-
+    canonical warning" will fire on construction. That warning is
+    acceptable here; it's the same posture Card5 used and the
+    existing test_facade_identity_check.py suppresses it via caplog.
+    """
+    from oneiric.core.resolution import Resolver
+    from fastblocks.core.resolver import FastblocksRegistry
+
+    return FastblocksRegistry(Resolver())
