@@ -404,3 +404,211 @@ class TestResolverOwnershipBoundary:
 
         registry = FastblocksRegistry(get_resolver())
         assert registry.unwrap() is get_resolver()
+
+
+class TestCandidateSelectionFieldsOwnership:
+    """CI guard for ADR 0008 Rule 2 — selection mechanism ownership.
+
+    Phase 1.5.7 (ADR 0008) records three rules:
+
+    - Rule 1 (Absorb or wrap) — enforced by ``TestResolverOwnershipBoundary``.
+    - **Rule 2** (Selection mechanism ownership): fastblocks code MUST NOT
+      set ``priority``, ``stack_level``, or ``provider`` fields on
+      ``Candidate`` instances directly. Those are upstream selection
+      policy; the only field fastblocks may set is ``source``
+      (``CandidateSource.LOCAL_PKG`` for provenance).
+    - Rule 3 (Legal values are fastblocks's job) — Phase 2 deliverable.
+
+    Before this CI guard, Rule 2 was verified only by grep at ADR-write
+    time — a future contributor could add
+    ``Candidate(..., priority=999)`` and the test suite would stay green.
+    This class makes the rule enforceable in CI.
+
+    The grep regexes match the exact commands documented in
+    ``docs/adr/0008-oneiric-selection-mechanism-ownership.md``
+    §Verification. Future ADR amendments should keep these regexes in
+    sync with the ADR's prose.
+
+    Note: ``register_candidate``'s signature itself defends against the
+    most common accident — the facade never exposes
+    ``priority``/``stack_level``/``provider`` as parameters (Card 1
+    of the Phase 1.5x remediation wave). The signature check below
+    pins that defense so it cannot regress.
+    """
+
+    # ADR 0008 §Verification regex #1: direct Candidate() constructions
+    # with selection fields. Mirrors the grep command in the ADR.
+    # re.DOTALL is required because Python multi-line Candidate()
+    # constructor calls put each arg on its own line; the regex must
+    # match across newlines to catch the real-world shape.
+    _CANDIDATE_SELECTION_FIELD_DECL = re.compile(
+        r"Candidate\s*\([^)]*(?:priority|stack_level|provider)\s*=",
+        re.DOTALL,
+    )
+
+    # ADR 0008 §Verification regex #2: register_candidate() invocations
+    # passing selection fields as keyword args. Mirrors the grep command
+    # in the ADR. (register_candidate's signature does not expose these,
+    # so any match here is necessarily wrong.)
+    _REGISTER_CANDIDATE_SELECTION_FIELD_DECL = re.compile(
+        r"register_candidate\s*\([^)]*(?:priority|stack_level|provider)\s*=",
+        re.DOTALL,
+    )
+
+    # Sanity filter: lines that look like Candidate() but are actually a
+    # COMMENT or docstring referencing the rule. Catches ADR text and
+    # regulator comments. We can't reliably detect this with regex alone,
+    # so we filter by file role (tests/, ADR docs, this CI guard itself).
+    _EXEMPT_FILE_PATTERNS: tuple[str, ...] = (
+        "tests/mcp/test_ci_guard.py",
+        "docs/adr/",
+        # The canary fixture's metadata dict has key 'source' — not a
+        # selection field. No exemption needed but listed for future-proofing.
+    )
+
+    def _iter_fastblocks_sources_for_rule2(self) -> list[Path]:
+        """Yield every .py file under fastblocks/ (excludes ADR docs + the CI guard itself).
+
+        Rule 2 is about fastblocks SOURCE code, not docs and not the
+        CI guard that enforces the rule. Exempting both keeps the
+        test honest (no self-reference) and tolerant (no false positives
+        from the ADR's own prose).
+        """
+        fastblocks_dir = REPO_ROOT / "fastblocks"
+        out: list[Path] = []
+        for py_file in fastblocks_dir.rglob("*.py"):
+            if ".venv" in py_file.parts:
+                continue
+            if py_file.name.endswith(".backup.py"):
+                continue
+            # The CI guard itself + ADR docs are exempted.
+            rel = str(py_file.relative_to(REPO_ROOT))
+            if any(rel.startswith(p) for p in self._EXEMPT_FILE_PATTERNS):
+                continue
+            # Also exempt the singleton's home (defensive — resolver.py
+            # may legitimately construct Candidates without selection
+            # fields).
+            if rel == "fastblocks/core/resolver.py":
+                continue
+            out.append(py_file)
+        return out
+
+    @pytest.mark.unit
+    def test_no_candidate_construction_sets_priority_or_stack_level_or_provider(self) -> None:
+        r"""Rule 2 grep #1: zero ``Candidate(...priority=...)`` writes.
+
+        Mirrors ``docs/adr/0008-...md`` §Verification. A future
+        contributor who adds ``Candidate(..., priority=999)`` to any
+        fastblocks source file (outside the singleton's home) will
+        fail this test in CI.
+
+        Implementation note: the regex spans multi-line Python
+        constructor calls (``Candidate(\\n  ...\\n  priority=999\\n)``),
+        so we search the whole file text with ``re.DOTALL`` and count
+        newlines up to the match start to get a stable line number
+        for the violation message.
+        """
+        violations: list[tuple[Path, int, str]] = []
+        for path in self._iter_fastblocks_sources_for_rule2():
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for m in self._CANDIDATE_SELECTION_FIELD_DECL.finditer(text):
+                # Translate match offset to 1-indexed line number.
+                line_no = text.count("\n", 0, m.start()) + 1
+                # Surface the line of the match + a snippet of the
+                # surrounding 3 lines for context.
+                snippet = "\n      ".join(
+                    text.splitlines()[max(0, line_no - 2):line_no + 1]
+                )
+                violations.append((path, line_no, snippet))
+        assert not violations, (
+            "ADR 0008 Rule 2 violation: fastblocks code MUST NOT set "
+            "Candidate's selection fields (priority, stack_level, provider).\n"
+            "The selection mechanism is upstream policy (ADR 0008 Rule 2).\n"
+            "Use `source=CandidateSource.LOCAL_PKG` for provenance only.\n"
+            "Violations:\n"
+            + "\n".join(f"  {p}:{n}:\n      {s}" for p, n, s in violations)
+        )
+
+    @pytest.mark.unit
+    def test_no_register_candidate_call_passes_priority_or_stack_level_or_provider(self) -> None:
+        """Rule 2 grep #2: zero ``register_candidate(...priority=...)`` writes.
+
+        Mirrors ADR §Verification. ``register_candidate``'s signature
+        does not expose ``priority``/``stack_level``/``provider`` — any
+        call passing these as kwargs is necessarily wrong.
+        """
+        violations: list[tuple[Path, int, str]] = []
+        for path in self._iter_fastblocks_sources_for_rule2():
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+            for m in self._REGISTER_CANDIDATE_SELECTION_FIELD_DECL.finditer(text):
+                line_no = text.count("\n", 0, m.start()) + 1
+                snippet = "\n      ".join(
+                    text.splitlines()[max(0, line_no - 2):line_no + 1]
+                )
+                violations.append((path, line_no, snippet))
+        assert not violations, (
+            "ADR 0008 Rule 2 violation: register_candidate() must not be "
+            "called with selection fields. Its signature does not expose "
+            "priority/stack_level/provider (Card 1 of the Phase 1.5x "
+            "remediation wave). Violations:\n"
+            + "\n".join(f"  {p}:{n}:\n      {s}" for p, n, s in violations)
+        )
+
+    @pytest.mark.unit
+    def test_fastblocks_registry_register_candidate_signature_excludes_selection_fields(self) -> None:
+        """Pin the signature defense: ``FastblocksRegistry.register_candidate`` MUST NOT
+        accept ``priority``/``stack_level``/``provider`` as parameters.
+
+        This is the load-bearing defense for ADR 0008 Rule 2: even if
+        a future contributor bypasses the grep tests above, the
+        signature itself prevents the most common accident. Card 1 of
+        the Phase 1.5x remediation wave established this signature;
+        this test pins it.
+        """
+        import inspect
+
+        from fastblocks.core.resolver import FastblocksRegistry
+
+        sig = inspect.signature(FastblocksRegistry.register_candidate)
+        forbidden = {"priority", "stack_level", "provider"}
+        actual = set(sig.parameters.keys())
+        overlap = forbidden & actual
+        assert not overlap, (
+            f"FastblocksRegistry.register_candidate must not accept "
+            f"selection-field parameters {sorted(forbidden)!r}; "
+            f"found {sorted(overlap)!r}. "
+            f"ADR 0008 Rule 2 forbids fastblocks from setting "
+            f"Candidate's selection mechanism directly. "
+            f"Actual parameters: {sorted(actual)!r}."
+        )
+
+    @pytest.mark.unit
+    def test_oneiric_helper_register_candidate_signature_excludes_selection_fields(self) -> None:
+        """Same signature pin for the legacy helper module.
+
+        ``fastblocks.adapters.oneiric_helper.register_candidate`` is
+        still imported by ~80 callers; its signature also must not
+        expose selection fields.
+        """
+        import inspect
+
+        from fastblocks.adapters.oneiric_helper import register_candidate
+
+        sig = inspect.signature(register_candidate)
+        forbidden = {"priority", "stack_level", "provider"}
+        actual = set(sig.parameters.keys())
+        overlap = forbidden & actual
+        assert not overlap, (
+            f"oneiric_helper.register_candidate must not accept "
+            f"selection-field parameters {sorted(forbidden)!r}; "
+            f"found {sorted(overlap)!r}. "
+            f"ADR 0008 Rule 2 forbids fastblocks from setting "
+            f"Candidate's selection mechanism directly. "
+            f"Actual parameters: {sorted(actual)!r}."
+        )
