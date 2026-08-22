@@ -134,8 +134,9 @@ def format_resolution_explanation_one_line(
     If ``explanation.ordered`` is empty:
         style=vanila: no candidates registered
 
-    If ``explanation`` lacks ``as_dict()`` (different Oneiric version),
-    fall back to ``repr(explanation)`` prefixed with ``explain:``.
+    If ``explanation`` lacks an ``ordered`` attribute (different
+    Oneiric version), fall back to ``repr(explanation)`` prefixed with
+    ``explain:``.
     """
     if explanation is None:
         return "<unavailable>"
@@ -187,7 +188,7 @@ def format_resolver_mismatch(
         # Future phases may add Literal types for other domains
         legal_tuple: tuple[str, ...] = ()
     else:
-        legal_tuple = legal  # type: ignore[assignment]
+        legal_tuple = t.cast("tuple[str, ...]", legal)
 
     # Find nearest neighbor for typo hints
     nearest: str | None = None
