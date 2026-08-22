@@ -14,8 +14,7 @@ The public API does BOTH:
      automatically.
 
 Returns a `Token` from the typed `set` so callers can pair with
-`reset(token)` for token-safe de-allocation. The legacy `clear()`
-API is kept as a deprecated alias for one commit, removed in Task 4.
+`reset(token)` for token-safe de-allocation.
 """
 from __future__ import annotations
 
@@ -71,17 +70,6 @@ def reset(token: Token) -> None:
     structlog.contextvars.unbind_contextvars(
         "trace_id", "span_id", "parent_span_id",
     )
-
-
-def clear() -> None:
-    """Legacy alias; deprecated. Use reset(token) for token-safe de-allocation.
-
-    Kept for one commit per Phase 6.5 plan Task 2; Task 4 removes it.
-    """
-    current = _current_trace.get()
-    if current is not None:
-        structlog.contextvars.clear_contextvars()
-    _current_trace.set(None)
 
 
 # Module-public names re-exported via __init__.py
