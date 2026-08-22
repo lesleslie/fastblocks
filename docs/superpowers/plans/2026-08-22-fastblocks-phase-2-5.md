@@ -304,7 +304,7 @@ git push origin main
 ## Task 3: refactor(app) — wire AppSettings() to use loader with soft fallback
 
 **Files:**
-- Modify: `fastblocks/adapters/app/default.py:182` (the one AppSettings() call site)
+- Modify: `fastblocks/adapters/app/default.py` (the one AppSettings() call site — but the tests construct AppSettings() directly, so wire at the AppSettings.__init__ level for full coverage)
 - Create: `tests/core/test_app_settings_yaml_wiring.py` (NEW, 4 tests)
 - Modify: `fastblocks/mcp/resources.py:288` (update doc to point at AppBaseSettings as canonical schema source)
 
