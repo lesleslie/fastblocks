@@ -85,7 +85,7 @@ clear prerequisites from the prior sub-phase, and a reviewer can approve
 |---|---|---|
 | **5A** Foundation | `tests/strategies.py`, Hypothesis profiles, fixtures, markers, zero-collection-error verification | None |
 | **5B** Matrix coverage | Property-based matrix (4 cells × 100), HTMY XSS (32 components), Jinja2 SSTI, hx_* kwargs | 5A's `tests/strategies.py` |
-| **5C** Adversarial integration | MCP canary, axe-core on 34, CSRF+HTMX, static files, lifecycle | 5A's `fastblocks_test_app` fixture |
+| **5C** Adversarial integration | MCP canary, axe-core on 32, CSRF+HTMX, static files, lifecycle | 5A's `fastblocks_test_app` fixture |
 
 **Why this ordering matters**: 5A ships the shared infrastructure (strategies,
 fixtures, profiles) that 5B and 5C consume. If we discovered mid-5B that
@@ -105,7 +105,7 @@ Per master plan line 469, single top-level file with 4 custom strategies.
 |---|---|---|
 | `safe_user_input` | `st.text` with alphabet (Lu/Ll/Nd/Pc/Pd/Po/Zs) — includes `&lt;&gt;"&amp;;(){}[]/=` per master plan line 469 | 5B matrix; 5C axe-core attributes |
 | `unsafe_input` | `st.one_of(st.sampled_from(_UNSAFE_PAYLOADS), st.text)` — 15+ SSTI vectors inlined as Python literal in `tests/strategies.py` plus random text with Po chars | 5B Jinja2 SSTI; 5B HTMY XSS matrix |
-| `attrs_dict` | `st.dictionaries` over **21 whitelisted HTMY attribute names** × `safe ∪ unsafe` | 5B HTMY XSS matrix |
+| `attrs_dict` | `st.dictionaries` over **25 whitelisted HTMY attribute names** × `safe ∪ unsafe` | 5B HTMY XSS matrix |
 | `htmy_component` | `st.one_of(*[st.from_type(c) for c in absorbed_components])` — enumerates 32 components via the package's `__all__` (Hypothesis auto-resolves field types via `typing.get_type_hints` — handles PEP 563) | 5B XSS matrix |
 
 **Whitelisted attrs** (25 names): class, id, role, tabindex, data-test,
@@ -236,16 +236,26 @@ def htmy_component() -> st.SearchStrategy:
     )
     assert len(components) == 32, (
         f"Expected 32 absorbed HTMY components, got {len(components)}. "
-        "Update tests that pin this count or amend the spec."
+        "Update tests that pin this count or amend "
+        "docs/superpowers/specs/2026-08-22-fastblocks-phase-5-design.md."
     )
 
-    # Override Hypothesis's defaults for `str` fields: absorb unsafe_input
-    # alongside the implicit safe text. Achieved by registering the strategy
-    # at module load via `st.register_type_strategy`.
-    st.register_type_strategy(
-        str,
-        st.one_of(safe_user_input, unsafe_input),
-    )
+    # Note: do NOT call st.register_type_strategy(str, ...) here. Such a
+    # registration mutates Hypothesis's process-wide type registry and would
+    # contaminate every other test in the suite that uses Hypothesis's default
+    # str strategy. The XSS matrix test feeds unsafe_input directly via
+    # attrs_dict; other tests that don't want unsafe values get safe text.
+    #
+    # Hypothesis's st.from_type() raises InvalidArgument on `object`-typed
+    # fields. At least 4 of the 32 components have such fields
+    # (Button.class_, Card.header/body/footer/class_, Field.label/help_text/,
+    # Navbar.brand/start/end/class_). Register object → safe_user_input at
+    # module load to satisfy the type-dispatch. `Any` is a special form, not
+    # a class — fields typed as `Any` are not handled by st.from_type and
+    # require manual override per field (documented in the spec; the
+    # implementer should extend the assertion message to name any new
+    # affected fields).
+    st.register_type_strategy(object, safe_user_input)
 
     return st.one_of(*[st.from_type(c) for c in components])
 ```
@@ -289,7 +299,7 @@ debugging helper, NOT a CI-stability feature.
 | Fixture | Scope | Purpose |
 |---|---|---|
 | `clean_axe_core_page` | function | Fresh Playwright page per test; closes browser context on teardown. Function scope is mandatory — Playwright pages aren't safe to share across tests. |
-| `fastblocks_test_app` | function | Builds a minimal FastBlocks app per test. Function scope (NOT session) is mandatory because the autouse `clean_resolver` fixture (Phase 1.5) wipes the resolver at both setup AND teardown of every test; a session-scoped app would have its registered candidates wiped before tests run. Per-test construction adds ~20s to total 5C runtime (4 tests × ~5s setup), which fits within the <5 min CI budget. |
+| `fastblocks_test_app` | function | Builds a minimal FastBlocks app per test. Function scope (NOT session) is mandatory because the autouse `clean_resolver` fixture (Phase 1.5) **reinitializes** the resolver singleton at both setup AND teardown of every test (replacing `self.registry` with a fresh `CandidateRegistry` while preserving instance identity — see `tests/conftest.py:340-367`); a session-scoped app would have its registered candidates wiped before tests run. Per-test construction adds ~20s to total 5C runtime (4 tests × ~5s setup), which fits within the <5 min CI budget. |
 
 The existing `clean_resolver` fixture (Phase 1.5, master plan line 296)
 is unchanged. No conftest pollution beyond what's listed.
@@ -368,7 +378,7 @@ parameterized over the 32 absorbed components (via `htmy_components.__all__`).
   contain raw value (trust boundary).
 - `list[str]` fields → each element escaped.
 - `dict[str, str]` fields (attrs) → values escaped; keys validated
-  against the 21-name whitelist.
+  against the 25-name whitelist.
 
 ### 5B.3 — Jinja2 SSTI regression
 
@@ -421,32 +431,47 @@ asserts the registered tool list equals the 7-name tuple from
 
 **Test file**: `tests/mcp/test_server_canary.py`.
 
-**Test scenarios** (3):
+**Test scenarios** (2):
 1. **Tools list tuple**: spin up `FastBlocksMCPServer`, call `list_tools()`,
    assert the result is exactly the 7-name tuple from
    `profiles.FASTBLOCKS_TOOLS`. This single scenario exercises the
    `tools.py:585-590` registration path that has historically masked
    `NameError`s — `server.tool(...)` calls happen during `initialize()`,
    so a NameError there surfaces as a missing name in the list.
-2. **Static resource catalog**: assert that the local `_RESOURCES` dict in
-   `fastblocks/mcp/resources.py` contains 7 entries (matches master plan
-   line 209). This is a static introspection test, NOT a server-spin-up
-   test, because `register_fastblocks_resources` (`resources.py:446-477`)
-   is currently a no-op stub — `server.resource(...)` is never called, so
-   `list_resources()` would return an empty list. The static catalog
-   check documents the expected surface area without depending on the
-   deferred wiring.
-3. **ASGI `_get_http_app` path coverage**: spin up the ASGI entry point
-   (`FastBlocksMCPServer()._get_http_app()`), inspect the resulting
-   `FastMCP` instance, assert the 7 names are registered there too. This
-   catches ADR 0011 Decision 6's `_get_http_app` orphan path where
-   `with suppress(Exception)` could mask a registration failure under
-   uvicorn.
+2. **ASGI `_get_http_app` path coverage**: import the module-level
+   `_get_http_app` function from `fastblocks/mcp.server` and invoke it
+   directly (NOT via `FastBlocksMCPServer()._get_http_app()` — the
+   method doesn't exist; the function is module-level per
+   `fastblocks/mcp/server.py:141`). Assert the returned ASGI app is
+   non-None. This catches ADR 0011 Decision 6's `_get_http_app` orphan
+   path where `with suppress(Exception)` could mask a registration
+   failure under uvicorn — the test asserts the function does NOT
+   silently return None.
+
+**Dropped scenarios** (and why):
+
+- **Resource list (master plan line 209)**: deferred — the 7-entry
+  resource surface in `fastblocks/mcp/resources.py:460-471` is built
+  inside `register_fastblocks_resources` as a local `resources` dict
+  that's only logged, not exposed. There is no module-level `_RESOURCES`
+  symbol to introspect (verified 2026-08-22). Exposing it would require
+  a production-code change to `resources.py`, which violates the
+  strict-tests-only boundary. Phase 5 ships without a resource-list
+  assertion; resource-list coverage waits for the deferred Oneiric
+  MCP helper (master plan line 209).
 
 **Important caveat**: this canary validates the **current** registration
 path (Phase 1.5's `register_fastblocks_tools`), not the deferred Phase 4
 `apply_tool_profile` path. If Phase 4 is un-blocked, the canary needs to
 be rewritten to validate the new registration. Documented in ADR 0011.
+
+**Note on Integration Contract template**: each Phase 5 commit ships with
+an IC block (Triggered from / Returns to / Demonstrable by / Rollback
+signal / Observability added) per the Phase 2 mechanical-four convention.
+The template lives at `docs/plans/TEMPLATE.md` — the fastblocks
+`CLAUDE.md` does not currently contain a §Process Discipline section
+that defines this format, so this spec inlines the template via the
+per-commit IC blocks in §5A/§5B/§5C.
 
 ### 5C.2 — axe-core a11y on 32 components
 
@@ -552,7 +577,7 @@ Phase 6 with rationale.
 | 3 | Property-based test for every cell of style × renderer matrix | 5B | line 469 |
 | 4 | `tests/strategies.py` exists with 4 strategies | 5A | line 469 |
 | 5 | XSS regression test covers all 32 absorbed components with per-field assertions | 5B | line 470 |
-| 6 | Accessibility contract test (axe-core on 34) | 5C | line 471-472 |
+| 6 | Accessibility contract test (axe-core on 32) | 5C | line 471-472 |
 | 7 | axe-core integration: 0 violations of 6 rules | 5C | line 472 |
 | 8 | MCP server integration test: 7-name tuple registered | 5C | line 473 |
 | 9 | Jinja2 SSTI regression: no autoescape bypass | 5B | line 474 |
@@ -585,7 +610,7 @@ ADR, new) once it ships.
 
 ## Per-commit Integration Contracts (12 commits)
 
-Per CLAUDE.md §Process Discipline. Each commit ships with an IC block.
+Per Phase 2 mechanical-four convention. Each commit ships with an IC block.
 
 ### 5A — 3 commits
 
@@ -614,7 +639,7 @@ Per CLAUDE.md §Process Discipline. Each commit ships with an IC block.
 | 11 | `test(integration): static files + lifecycle` | `tests/integration/test_static_files.py` + `tests/integration/test_lifespan.py` | 3 static + 2 lifecycle scenarios pass |
 | 12 | `chore(ci): bump coverage ratchet to 65%` | `pyproject.toml` updated with `--cov-fail-under = 65` | `pytest --cov-fail-under=65` exits 0 |
 
-**All 12 commits are independently revertible** per CLAUDE.md §Process
+**All 12 commits are independently revertible** per Phase 2 convention;
 Discipline.
 
 ### Cumulative runtime estimate
@@ -681,8 +706,10 @@ All 13 verification items (#1-13 minus deferred #14) pass AND:
 - Phase 2's `StyleName` Literal: `fastblocks/core/validators.py`
 - Phase 2.5's `AppBaseSettings`: `fastblocks/adapters/app/_base.py`
 - Phase 4 deferral: `docs/adr/0011-phase-4-deferral.md`
-- CLAUDE.md §Process Discipline (Integration Contract requirement):
-  `CLAUDE.md` (project root)
+- Integration Contract template: `docs/plans/TEMPLATE.md` (the
+  fastblocks `CLAUDE.md` does not currently contain a §Process Discipline
+  section; this spec inlines the template via the per-commit IC blocks
+  in §5A/§5B/§5C)
 - `_UNSAFE_PAYLOADS` tuple in `tests/strategies.py`: inlined canonical
   15-vector SSTI corpus (no separate JSON file; rationale: avoid
   stale-reference indirection bugs)
