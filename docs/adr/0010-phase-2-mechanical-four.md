@@ -3,8 +3,8 @@ status: accepted
 role: phase-2-closeout
 date: 2026-08-21
 last_reviewed: 2026-08-21
-supersedes: null
 superseded_by: null
+blocks_on: []
 decision_date: 2026-08-21
 topic: phase-2-type-safe-configuration-mechanical-four-closeout
 ---
@@ -69,13 +69,18 @@ string. The formatter helper produces the operator-facing single-line
 string. Names the formatter explicitly so implementers don't reinvent
 it.
 
-### Decision 6: `suppress(Exception)` ratchet at master plan baseline (123 sites)
+### Decision 6: `suppress(Exception)` ratchet at empirical baseline (122 sites)
 
-Phase 2 holds the master plan line 313 baseline. No new sites added,
-no sites deleted. The ratchet test
+Phase 2 locks the empirically measured baseline of **122**
+`suppress(Exception)` sites in `fastblocks/`. The ratchet test
 (`tests/core/test_suppress_exception_ratchet.py`) runs `git grep` via
-`subprocess` and asserts count ≤ 123. Future Phase 7 (final dead-code
-pass) may lower the count; the test passes on a lower count.
+`subprocess` and asserts count ≤ 122. No new sites added, no sites
+deleted. Future Phase 7 (final dead-code pass) may lower the count;
+the test passes on a lower count. Master plan line 313 records 123
+but the empirical count (verified via
+`git grep -c 'suppress(Exception)' -- fastblocks/` on 2026-08-21) is
+122. The ratchet locks the empirical number; the master plan
+reference is documented as off-by-one for future amendment.
 
 ### Decision 7: `app.yml` → `AppBaseSettings` wiring deferred to Phase 2.5
 
@@ -100,6 +105,62 @@ Standard library default. Catches typos like `'vanila'` → `'vanilla'`,
 | `try/except Exception:` migration in `core/style_registry.py:66` | Framework-boundary; out of Phase 2 scope | Phase 7 |
 | `register_template_candidate` decorator | No consumer site; Protocol still defined for Phase 6 lint anchor | When first renderer adopts the contract |
 | `app.yml` → `AppBaseSettings` wiring | Production code uses defaults; wiring is a separate task | Phase 2.5 |
+
+## Consequences
+
+### Positive
+
+- **Single source of truth for legal values.** With the
+  `StyleName` Literal in `core/validators.py` and the sync test,
+  every consumer (CLI, `AppBaseSettings`, future Prometheus labels)
+  reads from the same Literal set. Adding a new style means
+  editing one place; drift is caught by CI.
+- **Protocol-based adapter contracts replace ad-hoc checks.**
+  Concrete adapters now declare `register_style_functions` /
+  `register_template_candidate` on a runtime-checkable Protocol;
+  `register_style_candidate` raises `TypeError` on Protocol
+  violations at the wrapper boundary, before any Oneiric
+  resolution runs.
+- **Operator-facing `explain()` output is canonical.** The
+  `format_resolution_explanation_one_line()` helper centralizes
+  the single-line rendering so CLI users and logs see the same
+  string; future surfaces (Grafana, error pages) read from the
+  same source.
+- **`suppress(Exception)` ratchet prevents silent regressions.**
+  The empirical baseline (122 sites) is locked in CI; future
+  commits cannot add new sites without an explicit ADR amendment.
+
+### Negative
+
+- **Literal-type ergonomics are caller-bound.** Typer's `Literal`
+  support is best-effort (the help text shows the choices, but
+  Pydantic runtime validation catches the rest). Adding a new
+  style still requires editing the Literal at the home module,
+  the CLI, and any validator — the sync test enforces this.
+- **Protocol runtime checks have an import cost.**
+  `@runtime_checkable` on every Protocol walks the full attribute
+  list on each `isinstance()`. For the fastblocks surface area
+  (two Protocols) the overhead is negligible, but a future
+  contributor adding many more Protocols should revisit whether
+  static-only Protocols would suffice.
+- **Ratchet baseline is one-shot and empirical.** The 122 baseline
+  is whatever `git grep` returns today; if a future contributor
+  removes one site, the test still passes (it asserts `≤` not
+  `==`). There is no "must restore" enforcement — only a
+  "must not add" one.
+
+### Rollback signal
+
+If any Decision 1-5 proves unworkable in practice — e.g. the
+Literal home drifts back into per-adapter modules, or the
+Protocol runtime check overhead shows up in profiling — a new
+ADR must be filed amending or superseding this one with concrete
+counterexamples before the decision is relaxed. The
+`suppress(Exception)` ratchet (Decision 6) is the most likely
+target for revision; if Phase 7 wants to lower the baseline
+permanently, the new number goes into
+`MASTER_PLAN_BASELINE` in `tests/core/test_suppress_exception_ratchet.py`
+and this ADR is amended to match.
 
 ## Cross-references
 
