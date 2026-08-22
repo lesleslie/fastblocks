@@ -2,10 +2,10 @@
 status: accepted
 role: phase-2-closeout
 date: 2026-08-21
-last_reviewed: 2026-08-21
+last_reviewed: 2026-08-22
 superseded_by: null
 blocks_on: []
-decision_date: 2026-08-21
+decision_date: 2026-08-22
 topic: phase-2-type-safe-configuration-mechanical-four-closeout
 ---
 
@@ -101,10 +101,163 @@ Standard library default. Catches typos like `'vanila'` → `'vanilla'`,
 
 | Item | Reason | Lands in |
 |---|---|---|
-| Renderer match-statement dispatch | Requires renderer axis on `AppBaseSettings`; forces Phase 4 + 6 to take a position early | Phase 4 / 6 |
+| Renderer match-statement dispatch | See Decision 9 — multi-agent review on 2026-08-22 found no production consumer for `app.renderer`; deferred until consumer exists | Phase 4 / 6 (when first real renderer-axis consumer is built) |
 | `try/except Exception:` migration in `core/style_registry.py:66` | Framework-boundary; out of Phase 2 scope | Phase 7 |
 | `register_template_candidate` decorator | No consumer site; Protocol still defined for Phase 6 lint anchor | When first renderer adopts the contract |
 | `app.yml` → `AppBaseSettings` wiring | Production code uses defaults; wiring is a separate task | Phase 2.5 |
+| `SafeHTMLStr = NewType("SafeHTMLStr", str)` propagation | See Decision 10 — multi-agent review found (a) type/runtime contract inversion in `tests/xss/test_component_xss.py:115-133` (test pins **escape**, design claimed no-escape), (b) duplicates `htmy.SafeStr` already in use, (c) breaks `tests/xss/test_component_xss.py:156-171` nested-rendering test if applied to `Container.content` | Future phase; if ever shipped, alias `SafeHTMLStr = htmy.SafeStr` |
+
+## Phase 2 Finish Review (2026-08-22)
+
+A multi-agent design review on 2026-08-22 (architecture-council, python-pro,
+web-components-specialist, css-architect, htmx-specialist, htmy-specialist,
+accessibility-auditor — 7 reviewers) examined the proposed Phase 2 finish
+scope: match-statement dispatch on style + renderer axes, plus `SafeHTMLStr`
+propagation. The review surfaced load-bearing issues that changed the
+original scoping decisions. This section records the additional decisions.
+
+### Decision 9: Renderer match-statement dispatch deferred (renderer axis dropped)
+
+The proposed `RendererName = Literal["jinja2", "htmy"]` field on
+`AppBaseSettings` and a `register_renderer_functions(env, renderer_name)`
+match dispatcher were dropped from Phase 2 finish scope. Two findings:
+
+1. **No production consumer.** `grep -rn '\.renderer\b' fastblocks/ --include='*.py'`
+   returned no consumer reading `app.renderer`. The Jinja2 entry point
+   `AsyncJinja2Templates.__init__` (jinja2.py:910 `init_envs`) is selected
+   by import resolution and a settings-key lookup, not by an
+   `AppBaseSettings.renderer` field. The HTMY entry point
+   (`AdvancedHTMYComponentRegistry.render_component_with_lifecycle`,
+   htmy.py:781-827) doesn't expose an "Environment" abstraction matching
+   the proposed `TemplateAdapter.init_envs() -> t.Any` signature.
+
+2. **HTMY bypasses the style adapter entirely.** `htmy_components/adapter.py:194-207`
+   `inline_css()` is hardcoded to `Path(fastblocks_ui.get_css_path()).read_text(...)`,
+   ignoring `style_name`. A `style="vanilla"` + `renderer="htmy"` config
+   would still bundle fastblocks-ui CSS via the HTMY renderer — the
+   "two-axis rendering architecture" intent is structurally violated by
+   the live code.
+
+Adding the renderer Literal without a consumer creates a layer that
+fires Pydantic validation but is unreachable from production code. The
+match-statement on the renderer axis is therefore meaningless without
+preceding work: (a) add a real consumer (lifespan startup hook reading
+`app.renderer` and selecting between Jinja2 / HTMY entry points), then
+(b) close the HTMY inline_css bypass, then (c) add the Literal +
+match.
+
+### Decision 10: SafeHTMLStr propagation deferred
+
+The proposed `SafeHTMLStr = NewType("SafeHTMLStr", str)` trust-boundary
+type and `mark_safe(s)` helper were deferred. Three findings made the
+ship path untenable:
+
+1. **Contract inversion.** `tests/xss/test_component_xss.py:115-133`
+   pins the *actual* escape behavior: `Container(content='<div>safe</div>')`
+   MUST render as `&lt;div&amp;gt;safe&lt;/div&amp;gt;`. The design's
+   claim that "Container.content is pre-rendered HTML, no escape" was
+   factually backwards — the test docstring itself states "the spec
+   §C4 pin for 'pre-rendered HTML, no escape' was aspirational; the
+   implementation escapes." Shipping `SafeHTMLStr` as a "no-escape"
+   marker would create a type/runtime mismatch: type says do-not-escape,
+   runtime escapes anyway. The information asymmetry (junior dev who
+   skips `mark_safe` still gets safe behavior via runtime escape) makes
+   the type a misleading affordance.
+
+2. **Duplicate type.** `htmy_components/base.py:5` already imports
+   `from htmy import SafeStr` and `FastBlocksComponent.htmy(context)`
+   returns `SafeStr(self._markup(context))`. Adding `SafeHTMLStr`
+   alongside creates two incompatible types for one concept; every
+   cross-boundary call (`Container(content=...)` accepting a `SafeStr`
+   from a nested component) requires a coercion that the new type
+   breaks.
+
+3. **Nested-component test broken.** `tests/xss/test_component_xss.py:156-171`
+   (`test_nested_rendering_each_layer_escapes`) constructs
+   `Container(content=Column(content=Field(label=PAYLOAD).htmy({})).htmy({}))`.
+   `Field(...).htmy({})` returns `SafeStr`, not `str`. Narrowing
+   `Container.content` from `object = None` to `SafeHTMLStr` would
+   typecheck-fail that test, which is the very test the design
+   claimed to preserve.
+
+The trust-boundary primitive (escape-at-runtime vs assertion-at-type)
+remains valid future work. If/when shipped, the right shape is to
+**alias** `SafeHTMLStr = htmy.SafeStr` (not parallel) and ship a
+runtime helper that aligns with the actual escape contract — not a
+"do not escape" marker.
+
+### Decision 11: Match dispatch deferred (style axis too, not just renderer)
+
+Decision 9 dropped the renderer axis. Decision 10 deferred SafeHTMLStr.
+The match-statement dispatch on the **style axis** was originally
+proposed as part of the same finish, but two findings changed the
+prior calculus:
+
+1. **`vanilla.py` already exists.** The design proposed adding a new
+   `fastblocks/adapters/style/vanilla.py` as a no-op `StyleAdapter`.
+   The file already exists: 242 lines, defines `VanillaStyle(StyleBase)`
+   with `COMPONENT_CLASSES`, `get_stylesheet_links()`, `get_component_class()`,
+   `build_component_html()`, plus two Oneiric registrations
+   (`key="vanilla"` line 92, `key="styles"` line 234). Overwriting it
+   would destroy the CSS-class mapping and resolver registrations.
+
+2. **Protocol method-name mismatch (real bug in mechanical-four).**
+   `validators.py:60` declares `StyleAdapter.register_style_functions(env)`
+   as the Protocol method (single-name). The live runtime dispatcher
+   at `style_registry.py:60` calls `getattr(module, f"register_{style_name}_functions", None)`
+   (per-style-named). The existing `fastblocks_ui.py:140` implements
+   `register_fastblocks_ui_functions(env)` but NOT `register_style_functions(env)`.
+   Under the Phase 2 mechanical-four `register_style_candidate` Protocol
+   gate (`oneiric_helper.py:173`), `isinstance(fastblocks_ui, StyleAdapter)`
+   returns False (missing method per `_protocol_missing_methods`), and
+   `register_style_candidate("fastblocks_ui", fastblocks_ui)` raises
+   `TypeError` naming `register_style_functions` as missing. The
+   existing fastblocks_ui module fails the gate.
+
+The match-statement dispatch is therefore blocked until the Protocol
+contract is reconciled with the live per-style naming convention. The
+right fix (per CSS-architect finding) is to add module-level aliases
+in `fastblocks_ui.py` and `vanilla.py`:
+`register_style_functions = register_fastblocks_ui_functions`. That
+work is out of scope for the Phase 2 finish and lands as a separate
+bug fix amending Decision 3.
+
+### Decision 12: Phase 2 finish scope = empty
+
+The original directive ("finish Phase 2 — match-statement dispatch and
+`SafeHTMLStr` propagation") resolves to **no code shipped** based on
+Decisions 9-11. The work that remains in Phase 2 finish is:
+
+- Documentation only — the multi-agent review's findings are recorded
+  in this ADR.
+- Stale-note fix in master plan line 54 — the "Phase 3.1" reference
+  is corrected to "Phase 1B (absorption) and Phase 1.5 (registry
+  consolidation)."
+- Known-issue annotation: Decision 3's Protocol method-name claim
+  (`register_style_functions` is the Protocol method) is contradicted
+  by the live `register_{style_name}_functions` pattern; the gate
+  fails on the existing `fastblocks_ui.py` module. A bug-fix commit
+  is required to align the Protocol with the runtime dispatcher
+  before match dispatch can be safely added.
+
+### Known issue: Protocol method-name mismatch requires amendment to Decision 3
+
+Decision 3 stated: "the per-style-naming convention
+(`register_vanilla_functions`, `register_fastblocks_ui_functions`) is
+**broken**; concrete adapters must implement `register_style_functions`."
+The 2026-08-22 review found the opposite is true: the live code uses
+per-style naming, the Protocol demands single-name, and the existing
+production modules implement per-style. Decision 3's claim was made
+during the mechanical-four design before the live `fastblocks_ui.py`
+was read. A bug-fix ADR is required to reconcile this; until then,
+the mechanical-four `register_style_candidate` gate would reject
+the existing `fastblocks_ui.py` module on day-one of the merge.
+
+The likely amendment: Decision 3 stays in spirit (Protocol gates
+should be enforceable) but reverses the polarity — add module-level
+aliases in the production adapters so both naming conventions are
+satisfiable, and the runtime dispatcher keeps using per-style while
+the gate uses the alias.
 
 ## Consequences
 

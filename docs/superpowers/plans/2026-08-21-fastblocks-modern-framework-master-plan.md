@@ -51,7 +51,7 @@ Bodai is a multi-component ecosystem:
 
 **fastblocks** is a sibling: a Starlette-based Python web framework for SSR/HTMX apps. It is NOT the orchestration layer (that's Mahavishnu), NOT the state layer (that's Dhara). It is internal infrastructure for Bodai — same posture, different concern. The "zero external consumers" assertion (verified by Phase 0 preflight) means fastblocks has no third-party users.
 
-**Note:** CLAUDE.md:220 says ARCHITECTURE.md still describes fastblocks as "ACB-based"; the codebase actually moved to Oneiric in Phase 3.1. The code is the source of truth.
+**Note:** CLAUDE.md:220 says ARCHITECTURE.md still describes fastblocks as "ACB-based"; the codebase actually moved to Oneiric in Phase 1B (absorption) and Phase 1.5 (registry consolidation). The code is the source of truth.
 
 ## Context
 
