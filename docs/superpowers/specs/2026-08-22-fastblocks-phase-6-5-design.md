@@ -39,8 +39,12 @@ no new MCP tools, no new HTTP endpoints, no new adapter contracts.
 2. **`feat(observability): mandate `bind_contextvars()` in
    `trace_context.set()`** — fixes the load-bearing log↔trace
    correlation gap. `structlog.contextvars.merge_contextvars` reads
-   only from `structlog.contextvars._CONTEXT` (populated by
-   `bind_contextvars`); raw `ContextVar.set()` writes are invisible.
+   only from the stdlib `contextvars` storage: `bind_contextvars`
+   writes to `ContextVar`s whose names start with structlog's
+   `STRUCTLOG_KEY_PREFIX`; `merge_contextvars` then reads them via
+   `contextvars.copy_context()` (`Context` object iteration); raw
+   `ContextVar.set()` writes to unrelated `ContextVar`s are
+   invisible.
    The commit makes the public `trace_context.set()` API do BOTH
    the raw set AND `bind_contextvars(**asdict(ctx))` so trace_id
    reaches log lines.
@@ -52,11 +56,22 @@ no new MCP tools, no new HTTP endpoints, no new adapter contracts.
    running inside the executor's worker thread.
 
 4. **`tests(observability): conftest.py autouse fixture for
-   SpanProcessor teardown`** — snapshots OTel's
-   `TracerProvider._active_span_processor` (or installs a fresh
-   in-process `TracerProvider`) before each test and restores after,
-   so a SpanProcessor installed in test 1 doesn't persist into
-   test 2.
+   SpanProcessor teardown`** — **per quick-review 2026-08-22**:
+   the originally-proposed snapshot-via-`_active_span_processor`
+   private attribute was cargo-culted — verified at spec-author
+   time via `dir(ProxyTracerProvider)` that the `ProxyTracerProvider`
+   returned by `opentelemetry.trace.get_tracer_provider()` does NOT
+   expose `_active_span_processor` (and `_active_span_processor` is
+   a private API of `TracerProvider` itself, not the Proxy).
+   v1.1 fix: the fixture snapshots `proxy._real_provider` if
+   `proxy._real_provider` exists (proxy delegation case — what
+   production uses); otherwise it `trace.set_tracer_provider(TracerProvider())`
+   to swap in a fresh in-process `TracerProvider` for the test's
+   duration, then restores the previous one after. Either path
+   achieves the test's goal: a SpanProcessor installed in test 1
+   does not persist into test 2. The fixture is NOT optional —
+   without it, every test that calls `traced_decision()` accumulates
+   processors; counter labels double/triple across tests.
 
 **Out of scope** (deferred to a future Phase 6 retry per ADR 0013):
 
@@ -250,8 +265,12 @@ def _run_async_safely[T](coro: Coroutine[t.Any, t.Any, T]) -> T:
 
 Per ADR 0013 Decision 12: OTel's TracerProvider is process-global.
 A SpanProcessor installed in test 1 persists into tests 2..N unless
-explicitly torn down. This fixture snapshots the active span
-processor list before each test and restores after.
+explicitly torn down. Per quick-review 2026-08-22, we swap the
+TracerProvider per test via `trace.set_tracer_provider(TracerProvider())`
+because `ProxyTracerProvider` does not expose its active span-processor
+list (no public snapshot/restore API). The swap approach is documented
+in opentelemetry-test as the canonical test-isolation pattern for
+TracerProvider.
 """
 from contextlib import suppress
 import pytest
@@ -266,21 +285,20 @@ except ImportError:
 
 @pytest.fixture(autouse=True)
 def _tracer_provider_isolation():
-    """Reset the OTel TracerProvider to a fresh empty state per test."""
+    """Swap in a fresh empty TracerProvider per test, restore after."""
     if not HAS_OTEL_SDK:
         yield
         return
-    provider = trace.get_tracer_provider()
-    snapshot = list(getattr(provider, "_active_span_processor", []))
+    previous = trace.get_tracer_provider()
+    fresh = TracerProvider()
     with suppress(Exception):
-        # Reset private state via the documented API where available.
-        if hasattr(provider, "_active_span_processor"):
-            provider._active_span_processor = []
+        trace.set_tracer_provider(fresh)
     try:
         yield
     finally:
         with suppress(Exception):
-            provider._active_span_processor = snapshot
+            trace.set_tracer_provider(previous)
+            fresh.shutdown()  # flush any pending spans
 ```
 
 ## Failure modes (cross-cutting)
