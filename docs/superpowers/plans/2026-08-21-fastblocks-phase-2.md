@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Land the four-mechanical scope of Phase 2 (Literal types in settings + CLI, sync test, Oneiric `explain()`-based error contract, Protocol-based adapter contracts) in 6 additive commits with 28 new tests, all passing ty + pytest + ruff.
+**Goal:** Land the four-mechanical scope of Phase 2 (Literal types in settings + CLI, sync test, Oneiric `explain()`-based error contract, Protocol-based adapter contracts) in 6 additive commits with 37 new tests, all passing ty + pytest + ruff.
 
 **Architecture:** `fastblocks/core/validators.py` becomes the single source of truth for the style Literal (`StyleName = Literal["vanilla", "fastblocks_ui"]`), the cross-adapter Protocols (`@runtime_checkable StyleAdapter`, `@runtime_checkable TemplateAdapter`), and the resolver-mismatch error contract. AppBaseSettings + cli.py import from it. The sync test (`tests/core/test_validators_sync.py`) AST-parses both consumers and asserts the Literal set matches the source. The Protocol decorators in `oneiric_helper.py` add `isinstance(module, StyleAdapter)` gates on top of Card 1's `register_candidate_strict`.
 
@@ -84,14 +84,20 @@ from pathlib import Path
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-MASTER_PLAN_BASELINE = 123
+# Baseline measured empirically on 2026-08-21 via
+# `git grep -c 'suppress(Exception)' -- fastblocks/ | awk -F: '{s+=$2} END {print s}'`
+# Master plan line 313 says 123; actual count is 122. The plan locks
+# the actual count; if a future contributor adds one site, the ratchet
+# fails. Phase 7's cleanup may lower the count (test passes on a lower
+# count via `<=`, not `==`).
+MASTER_PLAN_BASELINE = 122
 
 
 @pytest.mark.unit
 def test_suppress_exception_ratchet_at_or_below_baseline() -> None:
-    """git grep count of 'suppress(Exception)' in fastblocks/ <= 123.
+    """git grep count of 'suppress(Exception)' in fastblocks/ <= 122.
 
-    Locks the master plan baseline. Phase 2 must not add new sites;
+    Locks the empirical baseline. Phase 2 must not add new sites;
     Phase 7's cleanup may delete sites (test passes if count drops).
     """
     result = subprocess.run(
@@ -118,24 +124,19 @@ def test_suppress_exception_ratchet_at_or_below_baseline() -> None:
         if match:
             total += int(match.group(1))
     assert total <= MASTER_PLAN_BASELINE, (
-        f"suppress(Exception) count {total} exceeds master plan baseline "
+        f"suppress(Exception) count {total} exceeds baseline "
         f"{MASTER_PLAN_BASELINE}. Phase 2 must not add new sites; "
         f"delete existing sites in a follow-up Phase 7 commit or amend "
-        f"the master plan baseline."
+        f"the baseline (and the master plan line 313 reference)."
     )
 ```
 
 - [ ] **Step 1.2: Run the test to confirm it passes against current main**
 
 Run: `.venv/bin/pytest tests/core/test_suppress_exception_ratchet.py -v`
-Expected: PASS. The current main has Phase 1.5x + earlier work; the suppress(Exception) count is whatever Phase 1A left it at (the master plan line 313 says 123; verify empirically).
+Expected: PASS. The current main has Phase 1.5x + earlier work; the empirical `suppress(Exception)` count is 122, which is ≤ 122.
 
-- [ ] **Step 1.3: Verify the count is actually ≤ 123**
-
-Run: `cd /Users/les/Projects/fastblocks && git grep -c 'suppress(Exception)' -- fastblocks/`
-Expected: a per-file count that sums to ≤ 123. If the sum is above 123, the master plan baseline is wrong — flag to the user before merging this commit.
-
-- [ ] **Step 1.4: Commit**
+- [ ] **Step 1.3: Commit**
 
 ```bash
 cd /Users/les/Projects/fastblocks
@@ -144,10 +145,12 @@ cd ../fastblocks-task6
 git add tests/core/test_suppress_exception_ratchet.py
 git commit -m "test(fastblocks): Phase 2 Commit6 — suppress(Exception) ratchet baseline-lock
 
-Locks the master plan line 313 baseline (123 sites) so future Phase 2
-commits cannot add or remove suppress(Exception) sites without failing
-CI. Per the spec's §Verification gate, Phase 2 holds the baseline;
-Phase 7's cleanup may lower the count (test passes on a lower count).
+Locks the empirical baseline of 122 suppress(Exception) sites in
+fastblocks/ (master plan line 313 records 123; actual count is 122 —
+verified 2026-08-21 via git grep). Future Phase 2 commits cannot add
+or remove suppress(Exception) sites without failing CI. Per the spec's
+§Verification gate, Phase 2 holds the baseline; Phase 7's cleanup may
+lower the count (test passes on a lower count via <=, not ==).
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 git checkout main
@@ -581,7 +584,7 @@ git merge --ff-only task/phase2-validators-module
 
 **Files:**
 - Modify: `fastblocks/adapters/app/_base.py:1-14` (import + field annotation)
-- Test: `tests/core/test_app_settings_literal.py` (NEW, 6 tests)
+- Test: `tests/core/test_app_settings_literal.py` (NEW, 7 tests: 2 legal + 1 default + 4 parametrize illegal values)
 
 **Interfaces:**
 - Consumes: `StyleName`, `DEFAULT_STYLE` from `fastblocks.core.validators` (Commit1)
@@ -651,7 +654,7 @@ def test_illegal_style_raises_validation_error(illegal_value: str) -> None:
     )
 ```
 
-Note: the `@pytest.mark.parametrize` expands to 4 test cases (one per illegal value), giving us 6 total tests (2 legal + 1 default + 4 illegal cases via parametrize - pytest reports parametrize cases as separate tests).
+Note: the `@pytest.mark.parametrize` expands to 4 test cases (one per illegal value). pytest reports parametrize cases as separate tests, so this file contributes 7 tests: 2 legal + 1 default + 4 parametrize.
 
 - [ ] **Step 3.2: Run the tests to confirm they fail**
 
@@ -660,13 +663,14 @@ Expected: FAIL. The current `AppBaseSettings.style` is `str`, so any value passe
 
 - [ ] **Step 3.3: Modify `fastblocks/adapters/app/_base.py`**
 
-Open `/Users/les/Projects/fastblocks/fastblocks/adapters/app/_base.py`. Read the file first to confirm current state (line numbers may have shifted). The change:
+Open `/Users/les/Projects/fastblocks/fastblocks/adapters/app/_base.py`. The file currently lacks `from __future__ import annotations` — add it as the first non-comment line per CLAUDE.md / crackerjack-compliant-code. The change:
 
-1. Add import (after the existing Oneiric import, line 4):
+1. Add `from __future__ import annotations` as line 1 (above `import typing as t`).
+2. Add the validators import below the existing Oneiric import (around line 4-5):
    ```python
    from fastblocks.core.validators import DEFAULT_STYLE, StyleName
    ```
-2. Change line 12 (the `style` field annotation):
+3. Change the `style` field annotation (around line 12):
    ```python
    # before
    style: str = "fastblocks_ui"
@@ -679,7 +683,7 @@ Verify the import order is correct (first-party `fastblocks.*` follows third-par
 - [ ] **Step 3.4: Run the tests to confirm they pass**
 
 Run: `.venv/bin/pytest tests/core/test_app_settings_literal.py -v`
-Expected: 6 tests PASS (2 legal + 1 default + 4 parametrize cases).
+Expected: 7 tests PASS (2 legal + 1 default + 4 parametrize cases).
 
 - [ ] **Step 3.5: Canary validation — revert the field type, confirm test fails, restore**
 
@@ -831,7 +835,9 @@ def test_app_base_settings_style_matches_validators_style_name() -> None:
         if isinstance(node.annotation, ast.Name):
             assert node.annotation.id == "StyleName", (
                 f"AppBaseSettings.style annotation must be either "
-                f"StyleName or Literal[...]; got {node.name}"
+                f"StyleName or Literal[...]; got annotation name "
+                f"{node.annotation.id!r} at "
+                f"{APP_BASE_PATH}:{node.lineno}"
             )
             return
         members = _extract_literal_members(node.annotation)
@@ -986,10 +992,11 @@ git merge --ff-only task/phase2-cli-literals
 - Modify: `tests/conftest.py` — add public `fresh_registry` fixture (lifted from Card5)
 - Modify: `tests/core/test_resolve_instance.py` — remove local `_fresh_registry`, consume `fresh_registry` fixture
 - Create: `tests/core/test_resolver_mismatch.py` (6 tests)
-- Create: `tests/core/test_style_adapter_protocol.py` (5 tests)
-- Create: `tests/core/test_template_adapter_protocol.py` (3 tests)
+- Create: `tests/core/test_style_adapter_protocol.py` (6 tests: 4 parametrize + 2 standalone)
+- Create: `tests/core/test_template_adapter_protocol.py` (4 tests: 2 parametrize + 2 standalone)
 - Create: `tests/core/test_shadowed_count_emitted.py` (1 test)
 - Create: `tests/core/test_typer_cli_rejects_invalid_style.py` (1 test)
+- Create: `tests/core/test_register_style_candidate.py` (3 tests: happy path, missing-method TypeError, narrowed missing-list)
 - Modify: `tests/core/test_validators_sync.py` — add 5th test (PEP 646 `Literal[*values]` rejection)
 
 **Interfaces:**
@@ -1029,35 +1036,60 @@ def test_validators_rejects_pep_646_starred_literal_outside_validators() -> None
                 )
 ```
 
-- [ ] **Step 5.2: Lift `_fresh_registry` to `tests/conftest.py`**
+- [ ] **Step 5.2a: Read Card5's `_fresh_registry` to confirm what we're lifting**
 
-Open `/Users/les/Projects/fastblocks/tests/conftest.py`. Find a sensible spot (near other fixtures). The new public fixture:
+Read `/Users/les/Projects/fastblocks/tests/core/test_resolve_instance.py` lines 30-60. Card5's `_fresh_registry` is a **function called inline** (not a pytest fixture parameter):
 
 ```python
+def _fresh_registry() -> FastblocksRegistry:
+    return FastblocksRegistry(Resolver())  # private Resolver — NOT get_resolver()
+```
+
+Card5's tests call `_fresh_registry()` inline at the top of each test, not as a fixture parameter. The lift to a public fixture requires refactoring every test in `test_resolve_instance.py` to consume `fresh_registry` as a parameter instead.
+
+Card5's fixture builds a **private Resolver** (not the canonical singleton). This is intentional for test isolation. Phase 2 preserves that — the lifted `fresh_registry` fixture uses `Resolver()` (private), NOT `get_resolver()` (canonical). The non-canonical-resolver warning from Phase 1.5x Card 8 will fire on construction; that is the existing Card5 behavior.
+
+- [ ] **Step 5.2b: Add `fresh_registry` fixture to `tests/conftest.py`**
+
+Open `/Users/les/Projects/fastblocks/tests/conftest.py`. Find a sensible spot near other fixtures. The new public fixture:
+
+```python
+from oneiric.core.resolution import Resolver
+from fastblocks.core.resolver import FastblocksRegistry
+
 @pytest.fixture
-def fresh_registry() -> "FastblocksRegistry":
-    """A clean FastblocksRegistry for tests that need private state.
+def fresh_registry() -> FastblocksRegistry:
+    """A private FastblocksRegistry for tests that need isolated state.
 
     Lifted from tests/core/test_resolve_instance.py:_fresh_registry
     during Phase 2 Commit4. Card5's helper was private (leading
     underscore); Phase 2 promotes it to a public conftest fixture
     consumed by both Card5's tests and Phase 2's
     test_resolver_mismatch.py.
-    """
-    from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
-    # Suppress the Card 8 non-canonical warning — this fixture
-    # intentionally constructs a fresh registry for test isolation.
-    import logging
-    registry = FastblocksRegistry(get_resolver())
-    return registry
+    The fixture builds a private Resolver (not the canonical
+    singleton from get_resolver()) — Phase 1.5x Card 8's "non-
+    canonical warning" will fire on construction. That warning is
+    acceptable here; it's the same posture Card5 used and the
+    existing test_facade_identity_check.py suppresses it via caplog.
+    """
+    return FastblocksRegistry(Resolver())
 ```
 
-(Note: this fixture intentionally uses the canonical `get_resolver()` per Phase 1.5x Card 8's "use the canonical singleton" lesson — but each test gets the canonical singleton, then `clear()`s or scopes around it. If Card5's `_fresh_registry` actually built a non-canonical registry and relied on the warning, Phase 2 preserves that intent with a `caplog`-suppress wrapper. Read Card5's actual implementation before adapting.)
+- [ ] **Step 5.2c: Refactor Card5's `tests/core/test_resolve_instance.py` to consume the fixture**
 
-Read `/Users/les/Projects/fastblocks/tests/core/test_resolve_instance.py` lines 30-60 first to see what `_fresh_registry` does, then match its behavior exactly. Update the conftest fixture accordingly.
+Modify `/Users/les/Projects/fastblocks/tests/core/test_resolve_instance.py`:
 
-After lifting, modify `tests/core/test_resolve_instance.py` to remove the local `_fresh_registry` definition and change all `def test_X(_fresh_registry):` to `def test_X(fresh_registry):` — pytest auto-resolves the fixture from conftest.
+1. Delete the local `_fresh_registry` function definition (lines 37-39).
+2. For every test in the file that calls `registry = _fresh_registry()` inline, refactor to consume the fixture as a parameter: change `def test_X() -> None:` to `def test_X(fresh_registry) -> None:` and remove the inline `registry = _fresh_registry()` line.
+3. The `_patch_resolver` helper Card5 uses (with `monkeypatch`) is unaffected — it takes the fixture-injected registry as a parameter.
+
+Verify by reading the test file end-to-end and confirming every test that used `_fresh_registry()` now uses the `fresh_registry` fixture.
+
+- [ ] **Step 5.2d: Run Card5's tests to confirm no regression**
+
+Run: `.venv/bin/pytest tests/core/test_resolve_instance.py -v`
+Expected: all Card5 tests pass against the new public fixture. If any test fails, the refactor missed a call site.
 
 - [ ] **Step 5.3: Write the resolver mismatch tests**
 
@@ -1179,7 +1211,7 @@ def _make_module_with(methods: set[str]) -> t.Any:
     for method in {"register_style_functions", "get_css_path",
                     "get_js_path", "escape_user_input"}:
         if method in methods:
-            setattr(ns, method, lambda env=None: None)
+            setattr(ns, method, lambda *a, **kw: None)
         else:
             # Don't set the attribute at all — module genuinely lacks it
             pass
@@ -1302,54 +1334,83 @@ import pytest
 
 @pytest.mark.unit
 def test_emit_startup_log_reports_shadowed_count(
-    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A stale registered candidate produces shadowed count >= 1 in logs."""
-    from fastblocks.core.resolver import FastblocksRegistry, get_resolver
-    from fastblocks.core.resolver_metrics import emit_startup_log
+    """A stale registered candidate produces shadowed count >= 1.
 
-    registry = FastblocksRegistry(get_resolver())
-    # Register a stale candidate — "fastblocks-ui" with a hyphen, not
-    # in StyleName. This produces a shadowed-but-not-served entry
-    # that ``list_shadowed()`` should pick up.
-    from oneiric.core.resolution import Candidate, CandidateSource
+    Mirrors the structured-log capture pattern from
+    tests/core/test_resolver_metrics.py:203-235: monkeypatch the
+    ``resolver_metrics._log.info`` call (Oneiric structlog does not
+    write through stdlib; capsys won't capture it). Use a private
+    Resolver for hermetic isolation (canonical singleton is shared
+    across the suite; FastblocksRegistry has no clear() method).
+    Register a stale candidate — key with a hyphen, not in
+    StyleName — via ``registry.register(candidate)`` (the method
+    that accepts a pre-built Candidate; ``register_candidate``
+    takes a callable factory and would wrap the Candidate).
+    """
+    from oneiric.core.resolution import (
+        Candidate,
+        CandidateSource,
+        Resolver,
+    )
+    from fastblocks.core.resolver import FastblocksRegistry
+    from fastblocks.core import resolver_metrics
 
+    registry = FastblocksRegistry(Resolver())  # private, hermetic
     candidate = Candidate(
         factory=lambda: object(),
         domain="style",
         key="fastblocks-ui",  # hyphenated, not in StyleName
         source=CandidateSource.LOCAL_PKG,
     )
-    try:
-        registry.register_candidate("style", "fastblocks-ui", candidate)
-        emit_startup_log(registry)
-        captured = capsys.readouterr()
-        combined = captured.out + captured.err
-        # The startup log format is "Oneiric resolver: 1 registry, N
-        # candidates, M shadowed". We don't pin N (counter accumulates
-        # across pytest sessions); we DO assert M >= 1 because we just
-        # registered a shadowed candidate.
-        import re
-        match = re.search(r"(\d+)\s+shadowed", combined)
-        assert match is not None, (
-            f"Expected 'M shadowed' in startup log; got: {combined!r}"
-        )
-        shadowed_count = int(match.group(1))
-        assert shadowed_count >= 1, (
-            f"Expected at least 1 shadowed candidate after registering "
-            f"a stale one; got {shadowed_count}"
-        )
-    finally:
-        # Clean up so subsequent tests aren't polluted
-        try:
-            registry.clear()
-        except AttributeError:
-            pass
+    registry.register(candidate)  # not register_candidate
+
+    # Spy on resolver_metrics._log.info (structlog BoundLogger)
+    info_calls: list[tuple[tuple[t.Any, ...], dict[str, t.Any]]] = []
+    real_info = resolver_metrics._log.info
+
+    def spy_info(*args: t.Any, **kwargs: t.Any) -> None:
+        info_calls.append((args, kwargs))
+        real_info(*args, **kwargs)
+
+    monkeypatch.setattr(resolver_metrics._log, "info", spy_info)
+    emit_startup_log = resolver_metrics.emit_startup_log
+    emit_startup_log(registry)
+
+    # Find the "M shadowed" call (Phase 1.5x's startup log emits
+    # "Oneiric resolver: 1 registry, N candidates, M shadowed")
+    shadowed_calls = [
+        (args, kwargs)
+        for args, kwargs in info_calls
+        if args and "shadowed" in (args[0] if args else "")
+    ]
+    assert shadowed_calls, (
+        f"Expected at least one info() call mentioning 'shadowed'; "
+        f"saw {len(info_calls)} info() calls total: "
+        f"{[args[0] if args else '' for args, _ in info_calls]!r}"
+    )
+    # The log format string has "%d shadowed" — second positional
+    # arg should be an integer >= 1.
+    args, _kwargs = shadowed_calls[0]
+    # The format-string positional arg for shadowed count
+    shadowed_count = None
+    for arg in args[1:]:
+        if isinstance(arg, int):
+            shadowed_count = arg
+            break
+    assert shadowed_count is not None and shadowed_count >= 1, (
+        f"Expected shadowed count >= 1 after registering a stale "
+        f"candidate; got {shadowed_count}"
+    )
 ```
 
-Note: the Candidate/CandidateSource import path is verified in
-`/Users/les/Projects/fastblocks/.venv/lib/python3.13/site-packages/oneiric/core/resolution.py`
-before writing this test. Adjust the import path if Oneiric's API differs.
+The import path is verified empirically:
+- `Candidate` at `/Users/les/Projects/fastblocks/.venv/lib/python3.13/site-packages/oneiric/core/resolution.py:41`
+- `CandidateSource` at line 34
+- `Resolver` in the same file
+- `FastblocksRegistry.register(candidate)` at `/Users/les/Projects/fastblocks/fastblocks/core/resolver.py:213`
+- The structured-log capture pattern at `/Users/les/Projects/fastblocks/tests/core/test_resolver_metrics.py:203-235`
 
 - [ ] **Step 5.7: Write the Scenario 5 regression test**
 
@@ -1385,7 +1446,99 @@ def test_typer_rejects_invalid_style_literal() -> None:
     )
 ```
 
-- [ ] **Step 5.8: Add `register_style_candidate` to `oneiric_helper.py`**
+- [ ] **Step 5.8: Write the failing test for `register_style_candidate`**
+
+Create `tests/core/test_register_style_candidate.py`. This is the **direct unit test** for the new production code in Commit4; without it, the Protocol isinstance gate ships untested.
+
+```python
+"""Phase 2 mechanical-four Commit4 — register_style_candidate direct tests.
+
+The Protocol isinstance gate added in Commit4 (in
+``fastblocks.adapters.oneiric_helper.register_style_candidate``) is
+the new production code in this commit. It MUST have direct unit
+tests — testing the Protocol surface alone does not exercise the
+gate.
+
+Three tests cover:
+1. Happy path — a valid StyleAdapter module is registered.
+2. Missing-method rejection — ``TypeError`` is raised naming the
+   missing methods.
+3. CandidateValidationError propagation — strict-validation errors
+   from the underlying register_candidate_strict propagate.
+"""
+from __future__ import annotations
+
+import typing as t
+from types import SimpleNamespace
+
+import pytest
+from fastblocks.adapters.oneiric_helper import register_style_candidate
+
+
+def _valid_style_adapter() -> t.Any:
+    """Build a SimpleNamespace satisfying StyleAdapter (4 methods)."""
+    ns = SimpleNamespace()
+    setattr(ns, "register_style_functions", lambda *a, **kw: None)
+    setattr(ns, "get_css_path", lambda *a, **kw: "/style.css")
+    setattr(ns, "get_js_path", lambda *a, **kw: "/style.js")
+    setattr(ns, "escape_user_input", lambda *a, **kw: "<escaped>")
+    return t.cast("t.Any", ns)
+
+
+@pytest.mark.unit
+def test_register_style_candidate_accepts_valid_adapter(
+    fresh_registry,
+) -> None:
+    """A module with all 4 StyleAdapter methods registers without error."""
+    module = _valid_style_adapter()
+    # Should NOT raise; happy path
+    register_style_candidate(fresh_registry, "vanilla", module)
+
+
+@pytest.mark.unit
+def test_register_style_candidate_raises_for_missing_method(
+    fresh_registry,
+) -> None:
+    """A module missing a StyleAdapter method raises TypeError."""
+    module = SimpleNamespace()
+    # Deliberately missing all 4 methods
+    with pytest.raises(TypeError) as excinfo:
+        register_style_candidate(fresh_registry, "vanilla", module)
+    msg = str(excinfo.value)
+    assert "register_style_functions" in msg, (
+        f"TypeError must name missing 'register_style_functions'; "
+        f"got: {msg!r}"
+    )
+    assert "get_css_path" in msg
+    assert "get_js_path" in msg
+    assert "escape_user_input" in msg
+
+
+@pytest.mark.unit
+def test_register_style_candidate_narrows_missing_method_list(
+    fresh_registry,
+) -> None:
+    """A module missing only one method gets only that method named."""
+    module = SimpleNamespace()
+    setattr(module, "register_style_functions", lambda *a, **kw: None)
+    setattr(module, "get_css_path", lambda *a, **kw: "/x")
+    setattr(module, "get_js_path", lambda *a, **kw: "/y")
+    # Missing only escape_user_input
+    with pytest.raises(TypeError) as excinfo:
+        register_style_candidate(fresh_registry, "vanilla", module)
+    msg = str(excinfo.value)
+    assert "escape_user_input" in msg
+    # And NOT the methods that ARE present (no false positives)
+    assert "register_style_functions" not in msg or "missing" in msg.lower()
+    # The exact match-rejection: the message names the missing method.
+```
+
+Run: `.venv/bin/pytest tests/core/test_register_style_candidate.py -v`
+Expected: FAIL with `ImportError` or `AttributeError` (the function doesn't exist yet). Specifically:
+- `test_register_style_candidate_accepts_valid_adapter` fails because `register_style_candidate` doesn't exist.
+- `test_register_style_candidate_raises_for_missing_method` fails for the same reason.
+
+- [ ] **Step 5.9: Add `register_style_candidate` to `oneiric_helper.py`**
 
 Open `/Users/les/Projects/fastblocks/fastblocks/adapters/oneiric_helper.py`. Read the file first to find where Card1's `register_candidate_strict` lives, then add `register_style_candidate` near it:
 
@@ -1425,42 +1578,48 @@ def register_style_candidate(
 
 Verify the import order and the existing `register_candidate_strict` signature before committing.
 
-- [ ] **Step 5.9: Run all new tests + full sweep**
+- [ ] **Step 5.11: Run all new tests + full sweep**
 
-Run: `.venv/bin/pytest tests/core/test_resolver_mismatch.py tests/core/test_style_adapter_protocol.py tests/core/test_template_adapter_protocol.py tests/core/test_shadowed_count_emitted.py tests/core/test_typer_cli_rejects_invalid_style.py tests/core/test_validators_sync.py -v`
-Expected: all new tests pass (5 + 3 + 6 + 1 + 1 + 5 = 21 tests).
+Run: `.venv/bin/pytest tests/core/test_register_style_candidate.py tests/core/test_resolver_mismatch.py tests/core/test_style_adapter_protocol.py tests/core/test_template_adapter_protocol.py tests/core/test_shadowed_count_emitted.py tests/core/test_typer_cli_rejects_invalid_style.py tests/core/test_validators_sync.py -v`
+Expected: all new tests pass (3 + 6 + 6 + 4 + 1 + 1 + 5 = 26 tests in this run).
 
 Run: `.venv/bin/pytest -q -m "not slow" --no-header`
-Expected: previous count + ~21 new = PASS.
+Expected: previous count + 26 new = PASS. (Step 7.1 below pins the final total.)
 
-- [ ] **Step 5.10: Canary validation on `register_style_candidate`**
+- [ ] **Step 5.10: Canary validation on `register_style_candidate` (mandatory)**
 
-Pick one of the Protocol tests. Temporarily revert `register_style_candidate` to skip the isinstance check (call `register_candidate_strict` directly).
-Run: `.venv/bin/pytest tests/core/test_style_adapter_protocol.py::test_protocol_missing_methods_reports_missing_method -v`
-Expected: ... actually, this test doesn't test `register_style_candidate` directly. A better one: temporarily revert the `register_style_candidate` body to skip the gate entirely, register a malformed module, and verify no `TypeError` is raised.
-Restore.
+Temporarily replace the `if not isinstance(module, StyleAdapter): raise TypeError(...)` block in `register_style_candidate` with `pass` (so the gate is bypassed; `register_candidate_strict` runs unconditionally).
 
-(Skip if the test surface doesn't directly test `register_style_candidate` — Commit4 is the first commit that adds the gate; canary discipline is most valuable for production code paths, not for tests of the gate itself.)
+Run: `.venv/bin/pytest tests/core/test_register_style_candidate.py::test_register_style_candidate_raises_for_missing_method -v`
+Expected: FAIL — with the gate removed, no `TypeError` is raised, and the test asserts `pytest.raises(TypeError)`.
 
-- [ ] **Step 5.11: Run ty across fastblocks/**
+Restore the `if not isinstance(...) raise TypeError(...)` block.
+
+Run: `.venv/bin/pytest tests/core/test_register_style_candidate.py::test_register_style_candidate_raises_for_missing_method -v`
+Expected: PASS.
+
+**This canary is mandatory, not optional.** The Protocol isinstance gate is the entire purpose of `register_style_candidate`; without the canary, the gate could be deleted silently in a future commit without any test failing.
+
+- [ ] **Step 5.12: Run ty across fastblocks/**
 
 Run: `uv run ty check fastblocks/`
 Expected: "All checks passed!"
 
-- [ ] **Step 5.12: Run crackerjack**
+- [ ] **Step 5.13: Run crackerjack**
 
 Run: `uv run crackerjack run`
 Expected: PASS on ty, refurb, ruff. The crackerjack ratchet on ty-directive count must remain at zero new suppressions.
 
-- [ ] **Step 5.13: Commit**
+- [ ] **Step 5.14: Commit**
 
 ```bash
 cd /Users/les/Projects/fastblocks
-git worktree add ../fastblocks-task4 -b task/phase2-protocol-gates main
+git worktree add ../fastblocks-task4 -b task/phase2-protocol-gates <sha-of-main-after-commit3>
 cd ../fastblocks-task4
 git add fastblocks/adapters/oneiric_helper.py \
         tests/conftest.py \
         tests/core/test_resolve_instance.py \
+        tests/core/test_register_style_candidate.py \
         tests/core/test_resolver_mismatch.py \
         tests/core/test_style_adapter_protocol.py \
         tests/core/test_template_adapter_protocol.py \
@@ -1471,22 +1630,33 @@ git commit -m "feat(adapter-registration): Phase 2 Commit4 — Protocol gates + 
 
 Adds register_style_candidate to oneiric_helper.py — a thin wrapper
 around Card 1's register_candidate_strict that adds an isinstance
-check against the @runtime_checkable StyleAdapter Protocol.
+check against the @runtime_checkable StyleAdapter Protocol. Direct
+unit tests in test_register_style_candidate.py (3 tests: happy path,
+missing-method TypeError, narrowed-missing-list).
 
 Adds format_resolver_mismatch and format_resolution_explanation_one_line
 tests (test_resolver_mismatch.py — 6 tests covering happy path, error
-shape, nearest-neighbor hint, unavailable-explain fallback, and
-narrow-exception catch).
+shape, nearest-neighbor hint, unavailable-explain fallback, narrow-
+exception catch, and the None-input formatter path).
 
-Adds Protocol surface tests (test_style_adapter_protocol.py — 5 tests
-covering 4 missing-method variants + happy path; test_template_adapter_protocol.py
-— 3 tests covering missing-method variants + happy path).
+Adds Protocol surface tests (test_style_adapter_protocol.py — 6 tests
+covering 4 missing-method variants + happy path + runtime-checkable
+pin; test_template_adapter_protocol.py — 4 tests covering missing-
+method variants + happy path + runtime-checkable pin).
 
-Adds Scenario 3 regression (test_shadowed_count_emitted.py) and
-Scenario 5 regression (test_typer_cli_rejects_invalid_style.py).
+Adds Scenario 3 regression (test_shadowed_count_emitted.py) using
+monkeypatch.setattr on resolver_metrics._log.info (matches the
+existing pattern in tests/core/test_resolver_metrics.py:203-235;
+capsys cannot capture Oneiric structlog output by design) and a
+private Resolver for hermetic isolation (FastblocksRegistry has no
+clear() method; canonical singleton must not be polluted).
+
+Adds Scenario 5 regression (test_typer_cli_rejects_invalid_style.py).
 
 Lifts _fresh_registry from Card 5 to tests/conftest.py as a public
 fresh_registry fixture, consumed by both Card 5 and Phase 2 tests.
+The lifted fixture uses Resolver() (private, hermetic) — NOT
+get_resolver() (canonical singleton) — matching Card 5's behavior.
 
 Adds 5th sync test rejecting Literal[*values] PEP 646 unpacking outside
 validators.py.
@@ -1650,7 +1820,7 @@ After all 6 commits merge to main:
 - [ ] **Step 7.1: Run the full pytest sweep**
 
 Run: `.venv/bin/pytest -q -m "not slow" --no-header`
-Expected: previous baseline (~1997 tests) + 28 new = ~2025 PASS, 0 FAIL.
+Expected: previous baseline (~1997 tests) + 37 new = ~2034 PASS, 0 FAIL.
 
 - [ ] **Step 7.2: Run ty**
 
@@ -1665,12 +1835,26 @@ Expected: PASS on ty, refurb, ruff. Coverage ratchet holds or improves.
 - [ ] **Step 7.4: Verify the ratchet test still passes**
 
 Run: `.venv/bin/pytest tests/core/test_suppress_exception_ratchet.py -v`
-Expected: PASS. The suppress(Exception) count is ≤ 123 (no Phase 2 commit added or removed a site).
+Expected: PASS. The suppress(Exception) count is ≤ 122 (no Phase 2 commit added or removed a site).
 
-- [ ] **Step 7.5: Verify all 28 new tests pass**
+- [ ] **Step 7.5: Verify all 37 new tests pass**
 
-Run: `.venv/bin/pytest tests/core/test_validators_module.py tests/core/test_validators_sync.py tests/core/test_resolver_mismatch.py tests/core/test_style_adapter_protocol.py tests/core/test_template_adapter_protocol.py tests/core/test_app_settings_literal.py tests/core/test_shadowed_count_emitted.py tests/core/test_typer_cli_rejects_invalid_style.py tests/core/test_suppress_exception_ratchet.py -v`
-Expected: 28 tests PASS.
+Run: `.venv/bin/pytest tests/core/test_validators_module.py tests/core/test_validators_sync.py tests/core/test_resolver_mismatch.py tests/core/test_style_adapter_protocol.py tests/core/test_template_adapter_protocol.py tests/core/test_app_settings_literal.py tests/core/test_shadowed_count_emitted.py tests/core/test_typer_cli_rejects_invalid_style.py tests/core/test_suppress_exception_ratchet.py tests/core/test_register_style_candidate.py -v`
+Expected: 37 tests PASS.
+
+Per-file breakdown (parametrize cases expand):
+| File | Tests |
+|---|---|
+| `test_validators_module.py` | 6 |
+| `test_validators_sync.py` | 5 (4 base + 1 PEP 646) |
+| `test_app_settings_literal.py` | 7 (2 legal + 1 default + 4 parametrize) |
+| `test_resolver_mismatch.py` | 6 |
+| `test_style_adapter_protocol.py` | 6 (4 parametrize + 2 standalone) |
+| `test_template_adapter_protocol.py` | 4 (2 parametrize + 2 standalone) |
+| `test_shadowed_count_emitted.py` | 1 |
+| `test_typer_cli_rejects_invalid_style.py` | 1 |
+| `test_suppress_exception_ratchet.py` | 1 |
+| **Total** | **37** |
 
 - [ ] **Step 7.6: Final commit (only if fixes were needed)**
 
