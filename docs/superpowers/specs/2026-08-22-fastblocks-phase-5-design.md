@@ -442,11 +442,7 @@ asserts the registered tool list equals the 7-name tuple from
    `_get_http_app` function from `fastblocks/mcp.server` and invoke it
    directly (NOT via `FastBlocksMCPServer()._get_http_app()` — the
    method doesn't exist; the function is module-level per
-   `fastblocks/mcp/server.py:141`). Assert the returned ASGI app is
-   non-None. This catches ADR 0011 Decision 6's `_get_http_app` orphan
-   path where `with suppress(Exception)` could mask a registration
-   failure under uvicorn — the test asserts the function does NOT
-   silently return None.
+   `fastblocks/mcp/server.py:141`). Use `unittest.mock.patch` to spy on `fastblocks.mcp.tools.register_fastblocks_tools` and assert it was called once with the fresh `FastMCP(name="fastblocks")` instance. This catches ADR 0011 Decision 6's `_get_http_app` orphan path where `with suppress(Exception)` could mask a registration failure under uvicorn — without the spy, an `assert app is not None` check would pass even when registration silently failed, because `_get_http_app` falls through to `mcp_instance.streamable_http_app()` regardless of registration outcome. The spy is the only way to verify the registration code path actually executed, given that the mcp_instance is local to `_get_http_app` and not accessible from outside (production-code change to expose mcp_instance would violate strict-tests-only).
 
 **Dropped scenarios** (and why):
 
@@ -490,6 +486,12 @@ the 32 absorbed components:
    Playwright page** before `axe.run()`. Without the CSS bundle, the
    `color-contrast` rule reports "incomplete" (not "violation"), making
    the assertion pass vacuously.
+3a. **Wrap the rendered HTML in a per-component scaffold** before
+   `page.set_content(...)`: `<!DOCTYPE html><html><body><main><h1>{component_name}</h1>{rendered}</main></body></html>`.
+   The scaffold satisfies `landmark-one-main` (one `<main>`) and
+   `page-has-heading-one` (one `<h1>`) at the page level; without it,
+   these page-level rules fire on every isolated render and produce
+   noise that masks real per-component regressions.
 4. Run `axe-playwright-python`'s `axe.run()` with the **expanded rule
    subset**: `color-contrast`, `label`, `button-name`, `link-name`,
    `image-alt`, `aria-roles`, `region`, `landmark-one-main`,
@@ -504,12 +506,14 @@ dropdowns, tabs, dialogs, drawers):
 
 | Component | Default posture | Required harness |
 |---|---|---|
-| Button | standalone, no special props | none |
-| Field | standalone, no special props | none |
-| Container / Columns / Section / Shell / Footer / Navbar / NavList / Media | landmark-style, content optional | `children` non-empty |
+| Button | standalone with realistic default | `label="Submit"` |
+| Field | standalone with realistic default | `label="Email"`, `control_id="email"`, `control_html="<input id=\"email\" type=\"email\">"` |
+| Navbar / Footer / NavList / NavGroups | landmark-style, rendered as `<nav>`/`<footer>` | non-empty `groups`/`children` |
+| Section / Shell / Media | landmark-style sectioning content | non-empty `children`, rendered as `<section>` |
+| Container / Columns | layout primitives (NOT landmarks) — axe `region` violation is structural, excluded via `excluded_rules` | non-empty `children` |
 | Modal / Dialog | open (rendered as `<dialog open aria-modal="true">`) | `aria-modal="true"` |
 | Dropdown | closed (panel-only — no trigger button) | none — flagged for `button-name` (see note) |
-| Tabs | rendered with default active tab | `default_active=0` |
+| Tabs | rendered with proper ARIA plumbing | `items=[(id="tab-0", label="Tab 1", body="..."), (id="tab-1", label="Tab 2", body="...")]`, `active_id="tab-0"` (field name verified at `htmy_components/ui/tabs.py:23`) |
 | Drawer | off-canvas (closed state) | none |
 | NavGroups | standalone nav landmark | non-empty `groups` |
 
@@ -639,8 +643,7 @@ Per Phase 2 mechanical-four convention. Each commit ships with an IC block.
 | 11 | `test(integration): static files + lifecycle` | `tests/integration/test_static_files.py` + `tests/integration/test_lifespan.py` | 3 static + 2 lifecycle scenarios pass |
 | 12 | `chore(ci): bump coverage ratchet to 65%` | `pyproject.toml` updated with `--cov-fail-under = 65` | `pytest --cov-fail-under=65` exits 0 |
 
-**All 12 commits are independently revertible** per Phase 2 convention;
-Discipline.
+**All 12 commits are independently revertible** per Phase 2 convention.
 
 ### Cumulative runtime estimate
 
