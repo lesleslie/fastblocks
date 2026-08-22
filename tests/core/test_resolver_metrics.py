@@ -114,8 +114,8 @@ def test_shadow_count_via_explicit_domain() -> None:
 def test_compute_metrics_snapshot_shape() -> None:
     """The snapshot dict has all required keys for Phase 6's exporter."""
     resolver_metrics.reset_for_tests()
-    FastblocksRegistry(get_resolver())
-    snapshot = resolver_metrics.compute_metrics_snapshot()
+    registry = FastblocksRegistry(get_resolver())
+    snapshot = resolver_metrics.compute_metrics_snapshot(registry)
     assert snapshot == {
         "phase": "post-phase-1.5",
         "registry_size_total": 1,
@@ -123,6 +123,80 @@ def test_compute_metrics_snapshot_shape() -> None:
         "shadow_count_total": 0,
         "domains_observed": None,
     }
+
+
+@pytest.mark.unit
+def test_emit_startup_log_does_not_inflate_registry_size_counter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Regression test for F-L1-01: emit_startup_log must NOT bump the counter.
+
+    Before the fix, ``compute_shadow_count_total(facade=None)`` would
+    auto-construct ``FastblocksRegistry(get_resolver())``, which
+    triggered ``increment_registry_size()``. Every ``emit_startup_log``
+    call therefore inflated the metric the operator was reading to
+    verify the consolidation invariant — a self-defeating counter.
+
+    After the fix, the facade is REQUIRED (no default), so emit_startup_log
+    can only be called with an explicit facade. This test asserts that
+    a single emit_startup_log call does NOT bump
+    ``_registry_size_total`` beyond what the test setup produced.
+    """
+    from unittest.mock import MagicMock
+
+    resolver_metrics.reset_for_tests()
+    registry = FastblocksRegistry(get_resolver())
+    counter_before = resolver_metrics.compute_registry_size_total()
+
+    spy = MagicMock()
+    monkeypatch.setattr(resolver_metrics._log, "info", spy)
+    resolver_metrics.emit_startup_log(registry)
+    spy.assert_called_once()
+
+    counter_after = resolver_metrics.compute_registry_size_total()
+    assert counter_after == counter_before, (
+        f"emit_startup_log inflated registry_size_total from "
+        f"{counter_before} to {counter_after}. Card 3 fix regression: "
+        f"the function should not auto-construct a facade that bumps "
+        f"the counter."
+    )
+
+
+@pytest.mark.unit
+def test_compute_shadow_count_total_does_not_inflate_registry_size_counter() -> None:
+    """Direct regression test for F-L1-01 on compute_shadow_count_total."""
+    resolver_metrics.reset_for_tests()
+    registry = FastblocksRegistry(get_resolver())
+    counter_before = resolver_metrics.compute_registry_size_total()
+
+    # Multiple calls must not bump the counter, even with the same facade.
+    for _ in range(5):
+        resolver_metrics.compute_shadow_count_total(registry, domains=[])
+
+    counter_after = resolver_metrics.compute_registry_size_total()
+    assert counter_after == counter_before, (
+        "compute_shadow_count_total must not bump registry_size_total "
+        "even when called multiple times with the same facade."
+    )
+
+
+@pytest.mark.unit
+def test_compute_shadow_count_total_requires_facade_argument() -> None:
+    """The facade parameter is REQUIRED (no default) post-Card 3.
+
+    Pin test: passing only ``domains=...`` (the old signature) should
+    raise TypeError. This protects against accidentally re-adding a
+    default that would re-introduce the F-L1-01 inflation bug.
+    """
+    with pytest.raises(TypeError):
+        resolver_metrics.compute_shadow_count_total(domains=[])  # ty: ignore[missing-argument]
+
+
+@pytest.mark.unit
+def test_emit_startup_log_requires_facade_argument() -> None:
+    """Same pin test for emit_startup_log's facade parameter."""
+    with pytest.raises(TypeError):
+        resolver_metrics.emit_startup_log()  # ty: ignore[missing-argument]
 
 
 @pytest.mark.unit
@@ -143,10 +217,10 @@ def test_emit_startup_log_calls_log_info_with_planned_format(
     from unittest.mock import MagicMock
 
     resolver_metrics.reset_for_tests()
-    FastblocksRegistry(get_resolver())
+    registry = FastblocksRegistry(get_resolver())
     spy = MagicMock()
     monkeypatch.setattr(resolver_metrics._log, "info", spy)
-    resolver_metrics.emit_startup_log()
+    resolver_metrics.emit_startup_log(registry)
     spy.assert_called_once()
     args = spy.call_args.args
     # Positional args: format-string, then %d values for registry,

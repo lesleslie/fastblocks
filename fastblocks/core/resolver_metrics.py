@@ -37,7 +37,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from oneiric.core.logging import get_logger
-from fastblocks.core.resolver import FastblocksRegistry, get_resolver
+from fastblocks.core.resolver import FastblocksRegistry
 
 _log = get_logger("fastblocks.resolver_metrics")
 
@@ -110,28 +110,31 @@ def compute_registry_size_total() -> int:
 
 
 def compute_shadow_count_total(
-    facade: FastblocksRegistry | None = None,
+    facade: FastblocksRegistry,
     domains: Iterable[str] | None = None,
 ) -> int:
     """Return the total shadowed candidates across the given domains.
 
-    If ``domains`` is None, all active domains are enumerated via
-    Oneiric's resolver (via ``list_active`` then ``list_shadowed``
-    per domain). This is the costliest snapshot — Phase 6 should
-    cache it. For Phase 1.5 the function is only called once at
-    startup, so the cost is acceptable.
+    The ``facade`` parameter is REQUIRED (no default) — Phase 1.5x
+    Card 3 (F-L1-01 fix): the previous default ``facade=None``
+    auto-constructed ``FastblocksRegistry(get_resolver())`` here,
+    which bumped ``_registry_size_total`` via ``__init__``. Every
+    call to ``emit_startup_log`` therefore inflated the registry-size
+    counter, defeating the Phase 1.5 consolidation invariant the
+    metric was supposed to enforce. Callers now pass the facade they
+    already hold (typically ``FastblocksRegistry(get_resolver())``
+    constructed once at module load).
+
+    If ``domains`` is None, returns 0 — Oneiric exposes no
+    domain-list helper, so we can't enumerate all domains without
+    Phase 6's planned cached domain-list. The canary path passes
+    ``domains`` explicitly.
+
+    Phase 6 should cache the snapshot and replace this function with
+    a Prometheus exporter over the same counter.
     """
     global _shadow_count_total
-    if facade is None:
-        facade = FastblocksRegistry(get_resolver())
     if domains is None:
-        # ``list_active`` is per-domain; we need the set of domains
-        # first. Oneiric exposes ``list_active(domain)`` but not a
-        # domain-list helper, so we use the fastblocks-level
-        # facade's wrap and iterate via ``explain`` resolution per
-        # known registration. For Phase 1.5 the canary path
-        # passes ``domains`` explicitly; the fallback is a guarded
-        # no-op returning 0.
         domains = []
     total = 0
     for domain in domains:
@@ -147,6 +150,7 @@ def compute_registration_count_total() -> int:
 
 
 def compute_metrics_snapshot(
+    facade: FastblocksRegistry,
     domains: Iterable[str] | None = None,
 ) -> dict[str, Any]:
     """Return a dict snapshot of all resolver metrics.
@@ -161,6 +165,10 @@ def compute_metrics_snapshot(
             "domains_observed": <list[str]> | None,
         }
 
+    The ``facade`` parameter is REQUIRED (no default) — Card 3 fix:
+    prevents the auto-construction side effect that previously
+    inflated ``registry_size_total`` on every call.
+
     Phase 6 (master plan) wires this dict to its Prometheus
     exporter. Today, the test suite asserts on it directly.
     """
@@ -168,12 +176,15 @@ def compute_metrics_snapshot(
         "phase": _phase_label,
         "registry_size_total": compute_registry_size_total(),
         "registration_count_total": compute_registration_count_total(),
-        "shadow_count_total": compute_shadow_count_total(domains=domains),
+        "shadow_count_total": compute_shadow_count_total(
+            facade, domains=domains
+        ),
         "domains_observed": list(domains) if domains is not None else None,
     }
 
 
 def emit_startup_log(
+    facade: FastblocksRegistry,
     *,
     domains: Iterable[str] | None = None,
 ) -> None:
@@ -183,12 +194,16 @@ def emit_startup_log(
 
         Oneiric resolver: <N> registry, <C> candidates, <S> shadowed
 
+    The ``facade`` parameter is REQUIRED (no default) — Card 3 fix:
+    prevents the auto-construction side effect that previously
+    inflated ``registry_size_total`` on every emit.
+
     Emitted via Oneiric's structured logger (``fastblocks.resolver_metrics``)
     at INFO level. Phase 6 will replace this with a metrics push; until
     then, the log line is the operator's primary signal that the
     consolidation invariant holds.
     """
-    snapshot = compute_metrics_snapshot(domains=domains)
+    snapshot = compute_metrics_snapshot(facade, domains=domains)
     _log.info(
         "Oneiric resolver: %d registry, %d candidates, %d shadowed",
         snapshot["registry_size_total"],

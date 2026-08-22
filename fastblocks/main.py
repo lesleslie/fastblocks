@@ -104,9 +104,15 @@ async def get_app() -> t.Any:
         # candidates, M shadowed``. Phase 6 will replace this with
         # a Prometheus push; the log line remains as the operator-
         # facing surface for Phase 1.5.
+        #
+        # Card 3 (Phase 1.5x remediation wave, F-L1-01): pass the
+        # facade we already hold (``_resolver`` at module load) to
+        # prevent emit_startup_log from auto-constructing a second
+        # facade, which would inflate ``registry_size_total`` on
+        # every call.
         from fastblocks.core import resolver_metrics
 
-        resolver_metrics.emit_startup_log()
+        resolver_metrics.emit_startup_log(_resolver)
 
     return _app_instance
 
