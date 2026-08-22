@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import typing as t
+
+from fastblocks.core.validators import DEFAULT_STYLE, StyleName
 
 # Oneiric imports
 from oneiric.core.config import OneiricSettings
@@ -9,7 +13,7 @@ class AppBaseSettings(OneiricSettings):  # type: ignore[misc]
     """App base settings using OneiricSettings."""
 
     name: str = "fastblocks"
-    style: str = "fastblocks_ui"
+    style: StyleName = DEFAULT_STYLE
     theme: str = "light"
 
 
