@@ -138,6 +138,30 @@ types in `AppBaseSettings`, CLI enums, and any other
 responsibility. The fastblocks Literal set is the contract
 between the user-facing surface and Oneiric's selection.
 
+**Validator homes (Rule 3 implementation).** Per
+`fastblocks/.claude/decisions/wire-up-contract.md`, every
+Literal-driven validation lives in a single, discoverable
+module per boundary rather than scattered across the codebase:
+
+| Validation kind             | Home                                                     |
+|-----------------------------|----------------------------------------------------------|
+| CLI `Literal[...]` choices  | `fastblocks/cli.py` (inline — Typer kwargs)              |
+| `AppBaseSettings` fields    | `fastblocks/applications.py` (the SettingsPydantic model)|
+| Shared Literal sets         | `fastblocks/core/validators.py` (NEW — Phase 2 home)     |
+| Per-adapter schema/validators | alongside the adapter, e.g. `fastblocks/adapters/styles/_base.py` |
+
+The new `fastblocks/core/validators.py` is the home for any
+Literal set consumed by both `AppBaseSettings` and the CLI, or
+referenced from multiple adapters. It exists so a Literal type
+like `Literal["html", "xhtml", "text"]` does not drift between
+the CLI's parser and the Settings class's runtime check.
+Adapters that need their own Literal may import from there
+rather than redefining the type.
+
+Rule 3 holds regardless of where the validator lives: the
+Literal set remains fastblocks's contract and must not be
+relaxed without an ADR amendment.
+
 ## Consequences
 
 ### Positive
