@@ -14,6 +14,10 @@ class AppBaseSettings(OneiricSettings):  # type: ignore[misc]
     name: str = "fastblocks"
     style: StyleName = DEFAULT_STYLE
     theme: str = "light"
+    title: str = ""
+    domain: str = ""
+    description: str = ""
+    version: str = ""
 
 
 class AppProtocol(t.Protocol):
