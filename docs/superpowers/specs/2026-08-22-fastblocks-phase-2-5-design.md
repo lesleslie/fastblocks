@@ -176,8 +176,11 @@ except FileNotFoundError:
     self.settings = AppSettings()
 ```
 
-Other `AppSettings()` call sites (5 total — verified via
-`grep -rn 'AppSettings()' fastblocks/`) follow the same pattern.
+Other `AppSettings()` call sites — the only production call site today is
+`fastblocks/adapters/app/default.py:182` (verified via
+`grep -rn 'AppSettings()' fastblocks/ --include='*.py'` returns 1 hit).
+The IC notes "5 other places" was an inflated estimate from earlier
+exploration; the actual wiring scope is one call site.
 
 ## Failure modes
 
