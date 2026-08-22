@@ -22,7 +22,7 @@ from importlib.metadata import version as get_version
 from pathlib import Path
 from subprocess import DEVNULL
 from subprocess import run as execute
-from typing import Annotated, Literal
+from typing import Annotated
 
 import typer
 import uvicorn
@@ -34,6 +34,7 @@ from granian import Granian
 from rich.console import Console
 from fastblocks.adapters.oneiric_helper import resolve_instance
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
+from fastblocks.core.validators import DEFAULT_STYLE, StyleName
 
 console = Console()
 
@@ -910,7 +911,7 @@ def create_app(
         typer.Option(prompt=True, help="Name of your application"),
     ],
     style: Annotated[
-        Literal["vanilla", "fastblocks_ui"],
+        StyleName,
         typer.Option(
             prompt=True,
             help="The style you want to use [vanilla,fastblocks_ui]",
@@ -938,7 +939,7 @@ def create_app(
 @create.command("template")
 def create_template(
     style: Annotated[
-        Literal["vanilla", "fastblocks_ui"],
+        StyleName,
         typer.Option(
             prompt=True,
             help="Style for the new template subtree",
@@ -971,7 +972,7 @@ def create_ide_config(
     generate_ide_config(output_dir=output_dir, ide=ide)
 
 
-def _scaffold_app_tree(app_path: Path, app_name: str, style: Literal["vanilla", "fastblocks_ui"]) -> None:
+def _scaffold_app_tree(app_path: Path, app_name: str, style: StyleName) -> None:
     """Create the app directory layout, switch into it, and touch init files."""
     app_path.mkdir(exist_ok=True)
     os.chdir(app_path)
@@ -1065,7 +1066,7 @@ def _run_setup_commands() -> None:
 
 def create_compat(
     app_name: str,
-    style: Literal["vanilla", "fastblocks_ui"] = "vanilla",
+    style: StyleName = "vanilla",
     domain: str = "example.com",
 ) -> None:
     """Backwards-compatible shim for the original top-level ``create`` entry.
@@ -1079,7 +1080,7 @@ def create_compat(
 
 async def _create_app_async(
     app_name: str = "myapp",
-    style: Literal["vanilla", "fastblocks_ui"] = "vanilla",
+    style: StyleName = "vanilla",
     domain: str = "example.com",
 ) -> None:
     """Async wrapper for the sync ``create_app`` shim."""
