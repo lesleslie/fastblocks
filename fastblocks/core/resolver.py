@@ -41,6 +41,25 @@ _log = get_logger("fastblocks.resolver")
 _resolver: Resolver | None = None
 
 
+def _construction_site_info() -> str:
+    r"""Return the file:line of the immediate caller of FastblocksRegistry().
+
+    Used by the Card 8 identity-check warning so operators see where
+    the leak was constructed, not just that one happened. Limited to
+    the immediate caller (one frame above the constructor) — deeper
+    tracking would intrude on async scheduling stacks and is not
+    worth the cost. Returns \"<unknown>\" if no caller frame is found
+    (e.g. when invoked from an interactive interpreter).
+    """
+    import inspect
+
+    frame = inspect.currentframe()
+    if frame is None or frame.f_back is None or frame.f_back.f_back is None:
+        return "<unknown>"
+    caller = frame.f_back.f_back
+    return f"{caller.f_code.co_filename}:{caller.f_lineno}"
+
+
 class CandidateValidationError(ValueError):
     """Raised by ``register_candidate_strict`` when Candidate construction fails.
 
@@ -143,7 +162,29 @@ class FastblocksRegistry:
     """
 
     def __init__(self, resolver: Resolver) -> None:
+        # Card 8 (F-L3-3 identity check): the constructor accepts any
+        # Resolver-shaped object, but a non-canonical one (i.e. not
+        # the singleton returned by ``get_resolver()``) silently
+        # creates a parallel registry that bypasses the consolidation
+        # invariant (ADR 0008 Rule 2). We log a warning so operators
+        # see the leak; we don't raise because some legitimate test
+        # isolation patterns construct ephemeral Resolvers to run
+        # against private state.
         self._resolver = resolver
+        canonical = get_resolver()
+        if resolver is not canonical:
+            import logging
+
+            stack = _construction_site_info()
+            logging.getLogger(__name__).warning(
+                "FastblocksRegistry constructed with a non-canonical "
+                "Resolver at %s; ADR 0008 Rule 2 expects all consumers "
+                "to share the singleton from fastblocks.core.resolver."
+                "get_resolver(). Pass `get_resolver()` or import path: "
+                "%s",
+                stack,
+                type(resolver).__module__ + "." + type(resolver).__name__,
+            )
         # Phase 1.5 observability: bump the registry-size counter
         # on every facade construction. Post-Phase-1.5 the expected
         # value is 1 — the consolidation invariant (see ADR 0008
