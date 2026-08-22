@@ -75,7 +75,7 @@ instrumentation call reaches back into.
 | `fastblocks/observability/counters.py` (NEW) | `Counter`/`Histogram` wrappers over `prometheus_client`; in-process `CollectorRegistry` for tests |
 | `fastblocks/observability/loggers.py` (NEW) | `structlog` Logger factory; bound to Oneiric settings chain |
 | `fastblocks/observability/tracer.py` (NEW) | `opentelemetry-sdk` TracerProvider; OTLPSpanExporter wired idempotently |
-| `fastblocks/observability/registry.py` (NEW) | Singleton registry; binds to Oneiric `Decisions.events()` stream |
+| `fastblocks/observability/registry.py` (NEW) | Singleton registry; installs OTel `SpanProcessor` that intercepts `resolver.decision` spans |
 | `fastblocks/adapters/oneiric/observability.py` (NEW) | Bridges Oneiric `explain()`/`list_shadowed()`/`DecisionEvent` → structured log lines + counter increments |
 | `settings/observability.yaml` (NEW) | Card[inality] mode, exporter endpoint, log format |
 
@@ -96,19 +96,60 @@ instrumentation call reaches back into.
   `FastblocksRegistry(get_resolver())`) — extends
   `settings/mahavishnu.yaml` (per Phase 2 Literal types).
 
-**Oneiric observability adapter** subscribes to Oneiric's
-`Decisions.events()` stream at startup. For each event:
-- Emit a `structlog` line at INFO (e.g.,
-  `event="decision_resolved" action="resolved" target="fastblocks.style"
-  choice="kelp" shadowed=["bulma"] duration_ms=12`).
-- Increment counter
-  `fastblocks_oneiric_decision_total{action, target, result}` where
-  `result ∈ {"hit", "miss", "shadowed"}`.
+**Oneiric observability adapter (real contract)** — Phase 6 does NOT
+subscribe to a `Decisions.events()` stream because **that API does
+not exist** in Oneiric (verified against
+`/Users/les/Projects/oneiric/oneiric/core/observability.py` and
+`oneiric/core/resolution.py:207-215` per multi-agent review F-ONE-001 /
+F-OBS-004). The actual contract:
+
+- `DecisionEvent` is a `@dataclass` (oneiric/core/observability.py:43-59)
+  with fields `domain`, `key`, `provider`, `decision`, `details`.
+- It is emitted as a **one-shot context manager** via `traced_decision(event)`
+  in `oneiric/core/resolution.py:207-215`. The `decision` field is the
+  literal string `"resolved"` (hardcoded at resolution.py:211).
+- The only public external surface is the OTel span emitted inside
+  `traced_decision()`. There is no subscribe API, no async iterator,
+  no event bus hook.
+
+**Phase 6's bridge strategy**: register an OTel `SpanProcessor` at startup
+that intercepts spans named `resolver.decision`. For each such span:
+
+- Read span attributes for `oneiric.decision.domain`,
+  `oneiric.decision.key`, `oneiric.decision.provider`,
+  `oneiric.decision.decision`. (Phase 6 Commit 4 includes a one-line
+  verification: assert these attributes are present on a real
+  `traced_decision()` span in test; if absent, Commit 4 cannot ship
+  until the attributes are contributed upstream to Oneiric.)
+- Emit a `structlog` line at INFO with shape:
+  `event="decision_resolved" domain="<domain>" key="<key>" provider="<provider>"
+  decision="resolved" trace_id="<hex>" span_id="<hex>"`.
+- Increment counter `fastblocks_oneiric_decision_total{domain, decision}`
+  where `domain` ∈ `Literal["fastblocks.style", "fastblocks.renderer",
+  "fastblocks.adapter", ...]` (bounded — see _label_allowlist fix below)
+  and `decision ∈ Literal["resolved"]` (single value; included for
+  forward-compat if Oneiric adds failure modes).
+- Increment counter `fastblocks_oneiric_resolution_shadowed_total{domain}`
+  ONLY when `decision="resolved"` AND the resolver produced alternative
+  candidates (`details["shadowed"]` non-empty). This is the bounded
+  version of the prior un-shadowed proposal.
 
 **Per master plan line 489 — "not parallel"**: Phase 6 doesn't
 duplicate resolution logic in fastblocks. It doesn't re-export Oneiric
 metrics under fastblocks names. It doesn't re-derive shadowed
-candidates; it surfaces what Oneiric already computed.
+candidates; it reads them from Oneiric's emitted span attributes.
+
+**Facade boundary (ADR 0008 Rule 1 / Phase 1.5)**: the bridge consumes
+via the `FastblocksRegistry(get_resolver())` facade's span-provider
+hooks, NOT directly through `Resolver` — keeps the Phase 1.5
+consolidation intact and routes through the observability counters
+already firing in `fastblocks/core/resolver_metrics.py`.
+
+**Commit 4 verify-gate**: before Commit 4 lands, ship a small verification
+script at `scripts/verify_oneiric_otel_attrs.py` that imports Oneiric,
+fires a real `traced_decision()`, and asserts the four attribute names
+exist. Commit 4's `Demonstrable by:` clause explicitly references this
+script's output.
 
 **6A settings shape** (`settings/observability.yaml`):
 
@@ -150,7 +191,7 @@ config-load time.
 | Settings file missing | Oneiric defaults apply (`enabled: false`); no signals emitted; app continues |
 | `prometheus_client` import fails at startup | `enabled: false`; logged once at WARNING; app continues |
 | `structlog` formatter raises | caught by `structlog`'s wrapper; line emitted as plain string |
-| Oneiric `Decisions.events()` raises mid-stream | adapter logs exception + drops subscription; signals stop flowing; app continues |
+| Oneiric's `traced_decision()` raises mid-emit | SpanProcessor logs exception + skips the span; counter not incremented for that span; app continues |
 
 **6A tests** (~10): Counter.inc() with labels, Histogram.observe(),
 label key set assertion, CardinalityGuard trip raises (in 6B but
@@ -304,6 +345,28 @@ typed labelnames lint passes, allowlist entry lint passes, lint runs
 end-to-end on fixture, instrument_tool increments counter on ok
 + error.
 
+### 6B.7 — Cardinality safety rule (per multi-agent review F-OBS-001)
+
+Phase 6 forbids the following as Prometheus label values, full stop:
+
+| Forbidden | Why | What to use instead |
+|---|---|---|
+| `trace_id`, `span_id` | Unique per request; one new time series per request directly recreates the OOM condition this phase is supposed to prevent | OTel context propagation; `merge_contextvars` or a custom structlog processor that reads `trace_context.get()` and merges the trace_id into the log line's event dict; Prometheus exemplars on histograms (Python `prometheus_client` supports `Observe(exemplar=...)`) |
+| `request_id`, `correlation_id` | Same cardinality problem | Logs only |
+| Full URLs (`https://example.com/foo?bar=baz`) | Unbounded by `?query` strings | Route templates (`/items/{id}`) or OTel span name |
+| User-controlled path segments (`/items/{id}`, `/users/{uuid}`) | `id` and `uuid` are unbounded | Static route names |
+| Generic `boundary` labels with a single possible value | A label with N=1 isn't a label — it's a constant that makes alerting and grouping harder | Label-free counter until ≥2 actual boundary types exist |
+| `domain` from Oneiric | New `domain` types can be added at runtime; permit a per-metric `Literal["fastblocks.style", "fastblocks.renderer", "fastblocks.adapter", ...]` allowlist keyed to `Counter` registration | `Literal[...]` per-metric |
+
+**Correlation policy**: cross-signal correlation (logs ↔ traces ↔ metrics) MUST go through:
+1. **OTel context** (Python's `opentelemetry.context` propagation through `ContextVar`s).
+2. **Logs** (structlog `merge_contextvars` for what it covers, plus a custom structlog processor reading `_current_trace` for trace_id/span_id).
+3. **Exemplars** on Prometheus histograms (`observe(exemplar={"trace_id": <hex>})`).
+
+NOT through Prometheus labels. This is the design's iron rule.
+
+---
+
 ### 6C — Trace propagation + a11y bridges (4-5 commits)
 
 **What ships**: the async-fanout + UI-bridge concerns.
@@ -350,26 +413,33 @@ are the modern idiom and integrate with `asyncio.Task` natively.
 `current_context()` (Python 3.13 stdlib) is `contextvars.copy_context()`
 which is heavier.
 
-**htmx.py per-thread loop boundary** (master plan line 521 — flagged
-in Phase 1A as a critical finding). The propagator fix is Phase 1A
-territory; Phase 6 ships TESTS that verify the boundary works:
+**htmx.py executor boundary** (per multi-agent review F-STR-1, F-OBS-006).
+The actual file is `fastblocks/htmx.py` (single file, 416 lines) — NOT
+`fastblocks/htmx/loop.py` (which does not exist). The relevant real
+helper is `_run_async_safely` at `fastblocks/htmx.py:19-52`, which
+delegates sync callers to async code via `executor.submit(asyncio.run, coro).result()`.
 
-```python
-# fastblocks/htmx/loop.py — Phase 1A's responsibility; Phase 6 reads it
-import contextvars
-from fastblocks.observability import trace_context
+**The propagation problem this surfaces**: `executor.submit(...)` starts
+a *new thread* with a fresh empty `ContextVar` storage. The coroutine
+inside `asyncio.run()` runs in the new thread's empty context.
+`_current_trace` set in the caller thread is **not** propagated. The
+prior spec snippet (a `_dispatch_with_trace` helper using
+`copy_context()`) was a no-op — `ctx` was computed and never applied.
 
-async def _dispatch_with_trace(coro):
-    ctx = contextvars.copy_context()
-    return await coro  # Python handles propagation inside asyncio loop
-```
+**What Phase 6 ships for this boundary**: Commit 12 is a **regression
+test only**. The test asserts that trace_context IS lost across the
+boundary under the current implementation (captured by
+`fastblocks_trace_context_lost_total`). The boundary fix itself —
+wrapping the executor call so context is preserved, e.g.
+`executor.submit(copy_context().run, asyncio.run, coro)` — belongs in
+a separate Phase 6.5 commit (or as an additional Phase 6 commit 12b).
+It is explicitly flagged as a production-code change to
+`fastblocks/htmx.py`. The fix is recorded in §5.6 Open Review Flags
+and is out of Phase 6's 15-commit scope per the user's "targeted
+fix round" choice.
 
-What Phase 6 adds: the OBSERVABILITY side. Consumers of the context
-propagation, not the propagator. Phase 6 ships tests that verify
-trace context survives the boundary AND counter increments inside the
-htmx.py loop carry the right `trace_id` label. If propagation breaks,
-Phase 6 emits `fastblocks_trace_context_lost_total{boundary}` —
-observability OF the boundary violation.
+Phase 6 emits `fastblocks_trace_context_lost_total` (label-free) —
+observability OF the boundary violation, recorded as a known gap.
 
 **OTel middleware** (master plan line 495 — outermost):
 
@@ -400,8 +470,24 @@ class OtelMiddleware(BaseHTTPMiddleware):
 
 Why outermost: so all other middleware (auth, CORS, request-logging)
 become children of the OTel root span. Sibling middleware then link
-their own spans to it. Mounted in `default.py` first in
-`add_middleware(...)` order.
+their own spans to it.
+
+**Mount order — Starlette `add_middleware` is reverse-wrapped** (per
+multi-agent review F-STR-2): Starlette wraps middleware in REVERSE, so
+the LAST-registered user middleware becomes the outermost. FastBlocks'
+`MiddlewareManager._apply_middleware_to_app`
+(`fastblocks/applications.py:332-342`) iterates `reversed(middleware_list)`
+when wrapping. **Therefore OtelMiddleware MUST be registered LAST in
+the user_middleware list** (or via `MiddlewarePosition.OUTERMOST` if the
+manager supports it; spec mandates verification of which position
+attribute is accepted before implementation).
+
+The Commit 11 IC's `Demonstrable by:` clause MUST include a test that
+asserts OtelMiddleware sits at index 0 of
+`MiddlewareManager.get_middleware_stack()` — if it doesn't, the trace
+attribution breaks for every request that fails auth/CORS (the most
+operationally interesting failures), making OTel invisible to the
+exact signals operators care most about.
 
 **Sentry + OTel root-span bridge** (master plan line 497):
 
@@ -411,20 +497,58 @@ own TracerProvider, you get TWO root spans per request — Sentry's spans
 don't link to OTel's tree, and vice versa. The bridge:
 
 ```python
+# Per multi-agent review F-OBS-003: pinned sentry-sdk = 3.0.0a7 (alpha).
+# That release exposes the OTel bridge under `sentry_sdk.opentelemetry`,
+# NOT `sentry_sdk.integrations.opentelemetry` (which exists in
+# later/3.x but paths shift across alphas). The original spec used
+# the latter path and would ImportError at startup.
+#
+# Spec mandates: pre-implementation, run a one-line smoke check
+# `python -c "import sentry_sdk; print(sentry_sdk.__version__)"` and
+# verify the actual import location by `python -c "from sentry_sdk
+# import opentelemetry; print(opentelemetry.__file__)"`. The smoke
+# check must be green BEFORE Commit 13 ships; the bridge is gated on it.
+
 from sentry_sdk import init as sentry_init
-from sentry_sdk.integrations.opentelemetry import OpenTelemetryIntegration
 
 def init_observability_with_sentry() -> None:
     sentry_init(
         dsn=settings.observability.sentry_dsn,  # optional; may be unset
-        integrations=[OpenTelemetryIntegration()],
+        # OTel bridge integration is wired dynamically — see smoke check below.
         traces_sample_rate=settings.observability.traces.sample_rate,
     )
 ```
 
-`OpenTelemetryIntegration()` with `transaction_style="tx.name"`
-(default): Sentry's `transaction` field comes from OTel's span name.
-One tree in both UIs.
+**Bridge configuration notes**:
+
+- `sentry-sdk` 3.0 is an alpha; the OTel integration paths are not
+  stable. The Commit 13 IC MUST include the smoke check
+  output (file path of `sentry_sdk.opentelemetry`) as a precondition
+  artifact in the commit message body. Any future Sentry upgrade that
+  changes the bridge path requires Commit 13 to be re-validated
+  (gated by the smoke check).
+- For Sentry version-pinning strategy, the spec mandates a single,
+  deterministic provider ownership: either Sentry OR OTel is the
+  root-span emitter, never both. Default is OTel-as-root with
+  Sentry-as-child (current spec intent). The dual-provider ownership
+  in 3.0 alpha MUST be verified by a test that asserts a single span
+  tree is visible in both UIs.
+- The Logfire Starlette instrumentation already present in
+  `fastblocks/initializers.py` is NOT addressed in Commit 13 — it's
+  pre-existing observability infrastructure. Phase 6 interacts with
+  it via the `merge_contextvars` route (custom processor reading
+  `_current_trace` per Fix 1's structlog note, if needed); conflicts
+  with OTel root-span ownership are out of scope and recorded in
+  §5.6 Open Review Flags.
+
+Failure modes:
+- `SENTRY_DSN` unset → bridge is a no-op; OTel works alone.
+- `sentry_init` raises (bad DSN) → app startup fails with clear error.
+- OTel bridge path differs from spec's expected import location →
+  bridge fails fast at startup; app MUST add a fallback config knob
+  `observability.sentry.disabled_on_import_error: bool` (default `true`)
+  that lets operations ship without Sentry while the bridge is
+  being repaired.
 
 Failure modes:
 - `SENTRY_DSN` unset → bridge is a no-op; OTel works alone.
@@ -449,6 +573,20 @@ def render_broadcast_as_a11y(
         f'<div role="{role}" aria-live="{kind.value}" '
         f'aria-atomic="true" class="sr-only">{_escape(message)}</div>'
     )
+
+
+# fastblocks/websocket/static/a11y_bridge.css (NEW, ships with Commit 14)
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 ```
 
 Routing policy (which events get which `aria-live` kind):
@@ -479,12 +617,40 @@ This is the test that vouches for WCAG SC 4.1.3 compliance.
 |---|---|
 | MCP Tool Invocations | `rate(fastblocks_mcp_tool_invocations_total[1m])` |
 | MCP Tool Latency (p99) | `histogram_quantile(0.99, fastblocks_mcp_tool_duration_seconds_bucket)` |
-| HTMY Render Total | `rate(fastblocks_htmy_component_render_total[1m])` |
-| Render Duration | `histogram_quantile(0.5, fastblocks_render_duration_seconds_bucket)` |
+| HTMY Render Total | `rate(fastblocks_htmy_component_render_total{escaped}[1m])` (with `escaped=true/false` filter so the master-plan line 583 escape-regression signal is observable) |
+| Render Duration | `histogram_quantile(0.95, fastblocks_render_duration_seconds_bucket)` (p95 not p50 — p50 hides tail regressions per F-OBS-007) |
 | Style Resolution | `rate(fastblocks_style_resolve_total[1m])` by `result` |
-| Shadowed Oneiric Candidates | `rate(fastblocks_oneiric_decision_total{result="shadowed"}[1m])` |
+| Shadowed Oneiric Candidates | `rate(fastblocks_oneiric_resolution_shadowed_total[1m])` |
 | Config Validation | `rate(fastblocks_config_validation_total[1m])` by `result` |
-| Trace Context Loss | `rate(fastblocks_trace_context_lost_total[1m])` by `boundary` |
+| Trace Context Loss | `rate(fastblocks_trace_context_lost_total[1m])` (label-free) |
+
+**Per-metric instrumentation matrix** (mandated by multi-agent review
+F-OBS-002 — the dashboard cannot be implemented or verified without
+this). Each metric has exactly one emitting call site in the codebase:
+
+| Metric | Emitted at | Labels | Bound test |
+|---|---|---|---|
+| `fastblocks_mcp_tool_invocations_total` | `instrument_tool` decorator in `fastblocks/mcp/observability.py` (Commit 8) | `tool_name, status` | `tests/mcp/test_mcp_observability.py::test_counters_incremented` |
+| `fastblocks_mcp_tool_duration_seconds` | same | `tool_name` | same |
+| `fastblocks_htmy_component_render_total` | New emit at HTMY render dispatcher in `fastblocks/adapters/templates/htmy_dispatcher.py:??` (Commit 4 followup or 6C Commit) | `escaped ∈ Literal["true", "false"]` | new test in `tests/observability/test_htmy_render_counter.py` |
+| `fastblocks_render_duration_seconds` | New `Histogram` wrapper around HTMY render call (same site) | (no labels — histogram-only) | new test asserts `observe()` round-trip |
+| `fastblocks_style_resolve_total` | New emit at Oneiric `select_strategy` call site (already stubbed in Phase 1.5's `fastblocks/core/resolver_metrics.py`) | `result ∈ Literal["hit", "miss", "shadowed"]` | extended `tests/core/test_resolver_metrics.py` |
+| `fastblocks_oneiric_resolution_shadowed_total` | Oneiric adapter's SpanProcessor (Commit 4) when `details["shadowed"]` is non-empty | `domain ∈ Literal["fastblocks.style", "fastblocks.renderer", "fastblocks.adapter"]` | `tests/observability/test_oneiric_adapter.py::test_shadowed_counter_increments` |
+| `fastblocks_oneiric_decision_total` | same — covers BOTH outcomes (resolved AND shadowed) | `domain, decision ∈ Literal["resolved"]` (forward-compat for future failure modes) | same |
+| `fastblocks_config_validation_total` | New emit at settings loader `validate_settings` (Phase 2.5's `AppSettings`) | `result ∈ Literal["ok", "invalid"]` | new test in `tests/observability/test_config_validation_counter.py` |
+| `fastblocks_trace_context_lost_total` | `trace_context` module (Commit 10) increments when caller isNone and callee is non-None | (label-free per §6B.7) | `tests/observability/test_trace_context.py::test_loss_counter_increments` |
+
+The matrix above is the **observability contract** — each metric
+listed in the dashboard is bound to exactly one emitting call site and
+exactly one test. If the matrix changes (e.g., a new panel is added),
+the spec update MUST come with both the new emit code path AND the
+test commit reference.
+
+**Per-dashboard-metric ground-truth test**: `tests/dashboards/test_fastblocks_dashboard_schema.py` MUST scan
+each panel's `targets[].expr`, extract the metric name, and assert that
+metric appears in the per-metric matrix above (or in a CI-managed
+machine-readable allowlist file). A panel referencing an un-instrumented
+metric fails at test time, not at production scrape time.
 
 Schema validation: dashboard JSON checked against Grafana 10.x schema
 (`tests/dashboards/test_fastblocks_dashboard_schema.py`). On future
@@ -517,7 +683,7 @@ aria-live test, Grafana 10.x schema validates.
 | OTel collector unreachable | Sampler drops traces; logs fall back to local stderr | observability can't take down the app |
 | Counter name collision (two Counters share a name) | `ValueError` at module-load time | prevents silent double-export; loud startup error |
 | Histogram bucket array mismatch | `ValueError` at observe() time | prevents silent bin-boundary bugs |
-| `trace_context.get()` returns `None` inside htmx.py loop | Counter `trace_id` label omitted; observability continues; increments `fastblocks_trace_context_lost_total` | observability OF the boundary violation, not a crash |
+| `trace_context.get()` returns `None` inside htmx.py loop | `fastblocks_trace_context_lost_total` increments (label-free); observability continues | observability OF the boundary violation, not a crash |
 | CardinalityGuard trips in production | `cardinality_mode="enforce"` → `ValueError`; instrumented-caller catches; `fastblocks_cardinality_violations_total` incremented | observability OF misuse, not silent drop |
 | Sentry DSN rotates | Bind at startup; rotation requires restart (matches Sentry's own model) | documented limitation |
 | Dashboard JSON schema drift (Grafana upgraded) | `tests/dashboards/` fails; implementer updates dashboard AND schema assertion together | catches unintentional dashboard breakage |
@@ -614,12 +780,12 @@ reviewer requirements in its IC.
   wired (idempotent if collector absent)
 - *Reviewers:* 2 (python-pro; observability-incident-lead)
 
-### Commit 4 — `feat(adapters): Oneiric observability adapter — explain()/list_shadowed() bridge`
+### Commit 4 — `feat(adapters): Oneiric observability adapter — SpanProcessor on `resolver.decision` spans`
 
-- *Triggered from:* Commits 1+2; Section 2 §6A.3
-- *Returns to / updates:* NEW `fastblocks/adapters/oneiric/observability.py`
-- *Demonstrable by:* Trigger Oneiric resolution in test; assert log
-  line + counter increment in synthetic sink
+- *Triggered from:* Commits 1+2; Section 2 §6A.3 (real contract per multi-agent review F-ONE-001 / F-OBS-004)
+- *Returns to / updates:* NEW `fastblocks/adapters/oneiric/observability.py` (SpanProcessor install); NEW `scripts/verify_oneiric_otel_attrs.py` (precondition smoke check)
+- *Demonstrable by:* Run `scripts/verify_oneiric_otel_attrs.py` — fires a real `traced_decision()` in Oneiric, asserts the four attribute names (`oneiric.decision.domain`, `oneiric.decision.key`, `oneiric.decision.provider`, `oneiric.decision.decision`) appear on the emitted span. CI fails the commit if attributes are absent. Then a unit test triggers Oneiric resolution; the SpanProcessor emits both a `structlog` line and an increment on `fastblocks_oneiric_decision_total{domain, decision}` via the synthetic sink.
+- *Precondition artifact:* Commit 13's smoke-check output (import path of `sentry_sdk.opentelemetry`) is preserved in the commit message body, per the Sentry import-path fix.
 - *Rollback signal:* `git revert`
 - *Observability added:* Oneiric → fastblocks observability export live
 - *Reviewers:* 2 (oneiric-specialist for protocol correctness;
@@ -728,9 +894,23 @@ reviewer requirements in its IC.
 
 - *Triggered from:* Commits 1+5; Section 4 §6C.5
 - *Returns to / updates:* NEW `fastblocks/websocket/a11y_bridge.py`;
+  NEW `fastblocks/websocket/static/a11y_bridge.css` (the
+  Bootstrap-style `.sr-only` rule per multi-agent review F-A11Y-001 —
+  without this CSS rule, the bridge's emitted `<div class="sr-only">`
+  is neither visible to sighted users nor reachable by screen readers,
+  silently failing the WCAG SC 4.1.3 contract from master plan line 492);
   rendered in default HTMY template
-- *Demonstrable by:* `render_broadcast_as_a11y(kind=POLITE, message="hit",
-  role="status")` returns the expected escaped HTML
+- *Demonstrable by:*
+  1. `render_broadcast_as_a11y(kind=POLITE, message="hit", role="status")`
+     returns the expected escaped HTML
+  2. Playwright test boots app + WebSocket adapter, fires request
+     triggering a fastblocks_websocket event, asserts DOM has new
+     `aria-live` node with expected text AND that computed style for
+     the node has `width="1px"` AND `clip-path` is `inset(50%)` (or
+     equivalent off-screen clip — proves the shipped CSS is loaded,
+     not just present in some unloaded stylesheet)
+  3. Manual screen-reader smoke gate (NVDA + VoiceOver) — recorded as
+     a known limitation of automated testing, documented inline
 - *Rollback signal:* `git revert`
 - *Observability added:* a11y bridge live (NOT user-observable until
   event happens)
@@ -771,19 +951,28 @@ reviewer requirements in its IC.
    478-479. Re-read at handoff: this might be Phase 5 verification debt
    rolled into Phase 6. If so, Phase 6 inherits the `LifespanManager`
    doesn't-exist P0 from ADR 0012 Decision 2.
-3. **Oneiric `Decisions.events()` API**: Phase 6 assumes the event-stream
-   contract exists. Verify with `oneiric-specialist` at handoff time. If
-   the contract has changed since ADR 0008, design adapts.
+3. **Oneiric `Decisions.events()` API** *(closed in v2)*: Phase 6
+   originally assumed an event-stream contract that did not exist.
+   Replaced with SpanProcessor consuming actual `resolver.decision`
+   OTel spans emitted by Oneiric's `traced_decision()` context manager.
+   Pre-condition artifact (verify_oneiric_otel_attrs.py output)
+   shipped as a Commit 4 smoke-check gate.
 4. **Grafana dashboard version**: pinned to Grafana 10.x. If operator
    uses different version, the schema assertion will fail. Document as
    expected behavior; treat as known limitation.
+5. **Commit 12 boundary fix**: trace_context propagation across
+   `fastblocks/htmx.py:_run_async_safely` is recorded as a regression
+   test only; the production-code fix (`executor.submit(copy_context().run, asyncio.run, coro)`)
+   is split off as a Phase 6.5 commit. Recorded as Phase 6's known-gap
+   in §6C.2.
 
 ## Cross-references
 
 - Master plan: §Pillar 6 (lines 174-180), §Phase 6 (line 342),
   §Phase 6 verification (lines 481-498)
-- ADR 0008: Oneiric selection mechanism (`Decisions.events()` contract
-  consumed by 6A)
+- ADR 0008: Oneiric selection mechanism (SpanProcessor on
+  `resolver.decision` spans replaces the originally-assumed event-stream;
+  consumer-side counter increment via OTel span attributes)
 - ADR 0011: Phase 4 deferral (Commit 8 dependency)
 - ADR 0012: Phase 5 deferral (LifespanManager P0 inheritance risk)
 - Phase 1.5 spec: Oneiric layered config (settings layer)
