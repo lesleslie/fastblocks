@@ -24,13 +24,20 @@ scope decision for THIS spec is **mechanical four**:
 1. `Literal[...]` types for the `style` domain (CLI + settings)
 2. CLI↔settings Literal sync test
 3. Oneiric-`explain()`-based error contract for registered-but-not-in-Literal drift
-4. `Protocol`-based adapter contracts (`StyleAdapter`, `TemplateAdapter`) with `isinstance` enforcement
+4. `Protocol`-based adapter contracts (`StyleAdapter`) with `isinstance` enforcement.
+   `TemplateAdapter` is **defined** for Phase 6's Prometheus cardinality lint
+   (Phase 6's label-set `Literal[...]` rule needs a stable type to lint
+   against), but its `register_template_candidate` decorator is **deferred**
+   — no template-renderer registration call site exists today, and adding
+   the decorator without a consumer would be a scope leak. Phase 2 ships
+   the `TemplateAdapter` Protocol + tests, not the registration decorator.
 
 **Out of scope** (deferred to Phase 4 / Phase 6 / Phase 7):
 
 - Renderer match-statement dispatch (master plan line 311)
 - `style_registry.py:66` `with suppress(Exception)` deletion (master plan line 313)
 - Prometheus metrics for the new error paths (deferred to Phase 6)
+- `register_template_candidate` decorator (deferred — no consumer site)
 
 **Already done in earlier phases** (master plan §Phase 1B results line 423
 records "XSS regression test passes"; the master plan's own Section §Phase1B
@@ -165,10 +172,10 @@ class TemplateAdapter(t.Protocol):
 because Phase 6's Prometheus label cardinality rule
 (master plan §Pillar 5) needs a stable type to lint against.
 
-## Registration gate — `register_style_candidate` / `register_template_candidate`
+## Registration gate — `register_style_candidate`
 
-Two new decorators in `fastblocks/adapters/oneiric_helper.py`, both thin
-wrappers around Card 1's existing `register_candidate_strict`:
+One new decorator in `fastblocks/adapters/oneiric_helper.py`, a thin
+wrapper around Card 1's existing `register_candidate_strict`:
 
 ```python
 def register_style_candidate(
@@ -188,10 +195,12 @@ def register_style_candidate(
     )
 ```
 
-Same shape for `register_template_candidate`. The `# ty: ignore` is
-**the one** ty directive in Phase 2 — narrow, justified inline, tied to
-the function's whole purpose. Mass-suppression threshold is 5; Phase 2
-adds 1.
+`register_template_candidate` is **deferred** (no consumer call site
+exists). `TemplateAdapter` Protocol is still defined and tested (Phase 6's
+Prometheus cardinality lint needs it); only the decorator waits. The
+`# ty: ignore` is **the one** ty directive in Phase 2 — narrow, justified
+inline, tied to the function's whole purpose. Mass-suppression threshold
+is 5; Phase 2 adds 1.
 
 ## Error message contract — `format_resolver_mismatch`
 
@@ -292,8 +301,8 @@ Per master plan §Phase 2 verification (line 456-462):
 
 | Gate | How verified |
 |---|---|
-| Every `Literal[...]` settings field has a runtime validator | `git grep -nE "style:\s*Literal" fastblocks/adapters/app/_base.py` returns 1 hit; ty reports no `[invalid-argument-type]` on the field |
-| Unknown style raises `ValueError` | `tests/core/test_app_settings_literal.py::test_unknown_style_raises` passes |
+| Every `Literal[...]` settings field has a runtime validator | `AppBaseSettings.style` is typed `StyleName` (resolves to `Literal["vanilla", "fastblocks_ui"]`); Pydantic v2 inherits the literal-validation behavior from `OneiricSettings`; `tests/core/test_app_settings_literal.py::test_legal_style_passes` + 3 illegal-value tests confirm runtime validation fires |
+| Unknown style raises the literal-validation error | `tests/core/test_app_settings_literal.py` confirms `pydantic.ValidationError` is raised for `kelp`, `webawesome`, `bulma` (all 3 Phase 1A-deleted values) with the legal set named in the message |
 | AppBaseSettings and CLI Literal are in sync | `tests/core/test_validators_sync.py` all 4 tests pass |
 | `git grep -c 'suppress(Exception)' -- fastblocks/` shows number below baseline | Baseline is 1 (Phase 1A cleanup); Phase 2 holds it at 1 (documented framework-boundary exception) |
 | `register_candidate` decorator with isinstance verification rejects adapter modules | `tests/core/test_style_adapter_protocol.py::test_register_rejects_missing_method` passes |
@@ -340,9 +349,9 @@ commits, all additive or backwards-compatible.
 ### Commit 4 — `feat(adapter-registration): Protocol-based isinstance gate + format_resolver_mismatch`
 
 - *Triggered from:* Commits 1-3 supply the Protocols; `register_candidate_strict` from Card 1 supplies the registration surface
-- *Returns to / updates:* `fastblocks/adapters/oneiric_helper.py` — adds `register_style_candidate()` and `register_template_candidate()`; `fastblocks/core/validators.py` — adds `format_resolver_mismatch()`
-- *Demonstrable by:* `tests/core/test_style_adapter_protocol.py` (5 tests), `tests/core/test_template_adapter_protocol.py` (3 tests), `tests/core/test_resolver_mismatch.py` (6 tests) all pass
-- *Rollback signal:* `git revert`; the decorators are additive — production continues to use existing `register_candidate_strict` directly
+- *Returns to / updates:* `fastblocks/adapters/oneiric_helper.py` — adds `register_style_candidate()` only (the `register_template_candidate` decorator is deferred — no consumer site); `fastblocks/core/validators.py` — adds `format_resolver_mismatch()`
+- *Demonstrable by:* `tests/core/test_style_adapter_protocol.py` (5 tests), `tests/core/test_template_adapter_protocol.py` (3 tests, Protocol-only — no decorator), `tests/core/test_resolver_mismatch.py` (6 tests) all pass
+- *Rollback signal:* `git revert`; the decorator is additive — production continues to use existing `register_candidate_strict` directly
 - *Observability added:* `fastblocks_validator_mismatch` and `fastblocks_protocol_mismatch` structured log lines
 
 ### Commit 5 — `docs(adr): ADR 0010 — Phase 2 mechanical-four closeout`
