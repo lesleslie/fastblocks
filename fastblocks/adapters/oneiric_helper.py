@@ -20,6 +20,27 @@ from fastblocks.core.resolver import FastblocksRegistry
 _log = get_logger("fastblocks.oneiric_helper")
 
 
+def _build_candidate(
+    domain: str,
+    key: str,
+    factory: Callable[..., Any],
+    metadata: dict[str, Any] | None,
+) -> Candidate:
+    """Construct a Candidate for the strict + lenient registration paths.
+
+    Mirrors the helper in ``fastblocks.core.resolver._build_candidate`` so
+    both paths use the same construction shape. Kept module-local so
+    this file remains importable without going through the facade.
+    """
+    return Candidate(
+        domain=domain,
+        key=key,
+        factory=factory,
+        source=CandidateSource.LOCAL_PKG,
+        metadata=metadata or {},
+    )
+
+
 def register_candidate(
     resolver: Resolver | FastblocksRegistry,
     domain: str,
@@ -50,6 +71,9 @@ def register_candidate(
         reasons unrelated to the inputs we constructed is not a "graceful
         degradation" case and must be visible to the caller.
 
+    For Phase 2 callers that need validation failures to surface as
+    exceptions, see :func:`register_candidate_strict`.
+
     Example:
         >>> from oneiric.core.resolution import Resolver
         >>> depends = Resolver()
@@ -63,13 +87,7 @@ def register_candidate(
         ... )
     """
     try:
-        candidate = Candidate(
-            domain=domain,
-            key=key,
-            factory=factory,
-            source=CandidateSource.LOCAL_PKG,
-            metadata=metadata or {},
-        )
+        candidate = _build_candidate(domain, key, factory, metadata)
     except (ValidationError, ValueError, TypeError) as exc:
         _log.exception(
             "register_candidate rejected invalid registration: "
@@ -82,6 +100,44 @@ def register_candidate(
 
     resolver.register(candidate)
     return True
+
+
+def register_candidate_strict(
+    resolver: Resolver | FastblocksRegistry,
+    domain: str,
+    key: str,
+    factory: Callable[..., Any],
+    metadata: dict[str, Any] | None = None,
+) -> None:
+    """Register a Candidate with the resolver; raise on validation failure.
+
+    Phase 2 fix for F-L5-01 (Phase 1.5 adversarial review). Mirrors
+    :func:`register_candidate` but raises
+    :class:`fastblocks.core.resolver.CandidateValidationError` instead
+    of returning ``False`` on the documented validation failure set.
+    Resolver implementation errors other than the documented set still
+    propagate as before.
+
+    Subclass ``ValueError`` so existing ``except ValueError`` handlers
+    continue to match — callers that want specifically validation-rejection
+    can catch ``CandidateValidationError`` directly.
+    """
+    try:
+        candidate = _build_candidate(domain, key, factory, metadata)
+    except (ValidationError, ValueError, TypeError) as exc:
+        # Local import to keep oneiric_helper.py decoupled from
+        # fastblocks.core.resolver at module-import time (some legacy
+        # callers import this module before fastblocks.core.resolver
+        # is initialised).
+        from fastblocks.core.resolver import CandidateValidationError
+
+        raise CandidateValidationError(
+            domain=domain,
+            key=key,
+            original=exc,
+        ) from exc
+
+    resolver.register(candidate)
 
 
 def resolve_instance(

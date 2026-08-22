@@ -41,6 +41,60 @@ _log = get_logger("fastblocks.resolver")
 _resolver: Resolver | None = None
 
 
+class CandidateValidationError(ValueError):
+    """Raised by ``register_candidate_strict`` when Candidate construction fails.
+
+    Phase 2 fix for F-L5-01. Subclasses ``ValueError`` so existing
+    ``except ValueError`` handlers continue to match, while callers that
+    want to specifically catch validation-rejection can do so.
+
+    Attributes:
+        domain: The candidate domain that was being registered.
+        key: The candidate key that was being registered.
+        original: The underlying ``ValidationError``, ``ValueError``,
+            or ``TypeError`` that triggered the rejection.
+    """
+
+    def __init__(
+        self,
+        *,
+        domain: str,
+        key: str,
+        original: BaseException,
+    ) -> None:
+        self.domain = domain
+        self.key = key
+        self.original = original
+        super().__init__(
+            f"register_candidate_strict rejected invalid registration: "
+            f"domain={domain!r} key={key!r} error={original}"
+        )
+
+
+def _build_candidate(
+    domain: str,
+    key: str,
+    factory: Callable[..., Any],
+    metadata: dict[str, Any] | None,
+) -> Candidate:
+    """Construct a Candidate for the fastblocks facade's strict + lenient paths.
+
+    Shared between :meth:`FastblocksRegistry.register_candidate` (which
+    swallows the documented exception set) and
+    :meth:`FastblocksRegistry.register_candidate_strict` (which raises
+    :class:`CandidateValidationError`). Keeps the construction shape in
+    one place so the two paths cannot drift on ``source`` /
+    ``metadata`` defaults.
+    """
+    return Candidate(
+        domain=domain,
+        key=key,
+        factory=factory,
+        source=CandidateSource.LOCAL_PKG,
+        metadata=metadata or {},
+    )
+
+
 def get_resolver() -> Resolver:
     """Return the **fastblocks-owned** Resolver singleton.
 
@@ -152,15 +206,12 @@ class FastblocksRegistry:
         to the caller — a candidate the registry rejects for reasons
         unrelated to the inputs we constructed is not a graceful
         degradation case and must be visible.
+
+        For Phase 2 callers that need validation failures to surface as
+        exceptions, see :meth:`register_candidate_strict`.
         """
         try:
-            candidate = Candidate(
-                domain=domain,
-                key=key,
-                factory=factory,
-                source=CandidateSource.LOCAL_PKG,
-                metadata=metadata or {},
-            )
+            candidate = _build_candidate(domain, key, factory, metadata)
         except (ValidationError, ValueError, TypeError) as exc:
             _log.exception(
                 "register_candidate rejected invalid registration: "
@@ -179,6 +230,46 @@ class FastblocksRegistry:
 
         resolver_metrics.increment_registration_count()
         return True
+
+    def register_candidate_strict(
+        self,
+        domain: str,
+        key: str,
+        factory: Callable[..., Any],
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """Wrap ``factory`` in a Candidate and register it; raise on failure.
+
+        Phase 2 fix for F-L5-01 (Phase 1.5 adversarial review). The
+        default :meth:`register_candidate` swallows
+        ``(ValidationError, ValueError, TypeError)`` and returns
+        ``False`` — a Phase 2 typed candidate that fails validation
+        would silently disappear from the registry, defeating the
+        fail-loud startup validation contract.
+
+        This method raises :class:`CandidateValidationError` (a
+        ``ValueError`` subclass, so existing ``except ValueError``
+        handlers still match) on the documented validation failure set.
+        Resolver implementation errors other than the documented set
+        still propagate as before — they are not graceful-degradation
+        cases and must be visible.
+
+        ``metadata`` validation is identical to ``register_candidate``;
+        no additional checks are added here. Phase 2 callers should
+        validate their own candidate metadata before calling this.
+        """
+        try:
+            candidate = _build_candidate(domain, key, factory, metadata)
+        except (ValidationError, ValueError, TypeError) as exc:
+            raise CandidateValidationError(
+                domain=domain,
+                key=key,
+                original=exc,
+            ) from exc
+        self._resolver.register(candidate)
+        from fastblocks.core import resolver_metrics
+
+        resolver_metrics.increment_registration_count()
 
     def resolve_instance(self, domain: str, key: str) -> Any:
         """Resolve and invoke the factory; return ``None`` on miss or failure.
