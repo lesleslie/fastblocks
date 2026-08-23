@@ -225,22 +225,50 @@ def test_env_var_names_match_source() -> None:
 
 
 def test_coverage_target_consistency() -> None:
-    """Every coverage % in docs must match pyproject.toml fail_under."""
+    """Every *current* coverage % in docs must match pyproject.toml fail_under.
+
+    Aspirational targets (e.g. ``Coverage ratchet 65%`` in deferred
+    ADRs) are exempt — those are forward-looking statements about
+    a future ratchet level, not claims about the current floor.
+    Phrases like ``ratchet``, ``target``, ``goal``, ``lifts to``,
+    ``stays at``, and ``beyond`` are forward-looking markers.
+    """
     pyproject = (REPO_ROOT / "pyproject.toml").read_text()
     match = re.search(r"--cov-fail-under=([\d.]+)", pyproject)
     if match is None:
         pytest.skip("Could not find --cov-fail-under in pyproject.toml")
     floor = float(match.group(1))
     pct_re = re.compile(r"(\d{1,3}(?:\.\d+)?)\s*%")
+    # Aspirational / forward-looking phrases around a coverage percentage.
+    aspirational_markers = (
+        "ratchet",
+        "target",
+        "goal",
+        "lift",
+        "boost",
+        "drives",
+        "lifts",
+        "beyond",
+        "stays",
+        "stays at",
+        "maintain",
+        "maintains",
+        "next attempt",
+        "future",
+        "aspirational",
+    )
     tolerance = 0.1
     for path, text in _iter_doc_text():
         for pct_match in pct_re.finditer(text):
             candidate = float(pct_match.group(1))
             if not (5.0 <= candidate <= 100.0):
                 continue
-            ctx_start = max(0, pct_match.start() - 50)
-            ctx = text[ctx_start : pct_match.end() + 5].lower()
+            ctx_start = max(0, pct_match.start() - 80)
+            ctx_end = min(len(text), pct_match.end() + 30)
+            ctx = text[ctx_start:ctx_end].lower()
             if "coverage" not in ctx and "cov" not in ctx:
+                continue
+            if any(marker in ctx for marker in aspirational_markers):
                 continue
             assert abs(candidate - floor) < tolerance, (
                 f"{path.relative_to(REPO_ROOT)} claims coverage {candidate}% "

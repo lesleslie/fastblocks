@@ -223,14 +223,14 @@ class TestSyncCache:
         """Test sync_cache handles exceptions gracefully."""
         mock_cache.delete_pattern.side_effect = Exception("Cache error")
 
-        async def _resolve(_resolver, domain, key):
+        def _resolve(_resolver, domain, key):
             if domain == "fastblocks" and key == "cache":
                 return mock_cache
             return None
 
         with patch(
-            "fastblocks.actions.sync.cache.resolve_component_async",
-            AsyncMock(side_effect=_resolve),
+            "fastblocks.actions.sync.cache.resolve_instance",
+            _resolve,
         ):
             result = await sync_cache(operation="refresh", strategy=mock_strategy)
 
@@ -272,7 +272,7 @@ class TestSyncCache:
     async def test_sync_cache_exception_during_get_depends(self, mock_strategy):
         """Test sync_cache handles exception when getting cache adapter."""
         with patch(
-            "fastblocks.actions.sync.cache.resolve_component_async",
+            "fastblocks.actions.sync.cache.resolve_instance",
             side_effect=Exception("Depends error"),
         ):
             result = await sync_cache(strategy=mock_strategy)

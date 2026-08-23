@@ -109,10 +109,12 @@ class TestGetInstalledAdapter:
         """Test get_installed_adapter with registry."""
         from fastblocks.initializers import _resolver, get_installed_adapter
 
-        with patch.object(_resolver, "registry", MagicMock(get=Mock(return_value=True))):
+        candidate = MagicMock()
+        candidate.key = "test_adapter"
+        with patch.object(_resolver, "list_active", return_value=[candidate]):
             result = get_installed_adapter("test_adapter")
-            # Should not raise an exception
-            assert result is not None or result is None
+            # Should not raise an exception and should find the adapter
+            assert result == "test_adapter"
 
 
 @pytest.mark.unit
@@ -493,7 +495,11 @@ class TestModuleLevelConstants:
         from fastblocks.initializers import _resolver
 
         assert _resolver is not None
-        assert hasattr(_resolver, "registry")
+        # Phase 1.5: ``_resolver`` is a ``FastblocksRegistry`` facade over
+        # the underlying Oneiric singleton; verify the facade surface,
+        # not the (now hidden) ``.registry`` attribute.
+        assert hasattr(_resolver, "list_active")
+        assert hasattr(_resolver, "resolve_instance")
 
 
 @pytest.mark.unit
