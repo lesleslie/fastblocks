@@ -22,36 +22,31 @@ def fb_cli():
     return cli
 
 
-def _candidate_resolver(instance_or_none):
-    """Resolver class mock where .resolve() returns a Candidate-shaped value.
+def _resolve_instance_with(value):
+    """Build a ``resolve_instance`` mock that returns ``value``.
 
-    Oneiric's Resolver.resolve is synchronous and returns either a
-    ``Candidate`` (whose ``.factory()`` yields the resolved instance) or
-    ``None`` when no candidate is registered. ``resolve_instance`` unwraps
-    that contract.
-
-    Passing ``None`` here makes ``resolve_instance`` return ``None`` (the
-    "no candidate" path); passing a non-None instance makes
-    ``resolve_instance`` return that instance (the "candidate found" path).
+    ``fastblocks.cli`` resolves the HTMY / syntax / language-server
+    adapters through ``fastblocks.adapters.oneiric_helper.resolve_instance``.
+    Patching that symbol is the correct chokepoint — earlier revisions
+    patched ``oneiric.core.resolution.Resolver`` directly, but the CLI
+    never calls that class; it uses the fastblocks singleton
+    (``fastblocks.core.resolver.get_resolver``) so the upstream patch had
+    no effect. Pass ``None`` to simulate "no candidate registered";
+    pass any object to simulate "candidate factory returned that object".
     """
-    resolver_instance = MagicMock()
-    if instance_or_none is None:
-        resolver_instance.resolve = MagicMock(return_value=None)
-    else:
-        candidate = MagicMock()
-        candidate.factory = MagicMock(return_value=instance_or_none)
-        resolver_instance.resolve = MagicMock(return_value=candidate)
-    return MagicMock(return_value=resolver_instance)
+    return MagicMock(return_value=value)
 
 
-# Backwards-compatible aliases. The Oneiric resolver is synchronous across
-# every CLI path, so both names produce the same Candidate-shape mock.
-def _async_resolver(return_value):
-    return _candidate_resolver(return_value)
+# Backwards-compatible aliases preserved for the existing patch sites that
+# still read ``_async_resolver(...)`` / ``_sync_resolver(...)``. The Oneiric
+# resolver is synchronous across every CLI path, so both names produce the
+# same ``resolve_instance``-shape mock.
+def _async_resolver(value):
+    return _resolve_instance_with(value)
 
 
-def _sync_resolver(return_value):
-    return _candidate_resolver(return_value)
+def _sync_resolver(value):
+    return _resolve_instance_with(value)
 
 
 @pytest.mark.unit
@@ -118,7 +113,7 @@ class TestDevCommand:
 @pytest.mark.unit
 class TestComponentsCommand:
     def test_components_no_registry(self, runner, fb_cli):
-        with patch("oneiric.core.resolution.Resolver", _sync_resolver(None)):
+        with patch("fastblocks.cli.resolve_instance", _sync_resolver(None)):
             result = runner.invoke(fb_cli, ["components"])
         assert result.exit_code == 0
         assert "Adapter registry not available" in result.output
@@ -132,7 +127,7 @@ class TestComponentsCommand:
         mock_adapter.module = "fastblocks.adapters.templates.jinja2"
         mock_registry = MagicMock()
         mock_registry.get_all_adapters.return_value = [mock_adapter]
-        with patch("oneiric.core.resolution.Resolver", _sync_resolver(mock_registry)):
+        with patch("fastblocks.cli.resolve_instance", _sync_resolver(mock_registry)):
             result = runner.invoke(fb_cli, ["components"])
         assert result.exit_code == 0
         assert "jinja2" in result.output
@@ -140,7 +135,7 @@ class TestComponentsCommand:
     def test_components_empty_adapter_list(self, runner, fb_cli):
         mock_registry = MagicMock()
         mock_registry.get_all_adapters.return_value = []
-        with patch("oneiric.core.resolution.Resolver", _sync_resolver(mock_registry)):
+        with patch("fastblocks.cli.resolve_instance", _sync_resolver(mock_registry)):
             result = runner.invoke(fb_cli, ["components"])
         assert result.exit_code == 0
         assert "No adapters found" in result.output
@@ -151,8 +146,10 @@ class TestComponentsCommand:
         # exception propagates and the CLI's outer try/except prints the
         # "No adapters found" diagnostic instead of "Adapter registry not
         # available".
-        bad.resolve = MagicMock(side_effect=ValueError("boom"))
-        with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
+        with patch(
+            "fastblocks.cli.resolve_instance",
+            MagicMock(side_effect=ValueError("boom")),
+        ):
             result = runner.invoke(fb_cli, ["components"])
         assert result.exit_code == 0
         assert "No adapters found" in result.output
@@ -161,18 +158,18 @@ class TestComponentsCommand:
 @pytest.mark.unit
 class TestScaffoldCommand:
     def test_scaffold_no_htmy_adapter(self, runner, fb_cli):
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(None)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(None)):
             result = runner.invoke(fb_cli, ["scaffold", "my_comp"])
         assert result.exit_code == 0
         assert "not found" in result.output.lower()
 
     def test_scaffold_resolver_error(self, runner, fb_cli):
-        bad = MagicMock()
-        # Resolver.resolve is synchronous; use a plain MagicMock side_effect
-        # rather than AsyncMock so the exception is actually raised at the
-        # call site (and no orphan coroutine warning).
-        bad.resolve = MagicMock(side_effect=Exception("adapter error"))
-        with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
+        # Patch resolve_instance to raise — the CLI's outer try/except
+        # catches it and prints the "Error ..." diagnostic.
+        with patch(
+            "fastblocks.cli.resolve_instance",
+            MagicMock(side_effect=Exception("adapter error")),
+        ):
             result = runner.invoke(fb_cli, ["scaffold", "my_comp"])
         assert result.exit_code == 0
         assert "Error" in result.output
@@ -180,7 +177,7 @@ class TestScaffoldCommand:
     def test_scaffold_success_with_props_and_htmx(self, runner, fb_cli):
         mock_htmy = MagicMock()
         mock_htmy.scaffold_component = AsyncMock(return_value="/path/to/my_comp.py")
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(mock_htmy)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(mock_htmy)):
             result = runner.invoke(
                 fb_cli,
                 [
@@ -199,7 +196,7 @@ class TestScaffoldCommand:
 @pytest.mark.unit
 class TestListCommand:
     def test_list_no_htmy_adapter(self, runner, fb_cli):
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(None)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(None)):
             result = runner.invoke(fb_cli, ["list"])
         assert result.exit_code == 0
         assert "not found" in result.output.lower()
@@ -207,7 +204,7 @@ class TestListCommand:
     def test_list_no_components_found(self, runner, fb_cli):
         mock_htmy = MagicMock()
         mock_htmy.discover_components = AsyncMock(return_value={})
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(mock_htmy)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(mock_htmy)):
             result = runner.invoke(fb_cli, ["list"])
         assert result.exit_code == 0
         assert "No components found" in result.output
@@ -221,18 +218,19 @@ class TestListCommand:
         meta.docstring = "A test component."
         mock_htmy = MagicMock()
         mock_htmy.discover_components = AsyncMock(return_value={"my_comp": meta})
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(mock_htmy)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(mock_htmy)):
             result = runner.invoke(fb_cli, ["list"])
         assert result.exit_code == 0
         assert "my_comp" in result.output
 
     def test_list_resolver_error(self, runner, fb_cli):
-        bad = MagicMock()
         # Exception (base class) is not in resolve_instance's defensive swallow
         # set, so the resolver failure propagates and the CLI's outer
         # try/except prints the "Error listing components: ..." diagnostic.
-        bad.resolve = MagicMock(side_effect=Exception("discovery failed"))
-        with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
+        with patch(
+            "fastblocks.cli.resolve_instance",
+            MagicMock(side_effect=Exception("discovery failed")),
+        ):
             result = runner.invoke(fb_cli, ["list"])
         assert result.exit_code == 0
         assert "Error" in result.output
@@ -241,7 +239,7 @@ class TestListCommand:
 @pytest.mark.unit
 class TestValidateCommand:
     def test_validate_no_htmy_adapter(self, runner, fb_cli):
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(None)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(None)):
             result = runner.invoke(fb_cli, ["validate", "my_comp"])
         assert result.exit_code == 0
         assert "not found" in result.output.lower()
@@ -258,7 +256,7 @@ class TestValidateCommand:
         meta.error_message = None
         mock_htmy = MagicMock()
         mock_htmy.validate_component = AsyncMock(return_value=meta)
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(mock_htmy)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(mock_htmy)):
             result = runner.invoke(fb_cli, ["validate", "my_comp"])
         assert result.exit_code == 0
         assert "dataclass" in result.output
@@ -275,7 +273,7 @@ class TestValidateCommand:
         meta.error_message = None
         mock_htmy = MagicMock()
         mock_htmy.validate_component = AsyncMock(return_value=meta)
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(mock_htmy)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(mock_htmy)):
             result = runner.invoke(fb_cli, ["validate", "my_comp"])
         assert result.exit_code == 0
         assert "hx-get" in result.output
@@ -292,7 +290,7 @@ class TestValidateCommand:
         meta.error_message = "Syntax error on line 5"
         mock_htmy = MagicMock()
         mock_htmy.validate_component = AsyncMock(return_value=meta)
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(mock_htmy)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(mock_htmy)):
             result = runner.invoke(fb_cli, ["validate", "my_comp"])
         assert result.exit_code == 0
         assert "Syntax error" in result.output
@@ -301,7 +299,7 @@ class TestValidateCommand:
 @pytest.mark.unit
 class TestInfoCommand:
     def test_info_no_htmy_adapter(self, runner, fb_cli):
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(None)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(None)):
             result = runner.invoke(fb_cli, ["info", "my_comp"])
         assert result.exit_code == 0
         assert "not found" in result.output.lower()
@@ -314,15 +312,16 @@ class TestInfoCommand:
         mock_htmy = MagicMock()
         mock_htmy.validate_component = AsyncMock(return_value=meta)
         mock_htmy.get_component_class = AsyncMock(side_effect=RuntimeError("no class"))
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(mock_htmy)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(mock_htmy)):
             result = runner.invoke(fb_cli, ["info", "my_comp"])
         assert result.exit_code == 0
         assert "dataclass" in result.output
 
     def test_info_resolver_error(self, runner, fb_cli):
-        bad = MagicMock()
-        bad.resolve = MagicMock(side_effect=Exception("resolver down"))
-        with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
+        with patch(
+            "fastblocks.cli.resolve_instance",
+            MagicMock(side_effect=Exception("resolver down")),
+        ):
             result = runner.invoke(fb_cli, ["info", "my_comp"])
         assert result.exit_code == 0
         assert "Error" in result.output
@@ -367,15 +366,16 @@ class TestGenerateIdeConfigCommand:
 @pytest.mark.unit
 class TestSyntaxCheckCommand:
     def test_syntax_check_no_support(self, runner, fb_cli):
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(None)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(None)):
             result = runner.invoke(fb_cli, ["syntax-check", "some_template.html"])
         assert result.exit_code == 0
         assert "not available" in result.output.lower()
 
     def test_syntax_check_resolver_error(self, runner, fb_cli):
-        bad = MagicMock()
-        bad.resolve = MagicMock(side_effect=Exception("resolver error"))
-        with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
+        with patch(
+            "fastblocks.cli.resolve_instance",
+            MagicMock(side_effect=Exception("resolver error")),
+        ):
             result = runner.invoke(fb_cli, ["syntax-check", "some_template.html"])
         assert result.exit_code == 0
         assert "Error" in result.output
@@ -384,15 +384,16 @@ class TestSyntaxCheckCommand:
 @pytest.mark.unit
 class TestFormatTemplateCommand:
     def test_format_template_no_support(self, runner, fb_cli):
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(None)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(None)):
             result = runner.invoke(fb_cli, ["format-template", "some_template.html"])
         assert result.exit_code == 0
         assert "not available" in result.output.lower()
 
     def test_format_template_resolver_error(self, runner, fb_cli):
-        bad = MagicMock()
-        bad.resolve = MagicMock(side_effect=Exception("resolver error"))
-        with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
+        with patch(
+            "fastblocks.cli.resolve_instance",
+            MagicMock(side_effect=Exception("resolver error")),
+        ):
             result = runner.invoke(fb_cli, ["format-template", "some_template.html"])
         assert result.exit_code == 0
         assert "Error" in result.output
@@ -401,15 +402,16 @@ class TestFormatTemplateCommand:
 @pytest.mark.unit
 class TestStartLanguageServerCommand:
     def test_start_language_server_no_server(self, runner, fb_cli):
-        with patch("oneiric.core.resolution.Resolver", _async_resolver(None)):
+        with patch("fastblocks.cli.resolve_instance", _async_resolver(None)):
             result = runner.invoke(fb_cli, ["start-language-server"])
         assert result.exit_code == 0
         assert "not available" in result.output.lower()
 
     def test_start_language_server_resolver_error(self, runner, fb_cli):
-        bad = MagicMock()
-        bad.resolve = MagicMock(side_effect=Exception("resolver error"))
-        with patch("oneiric.core.resolution.Resolver", MagicMock(return_value=bad)):
+        with patch(
+            "fastblocks.cli.resolve_instance",
+            MagicMock(side_effect=Exception("resolver error")),
+        ):
             result = runner.invoke(fb_cli, ["start-language-server"])
         assert result.exit_code == 0
         assert "Error" in result.output

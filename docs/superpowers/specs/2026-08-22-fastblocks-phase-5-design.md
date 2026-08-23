@@ -715,7 +715,7 @@ Three layers, with `tests/strategies.py` as the shared root.
 
 | # | Subject | Returns | Demonstrable by |
 |---|---|---|---|
-| 1 | `chore(tests): install pytest-hypothesis, playwright, axe-playwright-python` | `pyproject.toml` dev-deps | `uv pip list \| grep -E "(pytest-hypothesis\|playwright\|axe-playwright)"` |
+| 1 | `chore(tests): install hypothesis, playwright, axe-playwright-python` | `pyproject.toml` dev-deps | `uv pip list \| grep -E "(hypothesis\|playwright\|axe-playwright)"` |
 | 2 | `feat(tests): tests/strategies.py — 4 Hypothesis strategies` (with `@functools.cache` on `htmy_component()` per Erratum 1) | `tests/strategies.py` | `python -c "from tests.strategies import safe_user_input, unsafe_input, attrs_dict, htmy_component; print('OK')"` |
 | 3 | `chore(tests): zero-collection-error + Hypothesis profiles` (with `tests/a11y/_component_postures.py` schema per Erratum 3) | `tests/conftest.py` + 3 new markers + posture file | `pytest --collect-only -q -p no:xdist` returns 0 |
 | 4 | `test(templates): property-based style × renderer matrix` | `tests/templates/test_style_renderer_property.py` | 4 property-based tests pass |
