@@ -43,9 +43,10 @@ class TestInitializeBaseTemplates:
                 MagicMock(return_value=fake_templates),
             ):
                 await manager._initialize_base_templates()
-        # base_templates may be the fake or None depending on which
-        # branch was taken — the function should not raise either way.
-        assert manager.base_templates is None or manager.base_templates is not None
+        # No assertion: the contract is that _initialize_base_templates
+        # does not raise when resolve_instance returns the fake adapter.
+        # (Originally a tautological `is None or is not None` was here,
+        # removed by multi-agent review F-L3-008.)
 
     async def test_initialize_base_templates_fallback(
         self, manager: HybridTemplatesManager
@@ -62,8 +63,11 @@ class TestInitializeBaseTemplates:
                 MagicMock(),
             ):
                 await manager._initialize_base_templates()
-        # base_templates should be set (either via factory or fallback).
-        assert manager.base_templates is not None or manager.base_templates is None
+        # No assertion: the contract is that the fallback path doesn't
+        # raise. The original tautology `is not None or is None` was
+        # removed by multi-agent review F-L3-008; a tighter assertion
+        # requires investigating the production fallback contract
+        # (TODO: follow-up commit).
 
 
 @pytest.mark.unit
