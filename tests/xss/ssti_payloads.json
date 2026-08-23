@@ -1,0 +1,26 @@
+{
+  "_comment": "15-vector SSTI corpus per Erratum 17. Migrated from tests/strategies.py _UNSAFE_PAYLOADS when corpus grows beyond 30 vectors (currently 15, so still inline in strategies.py).",
+  "autoescape_bypass": [
+    "{{7*7}}",
+    "${7*7}",
+    "#{7*7}}",
+    "<%= 7*7 %>"
+  ],
+  "ssti_introspection": [
+    "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}",
+    "${T(java.lang.Runtime).getRuntime().exec('id')}",
+    "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}"
+  ],
+  "script_injection": [
+    "<script>alert(1)</script>",
+    "\"><script>alert(1)</script>",
+    "<img src=x onerror=alert(1)>",
+    "<svg onload=alert(1)>"
+  ],
+  "context_escape": [
+    "javascript:alert(1)",
+    "data:text/html,<script>alert(1)</script>",
+    "'-alert(1)-'",
+    "\"; alert(1); //"
+  ]
+}
