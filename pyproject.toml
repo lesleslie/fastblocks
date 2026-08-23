@@ -200,6 +200,9 @@ markers = [
     "integration: marks test as an integration test",
     "slow: mark test as slow to skip with --skip-slow",
     "websocket: marks test as needing the mcp_common.websocket stub (tests/conftest.py installs it at session scope)",
+    "a11y: axe-core integration tests (requires Playwright browser)",
+    "property: Hypothesis property-based tests",
+    "slow: tests skipped in fast CI (full Hypothesis max_examples=100 + full axe-core on 32 components)",
 ]
 timeout = "300"
 timeout_method = "thread"

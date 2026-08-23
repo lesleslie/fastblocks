@@ -474,3 +474,73 @@ def fresh_registry():
     from fastblocks.core.resolver import FastblocksRegistry
 
     return FastblocksRegistry(Resolver())
+
+
+# ---------------------------------------------------------------------------
+# Hypothesis profile mechanics (Phase 5 v4 retry — Task 3)
+# ---------------------------------------------------------------------------
+
+import logging
+import os
+
+from hypothesis import settings, Verbosity
+
+HYPOTHESIS_PROFILE = os.environ.get("HYPOTHESIS_PROFILE", "ci")
+
+# Per Erratum 24: try/except because settings.register_profile is process-global
+# and xdist worker re-import would raise InvalidArgument on second registration.
+try:
+    settings.register_profile(
+        "dev", max_examples=10, deadline=None, derandomize=False,
+        verbosity=Verbosity.normal,
+    )
+    settings.register_profile(
+        "ci", max_examples=100, deadline=None, derandomize=False,
+        verbosity=Verbosity.normal,
+    )
+    settings.register_profile(
+        "debug", max_examples=1, deadline=None, derandomize=True,
+        verbosity=Verbosity.verbose,
+    )
+except Exception:
+    pass  # Already registered (xdist worker re-import)
+
+settings.load_profile(HYPOTHESIS_PROFILE)
+
+
+# ---------------------------------------------------------------------------
+# Playwright + FastBlocksApp fixtures (Phase 5 v4 retry — Task 3)
+# ---------------------------------------------------------------------------
+
+import pytest_asyncio
+from playwright.async_api import async_playwright
+
+from fastblocks.adapters.app.default import FastBlocksApp  # per F-L1-001
+
+
+@pytest_asyncio.fixture
+async def clean_axe_core_page():
+    """Fresh Playwright page per test; closes browser context on teardown.
+
+    Function scope is MANDATORY — Playwright pages aren't safe to share across tests.
+    """
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        context = await browser.new_context()
+        page = await context.new_page()
+        try:
+            yield page
+        finally:
+            await context.close()
+            await browser.close()
+
+
+@pytest.fixture
+def fastblocks_test_app():
+    """Per-test FastBlocks app — fresh app instance per test.
+
+    Function scope (per Erratum 25: conservative, not strictly mandatory
+    given clean_resolver doesn't touch app.state. The binding constraint
+    is the ~20s cost across ~4 tests, which fits within 5-min CI budget).
+    """
+    return FastBlocksApp()
