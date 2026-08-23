@@ -240,6 +240,9 @@ def test_coverage_target_consistency() -> None:
     floor = float(match.group(1))
     pct_re = re.compile(r"(\d{1,3}(?:\.\d+)?)\s*%")
     # Aspirational / forward-looking phrases around a coverage percentage.
+    # Also includes observation markers ("measured", "actually") which
+    # signal a *measurement* (e.g. ADR noting 62.52% measured after a
+    # bump to 62% floor) rather than a *configured floor claim*.
     aspirational_markers = (
         "ratchet",
         "target",
@@ -256,6 +259,12 @@ def test_coverage_target_consistency() -> None:
         "next attempt",
         "future",
         "aspirational",
+        "measured",
+        "actually",
+        "observed",
+        "currently measures",
+        "total coverage",
+        "actual",
     )
     tolerance = 0.1
     for path, text in _iter_doc_text():
