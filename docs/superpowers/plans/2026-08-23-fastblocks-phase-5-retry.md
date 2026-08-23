@@ -7,7 +7,7 @@
 **Architecture:** Foundation → Matrix → Adversarial decomposition (5A → 5B → 5C). Each commit is independently revertible. Phase 6.5 substrate (`app.state.main_loop` + `app.state.jinja_env` bound at lifespan startup) enables 5C.5 against the actual production path. Strict-tests-only boundary enforced by per-commit canary.
 
 **Tech Stack:**
-- Python 3.13+, Starlette 1.6.0 (verified `app.router.lifespan_context` API), pytest, pytest-asyncio (auto mode), pytest-hypothesis ~=6.0, playwright ~=1.40, axe-playwright-python ~=0.1
+- Python 3.13+, Starlette 1.6.0 (verified `app.router.lifespan_context` API), pytest, pytest-asyncio (auto mode), hypothesis ~=6.0, playwright ~=1.40, axe-playwright-python ~=0.1
 - starlette_csrf (header-only CSRF), brotli_asgi
 - Existing: fastblocks.adapters.app.default.FastBlocksApp (lifespan binds app.state.main_loop + app.state.jinja_env at startup)
 
@@ -62,13 +62,13 @@ pyproject.toml                                     # MODIFIED (Tasks 1, 12) — 
 **Files:**
 - Modify: `pyproject.toml` (add dev-dependencies)
 
-**Produces:** `pyproject.toml` with pytest-hypothesis ~=6.0, playwright ~=1.40, axe-playwright-python ~=0.1
+**Produces:** `pyproject.toml` with hypothesis ~=6.0, playwright ~=1.40, axe-playwright-python ~=0.1
 
 - [ ] **Step 1: Add dev-dependencies to pyproject.toml**
 
 Edit `pyproject.toml` `[project.optional-dependencies]` block (or equivalent dev section). Add:
 ```toml
-"pytest-hypothesis~=6.0",
+"hypothesis~=6.0",
 "playwright~=1.40",
 "axe-playwright-python~=0.1",
 ```
@@ -85,14 +85,14 @@ Expected: chromium downloaded to ~/.cache/ms-playwright/
 
 - [ ] **Step 4: Verify install**
 
-Run: `uv pip list | grep -E "(pytest-hypothesis|playwright|axe-playwright)"`
+Run: `uv pip list | grep -E "(hypothesis|playwright|axe-playwright)"`
 Expected: all three packages present.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add pyproject.toml uv.lock
-git commit -m "chore(tests): install pytest-hypothesis, playwright, axe-playwright-python"
+git commit -m "chore(tests): install hypothesis, playwright, axe-playwright-python"
 ```
 
 ---
