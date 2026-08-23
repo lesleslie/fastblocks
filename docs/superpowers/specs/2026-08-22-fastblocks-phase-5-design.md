@@ -251,6 +251,400 @@ no-raise teardown assertion.
 **Reviewer attention:** L4 integration-realism reviews this rewrite; this
 is the load-bearing fix that unblocks v3.1's deferred status.
 
+### Erratum 6 — F-L3-1: CSRF form→header scenario dropped
+
+**v3.1 §5C.3 scenario 3:** "HTMX POST with valid `csrf_token` form field
+(header missing) → middleware copies to header → 200."
+
+**Verified 2026-08-23 (L3 adversarial-coverage review):** The middleware
+that copies form-field CSRF tokens to the X-CSRF-Token header does not
+exist in production. `fastblocks/middleware.py:72-97` HtmxMiddleware
+only sets `scope["htmx"]`; no form-to-header copy. `starlette_csrf`
+only inspects the X-CSRF-Token header directly. Scenario 3 cannot pass
+without adding a custom middleware (production-code change, violating
+the strict-tests-only boundary).
+
+**v4 fix:** Drop scenario 3. CSRF coverage ships with 3 scenarios:
+1. POST without CSRF token → 403
+2. POST with valid X-CSRF-Token header → 200
+3. POST with expired token → 403
+
+Form-field CSRF promotion is deferred to a future phase that allows
+middleware changes (or a one-line amendment to the strict-tests-only
+boundary with explicit ADR).
+
+**Reviewer attention:** L3 adversarial-coverage; this fix unblocks
+commit #10.
+
+### Erratum 7 — F-L3-2: Static files Cache-Control scenario dropped
+
+**v3.1 §5C.4 scenario 1:** "GET /static/ui.css → 200 with `Cache-Control:
+public, max-age=31536000, immutable`."
+
+**Verified 2026-08-23 (L3 adversarial-coverage review):** Three
+independent checks:
+1. Starlette's default `StaticFiles` constructor has no Cache-Control
+   handling (`starlette/staticfiles.py:39-56`).
+2. `fastblocks/adapters/routes/default.py:259-265` mounts static files
+   with only `directory=static_path`, no `headers=` kwarg.
+3. `fastblocks/middleware.py:327-386` defines `CacheControlMiddleware`
+   but it is **never registered** in `_register_default_middleware`
+   (lines 480-487) or `_register_conditional_middleware` (lines 489-528).
+
+Scenario 1 cannot pass without either registering CacheControlMiddleware
+(production-code change, strict-tests-only violation) or omitting the
+Cache-Control assertion.
+
+**v4 fix:** Drop the Cache-Control assertion from scenario 1. Scenario 1
+becomes "GET /static/ui.css → 200 with file contents served". Scenario 2
+(brotli) and scenario 3 (404) are preserved unchanged.
+
+Static-file cache-header behavior is deferred to a future phase that
+allows middleware registration changes (or an explicit amendment to the
+strict-tests-only boundary with explicit ADR).
+
+**Reviewer attention:** L3 adversarial-coverage; this fix unblocks
+commit #11.
+
+### Erratum 8 — F-L1-003: `register_type_strategy(object, ...)` documented scope
+
+**Verified 2026-08-23 (L1 foundation-correctness review):** The spec
+correctly warns against `register_type_strategy(str, ...)` as
+"contaminating every other test in the suite", but proposes
+`register_type_strategy(object, ...)` as a safe alternative. Both are
+process-global mutations of Hypothesis's type registry. `object` is the
+root of the Python type hierarchy, so the contamination surface is
+broad.
+
+**v4 fix:** Document the contamination scope explicitly in v3.1 §5A.1's
+preserved block (where the call lives). The implementer is responsible
+for understanding that any future test using `st.from_type(SomeClass)`
+where `SomeClass` has an `object`-typed field will silently receive
+`safe_user_input`. This is acceptable for Phase 5 because:
+(a) no other test in the suite currently uses `st.from_type()` for
+absorbed components, and (b) the strategy is conservative (`safe_user_input`
+won't trigger XSS in attributes). Documented in the v4 spec erratum
+for future maintainers.
+
+Alternative per-call strategy override (`st.from_type(c, {object: ...})`)
+was considered but rejected: it would require changing the call site
+in v3.1 §5A.1 and risks breaking the existing assertion logic.
+
+### Erratum 9 — F-L5-2: §Acceptance criteria claim restated
+
+**v4 originally said** "§Acceptance criteria (line 685-695) preserved
+verbatim from v3.1." Verified 2026-08-23 (L5 strict-tests-only boundary
+review): v4 expanded the criteria from 4 items to 8 (added #5 no
+production code changes, #6 strict-tests-only boundary preserved,
+#7 master plan drift documented, #8 multi-agent review approved).
+
+**v4 fix:** Restate as "v4 §Acceptance criteria is BASED ON v3.1's
+4-item block, EXPANDED with 4 v4-specific criteria. The v3.1 baseline:
+zero collection errors, all 13 verification items pass, coverage ≥ 65%,
+CI budget < 5 min. The v4 additions: no production code changes,
+strict-tests-only boundary preserved, master plan drift documented,
+multi-agent review approved." This removes the misleading
+"preserved verbatim" framing.
+
+### Erratum 10 — F-L5-1: Pre-merge canary for strict-tests-only boundary
+
+**v4 originally stated** acceptance #5 ("no production code changes")
+as a post-hoc check via `git diff main..HEAD --stat`. L5 review found
+this is a stated principle, not an enforced pre-merge gate.
+
+**v4 fix:** Add a per-commit canary requirement to the spec. Commit #3
+(zero-collection-error + Hypothesis profiles) MUST include a new
+`scripts/check_no_production_changes.sh` (or similar) that diffs the
+working tree against `main` and exits non-zero if any path under
+`fastblocks/` (outside `fastblocks/adapters/templates/htmy_components/**`
+template-registration files that Phase 1B added) appears in the
+changeset. The canary is invoked by crackerjack's CI step, not by a
+pre-commit hook (crackerjack owns CI; not adding a parallel hook).
+
+This makes acceptance #5 enforceable rather than aspirational.
+
+### Erratum 11 — F-L3-4: MCP canary spy assertion weakened
+
+**v3.1 §5C.1 scenario 2 asserts** the spy was called with the fresh
+FastMCP instance via `assert_called_once_with(<exact FastMCP instance>)`.
+L3 review found this is impossible because `mcp_instance` is local to
+`_get_http_app` and unreachable from outside.
+
+**v4 fix:** Weaken assertion to `assert mock.called` and
+`assert isinstance(mock.call_args.args[0], FastMCP)` and
+`mock.call_args.args[0].name == "fastblocks"`. Verifies the call
+happened with a FastMCP instance, not object identity.
+
+Additionally, add a third scenario per L3's suggestion: patch
+`register_fastblocks_tools` with `side_effect=RuntimeError("simulated
+failure")` and assert `_get_http_app()` still returns non-None. This
+catches the `with suppress(Exception)` orphan path ADR 0011 Decision 6
+warned about. Scenario count goes from 2 to 3 (within IC #8 budget).
+
+### Erratum 12 — F-L3-5 / F-L4-2 / F-L5-6: Teardown test uses caplog
+
+**v4 originally asserted** "teardown does not raise" only. Multiple
+reviewers found this is vacuously true and contradicts the spec's
+own "Critical recovery rule" two paragraphs later.
+
+**v4 fix:** Replace `test_lifespan_teardown_does_not_raise` with
+`test_lifespan_emits_shutdown_log` using pytest's `caplog` fixture:
+
+```python
+import logging
+
+
+async def test_lifespan_emits_shutdown_log(caplog) -> None:
+    """Exiting lifespan_context emits the shutdown log message.
+
+    Companion to test_lifespan_binds_app_state_at_startup. Asserts
+    the teardown path actually executed (not just didn't raise).
+    Verifies the log line verified 2026-08-22 in production source
+    (fastblocks/adapters/app/default.py:199-202).
+    """
+    caplog.set_level(logging.INFO, logger="fastblocks")
+    app = FastBlocksApp()
+
+    async with app.router.lifespan_context(app):
+        pass
+
+    assert "shutting down" in caplog.text
+```
+
+This converts a vacuous no-raise check into a behavioral check that
+detects teardown-path regressions.
+
+### Erratum 13 — F-L1-004: Master plan line 178 vs 468 contradiction
+
+**Verified 2026-08-23 (L1 foundation-correctness review):** Master plan
+line 178 (Approach paragraph) says `max_examples=1000, derandomize=True`.
+Master plan line 468 (Verification gate) says `max_examples=100,
+derandomize=False`. Both exist on the same master plan file.
+
+**v4 fix:** Pin to line 468 (correct for CI budget reasons:
+`max_examples=1000` × 4 cells × 32 components × 100ms/example
+≈ 12,800s, blowing the 5-min budget by ~43×). Master plan amendment PR
+(future, out of scope for Phase 5 retry) should reconcile line 178 to
+match line 468. The v4 spec extends Decision 12's erratum catalog to
+include this contradiction.
+
+### Erratum 14 — F-L1-005: functools.cache bundles assert+registration
+
+**Verified 2026-08-23 (L1 foundation-correctness review):** Erratum 1's
+`@functools.cache` on `htmy_component()` bundles three operations:
+(a) the `len(components) == 32` invariant assertion, (b) the
+`register_type_strategy(object, ...)` mutation, (c) the
+`st.from_type(c)` strategy build. A failure in (c) would propagate the
+same cache-miss exception to every test.
+
+**v4 fix:** Restructure `htmy_component()` into three pieces:
+1. Module-load `_build_components()` (NOT cached): filters `__all__`,
+   asserts count == 32.
+2. Module-load `_register_object_strategy()` (NOT cached): calls
+   `register_type_strategy(object, safe_user_input)`.
+3. Cached `htmy_component()`: returns `st.one_of(*[st.from_type(c) for c
+   in _build_components()])`.
+
+This way the assert and registration are deterministic at import time;
+only the strategy object is cached. Implementer makes these changes in
+commit #2.
+
+### Erratum 15 — F-L2-2: Modal vs Dialog clarification
+
+**Verified 2026-08-23 (L2 matrix-completeness review):** The realistic-
+defaults policy mentions "Modal/Dropdown/Tabs/Drawer/Dialog" but
+`htmy_components.__all__` contains `Dialog`, not `Modal`.
+
+**v4 fix:** Add a one-line clarification: "Modal → Dialog (the modal role
+is performed by Dialog in the absorbed components; there is no separate
+Modal class)." Implementer of commit #9 (axe-core on 32 components)
+treats them as the same.
+
+### Erratum 16 — F-L2-3: axe-core rule subset enumerated
+
+**Verified 2026-08-23 (L2 matrix-completeness review):** v3.1 §5C.2
+references a "10-rule subset" but master plan line 472 only enumerates
+6 rules (color-contrast, label, button-name, link-name, image-alt,
+aria-roles). The other 4 (region, landmark-one-main,
+page-has-heading-one, duplicate-id) are introduced in v3.1 §5C.2
+without explicit enumeration.
+
+**v4 fix:** Inline-enumerate the 10-rule subset in the Erratum 3 schema
+comment:
+
+```
+axe_rules: tuple[str, ...]
+  # Master-plan baseline (6):
+  #   - color-contrast: WCAG 1.4.3 contrast ratio
+  #   - label: form labels associate with controls
+  #   - button-name: buttons have discernible text
+  #   - link-name: links have discernible text
+  #   - image-alt: images have alt text
+  #   - aria-roles: ARIA roles are valid
+  # v3.1 extensions (4):
+  #   - region: all content is inside a landmark region
+  #   - landmark-one-main: document has exactly one main landmark
+  #   - page-has-heading-one: document has exactly one h1
+  #   - duplicate-id: no two elements share the same id
+```
+
+### Erratum 17 — F-L2-4: ssti_payloads.json created by commit #6
+
+**Verified 2026-08-23 (L2 matrix-completeness review):** Spec asserts a
+"15-vector SSTI corpus" but no `tests/xss/ssti_payloads.json` exists.
+Master plan line 469 references it but the file was never created.
+
+**v4 fix:** Commit #6 (Jinja2 SSTI regression) explicitly creates
+`tests/xss/ssti_payloads.json` with 15 documented vectors covering:
+autoescape-bypass (`{{ }}`, `[[ ]]`), `| safe` filter, Markup round-trip,
+fragment delimiter performance, plus SSTI patterns (Jinja2
+`{{config.__class__}}`, Python class introspection, etc.). The file is
+referenced from `tests/strategies.py`'s `_UNSAFE_PAYLOADS` tuple (which
+already has 15 inlined vectors — Erratum 18 documents the migration
+to JSON if/when the tuple grows beyond 30).
+
+### Erratum 18 — F-L2-5: exclusion_rules semantics
+
+**Verified 2026-08-23 (L2 matrix-completeness review):** v4 Erratum 3's
+schema has `exclusion_rules: tuple[str, ...] = ()` with no documentation
+of when to populate.
+
+**v4 fix:** Add docstring note to the ComponentPosture dataclass:
+
+```python
+exclusion_rules: tuple[str, ...] = ()
+  # axe-core rule IDs to exclude for THIS component only.
+  # Each entry must be a single rule ID (e.g., "landmark-one-main")
+  # with a one-line rationale in the implementing test (e.g.,
+  # "Dialog: exclude landmark-one-main because a Dialog does not
+  # contain the page main").
+  # Leave empty if all 10 rules apply.
+```
+
+### Erratum 19 — F-L2-6: 3 attack vectors enumerated
+
+**Verified 2026-08-23 (L2 matrix-completeness review):** Spec paraphrases
+master plan §C4's 3 attack vectors without enumerating.
+
+**v4 fix:** Inline the 3 attack vectors in commit #5's IC demonstrable-by:
+
+> Demonstrable by: 32 components × 3 attack vectors = ~100+ tests pass:
+> (a) attrs dict-key escaping — every whitelisted attr key receives
+> adversarial values; assert rendered output escapes keys
+> (b) CSS-context vectors — values containing `"; { } ()` Po chars
+> injected into CSS-relevant attrs (class, style); assert no script
+> execution context
+> (c) aria-* attribute injection — values like `aria-label="x"
+> onmouseover=...` injected into aria-* attrs; assert no event handler
+> injection
+
+### Erratum 20 — F-L5-4: §Failure modes line range
+
+**Verified 2026-08-23 (L5 strict-tests-only boundary review):** v4 cited
+v3.1 §Failure modes as "line 667-686" but actual is "line 659-685".
+
+**v4 fix:** Update citation to "line 659-685" (the actual §Failure modes
+range in v3.1).
+
+### Erratum 21 — F-L5-5: Coverage ratchet #12 sequencing
+
+**Verified 2026-08-23 (L5 strict-tests-only boundary review):** Coverage
+ratchet #12 is `chore(ci):` (configuration), but bumping
+`--cov-fail-under` mid-development risks locking main if coverage
+drops between intermediate merges.
+
+**v4 fix:** Document sequencing constraint in commit #12 IC:
+
+> Commit #12 MUST land LAST in the Phase 5 sequence. It is conditional
+> on all coverage-raising test commits (#2-#11) already on main.
+> The pre-measured coverage from #2-#11 must be ≥ 65% before commit
+> #12 lands; otherwise, add more tests OR amend the ratchet to a
+> lower target via ADR.
+
+### Erratum 22 — F-L1-004 coverage baseline mismatch
+
+**Verified 2026-08-23 (L1 + L3 reviews):** Spec claims baseline 55.05%
+(Phase 1B post-absorption). pyproject.toml line 206 has
+`--cov-fail-under=49.1324200913242`. Spec's bookkeeping is stale.
+
+**v4 fix:** Update §Coverage ratchet: baseline = 49.13% (current
+pyproject ratchet), target = 65% (+15.87pp). The +15.87pp is larger
+than v3.1's +10pp estimate but achievable given the ~150 new tests in
+Phase 5. Master plan line 653's 70% target remains the ceiling for
+Phase 6's observability hooks.
+
+### Erratum 23 — F-L4-3, F-L4-4: Substrate clarifications
+
+**L4 findings:** Spec leaves `get_event_loop()` vs `get_running_loop()`
+question open; spec omits the bound-method mechanism for
+`app.router.lifespan_context`.
+
+**v4 fix:** Add inline clarifications in the 5C.5 test code docstring:
+
+- `asyncio.get_event_loop()` is acceptable inside the
+  `@asynccontextmanager` body because Starlette guarantees a running
+  loop. `get_event_loop()` and `get_running_loop()` return the same
+  object (verified 2026-08-23). DeprecationWarning only fires from
+  non-running-loop contexts, which never happen in this code path.
+- `app.router.lifespan_context` is the bound `@asynccontextmanager`
+  method (because FastBlocksApp.__init__ passes `lifespan=self.lifespan`
+  to Starlette's super). Starlette's Router inspects the lifespan arg
+  and binds it directly (not wrapping in `_DefaultLifespan`).
+
+### Erratum 24 — F-L4-5: HYPOTHESIS_PROFILE edge cases
+
+**Verified 2026-08-23 (L4 review):** HYPOTHESIS_PROFILE env var has
+three edge cases not documented:
+(a) `settings.register_profile` is process-global; double registration
+    raises `hypothesis.errors.InvalidArgument`.
+(b) `settings.load_profile(HYPOTHESIS_PROFILE)` is last-writer-wins.
+(c) With pytest-xdist, env var must propagate to each worker.
+
+**v4 fix:** Add try/except wrapper around `register_profile` and
+document the env-var propagation requirement in the v3.1 §5A.2
+preserved block:
+
+```python
+try:
+    settings.register_profile("dev", max_examples=10, deadline=None, derandomize=False, verbosity=Verbosity.normal)
+    settings.register_profile("ci",  max_examples=100, deadline=None, derandomize=False, verbosity=Verbosity.normal)
+    settings.register_profile("debug", max_examples=1, deadline=None, derandomize=True, verbosity=Verbosity.verbose)
+except Exception:
+    pass  # already registered (xdist worker re-import)
+settings.load_profile(HYPOTHESIS_PROFILE)
+```
+
+Document: `HYPOTHESIS_PROFILE` must be exported in the shell before
+pytest invocation. With pytest-xdist, set via
+`addopts = ["-p", "no:cacheprovider"]` style or via shell export per
+worker (not via `-p` or `--env` flags which don't propagate).
+
+### Erratum 25 — F-L4-6: fastblocks_test_app function scope
+
+**Verified 2026-08-23 (L4 review):** Spec's justification for function
+scope (clean_resolver reinit) is over-broad. FastBlocksApp.__init__
+doesn't register candidates; lifespan startup doesn't touch the
+resolver. Function scope is conservative but not strictly mandatory.
+
+**v4 fix:** Soften the spec text — function scope is conservative given
+current init() uncertainty, not strictly mandatory. The binding
+constraint is the ~20s cost, which fits within the 5-min CI budget.
+Future maintainers may switch to session scope once they verify init()
+behavior.
+
+### Erratum 26 — F-L5-7: §Architecture "preserved verbatim" claim
+
+**Verified 2026-08-23 (L5 review):** v4 collapsed v3.1's §Architecture
+from 38 lines (with 4-strategy table, 25-attr whitelist, 32-component
+enumeration) to 19 lines (high-level sub-phase table only). The
+"preserved verbatim" claim is misleading.
+
+**v4 fix:** Restate as "v4 §Architecture preserves the high-level
+sub-phase structure from v3.1. The detailed §Layer 1 content (4-strategy
+table, 25-attr whitelist, 32-component enumeration) is preserved by
+reference in v3.1 §Architecture." This avoids the misleading "verbatim"
+framing.
+
 ---
 
 ## What v4 inherits from v3.1 unchanged
@@ -277,10 +671,11 @@ The following sections of v3.1 (`8787293`) are **preserved verbatim** in v4:
   ADR 0011 Decision 6's `with suppress(Exception)` orphan.
 - **§5C.2 axe-core a11y (line 472-529)** — except for the schema definition
   (Erratum 3).
-- **§5C.3 CSRF + HTMX (line 531-543)** — 4 scenarios.
-- **§5C.4 static files (line 545-555)** — 3 scenarios.
+- **§5C.3 CSRF + HTMX (line 531-543)** — 3 scenarios (was 4 in v3.1; see Erratum 6).
+- **§5C.4 static files (line 545-555)** — 2 scenarios (was 3 in v3.1; see Erratum 7).
 - **§Verification gate (line 571-592)** — 13 of 14 master-plan items.
-- **§Coverage ratchet (line 594-613)** — 65% target; +10pp from current 55.05%.
+- **§Coverage ratchet (line 594-613)** — 65% target; +15.87pp from current
+  49.13% (pyproject.toml baseline; v3.1's 55.05% reference is stale).
 - **§Per-commit Integration Contracts (line 615-665)** — 12 commits, all
   independently revertible.
 - **§Failure modes (line 667-686)** — collection error, real bypass found,
@@ -329,7 +724,7 @@ Three layers, with `tests/strategies.py` as the shared root.
 | 7 | `test(adapters): HTMY hx_* kwargs contract test` | `tests/adapters/templates/test_htmy_hx_kwargs.py` | 5 hx_* scenarios pass |
 | 8 | `test(mcp): server integration canary` | `tests/mcp/test_server_canary.py` | 2 scenarios pass (tools tuple + ASGI spy) |
 | 9 | `chore(tests): tests/a11y/ — axe-core on 32 components` (uses `_component_postures.py` from #3) | `tests/a11y/test_components_a11y.py` + `clean_axe_core_page` fixture | 0 axe-core violations |
-| 10 | `test(integration): CSRF + HTMX` | `tests/integration/test_csrf_htmx.py` + `fastblocks_test_app` fixture | 4 CSRF scenarios pass |
+| 10 | `test(integration): CSRF + HTMX` | `tests/integration/test_csrf_htmx.py` + `fastblocks_test_app` fixture | 3 CSRF scenarios pass (Erratum 6 dropped scenario 3) |
 | 11 | `test(integration): static files + lifecycle` (5C.5 rewritten per Erratum 5) | `tests/integration/test_static_files.py` + `tests/integration/test_lifespan.py` | 3 static + 2 lifecycle scenarios pass |
 | 12 | `chore(ci): bump coverage ratchet to 65%` | `pyproject.toml` updated with `--cov-fail-under = 65` | `pytest --cov-fail-under=65` exits 0 |
 
@@ -403,7 +798,8 @@ broken — that's a Phase 6.5 regression, not a Phase 5 test issue.
 
 ## Coverage ratchet (preserved from v3.1)
 
-**Current**: 55.05% (Phase 1B post-absorption baseline). **Phase 5 target**:
+**Current**: 49.13% (per pyproject.toml:206 baseline; v3.1's 55.05%
+reference is stale — verified 2026-08-23 by L1 + L3 review). **Phase 5 target**:
 **65%** (+9.95pp). Master plan recommends 70% but defers the +5pp to Phase 6's
 observability hooks.
 
@@ -413,7 +809,7 @@ observability hooks.
 | 5C MCP canary | ~1pp |
 | 5C integration (CSRF, static, lifecycle) | ~3pp |
 | 5C axe-core | ~1pp |
-| **Total** | **~10pp** (55.05% → 65%) |
+| **Total** | **~15.87pp** (49.13% → 65%) |
 
 **Why stop at 65%, not master plan's 70%:** Remaining 5pp depends on Phase 6's
 observability hooks (counters, log assertions, trace context). Lifting the
