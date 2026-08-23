@@ -209,7 +209,7 @@ timeout_method = "thread"
 addopts = [
     "--cov=fastblocks",
     "--cov-report=term",
-    "--cov-fail-under=49.1324200913242",
+    "--cov-fail-under=62",
     "-n", "auto",
     "--dist=loadfile"
 ]
@@ -237,7 +237,7 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 49.1324200913242
+fail_under = 62
 exclude_also = [
     "pragma: no cover",
     "def __repr__",

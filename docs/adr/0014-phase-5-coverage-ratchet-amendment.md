@@ -1,0 +1,109 @@
+---
+status: accepted
+role: phase-5-coverage-ratchet-amendment
+date: 2026-08-23
+last_reviewed: 2026-08-23
+supersedes: null
+superseded_by: null
+blocks_on: []
+decision_date: 2026-08-23
+topic: phase-5-coverage-ratchet-amendment
+---
+
+# ADR 0014: Phase 5 v4 Coverage Ratchet Amendment
+
+## Status
+
+Accepted (Phase 5 v4 coverage ratchet amendment — companion to
+master plan §Phase 5 v4 line 142, Erratum 21 Option B).
+
+## Context
+
+Phase 5 v4 (test infrastructure rebuild) shipped 11 commits with a
+target of lifting coverage from 49.13% to 65%. The plan's Task 12
+(deferred) and Task 13 (coverage lift) both targeted 65%.
+
+Measured coverage after Tasks 1-11: **55.41%** (+6.28 pp from 49.13%
+baseline). Task 13 added 246 new tests covering the top six
+zero-coverage MCP modules and five high-leverage adapter/sync
+helpers. Final measured coverage: **62.52%** (+7.10 pp from Tasks 1-11;
++13.39 pp from the original 49.13% baseline).
+
+The **2.48 pp gap from 65%** is structurally unreachable within the
+strict-tests-only boundary that bound Phase 5 v4:
+
+1. **Adapter-bound branches**: Several modules wire up real
+   adapters (S3, Redis, Resend, etc.). Unit tests stub the resolver,
+   so the "adapter unavailable" branch is exercised but the
+   "adapter available" branch — which contains the bulk of the
+   missing statements — requires real adapter state that's out of
+   scope for unit tests.
+2. **CLI integration paths**: `fastblocks/cli.py` has 132 uncovered
+   statements in CLI subcommands (`run`, `dev`, `validate`, `info`,
+   `syntax-check`, `format-template`, `start-language-server`) that
+   require live uvicorn/granian servers and HTMX adapter resolution.
+3. **Asset/icon adapters**: `materialicons.py`, `phosphor.py`,
+   `twicpics.py`, `cloudflare.py` adapter modules are wrappers
+   around installed optional deps — tests without the deps only
+   exercise the fallback path.
+4. **TLS configuration**: `fastblocks/websocket/tls_config.py`
+   (0% coverage) requires a live TLS server.
+
+Per Erratum 21's explicit guidance, three options were available:
+
+| Option | Path | Outcome |
+|---|---|---|
+| **A** | More tests | Bounded by strict-tests-only; 2.48 pp unreachable |
+| **B** | ADR amendment (this ADR) | Lower ratchet to match measured lift |
+| **C** | Abandon 11 commits | Lose +13.39 pp gain; regress to 49.13% baseline |
+
+Option B is the chosen path. The ratchet floor is amended from
+49.1324200913242 to **62** (rounded down from 62.52% with 0.52 pp
+safety margin, matching Erratum 22's v3.1 55.05% rounding convention).
+
+## Decision
+
+`--cov-fail-under` in `pyproject.toml` is amended from 49.13% to
+**62%**. This preserves the +13.39 pp lift from Tasks 1-13 while
+keeping the gate green against the new floor.
+
+Future phases can re-target higher by adding integration tests that
+exercise adapter-bound branches, CLI integration paths, and
+asset/icon adapter modules — moving coverage toward 70% over time.
+
+## Consequences
+
+**Positive:**
+
+- Coverage ratchet now reflects the actual test infrastructure state
+  (62.52% measured vs 49.13% legacy floor).
+- CI gate stays green; no regression from the 49.13% baseline.
+- The 7.10 pp Task 13 lift is recorded as a ratcheted floor — a
+  future contributor cannot silently regress below 62%.
+- Erratum 22's safety-margin rounding convention is preserved.
+
+**Negative:**
+
+- The 65% target is no longer the gate target. Documentation in the
+  plan/spec reflects the original 65% target; future readers should
+  consult this ADR for the current operational floor.
+- Strict-tests-only boundary is reaffirmed: integration tests that
+  could close the residual 2.48 pp gap are deferred to a future
+  phase.
+
+**Follow-up:**
+
+- A future "Phase 5.5 / Phase 6" wave can install optional adapter
+  deps (`aws`, `redis`, etc.) and write integration tests for the
+  remaining branches, lifting coverage toward 70% over time.
+- When that wave lands, this ADR should be updated or superseded to
+  reflect the new measured floor.
+
+## References
+
+- Plan: `docs/superpowers/plans/2026-08-23-fastblocks-phase-5-retry.md`
+- Spec: `docs/superpowers/specs/2026-08-22-fastblocks-phase-5-design.md`
+- Task 13 report: `.superpowers/sdd/2026-08-23-fastblocks-phase-5-retry/task-13-report.md`
+- Erratum 21 (coverage ratchet paths): spec §Errata line 220-240
+- Erratum 22 (rounding convention for `--cov-fail-under`): spec §Errata line 240-260
+- Commit `25a8551` — Task 13: coverage 55.41% → 62.51% + fix 21 pre-existing failures
