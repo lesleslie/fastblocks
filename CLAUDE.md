@@ -242,3 +242,11 @@ All I/O in the orchestration layer is async. The two places this gets violated:
 ## Reminder
 
 Crackerjack is the quality gate. Before declaring any task done, run `uv run crackerjack run` and confirm it passes. If a single test fails, do not declare success.
+
+## Oneiric action kits
+
+Before writing common primitives (HMAC, token gen, schema validation,
+retries, redaction, HTTP probing, serialization, compression, hashing,
+data transforms), check `oneiric.actions` — catalog lives at
+`oneiric/docs/action-kits.md` in the oneiric project. Discovery hint:
+`mahavishnu/.claude/decisions/promote-oneiric-action-kits.md`.
