@@ -58,8 +58,9 @@ Per Erratum 21's explicit guidance, three options were available:
 | **C** | Abandon 11 commits | Lose +13.39 pp gain; regress to 49.13% baseline |
 
 Option B is the chosen path. The ratchet floor is amended from
-49.1324200913242 to **62** (rounded down from 62.52% with 0.52 pp
-safety margin, matching Erratum 22's v3.1 55.05% rounding convention).
+49.1324200913242 to **62** (rounded down from the measured 62.52%
+with a 0.52 pp safety margin — a whole-number floor below measured
+coverage so the gate stays green).
 
 ## Decision
 
@@ -80,7 +81,8 @@ asset/icon adapter modules — moving coverage toward 70% over time.
 - CI gate stays green; no regression from the 49.13% baseline.
 - The 7.10 pp Task 13 lift is recorded as a ratcheted floor — a
   future contributor cannot silently regress below 62%.
-- Erratum 22's safety-margin rounding convention is preserved.
+- The whole-number floor (62) sits 0.52 pp below measured coverage
+  (62.52%), giving the gate headroom against measurement noise.
 
 **Negative:**
 
@@ -104,6 +106,6 @@ asset/icon adapter modules — moving coverage toward 70% over time.
 - Plan: `docs/superpowers/plans/2026-08-23-fastblocks-phase-5-retry.md`
 - Spec: `docs/superpowers/specs/2026-08-22-fastblocks-phase-5-design.md`
 - Task 13 report: `.superpowers/sdd/2026-08-23-fastblocks-phase-5-retry/task-13-report.md`
-- Erratum 21 (coverage ratchet paths): spec §Errata line 220-240
-- Erratum 22 (rounding convention for `--cov-fail-under`): spec §Errata line 240-260
+- Erratum 21 (coverage ratchet paths): spec §Errata line 549-562
+- Erratum 22 (coverage baseline mismatch): spec §Errata line 564-574
 - Commit `25a8551` — Task 13: coverage 55.41% → 62.51% + fix 21 pre-existing failures
