@@ -301,6 +301,24 @@ def _tracer_provider_isolation():
             fresh.shutdown()  # flush any pending spans
 ```
 
+## Erratum (post-implementation, 2026-08-22)
+
+The code block above is correct in shape but elides one
+detail discovered during the final whole-branch review: OTel's
+public `trace.set_tracer_provider` is one-shot per **process**,
+guarded by a `_TRACER_PROVIDER_SET_ONCE` flag at
+`opentelemetry/trace/__init__.py` (line `_TRACER_PROVIDER_SET_ONCE._done`).
+The second and later calls log `Overriding of current
+TracerProvider is not allowed` and silently no-op. The
+implementation therefore resets the flag
+(`_TRACER_PROVIDER_SET_ONCE._done = False`) immediately before
+each `trace.set_tracer_provider(...)` call inside the
+`_set_provider_silently` helper, so per-test swap-then-restore
+works on the 2nd..N invocation as well as the 1st. Only the
+boolean state of the flag is touched; no other private OTel
+state is mutated. The fixture is otherwise unchanged from the
+spec below.
+
 ## Failure modes (cross-cutting)
 
 | Failure | Behavior |

@@ -16,7 +16,10 @@ The FastBlocks implementation extends the original with:
 - Event-driven HTMX updates via ACB Events system
 """
 
+from __future__ import annotations
+
 import asyncio
+import contextvars
 import json
 import typing as t
 from collections.abc import Coroutine
@@ -43,12 +46,21 @@ def _run_async_safely[T](coro: Coroutine[t.Any, t.Any, T]) -> T:
     Errors raised inside ``coro`` propagate to the caller. This helper
     does **not** swallow exceptions; the existing ``with suppress(...)``
     wrappers at the call sites preserve their current tolerance.
+
+    Per ADR 0013 Decision 4: the executor submission is wrapped in
+    ``contextvars.copy_context()`` so any ContextVar set in the caller
+    (notably ``_current_trace`` from ``fastblocks.observability.trace_context``)
+    is visible inside the coroutine running on the executor thread.
+    Without ``copy_context()`` the worker thread starts with empty
+    ContextVar storage and ``asyncio.run`` inside it has no access to
+    the caller's trace context.
     """
     try:
         asyncio.get_running_loop()
     except RuntimeError:
         with ThreadPoolExecutor(max_workers=1) as executor:
-            return cast(T, executor.submit(asyncio.run, coro).result())
+            ctx = contextvars.copy_context()
+            return cast(T, executor.submit(ctx.run, asyncio.run, coro).result())
     raise RuntimeError("use the native async path inside an active event loop")
 
 

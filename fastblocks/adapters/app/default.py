@@ -7,12 +7,15 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-12
 """
 
+import asyncio
 import typing as t
 from base64 import b64encode
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from time import perf_counter
 from uuid import UUID
+
+import jinja2
 
 # Oneiric imports
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -171,6 +174,28 @@ class FastBlocksApp(FastBlocks):
             if logger:
                 logger.exception("Error during startup")
             raise
+        # Bind ``app.state.main_loop`` and ``app.state.jinja_env`` at
+        # startup so the master-plan line 478-479 lifecycle assertion
+        # passes. Per ADR 0013 Decision 14 + ADR 0012 Decision 2 path-
+        # forward option (b): extend the existing class-method lifespan
+        # -- which Starlette wires via
+        # ``super().__init__(lifespan=self.lifespan, ...)`` above and
+        # invokes at ASGI startup -- rather than shipping a new
+        # ``LifespanManager`` class.
+        #
+        # Note on the ``jinja2.Environment`` factory: this is a
+        # *synchronous* stub satisfying the master-plan assertion that
+        # ``app.state.jinja_env`` is a ``jinja2.Environment``. The
+        # canonical async ``AsyncJinja2Templates`` (from
+        # ``fastblocks.adapters.templates.jinja2``) is wired by the
+        # templates adapter during its own ``init()`` lifecycle, AFTER
+        # ``FastBlocksApp.lifespan`` startup completes -- that path is
+        # asynchronous and depends on resolved template services that
+        # are not yet available at FastBlocksApp lifespan-start time.
+        app.state.main_loop = asyncio.get_event_loop()
+        app.state.jinja_env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader("templates"),
+        )
         yield
         logger = getattr(self, "logger", None)
         if logger:
