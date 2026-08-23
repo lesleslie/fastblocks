@@ -711,24 +711,25 @@ Three layers, with `tests/strategies.py` as the shared root.
 
 ---
 
-## Per-commit Integration Contracts (12 commits, preserved from v3.1)
+## Per-commit Integration Contracts (12 implementation + 1 coverage lift = 13 commits)
 
 | # | Subject | Returns | Demonstrable by |
 |---|---|---|---|
-| 1 | `chore(tests): install hypothesis, playwright, axe-playwright-python` | `pyproject.toml` dev-deps | `uv pip list \| grep -E "(hypothesis\|playwright\|axe-playwright)"` |
-| 2 | `feat(tests): tests/strategies.py — 4 Hypothesis strategies` (with `@functools.cache` on `htmy_component()` per Erratum 1) | `tests/strategies.py` | `python -c "from tests.strategies import safe_user_input, unsafe_input, attrs_dict, htmy_component; print('OK')"` |
-| 3 | `chore(tests): zero-collection-error + Hypothesis profiles` (with `tests/a11y/_component_postures.py` schema per Erratum 3) | `tests/conftest.py` + 3 new markers + posture file | `pytest --collect-only -q -p no:xdist` returns 0 |
-| 4 | `test(templates): property-based style × renderer matrix` | `tests/templates/test_style_renderer_property.py` | 4 property-based tests pass |
-| 5 | `test(xss): HTMY XSS matrix for all 32 absorbed components` | `tests/xss/test_htmy_component_xss_matrix.py` | 32 components × 3 attack vectors = ~100+ tests pass |
-| 6 | `test(templates): Jinja2 SSTI regression` | `tests/templates/test_jinja2_ssti.py` | 4 SSTI scenarios pass |
-| 7 | `test(adapters): HTMY hx_* kwargs contract test` | `tests/adapters/templates/test_htmy_hx_kwargs.py` | 5 hx_* scenarios pass |
-| 8 | `test(mcp): server integration canary` | `tests/mcp/test_server_canary.py` | 2 scenarios pass (tools tuple + ASGI spy) |
-| 9 | `chore(tests): tests/a11y/ — axe-core on 32 components` (uses `_component_postures.py` from #3) | `tests/a11y/test_components_a11y.py` + `clean_axe_core_page` fixture | 0 axe-core violations |
-| 10 | `test(integration): CSRF + HTMX` | `tests/integration/test_csrf_htmx.py` + `fastblocks_test_app` fixture | 3 CSRF scenarios pass (Erratum 6 dropped scenario 3) |
-| 11 | `test(integration): static files + lifecycle` (5C.5 rewritten per Erratum 5) | `tests/integration/test_static_files.py` + `tests/integration/test_lifespan.py` | 3 static + 2 lifecycle scenarios pass |
-| 12 | `chore(ci): bump coverage ratchet to 65%` | `pyproject.toml` updated with `--cov-fail-under = 65` | `pytest --cov-fail-under=65` exits 0 |
+| 1 | `chore(tests): install hypothesis, playwright, axe-playwright-python` (Erratum 27: `axe-playwright-python~=0.1`; Erratum 28: `hypothesis~=6.0`) | `pyproject.toml` dev-deps | `uv pip list \| grep -E "(hypothesis\|playwright\|axe-playwright)"` |
+| 2 | `feat(tests): tests/strategies.py — 4 Hypothesis strategies` (Erratum 14 split: `_build_components()` + `_register_object_strategy()` non-cached, `htmy_component()` cached) | `tests/strategies.py` | `python -c "from tests.strategies import safe_user_input, unsafe_input, attrs_dict, htmy_component; print('OK')"` |
+| 3 | `chore(tests): zero-collection-error + Hypothesis profiles` (with `tests/a11y/_component_postures.py` 6-field schema per Erratum 3+18) | `tests/conftest.py` + 3 new markers + posture file + canary script | `pytest --collect-only -q -p no:xdist` returns 0; `bash scripts/check_no_production_changes.sh` exits 0 |
+| 4 | `test(templates): property-based style × renderer matrix` | `tests/templates/test_style_renderer_property.py` | 4 property-based tests pass; cells 3/4 marked `@pytest.mark.xfail` per multi-agent review RC-1 |
+| 5 | `test(xss): HTMY XSS matrix for all 32 absorbed components` (Erratum 19: 3 attack vectors field-injection / CSS-context / aria-*) | `tests/xss/test_htmy_component_xss_matrix.py` | ~59 tests pass across 32 components (vector a) + Button vectors b/c; full count = 32×3 = 96 parametrized cases, 9 skipped (enum validators) |
+| 6 | `test(templates): Jinja2 SSTI regression` (Erratum 17: 15-vector corpus / 4 categories) | `tests/templates/test_jinja2_ssti.py` + `tests/xss/ssti_payloads.json` | 4 SSTI scenarios pass |
+| 7 | `test(adapters): HTMY hx_* kwargs contract test` | `tests/adapters/templates/test_htmy_hx_kwargs.py` | 11 hx_* scenarios pass (9 attrs + 2 JSON variants) |
+| 8 | `test(mcp): server integration canary` (Erratum 11: 3 scenarios including suppress-mask regression) | `tests/mcp/test_server_canary.py` | 3 scenarios pass (tools tuple + ASGI spy + suppress-mask regression) |
+| 9 | `chore(tests): tests/a11y/ — axe-core on 32 components` (uses `_component_postures.py` from #3; Erratum 16: 10-rule subset) | `tests/a11y/test_components_a11y.py` + `clean_axe_core_page` fixture | 32 axe-core tests pass; 0 axe-core violations per component |
+| 10 | `test(integration): CSRF + HTMX` (Erratum 6: 3 scenarios, form-fallback dropped) | `tests/integration/test_csrf_htmx.py` + `fastblocks_test_app` fixture | 3 CSRF scenarios pass |
+| 11 | `test(integration): static files + lifecycle` (Erratum 7: 2 static scenarios, Cache-Control assertion dropped; Erratum 12: caplog-based lifecycle) | `tests/integration/test_static_files.py` + `tests/integration/test_lifespan.py` | 2 static + 2 lifecycle scenarios pass |
+| 12 | `chore(ci): bump coverage ratchet to 62%` (Erratum 21 Option B — original 65% target unreachable in strict-tests-only; see ADR 0014) | `pyproject.toml` `--cov-fail-under=62` + `docs/adr/0014-...md` | `pytest --cov-fail-under=62` exits 0; coverage measured 62.52% |
+| 13 | `test(ci): lift coverage 55.41% → 62.51% + fix 21 pre-existing failures` (operator-expanded scope after Task 12 BLOCKED at 55.41%) | 26 new test files (246 tests) + 5 modified test files | `pytest --cov=fastblocks` reports ≥62% coverage; 21 pre-existing failures → 0 |
 
-**All 12 commits independently revertible** per Phase 2 convention.
+**All 13 commits independently revertible** per Phase 2 convention.
 
 **Cumulative runtime estimate:** ~150 tests, ~100-150s (1.5-2.5 min). Well
 under 5-min CI budget.
