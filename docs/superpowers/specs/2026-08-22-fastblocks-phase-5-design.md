@@ -203,18 +203,40 @@ async def test_lifespan_binds_app_state_at_startup() -> None:
         assert isinstance(app.state.jinja_env, jinja2.Environment)
 
 
-async def test_lifespan_clears_app_state_at_teardown() -> None:
-    """Exiting lifespan_context clears app.state.main_loop + app.state.jinja_env."""
+async def test_lifespan_binds_app_state_at_startup() -> None:  # noqa: F811
+    """Drive Starlette's lifespan_context and assert app.state bindings.
+
+    Phase 6.5 Task 1 binds app.state.main_loop and app.state.jinja_env at
+    startup (verified 2026-08-22 against fastblocks/adapters/app/default.py
+    FastBlocksApp.lifespan). The teardown path (after yield) only logs
+    "shutting down" — it does NOT clear app.state. So we assert presence
+    inside the context only, not absence after.
+
+    If Phase 6.5 Task 1 ever ships teardown cleanup, the test should be
+    extended to assert that too — but as of 2026-08-22, that's a production
+    code change, not a test change.
+    """
     app = FastBlocksApp()
 
     async with app.router.lifespan_context(app):
-        # Bindings present inside the context
-        assert app.state.main_loop is not None
-        assert app.state.jinja_env is not None
+        assert isinstance(app.state.main_loop, asyncio.AbstractEventLoop)
+        assert isinstance(app.state.jinja_env, jinja2.Environment)
 
-    # Bindings cleared after the context exits
-    assert getattr(app.state, "main_loop", None) is None
-    assert getattr(app.state, "jinja_env", None) is None
+
+async def test_lifespan_teardown_does_not_raise() -> None:
+    """Exiting lifespan_context cleanly transitions to shutdown.
+
+    Companion to test_lifespan_binds_app_state_at_startup. Asserts the
+    teardown path runs without exception. Does NOT assert that app.state
+    is cleared (the production lifespan only logs on shutdown, not
+    cleans up — see Erratum 5a).
+    """
+    app = FastBlocksApp()
+
+    async with app.router.lifespan_context(app):
+        pass  # Bindings present inside the context
+
+    # If we get here, teardown ran without raising
 ```
 
 **Why this works:** Starlette's `app.router.lifespan_context(app)` is the
@@ -228,6 +250,13 @@ it.
 class that didn't exist — the test could never pass without violating the
 strict-tests-only boundary. The v4 test exercises the actual production
 path; it can pass and fail in meaningful ways.
+
+**Erratum 5a (2026-08-22, self-review finding):** The original v4 spec
+asserted `app.state.main_loop is None` after teardown. Verified against
+the production lifespan (commit `8c5c117`): the teardown path only logs
+"shutting down" — it does NOT clear app.state. The original test would
+have failed. Fixed to assert presence-only inside the context plus a
+no-raise teardown assertion.
 
 **Reviewer attention:** L4 integration-realism reviews this rewrite; this
 is the load-bearing fix that unblocks v3.1's deferred status.
