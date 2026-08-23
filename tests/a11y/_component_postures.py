@@ -58,19 +58,267 @@ _AXE_BASE: tuple[str, ...] = (
 #   - Dropdown: closed (panel-only — no trigger button)
 #   - Tabs: rendered with proper ARIA plumbing (active_id, role="tablist")
 #   - Drawer: off-canvas (closed state)
+#
+# Per Erratum 18: exclusion_rules entries below carry a one-line rationale
+# in the implementing test (tests/a11y/test_components_a11y.py), not here.
 POSTURES: tuple[ComponentPosture, ...] = (
     ComponentPosture(
-        name="Button",
-        scaffold='<!DOCTYPE html><html><body><main><h1>Button</h1><button>Submit</button></main></body></html>',
+        name="Alert",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
         axe_rules=_AXE_BASE,
         expected_landmark="main",
         accessible_name_source="text",
     ),
-    # ... 31 more entries — implementer enumerates from htmy_components.__all__ ...
-    # For each component, set:
-    #   scaffold: <!DOCTYPE html><html><body><main><h1>{name}</h1>{realistic_render}</main></body></html>
-    #   axe_rules: _AXE_BASE (or subset if components are restrictive)
-    #   expected_landmark: "navigation" / "main" / "complementary" / "region" as appropriate
-    #   accessible_name_source: "aria-label" / "text" / etc.
-    #   exclusion_rules: tuple of rule IDs to exclude for this component
+    ComponentPosture(
+        name="Breadcrumb",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-label",
+    ),
+    ComponentPosture(
+        name="Burger",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Button",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Card",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Checkbox",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="label",
+    ),
+    ComponentPosture(
+        name="Column",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Columns",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Container",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Dialog",
+        # Per Erratum 15: Dialog is the modal component; renders <dialog> with
+        # optional autoshow. Exclude landmark-one-main because a modal Dialog
+        # overlay does not contain the page main.
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-labelledby",
+        exclusion_rules=("landmark-one-main",),
+    ),
+    ComponentPosture(
+        name="Drawer",
+        # Drawer is off-canvas popover. Exclude region because the drawer is
+        # in the top layer (popover) and its content is intentionally hidden
+        # until shown.
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-label",
+        exclusion_rules=("region",),
+    ),
+    ComponentPosture(
+        name="Dropdown",
+        # Dropdown panel is popover; trigger button is separate (not rendered
+        # here per realistic-defaults policy). Exclude button-name because the
+        # dropdown panel-only render has no button child.
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-label",
+        exclusion_rules=("button-name",),
+    ),
+    ComponentPosture(
+        name="Field",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="label",
+    ),
+    ComponentPosture(
+        name="Footer",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Hero",
+        # Hero default heading_level=None renders title as <p>; scaffold
+        # provides the page h1. Exclude page-has-heading-one as a guard
+        # against callers setting heading_level=1 (which would emit <h1>).
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+        exclusion_rules=("page-has-heading-one",),
+    ),
+    ComponentPosture(
+        name="Input",
+        # Input is bare <input type="text">; no associated <label> when used
+        # standalone. Real callers wrap in <label> or pass aria-label via
+        # attrs. Exclude label for the standalone component posture.
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-label",
+        exclusion_rules=("label",),
+    ),
+    ComponentPosture(
+        name="Level",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Media",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="NavGroups",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="NavList",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Navbar",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-label",
+    ),
+    ComponentPosture(
+        name="Pagination",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-label",
+    ),
+    ComponentPosture(
+        name="Progress",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-label",
+    ),
+    ComponentPosture(
+        name="Section",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Select",
+        # Select is bare <select>...</select>; no associated <label> when used
+        # standalone. Exclude label for the standalone component posture.
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-label",
+        exclusion_rules=("label",),
+    ),
+    ComponentPosture(
+        name="Shell",
+        # Shell emits its own <main class="ui-shell__main"> as the page-level
+        # layout primitive. Wrapping in another <main> would violate
+        # landmark-one-main. Exclude the rule.
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+        exclusion_rules=("landmark-one-main",),
+    ),
+    ComponentPosture(
+        name="Switch",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="label",
+    ),
+    ComponentPosture(
+        name="Table",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Tabs",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="aria-label",
+    ),
+    ComponentPosture(
+        name="Tile",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+    ComponentPosture(
+        name="Title",
+        # Title default heading_level=None renders as <p>; scaffold provides
+        # the page h1. Exclude page-has-heading-one as a guard against callers
+        # setting heading_level=1 (which would emit <h1>).
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+        exclusion_rules=("page-has-heading-one",),
+    ),
+    ComponentPosture(
+        name="ValidationSummary",
+        scaffold='<!DOCTYPE html><html><body><main><h1>{name}</h1>{rendered}</main></body></html>',
+        axe_rules=_AXE_BASE,
+        expected_landmark="main",
+        accessible_name_source="text",
+    ),
+)
+
+assert len(POSTURES) == 32, (
+    f"Expected 32 component postures, got {len(POSTURES)}"
 )
