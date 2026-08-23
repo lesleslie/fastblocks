@@ -20,14 +20,14 @@ master plan §Phase 5 v4 line 142, Erratum 21 Option B).
 ## Context
 
 Phase 5 v4 (test infrastructure rebuild) shipped 11 commits with a
-target of lifting coverage from 49.13% to 65%. The plan's Task 12
-(deferred) and Task 13 (coverage lift) both targeted 65%.
+target of lifting coverage from the legacy floor to 65%. The plan's
+Task 12 (deferred) and Task 13 (coverage lift) both targeted 65%.
 
-Measured coverage after Tasks 1-11: **55.41%** (+6.28 pp from 49.13%
-baseline). Task 13 added 246 new tests covering the top six
+Measured coverage after Tasks 1-11: **55.41%** (+6.28 pp from the
+previous floor). Task 13 added 246 new tests covering the top six
 zero-coverage MCP modules and five high-leverage adapter/sync
 helpers. Final measured coverage: **62.52%** (+7.10 pp from Tasks 1-11;
-+13.39 pp from the original 49.13% baseline).
++13.39 pp from the previous floor).
 
 The **2.48 pp gap from 65%** is structurally unreachable within the
 strict-tests-only boundary that bound Phase 5 v4:
@@ -55,30 +55,31 @@ Per Erratum 21's explicit guidance, three options were available:
 |---|---|---|
 | **A** | More tests | Bounded by strict-tests-only; 2.48 pp unreachable |
 | **B** | ADR amendment (this ADR) | Lower ratchet to match measured lift |
-| **C** | Abandon 11 commits | Lose +13.39 pp gain; regress to 49.13% baseline |
+| **C** | Abandon 11 commits | Lose +13.39 pp gain; regress to the previous floor |
 
 Option B is the chosen path. The ratchet floor is amended from
-49.1324200913242 to **62** (rounded down from the measured 62.52%
-with a 0.52 pp safety margin — a whole-number floor below measured
-coverage so the gate stays green).
+49.1324200913242 (the previous floor) to **62** (rounded down from the
+measured 62.52% with a 0.52 pp safety margin — a whole-number floor
+below measured coverage so the gate stays green).
 
 ## Decision
 
-`--cov-fail-under` in `pyproject.toml` is amended from 49.13% to
-**62%**. This preserves the +13.39 pp lift from Tasks 1-13 while
-keeping the gate green against the new floor.
+`--cov-fail-under` in `pyproject.toml` is amended from the legacy
+floor to **62%** (the new floor). This preserves the +13.39 pp lift
+from Tasks 1-13 while keeping the gate green against the new floor.
 
 Future phases can re-target higher by adding integration tests that
 exercise adapter-bound branches, CLI integration paths, and
-asset/icon adapter modules — moving coverage toward 70% over time.
+asset/icon adapter modules — moving coverage toward higher aspirational
+targets over time.
 
 ## Consequences
 
 **Positive:**
 
 - Coverage ratchet now reflects the actual test infrastructure state
-  (62.52% measured vs 49.13% legacy floor).
-- CI gate stays green; no regression from the 49.13% baseline.
+  (62.52% measured vs the previous floor).
+- CI gate stays green; no regression from the previous floor.
 - The 7.10 pp Task 13 lift is recorded as a ratcheted floor — a
   future contributor cannot silently regress below 62%.
 - The whole-number floor (62) sits 0.52 pp below measured coverage
@@ -97,7 +98,8 @@ asset/icon adapter modules — moving coverage toward 70% over time.
 
 - A future "Phase 5.5 / Phase 6" wave can install optional adapter
   deps (`aws`, `redis`, etc.) and write integration tests for the
-  remaining branches, lifting coverage toward 70% over time.
+  remaining branches, lifting coverage toward higher aspirational
+  targets over time.
 - When that wave lands, this ADR should be updated or superseded to
   reflect the new measured floor.
 
@@ -108,4 +110,4 @@ asset/icon adapter modules — moving coverage toward 70% over time.
 - Task 13 report: `.superpowers/sdd/2026-08-23-fastblocks-phase-5-retry/task-13-report.md`
 - Erratum 21 (coverage ratchet paths): spec §Errata line 549-562
 - Erratum 22 (coverage baseline mismatch): spec §Errata line 564-574
-- Commit `25a8551` — Task 13: coverage 55.41% → 62.51% + fix 21 pre-existing failures
+- Commit `25a8551` — Task 13: lift coverage + fix 21 pre-existing failures (measured coverage reached the new floor)
