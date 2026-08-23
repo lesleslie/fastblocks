@@ -190,20 +190,10 @@ import asyncio
 
 import jinja2
 
-from fastblocks.adapters.app import FastBlocksApp
+from fastblocks.adapters.app.default import FastBlocksApp
 
 
 async def test_lifespan_binds_app_state_at_startup() -> None:
-    """Drive Starlette's lifespan_context and assert app.state bindings."""
-    app = FastBlocksApp()
-
-    async with app.router.lifespan_context(app):
-        # Phase 6.5 Task 1 — these are bound at startup, not per-request
-        assert isinstance(app.state.main_loop, asyncio.AbstractEventLoop)
-        assert isinstance(app.state.jinja_env, jinja2.Environment)
-
-
-async def test_lifespan_binds_app_state_at_startup() -> None:  # noqa: F811
     """Drive Starlette's lifespan_context and assert app.state bindings.
 
     Phase 6.5 Task 1 binds app.state.main_loop and app.state.jinja_env at
