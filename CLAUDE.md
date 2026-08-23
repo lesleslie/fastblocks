@@ -21,7 +21,7 @@ uv run pytest
 uv run pytest tests/test_htmx.py::TestHtmxDetails::test_specific -v
 uv run pytest tests/adapters/templates/ -k "test_loader"
 
-# Coverage (floor: 49.13% — pyproject.toml [tool.coverage.report].fail_under; gate fails below this)
+# Coverage (floor: 62% — pyproject.toml [tool.coverage.report].fail_under; gate fails below this)
 uv run pytest --cov=fastblocks --cov-report=term-missing
 uv run pytest --cov=fastblocks --cov-report=html  # htmlcov/
 

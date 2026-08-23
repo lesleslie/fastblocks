@@ -289,7 +289,7 @@ Following our **Clean Code Philosophy** where every line of code is a liability:
 
 - **Test Coverage Improvement (MANDATORY)**
 
-  - **Floor: 49.13% (pyproject.toml `[tool.coverage.report].fail_under`)**. Coverage must remain at or above this floor; the CI gate fails below it.
+  - **Floor: 62% (pyproject.toml `[tool.coverage.report].fail_under`)**. Coverage must remain at or above this floor; the CI gate fails below it.
   - **Always improve coverage incrementally** when working on projects with pytest coverage below the target
   - **Check coverage first**: Run `uv run pytest --cov=<package_name> --cov-report=term-missing` to see current status
   - **Target 2-5% improvement per session**: Add 1-3 focused tests that cover uncovered lines
