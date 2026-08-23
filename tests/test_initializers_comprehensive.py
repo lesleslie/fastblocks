@@ -348,6 +348,9 @@ class TestRegisterIntegrationsAsync:
 
         # Should not raise an exception even without async loop
         initializer._register_integrations_async()
+        # Post-state: the public contract is the method returns cleanly;
+        # the method's `self.app` should still be the test app.
+        assert initializer.app is app
 
 
 @pytest.mark.unit
@@ -364,6 +367,7 @@ class TestRegisterEventHandlers:
 
         # Should not raise an exception
         initializer._register_event_handlers()
+        assert initializer.app is app
 
     def test_register_event_handlers_with_logger(self) -> None:
         """Test _register_event_handlers with logger."""
@@ -376,6 +380,7 @@ class TestRegisterEventHandlers:
 
         # Should not raise an exception
         initializer._register_event_handlers()
+        assert initializer.app is app
 
 
 @pytest.mark.unit
@@ -465,6 +470,8 @@ class TestEdgeCases:
         with patch("fastblocks.initializers.get_installed_adapter", return_value=None):
             initializer._configure_logging()
 
+        # Post-state: app is unchanged after _configure_logging no-ops.
+        assert initializer.app is app
         # Should not raise an exception
 
 
