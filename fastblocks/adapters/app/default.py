@@ -246,6 +246,19 @@ class FastBlocksApp(FastBlocks):
         # ``self.fastblocks_app`` so this single registration covers
         # both lifespans wired in Task 3.
         self.add_route("/metrics", metrics_endpoint, methods=["GET"])
+        # Phase 6 Task 11 (Δ45/Δ48): register OtelMiddleware LAST in
+        # ``user_middleware`` so Starlette's reverse-order wrapper
+        # chain places it as the OUTERMOST HTTP middleware. Per the
+        # spec contract, the middleware must be the LAST entry in
+        # ``MiddlewareManager.get_middleware_stack()["user_middleware"]``
+        # — see ``tests/observability/test_otel_middleware_outermost.py``.
+        # The import is deferred to ``__init__`` to avoid pulling the
+        # OTel tracer module at module-load time (lean installs without
+        # the ``[observability]`` PEP 735 group would otherwise raise
+        # ``MissingDependencyError`` on every FastBlocks import).
+        from fastblocks.observability.otel_middleware import OtelMiddleware
+
+        self.add_middleware(OtelMiddleware)
 
     async def init(self) -> None:
         pass
