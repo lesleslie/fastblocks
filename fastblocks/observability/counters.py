@@ -46,7 +46,15 @@ class Counter:
         self._inner = _PromCounter(name, documentation, labelnames=labelnames)
 
     def inc(self, amount: float = 1.0, **labels: str) -> None:
-        self._inner.inc(amount, **labels)
+        # prometheus_client's Counter.inc() does NOT accept label kwargs;
+        # the proper call shape is ``_inner.labels(**labels).inc(amount)``.
+        # The wrapper transparently forwards both forms: unlabelled counters
+        # accept the bare inc(amount) path, labelled counters take labels
+        # via the **labels kwargs and forward through the .labels() chain.
+        if labels:
+            self._inner.labels(**labels).inc(amount)
+        else:
+            self._inner.inc(amount)
 
 class Histogram:
     def __init__(
