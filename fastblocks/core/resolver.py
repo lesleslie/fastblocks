@@ -147,8 +147,10 @@ class FastblocksRegistry:
     Wraps every method the codebase calls on Resolver so future
     Oneiric API changes (0.13→0.17 already changed the registration
     shape once) absorb here instead of at ~90 call sites. Same posture
-    as :func:`fastblocks.mcp.profiles.apply_fastblocks_tool_profile`
-    wrapping ``mcp_common.tools.apply_tool_profile``.
+    as the public capability registration primitives in
+    ``fastblocks.mcp.capabilities`` (Phase 4 v2.1) — the framework
+    exports registration functions for consumers (e.g. SplashStand)
+    to wire into their own ``mcp_common.tools.apply_tool_profile`` calls.
 
     Construct against the fastblocks singleton via :func:`get_resolver` —
     never against a fresh ``Resolver()`` — that defeats the "single

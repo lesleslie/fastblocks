@@ -152,7 +152,7 @@ To configure an adapter from Python, use the typed API:
 `AdapterRegistry.configure(adapter_name: str, **fields: Any)`, which validates
 field names against the per-adapter settings schema and rejects unknown keys.
 
-### Tool Profile System (opted out — see rationale)
+### Tool Profile System (library-aware — see rationale)
 
 FastBlocks is a **library**, not a standalone production MCP server. The
 seven read-only tools it exposes are catalog/inspection helpers that are
@@ -160,31 +160,20 @@ embedded in a consumer application's MCP surface (e.g. SplashStand). The
 production servers that genuinely need `mcp_common` profile-based dispatch
 (`MINIMAL` / `STANDARD` / `FULL`) live in the consumer app, not here.
 
-For that reason, the framework **opts out** of `mcp_common.tools.apply_tool_profile()`
-and ships a no-op stub at `fastblocks/mcp/profiles.py`:
+Phase 4 v2.1 (2026-08-23) replaced the no-op stub with a public capability
+metadata API. Consumers (e.g. SplashStand) import registration functions
+from `fastblocks.mcp.capabilities` and wire them into their own
+`apply_tool_profile` calls. The framework's internal
+`FastBlocksMCPServer` is unchanged and continues to register all 7
+read-only tools unconditionally via `register_fastblocks_tools`. This
+preserves the library-not-server posture: the framework is a library,
+not a standalone production MCP server, and consumers own profile
+choice.
 
-- `FASTBLOCKS_TOOLS`: the seven tool names, in registration order.
-- `PROFILE_REGISTRATIONS`: a `{ToolProfile.MINIMAL: ALL, STANDARD: ALL, FULL: ALL}`
-  mapping. Every profile maps to the full set — nothing is filtered.
-  Keys are members of the runtime-resolved enum (`_TOOL_PROFILE_CLS`) —
-  the same `ToolProfile.MINIMAL` / `STANDARD` / `FULL` names when
-  `mcp-common` is on the import path, the local `_FallbackToolProfile`
-  mirror otherwise. See `fastblocks/mcp/profiles.py:91-134` for the
-  resolution logic.
-- `apply_fastblocks_tool_profile(server, profile=...)`: a no-op that
-  accepts a server and a profile, emits a one-time deprecation log, and
-  returns `None` without touching the server.
-
-The signature mirrors `mcp_common.tools.apply_tool_profile`, so the
-migration path to the full pattern is a drop-in change once
-`mcp-common~=0.18` becomes available. The regression test at
-`tests/mcp/test_tool_profile.py` pins all three invariants.
-
-**Do not wire the framework's MCP server to `apply_tool_profile()`.**
-**Do not import `apply_fastblocks_tool_profile` from a consumer app.**
+**Consumers (e.g. SplashStand) wire their own `apply_tool_profile` calls using the registration functions from `fastblocks.mcp.capabilities`.** See `docs/architecture/tool-profile-rationale.md` for the full wiring example (added in Phase 4 v2.1 Commit 2).
 SplashStand (W4.10) is a fastblocks consumer with its own MCP server
-and mutating tools; it needs the full pattern. The framework's no-op
-stub is for the framework's read-only server only.
+and mutating tools; it needs the full pattern. The framework's internal
+server is read-only.
 
 Full justification, decision matrix, and a note for the W4.10 splashstand
 wave: `docs/architecture/tool-profile-rationale.md`.
