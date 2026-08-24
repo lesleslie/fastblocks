@@ -305,6 +305,21 @@ class Counter:
         cardinality_guard: CardinalityGuard | None = None,
     ) -> None:
         _require_prometheus()
+        # Wave 6 Task 5: reject the labelless-with-guard configuration
+        # up front. A cardinality guard on a labelless counter is a
+        # semantic no-op (the only thing it can track is the synthetic
+        # ``"_default"`` slot, which carries no per-call information).
+        # Silently bypassing enforcement — the current behavior via
+        # ``if self._guard is not None and labels:`` — would mask
+        # the bug at runtime. Raise ValueError at construction so the
+        # misconfiguration surfaces at import/test time, not in
+        # production under load.
+        if cardinality_guard is not None and not labelnames:
+            raise ValueError(
+                f"cardinality_guard requires labelnames (got labelnames=() "
+                f"for counter {name!r}); a guard on a labelless counter "
+                f"cannot enforce any cardinality budget."
+            )
         from fastblocks.observability.registry import ObservabilityRegistry
         # Δ74: register FIRST so duplicate names surface as MetricNameCollisionError
         # (not raw prometheus_client.ValueError). _Registry.register() catches
@@ -312,6 +327,12 @@ class Counter:
         # via raise from (Δ35).
         ObservabilityRegistry.register(name)
         self._inner = _PromCounter(name, documentation, labelnames=labelnames)
+        # Cache the labelnames tuple for ``inc()`` so it can validate the
+        # ``**labels`` kwargs without round-tripping through prometheus_client
+        # internals. The guard (when wired) carries a parallel tuple; we
+        # mirror it here on the Counter for the labelless-with-guard
+        # rejection path and the missing-required-label check.
+        self._labelnames: tuple[str, ...] = labelnames
         # Wire the cardinality guard (if provided) to this counter's
         # labelnames + metric name. Guard mode + threshold are preserved;
         # the seen-sets start empty so each Counter tracks its own
@@ -331,6 +352,26 @@ class Counter:
         # accept the bare inc(amount) path, labelled counters take labels
         # via the **labels kwargs and forward through the .labels() chain.
         #
+        # Wave 6 Task 5: when the counter is labelled, every required
+        # label MUST appear in ``**labels``. The previous code did
+        #     label_values = tuple(labels.get(ln) for ln in ...)
+        #     label_values = tuple(v for v in label_values if v is not None)
+        # which silently stripped the missing slot and forwarded a
+        # shortened tuple to prometheus_client — masking the bug. The
+        # tightened contract surfaces the missing required label as a
+        # KeyError on the label NAME (least-surprising diagnostic; the
+        # natural exception for a missing kwargs entry on a known-required
+        # set). Applies regardless of whether a cardinality guard is
+        # wired: a missing required label is a programmer error, not a
+        # cardinality policy decision.
+        if self._labelnames:
+            for ln in self._labelnames:
+                if ln not in labels:
+                    raise KeyError(
+                        f"counter {self._inner._name!r} requires label "
+                        f"{ln!r} but it was not provided to inc()"
+                    )
+        #
         # Cardinality enforcement (Task 5): when a guard is wired, check
         # the incoming label values BEFORE delegating to prometheus_client.
         # - off mode returns OK → inc proceeds unchanged.
@@ -339,10 +380,7 @@ class Counter:
         # - enforce mode raises MetricCardinalityViolation from inside
         #   check(); the exception propagates naturally to the caller.
         if self._guard is not None and labels:
-            label_values = tuple(labels.get(ln) for ln in self._guard._labelnames)
-            # Strip None slots (labelnames mismatch) so positional tuples
-            # are always aligned to the guard's tracked labels.
-            label_values = tuple(v for v in label_values if v is not None)
+            label_values = tuple(labels[ln] for ln in self._guard._labelnames)
             action = self._guard.check(label_values)
             if action is CardinalityAction.DROP:
                 return  # warn mode drops the increment entirely.
@@ -361,6 +399,17 @@ class Histogram:
         buckets: tuple[float, ...],
     ) -> None:
         _require_prometheus()
+        # Wave 6 Task 5: self-register in ``ObservabilityRegistry`` parallel
+        # to ``Counter.__init__`` (line 313 above). The manual call at
+        # ``fastblocks/mcp/observability.py:84`` is now redundant — Histogram
+        # registers its own name via the same singleton that catches Counter
+        # name collisions, so the manual call must be removed in the same
+        # commit. Mirrors Δ74 / Δ35: register FIRST so duplicate names
+        # surface as ``MetricNameCollisionError`` (not raw
+        # prometheus_client.ValueError).
+        from fastblocks.observability.registry import ObservabilityRegistry
+
+        ObservabilityRegistry.register(name)
         self._inner = _PromHistogram(name, documentation, labelnames=list(labelnames), buckets=list(buckets))
 
     def observe(self, value: float, *, exemplar: dict[str, str] | None = None) -> None:

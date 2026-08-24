@@ -1,9 +1,10 @@
 import threading
 
 import pytest
-from fastblocks.observability import Counter
+from fastblocks.observability import Counter, Histogram
 from fastblocks.observability.errors import MetricNameCollisionError
 from fastblocks.observability.registry import (
+    ObservabilityRegistry,
     get_default_registry,
 )
 
@@ -82,3 +83,41 @@ def test_observability_registry_module_level_alias_has_no_collector() -> None:
         registry_mod.ObservabilityRegistry
         is get_default_registry()
     )
+
+
+# ---------------------------------------------------------------------------
+# Wave 6 / Task 5 — Histogram self-registers parallel to Counter
+# ---------------------------------------------------------------------------
+#
+# Per Task 5: ``Histogram.__init__`` MUST call
+# ``ObservabilityRegistry.register(name)`` on construction, parallel to
+# ``Counter.__init__:313``. Today the manual registration in
+# ``fastblocks/mcp/observability.py:84`` exists ONLY because Histogram
+# skipped self-registration — after Task 5 the Histogram path goes
+# through the same singleton registry as Counter, so the manual call
+# in ``mcp/observability.py`` is redundant and must be removed.
+#
+# Test name uses a unique metric name to avoid colliding with other
+# tests on the process-global ``_names`` set.
+
+
+def test_histogram_path_registers_via_counter_style() -> None:
+    """Per Wave 6 Task 5: ``Histogram.__init__`` self-registers in
+    ``ObservabilityRegistry`` parallel to ``Counter.__init__``.
+
+    Today the only Histogram-registration test surface is the manual
+    ``ObservabilityRegistry.register(name)`` call in
+    ``fastblocks/mcp/observability.py:84``. After this commit that
+    manual call is redundant: ``Histogram.__init__`` registers the
+    name itself, so the same singleton that catches Counter name
+    collisions also catches Histogram name collisions.
+    """  # noqa: D205
+    name = "task5_histogram_path_registers_unique"
+    assert name not in ObservabilityRegistry._names  # type: ignore[attr-defined]
+
+    Histogram(
+        name, "task5 histogram-path register test",
+        labelnames=(), buckets=(0.01, 1.0),
+    )
+
+    assert name in ObservabilityRegistry._names  # type: ignore[attr-defined]

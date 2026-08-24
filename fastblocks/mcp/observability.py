@@ -65,23 +65,16 @@ def _build_metrics() -> tuple[Counter, Histogram]:
     Centralized so a test that imports ``instrument_tool`` triggers the
     same registration path the production wrappers use.
 
-    Counter registers its name with ``ObservabilityRegistry`` via
-    ``Counter.__init__``. Histogram.__init__ does not, so we register
-    the duration histogram here too (per Task 8 brief: "Register both
-    Counter and Histogram via ObservabilityRegistry"). Name collisions
-    surface as ``MetricNameCollisionError`` — same posture as Counter.
+    Both Counter and Histogram self-register their names with
+    ``ObservabilityRegistry`` via ``__init__`` (Wave 6 Task 5). Name
+    collisions surface as ``MetricNameCollisionError`` — same posture
+    for both metric types.
     """
     invocations = Counter(
         "fastblocks_mcp_tool_invocations_total",
         "MCP tool invocation counts",
         ("tool_name", "tool_status"),
     )
-    # Per Task 8 brief: register both Counter and Histogram.
-    # ObservabilityRegistry is the singleton; Counter already registered
-    # its name above, so we only need to register the Histogram here.
-    from fastblocks.observability.registry import ObservabilityRegistry
-
-    ObservabilityRegistry.register("fastblocks_mcp_tool_duration_seconds")
     duration = Histogram(
         "fastblocks_mcp_tool_duration_seconds",
         "MCP tool duration histogram",
