@@ -9,7 +9,7 @@ decision_date: 2026-08-23
 topic: phase-4-mcp-tool-surface-organization-library-aware-opt-in-closeout
 ---
 
-# ADR 0012: Phase 4 Library-Aware Opt-In Closeout
+# ADR 0015: Phase 4 Library-Aware Opt-In Closeout
 
 ## Status
 
