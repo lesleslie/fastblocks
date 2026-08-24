@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import pytest
 from starlette.requests import Request
+from fastblocks.observability import Counter
 
 # Counter names are pinned by ``__init__`` in ``fastblocks.adapters.app.default``.
 # These MUST match the names declared in that module exactly.
@@ -356,3 +357,70 @@ def test_metrics_endpoint_does_not_call_provider_shutdown_per_request() -> None:
         )
     finally:
         provider.shutdown = original_shutdown  # type: ignore[assignment,method-assign]
+
+
+# ---------------------------------------------------------------------------
+# 6. Wave 6 / Task 3 — /metrics scrapes prometheus_client.REGISTRY end-to-end
+# ---------------------------------------------------------------------------
+#
+# Per Task 3 brief: the ``/metrics`` endpoint must scrape the canonical
+# global registry (``prometheus_client.REGISTRY``), NOT the dead-code
+# ``ObservabilityRegistry._collector`` field that Task 5 review flagged.
+# The end-to-end check below registers a fresh Counter from the public API,
+# hits the handler, and asserts the response body exposes that Counter by
+# name. If a future regression swaps the encoder's registry argument to
+# ``ObservabilityRegistry._collector``, the freshly-registered counter would
+# NOT appear in the response body (because ``_collector`` was never populated),
+# and this test would fail loud.
+
+
+def test_metrics_endpoint_payload_contains_fastblocks_counter_from_global_registry() -> None:
+    """Per Wave 6 Task 3: /metrics exposes fresh Counters via prometheus_client.REGISTRY.
+
+    Registers a Counter via the public API, increments it so a sample is
+    emitted, hits the /metrics handler, and asserts the Counter's name
+    appears in the response payload. This end-to-end contract pins the
+    canonical scrape target (the global prometheus_client.REGISTRY); a
+    future regression that pointed the handler at ``ObservabilityRegistry
+    ._collector`` (the dead-code field) would render an empty body for
+    this Counter and surface here.
+    """
+    app_mod = _import_default_app_module()
+    handler = app_mod.metrics_endpoint
+
+    # Register a Counter via the public API so it lands on the canonical
+    # global registry. The Counter name embeds the task id so future
+    # regressions that strip our test surfaces are easy to attribute.
+    # NOTE: per the prometheus_client convention noted in
+    # test_cardinality_guard.py:95-105, the family name strips the
+    # ``_total`` suffix when the Counter name already ends in it; the
+    # sample name retains the suffix. We deliberately avoid ``_total`` in
+    # the input name so the family name and the sample name are the
+    # obvious ``name`` / ``name_total`` pair the assertions check.
+    counter_name = "phase6_task3_endpoint_smoke"
+    c = Counter(counter_name, "Wave 6 Task 3 /metrics smoke", labelnames=())
+    c.inc(1.0)
+
+    request = _make_request("*/*")
+    response = handler(request)
+    assert response.status_code == 200, (
+        f"GET /metrics returned {response.status_code} for end-to-end smoke"
+    )
+
+    body = bytes(response.body)
+    # Counter names appear in the Prometheus exposition format either as
+    # the TYPE/HELP headers or as the sample lines (the sample name
+    # adds the conventional ``_total`` suffix for Counter families).
+    # The literal ``counter_name`` MUST be present (HELP/TYPE line) AND
+    # the ``_total`` suffixed sample name MUST be present (the actual
+    # sample line). Both pins confirm the body was generated from the
+    # global registry that our Counter was registered against.
+    assert counter_name.encode() in body, (
+        f"/metrics body must expose Counter {counter_name!r} (HELP/TYPE line); "
+        f"body excerpt: {body[:400]!r}"
+    )
+    sample_name = counter_name + "_total"
+    assert sample_name.encode() in body, (
+        f"/metrics body must expose Counter sample {sample_name!r}; "
+        f"body excerpt: {body[:400]!r}"
+    )
