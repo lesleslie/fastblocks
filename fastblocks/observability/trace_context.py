@@ -72,6 +72,31 @@ def reset(token: Token) -> None:
     )
 
 
+def exemplar() -> dict[str, str] | None:
+    """Return the exemplar dict for the active trace context, if any.
+
+    Per Δ36 + Δ33: produces ``{"trace_id": str, "span_id": str}`` from a
+    single read of ``_current_trace`` so that callers can pass it to
+    ``Histogram.observe(*, exemplar=...)`` without an extra structlog round
+    trip. When no context is bound (the default value on the ContextVar is
+    ``None``), this returns ``None`` so the exemplar field stays optional
+    — the common case on MCP-handler entry before the request span has
+    been opened.
+
+    Returns:
+    -------
+    dict[str, str] | None
+        ``{"trace_id": ..., "span_id": ...}`` when a context is bound,
+        ``None`` otherwise. The keys are always string-valued so the
+        resulting object is directly accepted by
+        ``Histogram.observe(..., exemplar=...)``.
+    """
+    ctx = _current_trace.get()
+    if ctx is None:
+        return None
+    return {"trace_id": ctx.trace_id, "span_id": ctx.span_id}
+
+
 # Module-public names re-exported via __init__.py
 set_trace_context = set
 reset_trace_context = reset

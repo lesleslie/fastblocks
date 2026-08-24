@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from .trace_context import (
     TraceContext,
+    exemplar,
     get_trace_context,
     reset_trace_context,
     set_trace_context,
@@ -24,6 +25,7 @@ from .registry import (
 
 __all__ = [
     "TraceContext",
+    "exemplar",
     "get_trace_context",
     "reset_trace_context",
     "set_trace_context",
