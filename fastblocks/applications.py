@@ -76,6 +76,43 @@ match system():
         ...
 
 
+# Phase 6 Δ3/Δ45/Δ48: ExceptionMiddleware is no longer hardcoded into the
+# middleware list at construction time. ``register_user_exception_middleware``
+# attaches it to the system middleware dict at a boundary position so the
+# stack ordering is observable through ``MiddlewareManager.get_middleware_stack()``.
+# Default OUTERMOST preserves legacy behavior; INNERMOST is the opt-out for
+# OtelMiddleware-true-outermost scenarios (Commit 11).
+def register_user_exception_middleware(
+    app: FastBlocks,
+    *,
+    position: t.Literal["outermost", "innermost"] = "outermost",
+) -> None:
+    """Register ``ExceptionMiddleware`` at a boundary position.
+
+    Calling with the default ``position="outermost"`` preserves the legacy
+    outermost-first ordering. Calling with ``position="innermost"`` registers
+    it after every named system position so OtelMiddleware can be outermost.
+    """
+    enum_position = (
+        MiddlewarePosition.OUTERMOST
+        if position == "outermost"
+        else MiddlewarePosition.INNERMOST
+    )
+    # Dedupe: remove any prior ``ExceptionMiddleware`` registration at
+    # either boundary position before inserting at the new one. Without
+    # this loop, a user calling with ``position="innermost"`` after the
+    # default OUTERMOST registration would leave BOTH copies in the dict
+    # (``add_system_middleware`` is an assign, not a dedupe), and the
+    # resolved system_middleware list would contain ``ExceptionMiddleware``
+    # twice — duplicating it in the Starlette wrapper chain.
+    system = app.middleware_manager._system_middleware
+    for k in (MiddlewarePosition.OUTERMOST, MiddlewarePosition.INNERMOST):
+        entry = system.get(k)
+        if entry is not None and entry[0] is ExceptionMiddleware:
+            del system[k]
+    app.add_system_middleware(ExceptionMiddleware, position=enum_position)
+
+
 class MiddlewareManager:
     def __init__(self) -> None:
         self._system_middleware: dict[MiddlewarePosition, t.Any] = {}
@@ -171,6 +208,14 @@ class FastBlocks(Starlette):
         self.templates = None
         self.models = None
 
+        # Phase 6 Δ45: register ExceptionMiddleware at OUTERMOST by default.
+        # This replaces the legacy hardcoded prepend in
+        # ``FastBlocks.get_middleware_stack`` and the legacy hardcoded
+        # append at the end of ``build_middleware_stack``. The position
+        # is now part of the system_middleware dict and is observable via
+        # ``MiddlewareManager.get_middleware_stack()``.
+        register_user_exception_middleware(self, position="outermost")
+
         initializer.initialize()
 
         set_editor("pycharm")
@@ -247,7 +292,13 @@ class FastBlocks(Starlette):
         return modified_system_middleware
 
     def get_middleware_stack(self) -> list[tuple[str, type]]:
-        middleware_list = [("ExceptionMiddleware", ExceptionMiddleware)]
+        # Phase 6 Δ45: ExceptionMiddleware is no longer hardcoded at the
+        # front. It is registered via ``register_user_exception_middleware``
+        # at a boundary position (default OUTERMOST) and surfaces in the
+        # system_middleware dict. The legacy list-of-tuples shape is
+        # retained for backwards compatibility but will be normalized to
+        # ``MiddlewareManager.get_middleware_stack()`` in a follow-up.
+        middleware_list: list[tuple[str, type]] = []
         system_middleware = self._get_system_middleware_with_overrides()
         for middleware in system_middleware:
             info = self._extract_middleware_info(middleware)
@@ -318,7 +369,30 @@ class FastBlocks(Starlette):
         for position, middleware in self._system_middleware.items():
             position_index = self._middleware_position_map[position]
 
-            if 0 <= position_index < len(modified_system_middleware):
+            # Phase 6 Δ45: boundary positions are handled before the
+            # standard index-replace-or-append fallback. OUTERMOST
+            # inserts at the front of the list; INNERMOST appends at
+            # the end. Starlette's ``build_middleware_stack`` iterates
+            # ``reversed(middleware_list)`` when wrapping, so the front
+            # of the list wraps LAST and is the OUTERMOST in the runtime
+            # ASGI chain — that is why the dict-key name ``OUTERMOST``
+            # matches inserting at index 0 (and ``INNERMOST`` matches
+            # appending at the end). This preserves the legacy outermost
+            # behavior for ExceptionMiddleware and lets OtelMiddleware
+            # (Commit 11) register later to land at the true outermost.
+            if position_index == MiddlewarePosition.OUTERMOST.value:
+                if logger:
+                    logger.debug(
+                        f"Inserting middleware at OUTERMOST position (index 0): {position.name}"
+                    )
+                modified_system_middleware.insert(0, middleware)
+            elif position_index == MiddlewarePosition.INNERMOST.value:
+                if logger:
+                    logger.debug(
+                        f"Appending middleware at INNERMOST position (end): {position.name}"
+                    )
+                modified_system_middleware.append(middleware)
+            elif 0 <= position_index < len(modified_system_middleware):
                 if logger:
                     logger.debug(f"Replacing middleware at position {position.name}")
                 modified_system_middleware[position_index] = middleware
@@ -365,13 +439,14 @@ class FastBlocks(Starlette):
         )
 
         middleware_list.extend(system_middleware)
-        middleware_list.append(
-            Middleware(
-                ExceptionMiddleware,
-                handlers=exception_handlers,
-                debug=self.debug,
-            ),
-        )
+        # Phase 6 Δ45: ExceptionMiddleware is no longer appended at the
+        # end here. It is registered via ``register_user_exception_middleware``
+        # (called from ``__init__``) which adds it to ``_system_middleware``
+        # at the OUTERMOST position by default. The override handler in
+        # ``_apply_system_middleware_overrides`` then inserts it at the
+        # front of the resolved system_middleware list, preserving the
+        # legacy behavior. Opt-out via
+        # ``register_user_exception_middleware(self, position="innermost")``.
 
         app = self._apply_middleware_to_app(middleware_list, logger)
 

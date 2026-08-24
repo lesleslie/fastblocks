@@ -61,12 +61,17 @@ from .exceptions import MissingCaching
 
 
 class MiddlewarePosition(IntEnum):
+    # Phase 6 Δ45: boundary positions for opt-in middleware ordering.
+    # OUTERMOST sorts before all named positions (numeric -1);
+    # INNERMOST sorts after all named positions (numeric 99).
+    OUTERMOST = -1
     CSRF = 0
     SESSION = 1
     HTMX = 2
     CURRENT_REQUEST = 3
     COMPRESSION = 4
     SECURITY_HEADERS = 5
+    INNERMOST = 99
 
 
 class HtmxMiddleware:

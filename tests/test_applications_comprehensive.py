@@ -424,15 +424,20 @@ class TestFastBlocksGetMiddlewareStack:
         assert len(stack) > 0
 
     def test_get_middleware_stack_includes_exception_middleware(self) -> None:
-        """Test get_middleware_stack includes ExceptionMiddleware."""
+        """Test ExceptionMiddleware is registered at OUTERMOST via the canonical
+        ``MiddlewareManager.get_middleware_stack()`` dict shape (Phase 6 Δ45).
+
+        ``FastBlocks.get_middleware_stack()`` is the legacy list-of-tuples
+        shape and will be normalized in a follow-up; for canonical assertions
+        use ``MiddlewareManager.get_middleware_stack()``.
+        """
         from fastblocks.applications import FastBlocks
 
         app = FastBlocks()
 
-        stack = app.get_middleware_stack()
+        stack = app.middleware_manager.get_middleware_stack()
 
-        middleware_names = [m[0] for m in stack]
-        assert "ExceptionMiddleware" in middleware_names
+        assert stack["system_middleware"]["OUTERMOST"]["class"] == "ExceptionMiddleware"
 
 
 @pytest.mark.unit
