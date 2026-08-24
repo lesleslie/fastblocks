@@ -25,6 +25,9 @@ from pydantic import BaseModel, Field
 from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks.applications import FastBlocks
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
+from fastblocks.observability.tracer import (
+    get_default_tracer_provider as _get_default_tracer_provider,
+)
 
 from ..oneiric_helper import resolve_instance
 from ._base import AppBase, AppBaseSettings
@@ -150,7 +153,9 @@ class FastBlocksApp(FastBlocks):
 
     async def _display_fancy_startup(self) -> None:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
-        from aioconsole import aprint  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]
+        from aioconsole import (
+            aprint,  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]
+        )
         from pyfiglet import Figlet  # type: ignore[import-not-found]
 
         config = resolve_instance(depends, "fastblocks", "config")
@@ -191,7 +196,7 @@ class FastBlocksApp(FastBlocks):
             await self._display_simple_startup()
 
     @asynccontextmanager
-    async def lifespan(self, app: "FastBlocks") -> t.AsyncIterator[None]:
+    async def lifespan(self, app: FastBlocks) -> t.AsyncIterator[None]:
         try:
             logger = getattr(self, "logger", None)
             if logger:
@@ -224,6 +229,12 @@ class FastBlocksApp(FastBlocks):
             loader=jinja2.FileSystemLoader("templates"),
         )
         yield
+        # Per v6 Δ10/Δ18: flush pending spans via the BatchSpanProcessor
+        # before app teardown so the OTLP exporter does not lose the
+        # last batch. Idempotent on the cached provider (the module-
+        # level cache in ``observability.tracer`` survives across
+        # lifespan invocations).
+        await _get_default_tracer_provider().shutdown()
         logger = getattr(self, "logger", None)
         if logger:
             logger.info("FastBlocks application shutting down")
@@ -348,6 +359,12 @@ class App(AppBase):
             self.logger.exception("Error during startup")
             raise
         yield
+        # Per v6 Δ10/Δ18 + resolved-ambiguity: flush pending spans via
+        # the BatchSpanProcessor before app teardown so the OTLP
+        # exporter does not lose the last batch. The call is on the
+        # runtime path (``App.lifespan`` is the class instantiated at
+        # runtime — see comment at FastBlocksApp.lifespan, line 226).
+        await _get_default_tracer_provider().shutdown()
         self.logger.critical("Application shut down")
         try:
             await self._shutdown_logger()
