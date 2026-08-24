@@ -170,6 +170,9 @@ tests/archived/
 .cov_qual
 # Coverage data file
 .coverage
+# FastBlocks runtime scaffolding (project-root anchored)
+# Contains: backups/, config/, env/, migrations/, templates/
+/.fastblocks/
 
 # ============================================================================
 # Refactor Backup Artifacts
