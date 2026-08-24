@@ -235,5 +235,13 @@ def test_error_reason_literal_bounded_exception_set() -> None:
         "OSError",
         "ValueError",
         "TypeError",
+        "AttributeError",
+        "KeyError",
+        "ImportError",
+        "NameError",
+        "ZeroDivisionError",
+        "LookupError",
+        "RecursionError",
+        "MemoryError",
         "Exception",
     }, f"ErrorReason values out of contract: got {set(args)}"

@@ -140,12 +140,27 @@ AcceptHeader = Literal[
 # names the route can actually raise so a stray AttributeError or
 # ImportError cannot blow up the label cardinality. New error paths
 # must extend this Literal; the cardinality lint rejects counters
-# that emit ``reason=<unbound class>``.
+# that emit ``reason=<unbound class>``. The 13-value set widens the
+# 5-element baseline (RuntimeError, OSError, ValueError, TypeError,
+# Exception) with the next 8 exception classes that the broad
+# ``try/except Exception`` in Task 4's DecisionSpanProcessor and
+# Task 9's ``default.py:188`` (``reason=type(exc).__name__``)
+# legitimately surface. The ``Exception`` literal value is the
+# final fallback for unanticipated exception classes — semantically
+# redundant but bounds cardinality for unanticipated exception types.
 ErrorReason = Literal[
     "RuntimeError",
     "OSError",
     "ValueError",
     "TypeError",
+    "AttributeError",
+    "KeyError",
+    "ImportError",
+    "NameError",
+    "ZeroDivisionError",
+    "LookupError",
+    "RecursionError",
+    "MemoryError",
     "Exception",
 ]
 
