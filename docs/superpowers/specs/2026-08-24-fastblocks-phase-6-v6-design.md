@@ -41,12 +41,22 @@ v6's purpose is structural corrections that round-3 surfaced. The deltas are not
 | **Δ31** | **`Counter(name, labelnames)` examples missing required `documentation` arg**. `prometheus_client.Counter.__init__(name, documentation, labelnames=(), ...)` requires `documentation` as 2nd positional. All spec examples `Counter("foo", labelnames=("result",))` would `TypeError` at runtime. Update all examples | type-design TQ-3 |
 | **Δ32** | **Tool pydantic incompatibility is real and unmentioned**. When `instrument_tool` wraps a function, FastMCP's `Tool.from_function(fn)` does `fn.__name__` which fails on Pydantic BaseModel under Python 3.14. Documented in `tests/mcp/test_consumer_pattern_wiring.py:29-42`; one-line monkeypatch workaround at lines 61-74. Commit 8 must lift the monkeypatch from test fixture to production code (via `fastblocks/mcp/_add_tool_safe.py` module) | mcp-integration P0-β |
 
+### Final-pass P0 (critical-audit-specialist holistic audit)
+
+| Δ# | Finding | Verified by |
+|----|---------|-------------|
+| **Δ45** | **Two `get_middleware_stack` methods have DIFFERENT return shapes**. `MiddlewareManager.get_middleware_stack()` (applications.py:114-124) returns `dict[str, Any]` with `user_middleware`/`system_middleware`. `FastBlocks.get_middleware_stack()` (applications.py:249-268) returns `list[tuple[str, type]]`. Commit 0c ordering tests need ONE canonical target. **Pin to `MiddlewareManager.get_middleware_stack()`** (dict shape) | critical-audit-specialist |
+| **Δ46** | **`ObservabilityError(FastBlocksError)` self-contradicts**. `FastBlocksError` has 0 occurrences in fastblocks/ source (verified). Spec says subclass `FastBlocksError`, parenthetical says use `Exception` if absent. **Decide once: use `Exception` as base per `mahavishnu/core/errors.py:150-186` precedent** (`MahavishnuError(Exception)` is the actual shape). Drop the kw_only structured-fields claim or align with Mahavishnu's plain-attrs shape (Note: Decision 34 below also updated) | critical-audit-specialist |
+| **Δ47** | **`_patched_add_tool` lifted monkeypatch has process-wide blast radius**. Mutation `FastMCP.add_tool = _patched_add_tool` affects the entire Python process — consumer-side apps, monitoring tooling, tests. **Version-pin `mcp-common<0.4`** (until upstream fixes) AND add runtime guard `if FastMCP.add_tool is not _patched_add_tool: skip` for idempotency. Also reconcile name: pyproject has `mcp-common~=0.3` (hyphen); test docstring says `mcp_common 0.19.0` (underscore) — both refer to same package | critical-audit-specialist |
+| **Δ48** | **`OtelMiddleware` outermost ambiguity**. Starlette `build_middleware_stack` REVERSES user middleware; LAST-added becomes OUTERMOST after reversal. Spec said `user_middleware[0]` which contradicts this. **Rewrite: OtelMiddleware is added LAST to user middleware, then Starlette reverses it to be the OUTERMOST wrapper.** Implement via `app.add_middleware(OtelMiddleware)` AFTER all other user middleware. Update Decision #53 | critical-audit-specialist |
+| **Δ49** | **`instrument_tool` double-wraps same callable**. Both `tools.py:562-610` and `capabilities.py:106-158` register the SAME Python callables (`tools_module.validate_template` etc). If `instrument_tool` wraps each `server.tool(...)` site, every tool is wrapped TWICE per pipeline build → counter inflated 2-3x per invocation. **Add idempotency**: mark wrapped function with `__wrapped_by_instrument_tool__ = True` and skip re-wrap | critical-audit-specialist |
+
 ### Single-agent P0
 
 | Δ# | Finding | Verified by |
 |----|---------|-------------|
 | **Δ33** | **MCP `trace_context.get()` exemplar dead**. OtelMiddleware (Commit 11) wraps FastBlocks Starlette app. FastMCP creates its own internal Starlette app (`mcp/server/fastmcp/server.py:953-1049`). Exemplar feature spec promises does not function for MCP call site. v6 acknowledges: exemplar will return `"0"*32`/`"0"*16` for MCP calls; FastMCP-level OTel context propagation is **out of scope**, deferred to a future commit | mcp-integration P0-γ |
-| **Δ34** | **Bare `RuntimeError` contradicts Mahavishnu hierarchy**. `mahavishnu/core/errors.py:150-186` defines `MahavishnuError(Exception)` base with structured context. v6 introduces `ObservabilityError(FastBlocksError)` base in `fastblocks/observability/errors.py` with `MissingDependencyError`, `MetricNameCollisionError`, `SentryImportError` subclasses — each carries structured fields, not just a string | python-pro P0-γ |
+| **Δ34** | **Bare `RuntimeError` contradicts Mahavishnu hierarchy**. `mahavishnu/core/errors.py:150-186` defines `MahavishnuError(Exception)` base (verified). v6 introduces `ObservabilityError(Exception)` base in `fastblocks/observability/errors.py` with `MissingDependencyError`, `MetricNameCollisionError`, `SentryImportError` subclasses — each carries plain attributes (matching `MahavishnuError` style), not kw_only structured fields (per Δ46 correction: `FastBlocksError` doesn't exist; use `Exception` base) | python-pro P0-γ + critical-audit-specialist Δ46 |
 | **Δ35** | **`raise from` discipline missing**. `ValueError` for CollectorRegistry collision (Δ18) and bare `RuntimeError` (superseded by Δ34) lack `raise from original`. v6 mandates `raise ... from original` everywhere in observability code | python-pro P0-δ |
 | **Δ36** | **Triple `trace_context.get()` call in exemplar**. `trace_context.get().trace_id if trace_context.get() else "0"*32` makes 3 reads — wasteful AND unsafe in async. v6 introduces `trace_context.exemplar() -> dict[str, str] | None` helper that does one read and returns `{"trace_id": ..., "span_id": ...}` per OpenMetrics | python-pro P0-ε |
 | **Δ37** | **`instrument_tool` wrapping site unspecified**. Two registration paths exist: `tools.py:562-610` (`register_fastblocks_tools`) AND `capabilities.py:106-158` (consumer-facing 3 `register_X_capability`). Instrumenting only one path means the other doesn't emit metrics. v6 commits to instrumenting **both** paths via a shared `instrument_tool` callable | mcp-integration P0-α |
@@ -104,7 +114,7 @@ Total: 17 commits. Wall-clock estimate: 6-7 weeks (per v5 with v6 additions).
 
 | Layer | Provides | Consumes |
 |-------|----------|----------|
-| **ObservabilityError hierarchy (1)** | `ObservabilityError(FastBlocksError)` base + `MissingDependencyError`, `MetricNameCollisionError`, `SentryImportError` subclasses with structured fields | (project errors module) |
+| **ObservabilityError hierarchy (1)** | `ObservabilityError(Exception)` base (per `MahavishnuError(Exception)` precedent at `mahavishnu/core/errors.py:150-186`; **`FastBlocksError` does not exist in fastblocks/ source — verified**) + `MissingDependencyError`, `MetricNameCollisionError`, `SentryImportError` subclasses with plain attributes | (project errors module) |
 | **Counters / Histograms (1)** | `Counter(name, /, documentation="...", *labelnames: str)` positional-only name + variadic labels; `Histogram(name, /, documentation="...", labelnames: tuple[str, ...], buckets: tuple[float, ...])`; exemplars keyword-only | `prometheus_client` (dep group) |
 | **ObservabilityRegistry (1)** | Singleton wrapping `prometheus_client.CollectorRegistry`; snapshot at startup; raises `MetricNameCollisionError` from `prometheus_client.ValueError`; thread-safe registration via `threading.Lock` (registration-only; increments lock-free) | 6A.1 |
 | Structured logs (2) | `get_logger(name)` → JSON via `structlog.merge_contextvars`; **`logger.exception(...)` everywhere per CLAUDE.md** (not `logger.error(..., exc_info=True)`) | `structlog` (core) |
@@ -222,7 +232,7 @@ members, install footprint matrix, dual-OTel safety net.)*
 
 - *Triggered from:* v5 Commit 1; Δ34 (ObservabilityError hierarchy), Δ31 (Counter documentation arg), P1-1 (positional-only name), P1-2 (keyword-only exemplar), P1-8 (thread-safe registry), P1-7 (`__all__` for new modules)
 - *Returns to / updates:*
-  - NEW `fastblocks/observability/errors.py` defining `ObservabilityError(FastBlocksError)`, `MissingDependencyError(ObservabilityError, *, pip_group: str, package: str | None = None)`, `MetricNameCollisionError(ObservabilityError, *, metric_name: str)`, `SentryImportError(ObservabilityError, *, reason: Literal["import_error", "init_runtime_error"])`. **All carry structured fields (not just message strings)** per Mahavishnu `MahavishnuError` precedent. Each subclass implements `__rich_repr__` for debugging. (`FastBlocksError` is the project's not-yet-defined base; if absent, use `Exception` for now and refactor in Phase 7.)
+  - NEW `fastblocks/observability/errors.py` defining `ObservabilityError(Exception)` (per Δ46: uses `Exception` base, not `FastBlocksError` which doesn't exist), `MissingDependencyError(ObservabilityError)` carrying `pip_group: str, package: str | None` attributes (not kw_only-constructor params; matches `MahavishnuError` plain-attr style), `MetricNameCollisionError(ObservabilityError)` carrying `metric_name: str`, `SentryImportError(ObservabilityError)` carrying `reason: Literal["import_error", "init_runtime_error"]`. Each implements `__rich_repr__` for debugging. **Constructor takes `**kwargs` to populate attrs in `__init__` body** per `MahavishnuError` shape — NOT kw_only constructor params.
   - NEW `fastblocks/observability/counters.py` — `Counter(name: str, /, documentation: str, *labelnames: str)` positional-only name + variadic labels; `Histogram(name: str, /, documentation: str, labelnames: tuple[str, ...], buckets: tuple[float, ...])`; methods `inc(amount: float = 1.0, *, exemplar: dict[str, str] | None = None)` and `observe(value: float, *, exemplar: dict[str, str] | None = None)` (keyword-only exemplar per P1-2); lazy-import `RuntimeError`/`MissingDependencyError` wrappers for `prometheus_client`
   - NEW `fastblocks/observability/registry.py` — `ObservabilityRegistry` singleton wrapping `prometheus_client.CollectorRegistry`; `threading.Lock` for registration only (increments are lock-free via prometheus_client internals); snapshot metric names at startup; raises `MetricNameCollisionError` via `raise from prometheus_client.ValueError` (per Δ35)
   - NEW `fastblocks/observability/__init__.py` with `__all__ = ["Counter", "Histogram", "ObservabilityRegistry", "trace_context", "MissingDependencyError", "MetricNameCollisionError", "SentryImportError", "exemplar"]`
@@ -322,9 +332,9 @@ members, install footprint matrix, dual-OTel safety net.)*
   6. `tests/observability/test_log_correlation.py::test_trace_id_surfaces_via_merge_contextvars` passes
 - *Observability added:* none directly; **observability-OF the exemplar feature** improved via single-read helper
 
-### Commit 11 — `feat(observability): OtelMiddleware + trace_id binding — truly outermost via user_middleware[0] after Commit 0c`
+### Commit 11 — `feat(observability): OtelMiddleware + trace_id binding — outermost via add_middleware LAST after Commit 0c (Starlette reverses user middleware)`
 
-**Δ-applied in v6**: inherits v5 + P1-5 (resilient to `trace_context.reset(token)` raise via `fastblocks_otel_middleware_reset_failed_total` counter).
+**Δ-applied in v6**: inherits v5 + P1-5 (resilient to `trace_context.reset(token)` raise via `fastblocks_otel_middleware_reset_failed_total` counter); **Δ48 outermost via add-after-reverse** (OtelMiddleware is registered LAST, then Starlette reverses it to be OUTERMOST — NOT user_middleware[0]); **Δ45 Commit 0c Canonical Shape** (Commit 11's Demonstrable by uses `MiddlewareManager.get_middleware_stack()` dict shape, not `FastBlocks.get_middleware_stack()` list-of-tuples shape).
 
 ### Commit 12 — `feat(observability): Sentry bridge (OpenTelemetryIntegration) with loud-fail default + TracerProvider-first ordering + delta39-ζ counter**
 
@@ -421,10 +431,12 @@ master plan line 356: no deprecation warnings. v6-specific migration:
     acknowledgment that the FastMCP path bypasses FastBlocks'
     OtelMiddleware. Trade-off: exemplars degraded for MCP; observability
     counts+histograms still increment correctly.
-39. **`ObservabilityError(FastBlocksError)` hierarchy** (Δ34) —
+39. **`ObservabilityError(Exception)` hierarchy** (Δ34 corrected by Δ46) —
     `MissingDependencyError`, `MetricNameCollisionError`,
-    `SentryImportError`. Structured fields not bare strings. Pattern
-    copied from Mahavishnu's `MahavishnuError`.
+    `SentryImportError`. **Base is `Exception`** (per Mahavishnu's
+    `MahavishnuError(Exception)` precedent — `FastBlocksError` does
+    not exist in fastblocks/ source). Plain attributes assigned in
+    `__init__`, NOT kw_only constructor parameters.
 40. **`raise from` discipline** (Δ35): every `raise` of an
     `ObservabilityError` from a non-`ObservabilityError` carries
     `from original`. Tracebacks preserved.
@@ -452,7 +464,19 @@ master plan line 356: no deprecation warnings. v6-specific migration:
 50. **Sentry init ordering** TracerProvider first (per v5).
 51. **`profiling_enabled=False` only** when bridging OTel (per v5).
 52. **Dynamic WS broadcast Playwright test** (per v5).
-53. **`user_middleware[0]` outermost direction** (per v5).
+53. **OtelMiddleware outermost via add-after-reverse** (Δ48 — was v5's "user_middleware[0]" which was incorrect). Starlette `build_middleware_stack` REVERSES user middleware; OtelMiddleware is the LAST `app.add_middleware(...)` call so it's at `user_middleware[-1]` in stored order, which Starlette reverses to OUTERMOST. Implement via `app.add_middleware(OtelMiddleware)` AFTER all other user middleware registration.
+
+**Final-pass decisions (Δ45-Δ49 — critical-audit-specialist)**:
+
+54. **Two `get_middleware_stack` shapes; pin to dict** (Δ45). Commit 0c ordering tests target `MiddlewareManager.get_middleware_stack()` which returns `dict[str, Any]` (verified at `applications.py:114-124`). The legacy `FastBlocks.get_middleware_stack()` at `applications.py:249-268` returning `list[tuple]` is normalized in a follow-up; not Commit 0c scope.
+
+55. **`_patched_add_tool` blast radius mitigated** (Δ47). Mutation `FastMCP.add_tool = _patched_add_tool` is process-wide. Mitigations: (a) runtime guard `if FastMCP.add_tool is not _patched_add_tool: return _original(...)` makes re-application idempotent; (b) version pin `mcp-common<0.4` in `pyproject.toml` until upstream bug fixed; (c) reconciliation: pyproject uses `mcp-common~=0.3` (hyphenated), test docstring uses `mcp_common 0.19.0` (underscored) — both refer to same package; spec normalizes to underscore in code refs and hyphen in pyproject.
+
+56. **`instrument_tool` is idempotent via marker** (Δ49). `instrument_tool(func)` checks `func.__wrapped_by_instrument_tool__` flag; if False, wraps and sets the flag; if True, returns the original. Avoids double-wrapping when `tools.py:562-610` AND `capabilities.py:106-158` both register the same Python callable. Without this, counters inflate 2-3x per tool invocation.
+
+57. **`trace_context.get()` exemplars in async contexts** (final-pass implicit). `ContextVar.get()` reads are safe inside a single synchronous block; future implementers must NOT add `await` between the `exemplar()` call and the `Histogram.observe(value, exemplar=...)` call, or risk reading a different task's context.
+
+58. **Commit 0c ordering tests use canonical shape** (Δ45). All Commit 0c `Demonstrable by` assertions use `manager.get_middleware_stack()["user_middleware"][...]` (dict shape, returns list/dict structure), not `FastBlocks.get_middleware_stack()` (list-of-tuples shape). Assertion language: `assert stack["user_middleware"][-1]["class"] == "ExceptionMiddleware"` for outermost_default; `[0]["class"] == "ExceptionMiddleware"` for innermost_opt_out.
 
 ## Spec self-review checklist
 
