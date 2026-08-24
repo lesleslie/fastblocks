@@ -55,7 +55,7 @@ v6's purpose is structural corrections that round-3 surfaced. The deltas are not
 
 | Δ# | Finding | Verified by |
 |----|---------|-------------|
-| **Δ33** | **MCP `trace_context.get()` exemplar dead**. OtelMiddleware (Commit 11) wraps FastBlocks Starlette app. FastMCP creates its own internal Starlette app (`mcp/server/fastmcp/server.py:953-1049`). Exemplar feature spec promises does not function for MCP call site. v6 acknowledges: exemplar will return `"0"*32`/`"0"*16` for MCP calls; FastMCP-level OTel context propagation is **out of scope**, deferred to a future commit | mcp-integration P0-γ |
+| **Δ33** | **MCP `trace_context.get()` exemplar dead**. OtelMiddleware (Commit 11) wraps FastBlocks Starlette app. FastMCP creates its own internal Starlette app (`mcp/server/fastmcp/server.py:953-1049`). Exemplar feature spec promises does not function for MCP call site. v6 acknowledges: `trace_context.exemplar()` returns `None` (which `Histogram.observe` skips) for MCP calls; FastMCP-level OTel context propagation is **out of scope**, deferred to a future commit. *(Self-correction Δ66: earlier v6 drafts said `"0"*32`/`"0"*16` here; that contradicts Decision 38 below and the actual Commit 10 IC — exemplar returns `None`, not zero-strings.)* | mcp-integration P0-γ |
 | **Δ34** | **Bare `RuntimeError` contradicts Mahavishnu hierarchy**. `mahavishnu/core/errors.py:150-186` defines `MahavishnuError(Exception)` base (verified). v6 introduces `ObservabilityError(Exception)` base in `fastblocks/observability/errors.py` with `MissingDependencyError`, `MetricNameCollisionError`, `SentryImportError` subclasses — each carries plain attributes (matching `MahavishnuError` style), not kw_only structured fields (per Δ46 correction: `FastBlocksError` doesn't exist; use `Exception` base) | python-pro P0-γ + critical-audit-specialist Δ46 |
 | **Δ35** | **`raise from` discipline missing**. `ValueError` for CollectorRegistry collision (Δ18) and bare `RuntimeError` (superseded by Δ34) lack `raise from original`. v6 mandates `raise ... from original` everywhere in observability code | python-pro P0-δ |
 | **Δ36** | **Triple `trace_context.get()` call in exemplar**. `trace_context.get().trace_id if trace_context.get() else "0"*32` makes 3 reads — wasteful AND unsafe in async. v6 introduces `trace_context.exemplar() -> dict[str, str] | None` helper that does one read and returns `{"trace_id": ..., "span_id": ...}` per OpenMetrics | python-pro P0-ε |
@@ -98,7 +98,7 @@ paths; no duplication; no alternative observability stack.
 
 ```
 [NEW] pyproject.toml: [observability] optional dep group (version-pinned per Round 2)
-[NEW] settings/observability.yaml: cardinality_mode, traces.export, sentry.* knobs
+[NEW] app.yml observability block + `AppSettings` extension: cardinality_mode, traces.export, sentry.* knobs (Δ91 — earlier v6 said `settings/observability.yaml`; FastBlocks uses Oneiric's `app.yml` + `AppSettings` in `fastblocks/adapters/app/default.py`)
 [NEW] fastblocks/applications.py: ExceptionMiddleware decoupled at BOTH sites (line 250 + 368-374)
 [6A]   Foundations: errors.py + Counter/Histogram + ObservabilityRegistry + structlog + OTel + Oneiric adapter
                                                               (Commits 1-4)
@@ -116,14 +116,14 @@ Total: 17 commits. Wall-clock estimate: 6-7 weeks (per v5 with v6 additions).
 |-------|----------|----------|
 | **ObservabilityError hierarchy (1)** | `ObservabilityError(Exception)` base (per `MahavishnuError(Exception)` precedent at `mahavishnu/core/errors.py:150-186`; **`FastBlocksError` does not exist in fastblocks/ source — verified**) + `MissingDependencyError`, `MetricNameCollisionError`, `SentryImportError` subclasses with plain attributes | (project errors module) |
 | **Counters / Histograms (1)** | `Counter(name, /, documentation="...", *labelnames: str)` positional-only name + variadic labels; `Histogram(name, /, documentation="...", labelnames: tuple[str, ...], buckets: tuple[float, ...])`; exemplars keyword-only | `prometheus_client` (dep group) |
-| **ObservabilityRegistry (1)** | Singleton wrapping `prometheus_client.CollectorRegistry`; snapshot at startup; raises `MetricNameCollisionError` from `prometheus_client.ValueError`; thread-safe registration via `threading.Lock` (registration-only; increments lock-free) | 6A.1 |
+| **ObservabilityRegistry (1)** | Module-level **singleton instance** `_REGISTRY = _Registry()` (NOT module-level `property` — that would return a descriptor and break `from fastblocks.observability import ObservabilityRegistry`); wraps `prometheus_client.CollectorRegistry`; snapshot at startup; raises `MetricNameCollisionError` from `prometheus_client.ValueError` via `raise from original` (Δ35 + Δ74 — `_Registry.register()` is called from `Counter.__init__` BEFORE constructing the underlying `_PromCounter` so duplicate-name detection happens at the typed boundary); thread-safe registration via `threading.Lock` (registration-only; increments lock-free); public name re-exported as `ObservabilityRegistry` (the singleton instance, not the class) | 6A.1 |
 | Structured logs (2) | `get_logger(name)` → JSON via `structlog.merge_contextvars`; **`logger.exception(...)` everywhere per CLAUDE.md** (not `logger.error(..., exc_info=True)`) | `structlog` (core) |
 | OTel Tracer (3) | `get_tracer(name)` + `setup_default_tracer_provider(...)` + `BatchSpanProcessor.shutdown()` contract | `opentelemetry-sdk` + `opentelemetry-exporter-otlp-proto-http` (dep group, pinned per Δ22) |
 | **trace_context (10)** | `get()`/`set(token)`/`reset(token)` **token-safe** API; **`exemplar() -> dict[str, str] | None` helper** (Δ36; one read, both keys); aliases preserved | 6A.3 |
-| Oneiric adapter (4) | `DecisionSpanProcessor(SpanProcessor)` **(concrete inheritance)**; `on_start` filters by `name == "resolver.decision"`; emits counter + log; `decision ∈ Literal["resolved","error"]` (Δ29 — matches Oneiric's actual emission); `try/except Exception → logger.exception` with `fastblocks_span_processor_errors_total{kind}` counter (silent-failure surfaced) | Oneiric OTel `resolver.decision` span |
+| Oneiric adapter (4) | `DecisionSpanProcessor(SpanProcessor)` **(concrete inheritance per Δ38)**; `on_start(span)` is a pure name-filter (`span.name == "resolver.decision"`, returns early otherwise — no side effects); `on_end(span)` reads span attrs (`domain`, `key`, `provider`, `decision`), emits counter + log; `decision ∈ Literal["resolved","error"]` (Δ29 — matches Oneiric's actual emission); `try/except Exception → logger.exception` wrapping the entire `on_end` body, with `fastblocks_oneiric_decision_emit_failed_total{reason ∈ Literal["attr_read_failed","log_emit_failed","counter_emit_failed","cardinality_reject"]}` counter (silent-failure surfaced per Δ78). **Decision 8 self-correction Δ51 — earlier text said `on_start` emits; that is wrong because at start time the resolver hasn't run yet and span attrs are unset, so the counter would always increment `decision="error"`.** | Oneiric OTel `resolver.decision` span |
 | CardinalityGuard (5) | Per-metric `Literal[...]` allowlist; `cardinality_mode ∈ Literal["off","audit","warn","enforce"]` (Δ41 ordering: semantic — off→audit→warn→enforce); `MetricCardinalityViolation` event class | 6A.1 |
 | MCP instrumentation (8) | `instrument_tool` decorator; counter + histogram; **`Counter(..., documentation="...")`** (Δ31); **`instrument_tool` wraps BOTH `tools.py:562-610` AND `capabilities.py:106-158` paths** (Δ37); **installs `_patched_add_tool` workaround at module-import time** (Δ32) so pydantic BaseModel Tool objects don't TypeError | mcp_common dispatch + FastMCP `add_tool` |
-| `/metrics` endpoint (9) | Accept-header dispatch with **explicit default for `*/*`/missing Accept** (Δ42 → OpenMetrics); wraps `choose_encoder` + `generate_latest` in try/except with `fastblocks_metrics_endpoint_errors_total{reason}` counter (P1-3); **`fastblocks_metrics_endpoint_dispatch_total{accept_header}`** for observability-of-dispatch | 6A.1 + Starlette |
+| `/metrics` endpoint (9) | Accept-header dispatch with **explicit default for `*/*`/missing Accept** (Δ42 → OpenMetrics); wraps `choose_encoder` + `generate_latest` in try/except with `fastblocks_metrics_endpoint_errors_total{reason}` counter (P1-3); **`fastblocks_metrics_endpoint_dispatch_total{accept_header}`** for observability-of-dispatch. **Δ53 cardinality-fix — `accept_header ∈ Literal["openmetrics","text","wildcard","missing","other"]`** (5 bounded values derived by the dispatch logic from the raw header string, NOT the raw header value itself; real-world Accept headers vary widely otherwise). | 6A.1 + Starlette |
 | OtelMiddleware (11) | Per-request OTel root span; binds `trace_context`; clears via token-reset in `finally`; **resilient to `trace_context.reset(token)` raise** (Δ43 → `fastblocks_otel_middleware_reset_failed_total`) | 6A.3 + 6C.10 + Commit 0c |
 | Sentry bridge (12) | `sentry_sdk.init(...)` + `OpenTelemetryIntegration`; ordering: **TracerProvider first, then `sentry_init`**; only `profiling_enabled=False`; `disabled_on_import_error: bool = false` (loud default); **`reason="init_runtime_error"` counter** alongside `reason="import_error"` | 6A.3 + `sentry-sdk` |
 | a11y bridge (13) | `render_broadcast_as_a11y(...)`; **rate-limit with `coalesced_total` AND `dropped_total`** (Δ39-α); **WCAG-correct routing: `miss→polite/status`, `escaped=false→logs only`**; `aria-relevant="additions"`; dynamic WS broadcast Playwright test | WebSocket broadcasts |
@@ -144,7 +144,7 @@ observability-of-observability is itself observable.
 | SpanProcessor.on_end raise | `logger.exception(...)` (per Δ40 CLAUDE.md) + `fastblocks_span_processor_errors_total{kind}` (always emitted, not DEBUG-only) |
 | Concurrent `prometheus_client.REGISTRY` multi-worker | `ObservabilityRegistry` thread-safe via `threading.Lock` (registration-only); cross-process documented known-limitation |
 | `/metrics` scraper sends `Accept: text/plain; version=0.0.4` | `choose_encoder` dispatches; legacy content type returned |
-| `/metrics` scraper sends `Accept: */*` or missing | **Default to OpenMetrics** (Δ42 forward path); `fastblocks_metrics_endpoint_dispatch_total{accept_header}` |
+| `/metrics` scraper sends `Accept: */*` or missing | **Default to OpenMetrics** (Δ42 forward path); `fastblocks_metrics_endpoint_dispatch_total{accept_header ∈ Literal["openmetrics","text","wildcard","missing","other"]}` (Δ53 cardinality-bounded, NOT raw header string) |
 | `/metrics` encoder / generator raise | `fastblocks_metrics_endpoint_errors_total{reason}` |
 | `sentry_sdk.init()` runs before TracerProvider built | Forbidden — app fails loud at startup; `reason="init_runtime_error"` (Δ39-ζ) |
 | `sentry_sdk.opentelemetry` import path drifts | `SentryImportError(ObservabilityError)` raised; `reason="import_error"`; loud-fail default |
@@ -156,6 +156,28 @@ observability-of-observability is itself observable.
 | CollectorRegistry global leakage (Δ39-β) | `fastblocks_observability_registry_unknown_metrics_total` (emitted when `/metrics` is called and global REGISTRY has metrics outside `ObservabilityRegistry`) |
 | Oneiric resolver raise-before-span (P1-4) | Wrap resolution call; emit `decision="error"` BEFORE the raise propagates |
 | SpanProcessor.on_end Counter.inc fails due to CardinalityGuard reject (P0-γ) | Counter wrapped in its own try/except; emit `fastblocks_oneiric_decision_emit_failed_total{reason="cardinality_reject"}` |
+
+### Runbook (Δ54)
+
+The 18 silent-failure counters above enumerate **what** is measured; this table covers **what to do** when they fire. Counter names map 1:1 to dashboard panels in Commit 14.
+
+| Counter | Alert threshold | Runbook action |
+|---|---|---|
+| `fastblocks_otlp_spans_dropped_total{reason="queue_full"}` | rate > 100/s for 5 min | Reduce `OTEL_BSP_MAX_QUEUE_SIZE` not; lower sampling rate OR scale collector |
+| `fastblocks_otlp_spans_dropped_total{reason="export_timeout"}` | rate > 0 for 1 min | Verify OTLP endpoint reachable; check collector process health |
+| `fastblocks_otlp_spans_dropped_total{reason="collector_unreachable"}` | rate > 0 for 30s | Check OTLP endpoint URL; verify DNS/network path; check TLS cert |
+| `fastblocks_a11y_bridge_dropped_total{region}` | rate > 5/s for 1 min | Front-end bug — WS subscription is missing OR DOM selector drift; check Playwright trace |
+| `fastblocks_metrics_endpoint_errors_total{reason}` | rate > 0 for 5 min | Verify metrics endpoint scrape config; check FastBlocks startup logs |
+| `fastblocks_oneiric_decision_emit_failed_total{reason}` | rate > 0 for 1 min | Programming bug in DecisionSpanProcessor; restart app; open ticket |
+| `fastblocks_otel_middleware_reset_failed_total` | rate > 0 | Programming bug — token discipline broken; restart app; open ticket |
+| `fastblocks_otel_middleware_set_failed_total` (Δ62) | rate > 0 | Programming bug; restart app; open ticket |
+| `fastblocks_structlog_config_failed_total` (Δ63) | rate > 0 | Verify structlog config; check for processor conflict |
+| `fastblocks_tracer_provider_shutdown_failed_total{reason}` (Δ77) | any | Verify clean shutdown signal handling; check SIGTERM delivery |
+| `fastblocks_sentry_event_send_failed_total{reason}` (Δ81) | rate > 0 for 5 min | Verify Sentry DSN; check network/auth; check rate limits |
+| `fastblocks_sentry_disabled_total{reason}` (Δ39-ζ) | any | Verify Sentry SDK alpha pin; check `sentry_sdk.opentelemetry` import path |
+| `fastblocks_cardinality_violations_dropped_total{label}` (Δ79) | rate > 0 | Add the offending label to `_KNOWN_LABELS` allowlist OR lower traffic |
+| `fastblocks_a11y_bridge_acknowledged_total{region}` (Δ82) | < 80% of `dropped_total` | Client-side WS subscription broken; check Playwright trace |
+| `fastblocks_tracer_shutdown_status` (Δ59) | value=0 at /metrics scrape | App died ungracefully (SIGKILL/OOM); restart and investigate |
 
 ### Δ41 — Semantic ordering of CardinalityGuard modes
 
@@ -218,7 +240,7 @@ changes from v5 are noted in detail per affected commit.)
 removed from monitoring, breaking-change callout for workspace
 members, install footprint matrix, dual-OTel safety net.)*
 
-### Commit 0b — `feat(settings): settings/observability.yaml + PyProjectSettings observability extension`
+### Commit 0b — `feat(settings): app.yml observability block + AppSettings extension (Δ91 path correction)`
 
 *(Inherits v5 Commit 0b: cardinality_mode Literal, disabled_on_import_error, profiling_enabled.)*
 
@@ -233,7 +255,7 @@ members, install footprint matrix, dual-OTel safety net.)*
 - *Triggered from:* v5 Commit 1; Δ34 (ObservabilityError hierarchy), Δ31 (Counter documentation arg), P1-1 (positional-only name), P1-2 (keyword-only exemplar), P1-8 (thread-safe registry), P1-7 (`__all__` for new modules)
 - *Returns to / updates:*
   - NEW `fastblocks/observability/errors.py` defining `ObservabilityError(Exception)` (per Δ46: uses `Exception` base, not `FastBlocksError` which doesn't exist), `MissingDependencyError(ObservabilityError)` carrying `pip_group: str, package: str | None` attributes (not kw_only-constructor params; matches `MahavishnuError` plain-attr style), `MetricNameCollisionError(ObservabilityError)` carrying `metric_name: str`, `SentryImportError(ObservabilityError)` carrying `reason: Literal["import_error", "init_runtime_error"]`. Each implements `__rich_repr__` for debugging. **Constructor takes `**kwargs` to populate attrs in `__init__` body** per `MahavishnuError` shape — NOT kw_only constructor params.
-  - NEW `fastblocks/observability/counters.py` — `Counter(name: str, /, documentation: str, *labelnames: str)` positional-only name + variadic labels; `Histogram(name: str, /, documentation: str, labelnames: tuple[str, ...], buckets: tuple[float, ...])`; methods `inc(amount: float = 1.0, *, exemplar: dict[str, str] | None = None)` and `observe(value: float, *, exemplar: dict[str, str] | None = None)` (keyword-only exemplar per P1-2); lazy-import `RuntimeError`/`MissingDependencyError` wrappers for `prometheus_client`
+  - NEW `fastblocks/observability/counters.py` — `Counter(name: str, /, documentation: str, *labelnames: str)` positional-only name + variadic labels; `Histogram(name: str, /, documentation: str, labelnames: tuple[str, ...], buckets: tuple[float, ...])`; methods `inc(amount: float = 1.0, *, exemplar: dict[str, str] | None = None)` and `observe(value: float, *, exemplar: dict[str, str] | None = None)` (keyword-only exemplar per P1-2); lazy-import `RuntimeError`/`MissingDependencyError` wrappers for `prometheus_client`. **Δ74 critical — `Counter.__init__` body MUST (a) call `ObservabilityRegistry.register(name)` FIRST to claim the name (raises `MetricNameCollisionError` from any `ValueError` via `raise from original`), THEN (b) construct `self._inner = _PromCounter(name, documentation, labelnames=labelnames)` so any duplicate name surfaces as the typed exception, NOT a raw `prometheus_client.ValueError`. The same pattern applies to `Histogram.__init__`. Test 1 of Demonstrable by must verify the typed-exception shape.**
   - NEW `fastblocks/observability/registry.py` — `ObservabilityRegistry` singleton wrapping `prometheus_client.CollectorRegistry`; `threading.Lock` for registration only (increments are lock-free via prometheus_client internals); snapshot metric names at startup; raises `MetricNameCollisionError` via `raise from prometheus_client.ValueError` (per Δ35)
   - NEW `fastblocks/observability/__init__.py` with `__all__ = ["Counter", "Histogram", "ObservabilityRegistry", "trace_context", "MissingDependencyError", "MetricNameCollisionError", "SentryImportError", "exemplar"]`
 - *Demonstrable by:*
@@ -476,7 +498,43 @@ master plan line 356: no deprecation warnings. v6-specific migration:
 
 57. **`trace_context.get()` exemplars in async contexts** (final-pass implicit). `ContextVar.get()` reads are safe inside a single synchronous block; future implementers must NOT add `await` between the `exemplar()` call and the `Histogram.observe(value, exemplar=...)` call, or risk reading a different task's context.
 
-58. **Commit 0c ordering tests use canonical shape** (Δ45). All Commit 0c `Demonstrable by` assertions use `manager.get_middleware_stack()["user_middleware"][...]` (dict shape, returns list/dict structure), not `FastBlocks.get_middleware_stack()` (list-of-tuples shape). Assertion language: `assert stack["user_middleware"][-1]["class"] == "ExceptionMiddleware"` for outermost_default; `[0]["class"] == "ExceptionMiddleware"` for innermost_opt_out.
+58. **Commit 0c ordering tests use canonical shape** (Δ45 + Δ68 correction). All Commit 0c `Demonstrable by` assertions use `manager.get_middleware_stack()["system_middleware"]["OUTERMOST"]["class"]` (dict shape, returns list/dict structure; `ExceptionMiddleware` lives in `system_middleware` per `add_system_middleware(...)`, NOT in `user_middleware`). Earlier v6 text incorrectly said `user_middleware[-1]` — corrected. The canonical assertion: `assert stack["system_middleware"]["OUTERMOST"]["class"] == "ExceptionMiddleware"` for outermost_default; `assert "ExceptionMiddleware" not in stack["system_middleware"]` for innermost_opt_out (now under `user_middleware`). Plan Task 0c Step 1 test is correct; spec Decision 58 was the bug.
+
+**Power-trio additions (Δ50-Δ75)**:
+
+59. **`exemplar()` returns `None` for MCP** (Δ50 self-correction of Δ33 row text). Earlier v6 draft said `"0"*32`/`"0"*16`; corrected to `None` to match Decision 38 and the Commit 10 IC. OpenMetrics exemplar format with all-zero hex IDs would be syntactically valid but semantically meaningless — `None` lets `Histogram.observe` skip the exemplar field cleanly.
+
+60. **`DecisionSpanProcessor` emits on `on_end`, not `on_start`** (Δ51). At `on_start` time the resolver hasn't run; span attrs are unset; counter would always increment `decision="error"`. `on_start` is a pure name filter (returns early if `span.name != "resolver.decision"`); `on_end` reads span attrs and emits. Spec text at the layer-model row corrected to match.
+
+61. **`ObservabilityRegistry` is a singleton instance, not a module-level property** (Δ52). `_REGISTRY = _Registry()` at module-import time; re-exported as `ObservabilityRegistry` (the instance, NOT the class). Module-level `property(...)` is broken — `from fastblocks.observability import ObservabilityRegistry` would yield a descriptor object that lacks `.register(...)` etc. Corrected shape applied to Commit 1's `_Registry` and re-export.
+
+62. **`accept_header` label is bounded to 5 Literal values** (Δ53). `Literal["openmetrics","text","wildcard","missing","other"]` derived by the dispatch logic. Real-world Accept headers vary widely (versions, charsets, weights); raw string would inflate cardinality unboundedly and trip CardinalityGuard in `enforce` mode (the default).
+
+63. **Runbook column on failure table** (Δ54). Every silent-failure counter maps to a dashboard panel + alert threshold + remediation action. See Runbook table above.
+
+64. **Sentry alpha version-locked to a single alpha** (Δ55). `sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8` (exact alpha range). Alphas are known to break `sentry_sdk.opentelemetry` between alphas; locking prevents accidental upgrade breaking the bridge silently. Future alphas require explicit CI smoke test + version bump.
+
+65. **`domain` label allowlist** (Δ56). `OneiricDomain` (in `_label_allowlist.py`) is `frozenset[str]` of known domains. CardinalityGuard WARNS (not rejects) when `domain ∉ _KNOWN_DOMAINS` so framework operators can audit before blocking.
+
+66. **`sentry_init_failures_total{reason}` always emits** (Δ57 rename). The earlier `sentry_disabled_total{reason}` name was misleading (only fires in silenced mode). New name makes it clear the counter fires for ANY init failure, regardless of `disabled_on_import_error` setting. Reason ∈ `Literal["import_error","init_runtime_error"]`.
+
+67. **`reason` label pinned to `Literal["","traced_decision_raised","resolver_raised"]`** (Δ58). Empty string only for `decision="resolved"`; non-empty Literals only for `decision="error"`. CardinalityGuard needs this Literal closure to enforce.
+
+68. **`fastblocks_tracer_shutdown_status` gauge exposes shutdown state** (Δ59). `0` = shutdown never called, `1` = shutdown called. /metrics scrape reads the gauge; if `0`, runbook is "restart app gracefully". Pair with `fastblocks_tracer_provider_shutdown_failed_total{reason}` counter (Δ77).
+
+69. **`_label_allowlist.py` enforced at module-load time, not just CI** (Δ60). `Counter.__init__` looks up each `labelnames` entry in `_KNOWN_LABELS` and raises `MetricNameCollisionError` (or new `UnknownLabelError`) if missing. CI lint (`check_metric_cardinality.py`) becomes a backstop, not the primary check.
+
+70. **OTLPSpanExporter drop reasons expanded** (Δ83). From `Literal["queue_full","export_timeout","collector_unreachable"]` (Δ39-δ) to `Literal["queue_full","export_timeout","dns_resolution_failure","tls_error","connection_refused","http_4xx","http_5xx","auth_rejected","collector_unreachable"]`. Mapped from underlying exception types in a single `except Exception` block.
+
+71. **`trace_context.set()` failure counter** (Δ80). Mirror of Δ43/Decision 48 (which covered `reset()` failure). `fastblocks_otel_middleware_set_failed_total` incremented when OtelMiddleware's `trace_context.set(token)` raises. Same severity as reset failure — both indicate programming bugs.
+
+72. **Sentry transport send failures** (Δ81). New counter `fastblocks_sentry_event_send_failed_total{reason}` where reason ∈ `Literal["network_error","auth_failed","rate_limited","payload_rejected","timeout"]`. Wired via Sentry `before_send` hook OR `transport_uses_http` lifecycle event. Init errors are separate (`sentry_init_failures_total`).
+
+73. **a11y bridge client→server ack protocol** (Δ82). New counter `fastblocks_a11y_bridge_acknowledged_total{region}` incremented when server receives client `aria_live_broadcast_received` event over separate WS channel. Mismatched `dropped_total` vs `acknowledged_total` exposes unacked failures.
+
+74. **`trace_context.exemplar()` does NOT currently exist** (Δ94 clarification). Already-shipped `trace_context.py:40-77` has only `get/set/reset`. Commit 10 ADDS the helper. Spec text at Decision 41 must not say "already shipped" — corrected.
+
+75. **`Histogram.observe` exemplar API verified at Task 1 commit time** (Δ84). `prometheus_client~=0.21` exemplar signature must be smoke-tested in Task 1 (Demonstrable by item 7) before Commit 8 wires `Histogram.observe(value, exemplar=trace_context.exemplar())`. If the pin doesn't support `exemplar=` kwarg, bump pin OR switch to `openmetrics-exposition`.
 
 ## Spec self-review checklist
 
