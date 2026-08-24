@@ -6,13 +6,37 @@ import importlib
 import inspect
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
-# Oneiric resolver for dependency injection
-depends = FastblocksRegistry(get_resolver())
+if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
+
+# Lazy resolver dependency. ``depends`` is left None at import time so
+# the discovery module can be imported even when ``FastblocksRegistry``
+# is patched in a test. The first call to ``resolve_depends()`` lazy-
+# initializes it; existing tests that ``monkeypatch.setattr`` ``depends``
+# directly on this module continue to win over the lazy cache.
+depends: FastblocksRegistry | None = None
+_depends: FastblocksRegistry | None = None
+
+
+def resolve_depends() -> FastblocksRegistry:
+    """Return the active ``FastblocksRegistry`` for adapter resolution.
+
+    Honors ``monkeypatch.setattr(discovery, "depends", X)`` by checking
+    the module-level ``depends`` first; falls back to lazy
+    initialization via ``FastblocksRegistry(get_resolver())``.
+    """
+    module_depends = globals().get("depends")
+    if module_depends is not None:
+        return module_depends
+    global _depends
+    if _depends is None:
+        _depends = FastblocksRegistry(get_resolver())
+    return _depends
 
 
 # Custom AdapterBase for Oneiric compatibility
@@ -114,7 +138,7 @@ class AdapterDiscoveryServer:
         narrow: a single bad candidate no longer masks the whole pass.
         """
         try:
-            candidates = depends.list_active("fastblocks")
+            candidates = resolve_depends().list_active("fastblocks")
         except (AttributeError, KeyError, RuntimeError, TypeError) as exc:
             # Resolver transport failure: the registry probe itself is best-effort.
             # We log + return rather than silently swallow.
@@ -311,7 +335,7 @@ class AdapterDiscoveryServer:
     async def get_adapter_instance(self, name: str) -> Any | None:
         """Get an actual adapter instance from ACB registry."""
         try:
-            return depends.resolve("fastblocks", name)
+            return resolve_depends().resolve("fastblocks", name)
         except (KeyError, AttributeError, RuntimeError):
             return None
 
@@ -327,3 +351,54 @@ class AdapterDiscoveryServer:
             return adapter_class()
         except (ImportError, AttributeError, TypeError):
             return None
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 v2.1 — FastBlocks-specific discovery_fn for ``apply_tool_profile``.
+#
+# Override of mcp_common's ``_default_discovery`` to add the
+# ``capability`` field consumers need. Opt-in: consumers pass this as
+# ``discovery_fn=fastblocks_discovery`` to their own apply_tool_profile
+# call. If consumers don't pass it, mcp_common's default shape is used
+# (no capability tag).
+#
+# Schema: ``{name, capability, description, inputSchema}``. There is
+# no ``is_available`` field — tools that fail a capability gate are
+# NOT in ``server.list_tools()`` (gate failures skip registration
+# entirely, per mcp_common contract).
+# ---------------------------------------------------------------------------
+async def fastblocks_discovery(
+    server: FastMCP, filter_query: str | None
+) -> list[dict]:
+    """Emit {name, capability, description, inputSchema}.
+
+    Walks the server's registered tools and looks up each name in
+    ``get_tool_capability()``.
+    """
+    from fastblocks.mcp.capabilities import get_tool_capability
+
+    tools = await server.list_tools()
+    result: list[dict] = []
+    for t in tools:
+        capability = get_tool_capability(t.name)
+        result.append(
+            {
+                "name": t.name,
+                "capability": capability,
+                "description": t.description or "",
+                "inputSchema": t.parameters,
+            }
+        )
+    if filter_query:
+        q = filter_query.lower()
+        result = [
+            t
+            for t in result
+            if q in str(t["name"]).lower()
+            or q in str(t["capability"]).lower()
+            or q in str(t["description"]).lower()
+        ]
+    return result
+
+
+__all__ = ["fastblocks_discovery"]
