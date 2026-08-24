@@ -74,7 +74,11 @@ class FastBlocksMCPServer:
     async def _register_tools(self) -> None:
         """Register FastBlocks MCP tools.
 
-        Tools will be implemented in tools.py and registered here.
+        Per Task 8 (Δ37): delegate to ``register_fastblocks_tools`` which
+        wraps every tool function with ``instrument_tool`` before passing
+        to ``server.tool(...)``. The server-side call site lives in
+        ``tools.py:register_fastblocks_tools``; this wrapper just calls
+        into it.
         """
         from .tools import register_fastblocks_tools
 

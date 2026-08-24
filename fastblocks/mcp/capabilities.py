@@ -20,12 +20,8 @@ function. Consumers can then import the new tool.
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING
 
 from mcp.server.fastmcp import FastMCP
-
-if TYPE_CHECKING:
-    from fastblocks.mcp import tools as tools_module
 
 # ---------------------------------------------------------------------------
 # Capability membership — pure data, exported for consumer introspection.
@@ -107,55 +103,58 @@ def register_template_capability(server: FastMCP) -> None:
     """Register the 3 TEMPLATE_CAPABILITY tools."""
     if not _is_template_available():
         return
-    from fastblocks.mcp import tools as tools_module
     from mcp_common.tools import trim_description
+    from fastblocks.mcp import tools as tools_module
+    from fastblocks.mcp.observability import instrument_tool
 
     server.tool(
         "validate_template",
         description=trim_description(tools_module.validate_template.__doc__ or ""),
-    )(tools_module.validate_template)
+    )(instrument_tool("validate_template", tools_module.validate_template))
     server.tool(
         "list_templates",
         description=trim_description(tools_module.list_templates.__doc__ or ""),
-    )(tools_module.list_templates)
+    )(instrument_tool("list_templates", tools_module.list_templates))
     server.tool(
         "render_template",
         description=trim_description(tools_module.render_template.__doc__ or ""),
-    )(tools_module.render_template)
+    )(instrument_tool("render_template", tools_module.render_template))
 
 
 def register_component_capability(server: FastMCP) -> None:
     """Register the 2 COMPONENT_CAPABILITY tools."""
     if not _is_component_available():
         return
-    from fastblocks.mcp import tools as tools_module
     from mcp_common.tools import trim_description
+    from fastblocks.mcp import tools as tools_module
+    from fastblocks.mcp.observability import instrument_tool
 
     server.tool(
         "list_components",
         description=trim_description(tools_module.list_components.__doc__ or ""),
-    )(tools_module.list_components)
+    )(instrument_tool("list_components", tools_module.list_components))
     server.tool(
         "validate_component",
         description=trim_description(tools_module.validate_component.__doc__ or ""),
-    )(tools_module.validate_component)
+    )(instrument_tool("validate_component", tools_module.validate_component))
 
 
 def register_adapter_capability(server: FastMCP) -> None:
     """Register the 2 ADAPTER_CAPABILITY tools."""
     if not _is_adapter_available():
         return
-    from fastblocks.mcp import tools as tools_module
     from mcp_common.tools import trim_description
+    from fastblocks.mcp import tools as tools_module
+    from fastblocks.mcp.observability import instrument_tool
 
     server.tool(
         "list_adapters",
         description=trim_description(tools_module.list_adapters.__doc__ or ""),
-    )(tools_module.list_adapters)
+    )(instrument_tool("list_adapters", tools_module.list_adapters))
     server.tool(
         "check_adapter_health",
         description=trim_description(tools_module.check_adapter_health.__doc__ or ""),
-    )(tools_module.check_adapter_health)
+    )(instrument_tool("check_adapter_health", tools_module.check_adapter_health))
 
 
 # ---------------------------------------------------------------------------
@@ -199,8 +198,8 @@ def get_tool_capability(tool_name: str) -> str | None:
 
 
 __all__ = [
-    "ALL_CAPABILITIES",
     "ADAPTER_CAPABILITY",
+    "ALL_CAPABILITIES",
     "COMPONENT_CAPABILITY",
     "MANDATORY_CAPABILITIES",
     "TEMPLATE_CAPABILITY",
