@@ -191,3 +191,55 @@ SplashStand's mutating tools actually need. **Do not let that happen.**
 - `fastblocks/mcp/profiles.py` — the no-op stub.
 - `fastblocks/tests/mcp/test_tool_profile.py` — the regression test.
 - W4.9 task brief: `/Users/les/Projects/mahavishnu/.superpowers/sdd/2026-08-18-mcp-tool-profile-adoption/task-22-brief.md`
+
+## Phase 4 v2.1 — Consumer pattern (added 2026-08-23)
+
+The framework no longer ships a no-op stub. Consumers (e.g. SplashStand)
+import the capability primitives from `fastblocks.mcp.capabilities` and
+wire them into their own `apply_tool_profile` calls:
+
+```python
+from fastblocks.mcp.capabilities import (
+    MANDATORY_CAPABILITIES,
+    register_template_capability,
+    register_component_capability,
+    register_adapter_capability,
+)
+from fastblocks.mcp.discovery import fastblocks_discovery
+from mcp_common.tools import ToolProfile
+from mcp_common.tools.dispatch import _apply_tool_profile  # async sibling
+
+# Async context (the canonical MCP server case)
+await _apply_tool_profile(
+    server,
+    profile_env_var="SPLASHSTAND_TOOL_PROFILE",
+    registrations={
+        ToolProfile.MINIMAL:  list(MANDATORY_CAPABILITIES),
+        ToolProfile.STANDARD: [register_template_capability],
+        ToolProfile.FULL:     [
+            register_template_capability,
+            register_component_capability,
+            register_adapter_capability,
+        ],
+    },
+    registration_map={},
+    register_all_fn=None,
+    mandatory_groups=set(),
+    essential_tool_names=set(),
+    discovery_fn=fastblocks_discovery,
+    yaml_loader=None,  # v2.1: env-var-only profile resolution
+)
+
+# Sync startup (CLI tools, scripts)
+from mcp_common.tools import apply_tool_profile
+apply_tool_profile(
+    server,
+    profile_env_var="SPLASHSTAND_TOOL_PROFILE",
+    # ... same kwargs ...
+)
+```
+
+The framework-internal `FastBlocksMCPServer` is unchanged and continues
+to register all 7 tools via the existing `register_fastblocks_tools`
+function. This preserves CLAUDE.md:157-190's library-not-server posture.
+
