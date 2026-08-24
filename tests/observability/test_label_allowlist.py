@@ -31,6 +31,7 @@ from fastblocks.observability._label_allowlist import (
     StyleResult,
     ToolName,
     ToolStatus,
+    WebsocketRegion,
 )
 
 # ---------------------------------------------------------------------------
@@ -46,6 +47,7 @@ EXPECTED_LABEL_NAMES: tuple[str, ...] = (
     "render_escaped",
     "accept_header",
     "reason",
+    "region",
 )
 
 
@@ -171,6 +173,7 @@ def test_lookup_specific_labels() -> None:
     assert _KNOWN_LABELS["render_escaped"] is RenderEscaped
     assert _KNOWN_LABELS["accept_header"] is AcceptHeader
     assert _KNOWN_LABELS["reason"] is ErrorReason
+    assert _KNOWN_LABELS["region"] is WebsocketRegion
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +203,7 @@ def test_all_exports_present() -> None:
         "RenderEscaped",
         "AcceptHeader",
         "ErrorReason",
+        "WebsocketRegion",
         "_KNOWN_LABELS",
     }
     assert expected.issubset(set(allowlist_mod.__all__)), (

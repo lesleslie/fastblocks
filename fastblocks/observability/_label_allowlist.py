@@ -149,6 +149,21 @@ ErrorReason = Literal[
     "Exception",
 ]
 
+# WebSocket room/channels the ``fastblocks_a11y_bridge_dropped_total``
+# counter (Task 13) emits when an a11y bridge event is rate-limited and
+# dropped. Mirrors the canonical FastBlocks WebSocket rooms surfaced in
+# ``fastblocks.websocket.server.FastblocksWebSocketServer``
+# (``ui:<id>`` collapses to ``ui``, ``component:<id>`` to ``component``,
+# ``state``, ``global``). Per Δ39-α the dropped counter is the only
+# surfaces where ``region`` appears; bounding the value set to these
+# four keeps the PromQL aggregation stable across the websocket stack.
+WebsocketRegion = Literal[
+    "ui",
+    "component",
+    "state",
+    "global",
+]
+
 # ---------------------------------------------------------------------------
 # The registry itself — key=label name, value=Literal type.
 #
@@ -168,6 +183,7 @@ _KNOWN_LABELS: dict[str, type[Any]] = {
     "render_escaped": RenderEscaped,
     "accept_header": AcceptHeader,
     "reason": ErrorReason,
+    "region": WebsocketRegion,
 }
 
 __all__ = [
@@ -180,4 +196,5 @@ __all__ = [
     "StyleResult",
     "ToolName",
     "ToolStatus",
+    "WebsocketRegion",
 ]

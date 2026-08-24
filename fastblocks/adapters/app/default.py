@@ -250,6 +250,39 @@ class FastBlocksApp(FastBlocks):
         # ``self.fastblocks_app`` so this single registration covers
         # both lifespans wired in Task 3.
         self.add_route("/metrics", metrics_endpoint, methods=["GET"])
+        # Phase 6 Task 13 (Δ10/Δ13/Δ39-α): mount /static so the
+        # ``a11y_bridge.css`` visually-hidden stylesheet served at
+        # ``fastblocks/websocket/static/a11y_bridge.css`` is reachable
+        # at ``GET /static/a11y_bridge.css``. The Mount is appended
+        # to ``self.routes`` (Starlette's surface, inherited by
+        # ``FastBlocks``) so the registration survives both the
+        # ``FastBlocksApp`` and ``App`` lifespans — the latter routes
+        # through ``__getattr__`` to ``self.fastblocks_app``.
+        #
+        # The directory path is anchored at the package root
+        # (``fastblocks/websocket/static``) so the asset travels with
+        # the package regardless of where the host app is started.
+        # ``StaticFiles`` raises FileNotFoundError at mount time if the
+        # directory is missing — the call is wrapped in suppress so a
+        # slim install without the static file (e.g. an environment
+        # that excluded the a11y_bridge subtree) does not crash app
+        # startup; the route simply does not appear.
+        # Only FileNotFoundError is swallowed so ImportError / TypeError
+        # / AttributeError from the Starlette imports still crash loud
+        # during startup instead of being masked by a broad
+        # ``suppress(Exception)``.
+        with suppress(FileNotFoundError):
+            from starlette.routing import Mount
+            from starlette.staticfiles import StaticFiles
+
+            static_dir = Path(__file__).resolve().parent.parent.parent / "websocket" / "static"
+            self.routes.append(
+                Mount(
+                    "/static",
+                    app=StaticFiles(directory=str(static_dir)),
+                    name="fastblocks-static",
+                ),
+            )
         # Phase 6 Task 11 (Δ45/Δ48): register OtelMiddleware LAST in
         # ``user_middleware`` so Starlette's reverse-order wrapper
         # chain places it as the OUTERMOST HTTP middleware. Per the

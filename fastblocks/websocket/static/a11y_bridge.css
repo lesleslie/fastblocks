@@ -1,0 +1,41 @@
+/* FastBlocks a11y bridge — visually-hidden ARIA live region.
+ *
+ * Per Δ13 + Δ10 (CORRECTED): the WebSocket → aria-live bridge injects
+ * its announcements into a single `<div>` element tagged with the
+ * namespaced `.sr-only--fastblocks-a11y-bridge` class. The class hides
+ * the element from sighted users while keeping it readable by
+ * assistive technologies (screen readers, voice browsers).
+ *
+ * Modern visually-hidden technique
+ * --------------------------------
+ * The class uses the `clip-path: inset(50%)` form (the modern,
+ * accessible technique introduced to replace the deprecated
+ * zero-rectangle and 1px-border hacks). The legacy property was
+ * deprecated in 2016; `clip-path: inset(50%)` is the canonical
+ * replacement and works in every modern browser.
+ *
+ * The class name is namespaced with the `--fastblocks-a11y-bridge`
+ * suffix to avoid collision with any other sr-only class a host
+ * page might define (e.g. a downstream template engine that ships
+ * its own utility CSS).
+ *
+ * Companion HTML (rendered by `render_broadcast_as_a11y` in
+ * `fastblocks/websocket/a11y_bridge.py`):
+ *
+ *     <div role="status" aria-live="polite" aria-atomic="true"
+ *          data-fb-aria-live="true" aria-relevant="additions"
+ *          class="sr-only--fastblocks-a11y-bridge">…</div>
+ */
+.sr-only--fastblocks-a11y-bridge {
+    /* Modern visually-hidden technique (replaces deprecated zero-rect hack). */
+    clip-path: inset(50%);
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    white-space: nowrap;
+    border: 0;
+}
+
