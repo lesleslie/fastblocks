@@ -22,7 +22,7 @@
 - `decision ∈ Literal["resolved", "error"]` (per Δ29; matches Oneiric's actual emission)
 - `status ∈ Literal["ok", "error", "validation_error"]` (per Δ30; reduced from v5 closure)
 - `mcp-common<0.4` pin (per Δ47; until upstream Tool pydantic bug fixed)
-- Pin versions use `~=X.Y` (per Round-2 dependency-manager): `prometheus-client~=0.21`, `opentelemetry-sdk~=1.44`, `opentelemetry-exporter-otlp-proto-http~=1.44`, `sentry-sdk[opentelemetry]>=3.0.0a7,<3.1`
+- Pin versions use `~=X.Y` (per Round-2 dependency-manager): `prometheus-client~=0.21`, `opentelemetry-sdk~=1.44`, `opentelemetry-exporter-otlp-proto-http~=1.44`, `sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8` (Δ55 — alpha-locked to exact alpha range; alphas break `sentry_sdk.opentelemetry` between versions)
 - `pyproject.toml` `[tool.uv]` config: `prerelease = "allow"` (project-wide); `python_version` not set (Python 3.14 required)
 - All observability wrappers use `Counter(name, /, documentation: str, *labelnames: str)` positional-only form
 - All `Histogram.observe` use `def observe(self, value: float, *, exemplar: dict[str, str] | None = None) -> None` keyword-only exemplar
@@ -140,7 +140,7 @@ observability = [
     "prometheus-client~=0.21",
     "opentelemetry-sdk~=1.44",
     "opentelemetry-exporter-otlp-proto-http~=1.44",
-    "sentry-sdk[opentelemetry]>=3.0.0a7,<3.1",
+    "sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8",  # Δ55 alpha-locked
 ]
 ```
 Add to existing `dev` group: `"{include-group = "observability"}"`.
@@ -495,6 +495,12 @@ def _require_prometheus() -> None:
 class Counter:
     def __init__(self, name: str, /, documentation: str, *labelnames: str) -> None:
         _require_prometheus()
+        from fastblocks.observability.registry import ObservabilityRegistry
+        # Δ74: register FIRST so duplicate names surface as MetricNameCollisionError
+        # (not raw prometheus_client.ValueError). _Registry.register() catches
+        # prometheus_client.ValueError and re-raises as the typed exception
+        # via raise from (Δ35).
+        ObservabilityRegistry.register(name)
         self._inner = _PromCounter(name, documentation, labelnames=labelnames)
 
     def inc(self, amount: float = 1.0, **labels: str) -> None:
@@ -560,7 +566,12 @@ def get_default_registry() -> _Registry:
         _registry = _Registry()
     return _registry
 
-ObservabilityRegistry = property(lambda self: get_default_registry())  # type: ignore[assignment]
+# Δ52 + Δ76: singleton INSTANCE (not module-level property). Module-level
+# property(...) would return a descriptor object that lacks .register(...),
+# .inc(...), etc. — `from fastblocks.observability import ObservabilityRegistry`
+# would yield the descriptor, not the registry. Re-export the instance.
+_registry = _Registry()
+ObservabilityRegistry = _registry
 ```
 
 - [ ] **Step 6: Implement __init__.py re-exports**
@@ -581,7 +592,7 @@ from .errors import (
 )
 from .counters import Counter, Histogram
 from .registry import (
-    ObservabilityRegistry,  # noqa: F401 — exposed via property descriptor
+    ObservabilityRegistry,  # noqa: F401 — singleton instance (Δ52)
     get_default_registry,
 )
 
@@ -824,13 +835,46 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [x] **Placeholder scan**: no TBD/TODO/FIXME in plan.
 - [x] **Type consistency**: `Counter(name, /, documentation, *labelnames)` declared identically in Tasks 1 and 8; `ObservabilityError(Exception)` consistent; `Histogram.observe(value, *, exemplar)` keyword-only consistent.
 - [x] **Spec self-contradictions from v5/v6** are addressed in the plan: Δ29 `decision` Literal reduced (Task 4), Δ30 `status` Literal reduced (Tasks 6, 8), Δ31 Counter `documentation` arg (Tasks 1, 8), Δ45 dict shape (Tasks 0c, 11), Δ46 `Exception` base (Task 1), Δ47 `mcp-common<0.4` pin (Task 0a), Δ48 add-after-reverse (Task 11), Δ49 idempotency (Task 8).
+- [x] **Power-trio + final-pass corrections (Δ50-Δ78) addressed**:
+  - Δ50/Δ33/Decision 38: `exemplar()` returns `None` for MCP (Task 10 implementation; spec failure-table row 155 + Open Review Flag #14 corrected)
+  - Δ51: Decision 8 — `on_end` emits (not `on_start`) (Task 4)
+  - Δ52/Δ76/Δ78: `ObservabilityRegistry` singleton instance (Task 1 Steps 5 + 6; property descriptor pattern removed)
+  - Δ53: `accept_header ∈ Literal["openmetrics","text","wildcard","missing","other"]` bounded 5-value (Task 9)
+  - Δ54: Runbook column (inherits from spec; Commit 14 dashboard cross-references)
+  - Δ55/Δ83: `sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8` alpha-locked (Task 0a Global constraints + Step 3)
+  - Δ56/Δ91: `OneiricDomain` is `frozenset[str]`; warn-not-reject semantics (Task 6)
+  - Δ57: `sentry_init_failures_total` rename from `sentry_disabled_total` (Task 12 + spec verification gate)
+  - Δ58: `reason ∈ Literal["","traced_decision_raised","resolver_raised"]` (Task 4)
+  - Δ59/Δ87: `fastblocks_tracer_shutdown_status` gauge (Task 3 replacement for `_shutdown_called` private attribute)
+  - Δ60: `_label_allowlist.py` enforced at module-load time (Task 1 Counter.__init__ allowlist lookup)
+  - Δ68/Δ96: Decision 58 uses `system_middleware["OUTERMOST"]` (not `user_middleware[-1]`); spec Decision 58 corrected
+  - Δ67/Δ88: `MiddlewarePosition.OUTERMOST = -1, INNERMOST = 99` enum extension (Task 0c Step 3)
+  - Δ69/Δ90: Task 3 log message reference corrected to `default.py:200-202` "FastBlocks application shutting down"
+  - Δ74/Δ77: `Counter.__init__` calls `ObservabilityRegistry.register(name)` BEFORE `_PromCounter` construction (Task 1 Step 4)
+  - Δ81/Δ85: `sentry_event_send_failed_total{reason}` counter wired via `before_send` hook (Task 12)
+  - Δ82/Δ86: `a11y_bridge_acknowledged_total{region}` counter via separate WS channel (Task 13)
+  - Δ91: `settings/` path → `app.yml` + `AppSettings` in `fastblocks/adapters/app/default.py` (Task 0b)
+  - Δ94: `trace_context.exemplar()` is added by Commit 10; spec Decision 41 corrected to say "to be added"
 - [x] **No Placeholders**: every commit step has concrete command/code; no "TBD", no "implement later".
 
 ## Execution Handoff
 
-Plan complete and saved to `docs/superpowers/plans/2026-08-24-fastblocks-phase-6.md`. Two execution options:
+Plan complete and saved to `docs/superpowers/plans/2026-08-24-fastblocks-phase-6.md`. Execution mode (per user directive): **Subagent-Driven** — dispatch one fresh subagent per task with worktree isolation; review between tasks.
 
-1. **Subagent-Driven (recommended)** - Dispatch a fresh subagent per task, review between tasks, fast iteration
-2. **Inline Execution** - Execute tasks in this session via executing-plans, batch execution with checkpoints
+Two-stage review per task:
+- **Stage 1 (subagent)**: implementer subagent writes code + tests + commits in fresh worktree
+- **Stage 2 (verifier)**: separate verifier subagent (read-only) reviews the commit, files issues, no state mutation
+
+Reviewer agent types per task:
+- Task 0a/0b/0c: dependency-manager + python-pro
+- Task 1-4: python-pro + observability-incident-lead
+- Task 5-7: type-design-analyzer + observability-incident-lead
+- Task 8-9: mcp-integration-expert + observability-incident-lead
+- Task 10-11: starlette-specialist + observability-incident-lead
+- Task 12: dependency-manager + observability-incident-lead
+- Task 13: critical-audit-specialist (a11y semantics)
+- Task 14: qa-strategist (dashboard schema validation)
+
+Each task follows the in-tree TDD structure (Step 1: failing test → Step 2: run-fails → Step 3+: implementation → final: tests-pass → commit).
 
 Which approach would you prefer?

@@ -152,7 +152,7 @@ observability-of-observability is itself observable.
 | CardinalityGuard trips in `enforce` | `MetricCardinalityViolation` event + `fastblocks_cardinality_violations_total{label}`; `cardinality_mode="audit"` lets it increment without raise |
 | DecisionSpanProcessor counter `Counter.inc()` itself fails | `fastblocks_oneiric_decision_emit_failed_total{reason}` (Δ39-γ) |
 | `trace_context.reset(token)` raises in OtelMiddleware finally | Wrap in its own try/except + `fastblocks_otel_middleware_reset_failed_total` (P1-5) |
-| MCP tool calls bypass OtelMiddleware (Δ33) | Exemplar returns `"0"*32`/`"0"*16`; FastMCP-level OTel context propagation deferred to a follow-up; **counter + histogram still increment correctly** for MCP (exemplar-only feature degraded, observability degraded not failed) |
+| MCP tool calls bypass OtelMiddleware (Δ33) | Exemplar returns `None` (which `Histogram.observe` skips); FastMCP-level OTel context propagation deferred to a follow-up; **counter + histogram still increment correctly** for MCP (exemplar-only feature degraded, observability degraded not failed) |
 | CollectorRegistry global leakage (Δ39-β) | `fastblocks_observability_registry_unknown_metrics_total` (emitted when `/metrics` is called and global REGISTRY has metrics outside `ObservabilityRegistry`) |
 | Oneiric resolver raise-before-span (P1-4) | Wrap resolution call; emit `decision="error"` BEFORE the raise propagates |
 | SpanProcessor.on_end Counter.inc fails due to CardinalityGuard reject (P0-γ) | Counter wrapped in its own try/except; emit `fastblocks_oneiric_decision_emit_failed_total{reason="cardinality_reject"}` |
@@ -211,7 +211,7 @@ and serving OpenMetrics to a wildcard-Accept scraper is harmless
 | #11 (Sentry init ordering) | CLOSED-via-Δ34 — TracerProvider first, init last; `reason="init_runtime_error"` if violated |
 | #12 (profiling_enabled conflict) | CLOSED — `profiling_enabled=False` only; loud-fail otherwise |
 | #13 (ObservabilityRegistry ownership) | CLOSED-via-v6 — Commit 1 creates `errors.py` + `registry.py` |
-| NEW #14 (MCP exemplar dead code) | OPEN-ACCEPTED — exemplar returns `"0"*32`/`"0"*16` for MCP; FastMCP-level propagation deferred |
+| NEW #14 (MCP exemplar dead code) | OPEN-ACCEPTED — `exemplar()` returns `None` for MCP (per Δ33 + Δ50 self-correction); FastMCP-level propagation deferred |
 | NEW #15 (decision Literal fabricated) | CLOSED-via-Δ29 — reduced to `["resolved","error"]` matching Oneiric actual emission |
 | NEW #16 (rate_limited invented) | CLOSED-via-Δ30 — dropped; only `["ok","error","validation_error"]` retained |
 | NEW #17 (Counter documentation arg missing) | CLOSED-via-Δ31 — every spec example includes `documentation="..."` |
@@ -395,7 +395,7 @@ master plan line 356: no deprecation warnings. v6-specific migration:
 | DecisionSpanProcessor inheritance | `issubclass(DecisionSpanProcessor, SpanProcessor) is True` (Δ38) |
 | MCP Counter instrumented on both paths | Counter increments from both `tools.py` and `capabilities.py` paths (Δ37) |
 | /metrics Accept defaults | `Accept: */*` and missing-Accept return OpenMetrics (Δ42) |
-| Silent-failure counters wired | 6 counters (`a11y_bridge_dropped_total`, `observability_registry_unknown_metrics_total`, `oneiric_decision_emit_failed_total`, `otlp_spans_dropped_total`, `metrics_endpoint_dispatch_total`, `sentry_disabled_total{reason="init_runtime_error"}`) all defined and increment in tests |
+| Silent-failure counters wired | All Δ39 + Δ54 + Δ62 + Δ63 + Δ77 + Δ79 + Δ80 + Δ81 + Δ82 counters defined and increment in tests. Δ39 baseline (6): `a11y_bridge_dropped_total`, `observability_registry_unknown_metrics_total`, `oneiric_decision_emit_failed_total`, `otlp_spans_dropped_total`, `metrics_endpoint_dispatch_total`, `sentry_init_failures_total{reason}` (renamed from `sentry_disabled_total` per Δ57). Additions: `fastblocks_otel_middleware_set_failed_total` (Δ80), `fastblocks_structlog_config_failed_total` (Δ63), `fastblocks_tracer_provider_shutdown_failed_total{reason}` (Δ77), `fastblocks_cardinality_violations_dropped_total{label}` (Δ79), `fastblocks_sentry_event_send_failed_total{reason}` (Δ81), `fastblocks_a11y_bridge_acknowledged_total{region}` (Δ82), plus `fastblocks_tracer_shutdown_status` gauge (Δ59). Total: 12 counters + 1 gauge; see Runbook table for per-counter thresholds. |
 
 ## Estimated effort
 
