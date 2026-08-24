@@ -22,15 +22,16 @@ import typing
 
 import pytest
 from fastblocks.observability._label_allowlist import (
+    _KNOWN_LABELS,
+    AcceptHeader,
+    ErrorReason,
     OneiricDecision,
     OneiricDomain,
     RenderEscaped,
     StyleResult,
     ToolName,
     ToolStatus,
-    _KNOWN_LABELS,
 )
-
 
 # ---------------------------------------------------------------------------
 # 1. All known labels present
@@ -43,6 +44,8 @@ EXPECTED_LABEL_NAMES: tuple[str, ...] = (
     "domain",
     "style_result",
     "render_escaped",
+    "accept_header",
+    "reason",
 )
 
 
@@ -166,6 +169,8 @@ def test_lookup_specific_labels() -> None:
     assert _KNOWN_LABELS["domain"] is OneiricDomain
     assert _KNOWN_LABELS["style_result"] is StyleResult
     assert _KNOWN_LABELS["render_escaped"] is RenderEscaped
+    assert _KNOWN_LABELS["accept_header"] is AcceptHeader
+    assert _KNOWN_LABELS["reason"] is ErrorReason
 
 
 # ---------------------------------------------------------------------------
@@ -193,8 +198,38 @@ def test_all_exports_present() -> None:
         "OneiricDomain",
         "StyleResult",
         "RenderEscaped",
+        "AcceptHeader",
+        "ErrorReason",
         "_KNOWN_LABELS",
     }
     assert expected.issubset(set(allowlist_mod.__all__)), (
         f"__all__ missing exports: {expected - set(allowlist_mod.__all__)}"
     )
+
+
+# ---------------------------------------------------------------------------
+# 7. Task 9 AcceptHeader / ErrorReason Literal contract
+# ---------------------------------------------------------------------------
+
+
+def test_accept_header_literal_four_value_matrix() -> None:
+    """Per Δ42: the /metrics Accept-header matrix is exactly four values."""
+    args = typing.get_args(AcceptHeader)
+    assert set(args) == {
+        "application/openmetrics-text",
+        "text/plain",
+        "*/*",
+        "missing",
+    }, f"AcceptHeader values out of contract: got {set(args)}"
+
+
+def test_error_reason_literal_bounded_exception_set() -> None:
+    """Per Task 9: ErrorReason is the bounded exception class-name set."""
+    args = typing.get_args(ErrorReason)
+    assert set(args) == {
+        "RuntimeError",
+        "OSError",
+        "ValueError",
+        "TypeError",
+        "Exception",
+    }, f"ErrorReason values out of contract: got {set(args)}"

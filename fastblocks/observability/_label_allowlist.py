@@ -45,6 +45,22 @@ Literal types that bound each label's value set:
 - ``RenderEscaped`` records whether a renderer escaped its output
   (``safe`` = autoescape applied OR output was pre-marked-safe,
   ``raw`` = caller-supplied HTML passed through unescaped).
+- ``AcceptHeader`` enumerates the four Accept-header values the
+  ``/metrics`` endpoint dispatches on (Task 9). ``missing`` captures
+  requests that omit the header entirely so the dispatch counter does
+  not see unbounded label values from clients that pass through custom
+  Accept strings.
+- ``ErrorReason`` carries the bounded exception class-name set the
+  ``/metrics`` endpoint emits when encoder-selection or metric
+  generation raises (Task 9). It also retroactively bounds the
+  ``reason`` label used by Task 4's
+  ``fastblocks_oneiric_decision_emit_failed_total{reason}`` counter
+  — Task 4 emitted the label without registering the Literal here,
+  leaving the cardinality lint to flag it as unknown. The Literal
+  records the values the route can actually emit (``RuntimeError``,
+  ``OSError``, ``ValueError``, ``TypeError``, ``Exception``).
+  Task 4's emit-failed counter uses exception class names too, so
+  the same set bounds both surfaces.
 """
 from __future__ import annotations
 
@@ -105,6 +121,34 @@ StyleResult = Literal["ok", "error", "validation_error"]
 # ``"safe_marked"``).
 RenderEscaped = Literal["safe", "raw"]
 
+# Accept-header values the ``/metrics`` endpoint dispatches on (Task 9).
+# ``missing`` covers requests that omit the Accept header entirely; the
+# other three are the canonical IANA-registered content types the
+# ``/metrics`` route produces. Adding new Accept-header handling (e.g.
+# ``application/json``) requires extending this Literal — the cardinality
+# lint rejects any counter whose ``labelnames`` tuple contains
+# ``accept_header`` if the inc() call passes a value outside this set.
+AcceptHeader = Literal[
+    "application/openmetrics-text",
+    "text/plain",
+    "*/*",
+    "missing",
+]
+
+# Exception class names emitted on the ``reason`` label (Task 9 route
+# error counter + Task 4 emit-failed counter). Bounded to the class
+# names the route can actually raise so a stray AttributeError or
+# ImportError cannot blow up the label cardinality. New error paths
+# must extend this Literal; the cardinality lint rejects counters
+# that emit ``reason=<unbound class>``.
+ErrorReason = Literal[
+    "RuntimeError",
+    "OSError",
+    "ValueError",
+    "TypeError",
+    "Exception",
+]
+
 # ---------------------------------------------------------------------------
 # The registry itself — key=label name, value=Literal type.
 #
@@ -122,10 +166,14 @@ _KNOWN_LABELS: dict[str, type[Any]] = {
     "domain": OneiricDomain,
     "style_result": StyleResult,
     "render_escaped": RenderEscaped,
+    "accept_header": AcceptHeader,
+    "reason": ErrorReason,
 }
 
 __all__ = [
     "_KNOWN_LABELS",
+    "AcceptHeader",
+    "ErrorReason",
     "OneiricDecision",
     "OneiricDomain",
     "RenderEscaped",

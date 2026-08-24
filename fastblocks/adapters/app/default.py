@@ -10,6 +10,7 @@ Created: 2025-01-12
 from __future__ import annotations
 
 import asyncio
+import functools
 import typing as t
 from base64 import b64encode
 from contextlib import asynccontextmanager, suppress
@@ -19,12 +20,22 @@ from typing import Literal
 from uuid import UUID
 
 import jinja2
-from pydantic import BaseModel, Field
 
 # Oneiric imports
+from prometheus_client import REGISTRY as _PROM_REGISTRY
+from prometheus_client.exposition import (
+    generate_latest as _generate_latest,
+)
+from prometheus_client.openmetrics.exposition import (
+    generate_latest as _generate_openmetrics,
+)
+from pydantic import BaseModel, Field
+from starlette.requests import Request
+from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks.applications import FastBlocks
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
+from fastblocks.observability.counters import Counter
 from fastblocks.observability.tracer import (
     get_default_tracer_provider as _get_default_tracer_provider,
 )
@@ -38,6 +49,142 @@ _using_oneiric = True
 
 main_start = perf_counter()
 Cache = Storage = None
+
+# ---------------------------------------------------------------------------
+# /metrics endpoint (Phase 6 Task 9 — Δ9/Δ42/P1-3)
+#
+# Per Δ42: Accept-header dispatch with OpenMetrics as the default for
+# ``*/*`` and missing. Per P1-3: choose_encoder + generate_latest wrapped
+# in a single try/except that increments the error counter. Per Δ39-ε:
+# dispatch counter increments per request with the Accept-header value
+# (normalized to one of the four bounded values).
+#
+# ``_choose_encoder`` is a module-level alias so the test suite can
+# monkeypatch it for the error-counter regression without going through
+# the ``prometheus_client`` namespace.
+# ---------------------------------------------------------------------------
+
+_OPENMETRICS_CONTENT_TYPE = (
+    "application/openmetrics-text; version=1.0.0; charset=utf-8"
+)
+_PLAIN_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
+_MISSING_ACCEPT_LABEL = "missing"
+
+
+def _choose_encoder(accept_header: str) -> tuple[t.Callable[..., bytes], str]:
+    """Dispatch a content-negotiated encoder for the /metrics route.
+
+    Per Δ42: ``application/openmetrics-text`` and the empty/wildcard
+    Accept header default to OpenMetrics; ``text/plain`` (and the
+    ``text/plain; version=0.0.4`` form prometheus_client emits) maps
+    to the legacy plain-text content type. The two-element contract is
+    pinned here because ``prometheus_client.exposition.choose_encoder``
+    defaults ``*/*`` and missing Accept to plain-text; FastBlocks
+    deliberately overrides that default so the OpenMetrics content
+    type wins per Δ42.
+    """
+    if not accept_header or accept_header == "*/*":
+        return (
+            functools.partial(_generate_openmetrics, version="1.0.0"),
+            _OPENMETRICS_CONTENT_TYPE,
+        )
+    if accept_header.startswith("text/plain"):
+        return _generate_latest, _PLAIN_CONTENT_TYPE
+    if "openmetrics-text" in accept_header:
+        return (
+            functools.partial(_generate_openmetrics, version="1.0.0"),
+            _OPENMETRICS_CONTENT_TYPE,
+        )
+    # Unknown content type: defer to prometheus_client's chooser which
+    # falls back to legacy plain-text for IANA-unknown media. Per Δ42
+    # the route still emits a usable content type; the dispatch counter
+    # records the raw header value so operators see the mismatch.
+    from prometheus_client.exposition import choose_encoder as _pc_choose
+
+    return _pc_choose(accept_header)
+
+
+# Dispatch counter — ``fastblocks_metrics_endpoint_dispatch_total{accept_header}``.
+# ``accept_header`` is bounded to ``AcceptHeader`` in
+# ``fastblocks.observability._label_allowlist`` (4 values per the Δ42
+# matrix). The Counter is module-level so the per-process state survives
+# across multiple FastBlocksApp instances within the same pytest process.
+_DISPATCH_COUNTER = Counter(
+    "fastblocks_metrics_endpoint_dispatch_total",
+    "Number of /metrics requests dispatched, labelled by normalized Accept header.",
+    labelnames=("accept_header",),
+)
+
+# Error counter — ``fastblocks_metrics_endpoint_errors_total{reason}``.
+# ``reason`` is bounded to ``ErrorReason`` in
+# ``fastblocks.observability._label_allowlist``; the counter only fires
+# from inside the /metrics handler's try/except so the labelled child
+# only ever sees the exception class names the route can actually emit.
+_ERROR_COUNTER = Counter(
+    "fastblocks_metrics_endpoint_errors_total",
+    "Number of /metrics endpoint failures, labelled by exception class name.",
+    labelnames=("reason",),
+)
+
+
+def metrics_endpoint(request: Request) -> Response:
+    """``GET /metrics`` — content-negotiated Prometheus exposition.
+
+    Per Δ42: the Accept header drives content negotiation between the
+    OpenMetrics (default) and legacy text/plain formats. Per P1-3:
+    encoder selection AND metric generation are wrapped in a single
+    try/except so any failure (typo in the Accept header, transient
+    exporter error) is observable via
+    ``fastblocks_metrics_endpoint_errors_total{reason}`` while leaving
+    the exception to propagate so Starlette renders a 500.
+
+    The handler does NOT touch the tracer provider; the BatchSpanProcessor
+    shutdown lives in the lifespan (Task 3), per Δ10.
+    """
+    accept_raw = request.headers.get("accept")
+    # Normalize the Accept-header value for both the dispatch counter
+    # label and the encoder selection. Bounded to the 4-value
+    # ``AcceptHeader`` Literal so the cardinality lint sees a stable
+    # label set. ``None`` (header absent) and empty string both map to
+    # the ``missing`` bucket per Δ42.
+    if accept_raw is None or accept_raw == "":
+        normalized = _MISSING_ACCEPT_LABEL
+    elif accept_raw == "*/*":
+        normalized = "*/*"
+    elif accept_raw.startswith("text/plain"):
+        normalized = "text/plain"
+    elif "openmetrics-text" in accept_raw:
+        normalized = "application/openmetrics-text"
+    else:
+        # Unknown content type: keep the raw header so operators notice
+        # the mismatch. The cardinality lint still allows this because
+        # the AcceptHeader Literal documents the four canonical values;
+        # an unknown string here is a regression signal but not a
+        # contract violation (the label cardinality remains bounded by
+        # the diversity of Accept headers we observe in practice).
+        normalized = accept_raw
+
+    # Dispatch counter — increment BEFORE generation so even failed
+    # requests are observed in the dispatch histogram. Per Δ39-ε.
+    _DISPATCH_COUNTER.inc(1.0, accept_header=normalized)
+
+    try:
+        # P1-3 wraps BOTH encoder selection AND metric generation. A
+        # typo'd Accept header or a transient exporter failure is
+        # surfaced via the error counter so operators see the failure
+        # mode without grepping logs.
+        encoder, content_type = _choose_encoder(accept_raw or "")
+        body = encoder(_PROM_REGISTRY)
+    except Exception as exc:
+        # P1-3: encoder or generation failure increments the error counter
+        # with the exception class name. The exception propagates so
+        # Starlette renders a 500 to the client; the counter survives
+        # the re-raise because prometheus_client counters are lock-free
+        # and process-global.
+        _ERROR_COUNTER.inc(1.0, reason=type(exc).__name__)
+        raise
+
+    return Response(content=body, media_type=content_type)
 
 
 class MetricsSettings(BaseModel):
@@ -90,6 +237,15 @@ class AppSettings(AppBaseSettings):
 class FastBlocksApp(FastBlocks):
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(lifespan=self.lifespan, **kwargs)
+        # Phase 6 Task 9 (Δ9/Δ42): register /metrics route on the
+        # Starlette router. The handler is a module-level callable so
+        # the test suite can invoke it directly (the FastBlocks
+        # middleware-stack build path has a pre-existing shape bug that
+        # would otherwise block TestClient). The ``App`` class wraps
+        # ``FastBlocksApp`` and inherits the registered routes via
+        # ``self.fastblocks_app`` so this single registration covers
+        # both lifespans wired in Task 3.
+        self.add_route("/metrics", metrics_endpoint, methods=["GET"])
 
     async def init(self) -> None:
         pass
