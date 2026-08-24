@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.21.0"
+version = "0.22.0"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -88,16 +88,20 @@ dev = [
     "pytest-xdist~=3.8",
     "pyyaml~=6.0",
     "refurb~=2.2",
+    {include-group = "observability"},
 ]
 admin = [
     "sqladmin~=0.22",
 ]
 monitoring = [
     "logfire[starlette]~=4.15",
-    # sentry-sdk 3.0.0a7 is the only published release on the 3.x line
-    # at the time of writing; pin with >= until 3.0.0 stable ships.
-    "sentry-sdk[starlette]>=3.0.0a7",
-    "urllib3~=2.5",
+]
+observability = [
+    "prometheus-client~=0.21",
+    "opentelemetry-sdk~=1.44",
+    "opentelemetry-exporter-otlp-proto-http~=1.44",
+    "sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8",  # Δ55 alpha-locked
+    "mcp-common>=0.3,<0.4",  # Δ47 — lifted monkeypatch blast radius; explicit <0.4 cap
 ]
 images = [
     "cloudinary~=1.44",
