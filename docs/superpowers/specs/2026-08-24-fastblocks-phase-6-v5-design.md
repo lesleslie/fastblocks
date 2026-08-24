@@ -52,7 +52,7 @@ file:line evidence from today.
 | Δ | What changed | v4 said | v5 says |
 |---|--------------|---------|---------|
 | **Δ1 dep posture** | FastBlocks' actual dep-group structure is `dev`/`admin`/`monitoring`/`images` (pyproject.toml:68-104), NOT `ai`/`gpu`/`content-ingest`/`storage-pg` (those are Mahavishnu's groups per CLAUDE.md) | Cited Mahavishnu's groups as FastBlocks precedent (false) | Cites FastBlocks' actual `monitoring` group, plans re-pin of `sentry-sdk` into new `[observability]` (consolidation strategy) |
-| **Δ2 Sentry version** | `sentry-sdk 3.0.0a7` is in `uv.lock:4937` (already pinned by `monitoring` group) | Said "26.x installed" | Consolidates to `monitoring`→`observability` re-pin; references `sentry_sdk.opentelemetry` import path per ADR 0013:173-176 (known good path for 3.0.0a7) |
+| **Δ2 Sentry version** | `sentry-sdk 3.0.0a7` is in `uv.lock:4479` (already pinned by `monitoring` group) | Said "26.x installed" | Consolidates to `monitoring`→`observability` re-pin; references `sentry_sdk.opentelemetry` import path per ADR 0013:173-176 (known good path for 3.0.0a7); Δ21 fix: spec cited wrong lockfile line (4937 → 4479) |
 | **Δ3 ExceptionMiddleware dual site** | `FastBlocks.get_middleware_stack()` line 250 ALSO hardcodes `[("ExceptionMiddleware", ExceptionMiddleware)]` (not just `build_middleware_stack` line 368-374) | Cited only line 368-374 | Commit 0c fixes BOTH sites |
 | **Δ4 trace_context API** | Shipped API is `get()`/`set(token)`/`reset(token)` with token-safe nesting, NOT `clear()` | IC's Demonstrable by referenced nonexistent `clear()` | IC references token-safe API; preserves already-shipped aliases |
 | **Δ5 trace_context_lost_total** | `fastblocks/htmx.py:49-62` already does the production fix (commit `5c919f4`); regression test at `tests/htmx/test_trace_context_propagation.py:33-76` already proves propagation | Commit 12 asserted "trace context is lost" (would test dead code) | Drop Commit 12 (dead code); fold regression-preservation into Commit 3's Demonstrable by as item (d) |
@@ -107,8 +107,8 @@ verification time vs v3's optimistic 5 weeks).
 
 | Layer | Provides | Consumes |
 |-------|----------|----------|
-| Counters/Histograms (1) | `Counter("name", labelnames=(...))`, `Histogram.observe(value, exemplar={"trace_id"})` | `prometheus_client` (dep group) |
-| ObservabilityRegistry (1) | Singleton wrapping `prometheus_client.CollectorRegistry`; collects metric-name registry to prevent name collisions | 6A.1 |
+| Counters/Histograms (1) | `Counter("name", labelnames=(...))`, `Histogram.observe(value, exemplar={"trace_id"})`; Counter wrapper defaults `registry=ObservabilityRegistry` so all fastblocks-owned Counters land in `/metrics` exposition (avoids the global `prometheus_client.REGISTRY` isolation pitfall per dependency-manager round 2 P1-1) | `prometheus_client` (dep group) |
+| ObservabilityRegistry (1) | Singleton wrapping `prometheus_client.CollectorRegistry`; snapshots metric names at startup; raises `ValueError` on name collision per #9 | 6A.1 |
 | Structured logs (2) | `get_logger(name)` → JSON line via `structlog.merge_contextvars` | `structlog` (already core) |
 | OTel Tracer (3) | `get_tracer(name)` + `BatchSpanProcessor.shutdown()` contract | `opentelemetry-sdk` + `opentelemetry-exporter-otlp` (dep group) |
 | trace_context (10) | `get()`/`set(token)`/`reset(token)` ContextVar binding with structlog merge | 6A.3 |
@@ -168,19 +168,36 @@ signal, Observability added, Reviewers.
 
 ### Commit 0a — `chore(pyproject): [observability] optional dep group; consolidate sentry-sdk from monitoring`
 
-- *Triggered from:* Δ1, Δ2; pyproject.toml precedent `monitoring` (lines 94-101)
+- *Triggered from:* Δ1, Δ2; pyproject.toml precedent `monitoring` (lines 94-101); **Round 2 corrections Δ22 (version pins), Δ23 (proto-http not otlp meta-pkg), Δ24 (dev-group framing), Δ25 (breaking-change callout)**
 - *Returns to / updates:*
-  - `pyproject.toml` adds `[dependency-groups].observability = ["prometheus-client", "opentelemetry-sdk", "opentelemetry-exporter-otlp", "sentry-sdk[opentelemetry]"]`
-  - `pyproject.toml` `[dependency-groups].monitoring` removes `sentry-sdk[starlette]>=3.0.0a7` (consolidate to observability to avoid version skew)
-  - `pyproject.toml` `[dependency-groups].dev` adds `{include-group = "observability"}`
+  - `pyproject.toml` adds `[dependency-groups].observability` with **version pins** matching existing FastBlocks convention (`~=X.Y`; line 96 of pre-Commit-0a pyproject): `prometheus-client~=0.21`, `opentelemetry-sdk~=1.44` (matches Logfire's transitively-required pin), `opentelemetry-exporter-otlp-proto-http~=1.44` (**Δ23**; spec HTTP-only exporter per Δ9; avoids pulling `proto-grpc`/`grpcio`/`protobuf` transitively), `sentry-sdk[opentelemetry]>=3.0.0a7,<3.1`
+  - `pyproject.toml` `[dependency-groups].monitoring` removes `sentry-sdk[starlette]>=3.0.0a7` AND `urllib3~=2.5` (**Δ22 orphan-dep cleanup**; urllib3 was only there for sentry's transitive)
+  - `pyproject.toml` `[dependency-groups].dev` is **UNCHANGED** (**Δ24**): developer installs use `uv sync --group dev --group observability` explicitly rather than auto-bloating dev with observability runtime deps. Documented in install footprint matrix below.
+  - **Breaking change callout** (**Δ25**): removing `sentry-sdk` from `monitoring` group is a breaking change for any **workspace member** that previously did `uv sync --group monitoring` and relied on `sentry-sdk` transitively. **Library consumers** (`pip install fastblocks`) are unaffected — PEP 735 dep-groups do not flow to PyPI extras. Documented in Migration policy; bump FastBlocks version 0.21.0 → 0.22.0 to signal the minor-version break.
 - *Demonstrable by:*
   1. `uv sync` (lean) does NOT install; `python -c "from fastblocks.observability.counters import Counter; Counter(name='demo', labelnames=('r',))"` raises `RuntimeError` with install hint
   2. `uv sync --group observability` installs; same import succeeds
-  3. `.venv/bin/pip show sentry-sdk prometheus-client opentelemetry-sdk opentelemetry-exporter-otlp` returns version ≥ 1.0 for all four
-  4. `uv tree --depth 1 --group monitoring | grep sentry` returns 0 hits (consolidation confirmed)
-- *Rollback signal:* `git revert`; `monitoring` group retains old sentry-sdk; lean installs unaffected
+  3. `.venv/bin/pip show sentry-sdk prometheus-client opentelemetry-sdk opentelemetry-exporter-otlp-proto-http` returns matching versions: prometheus-client 0.21.x, opentelemetry-sdk 1.44.x, opentelemetry-exporter-otlp-proto-http 1.44.x, sentry-sdk 3.0.0a7
+  4. `uv tree --depth 1 --group monitoring | grep -E 'sentry|urllib3'` returns 0 hits (consolidation confirmed; urllib3 cleanup)
+  5. `uv tree --depth 1 --group observability | grep -E 'grpcio|protobuf|opentelemetry-exporter-otlp-proto-grpc'` returns 0 hits (**Δ23**; proto-grpc NOT pulled)
+  6. `[opentelemetry]` extra of `sentry-sdk` includes the OTel auto-instrumentation hooks needed by `sentry_sdk.opentelemetry` import path; not a free extra.
+- *CI install command:* `uv sync --all-groups --quiet` (canonical for crackerjack CI). Dev-only installs (no observability needed): `uv sync --group dev`. Lean prod install (no FastBlocks tests): no groups; observability runtime deps must be added via `uv pip install` or `[project].dependencies` if the operator's app needs them.
+- *Rollback signal:* `git revert`; `monitoring` group retains old sentry-sdk + urllib3; lean installs unaffected
 - *Observability added:* none directly; dep-graph only
-- *Reviewers:* 1 (python-pro for PEP 735 syntax + dep-group conformance)
+- *Reviewers:* **2** (python-pro for PEP 735 syntax + dep-group conformance; dependency-manager for version-pin rigor + workspace impact)
+
+### Install footprint matrix (**Δ22 Δ23 Δ24**)
+
+| Install command | What's installed | Use case |
+|---|---|---|
+| `uv sync` (lean) | Only `[project.dependencies]` | Production app runs (FastBlocks as a library) |
+| `uv sync --group dev` | Lean + testing/lint tooling | Local dev without observability work |
+| `uv sync --group observability` | Lean + observability runtime | Production app with metrics/traces |
+| `uv sync --group dev --group observability` | Dev tooling + observability | Phase 6 implementation work |
+| `uv sync --group monitoring` | Lean + Logfire | Legacy path (Sentry removed in Δ25) |
+| `uv sync --all-groups` | Everything | CI canonical install (crackerjack) |
+
+If **both `monitoring` and `observability` groups are co-installed** (**Δ22 Δ26 dual-version OTel risk**): `logfire~=4.15` pins `opentelemetry-sdk==1.44.0`; Commit 0a's `~=1.44` is compatible (resolve to 1.44.x). With `uv lock --upgrade`, `logfire`'s pin is the de facto version constraint; the new `observability` group's unconstrained entries (after Commit 0a's pins) will resolve to whatever `logfire` accepts. **Spec mandates**: when both groups are present, the operator should pin `opentelemetry-sdk` to exactly the version `logfire` requires, not just `~=`.
 
 ### Commit 0b — `feat(settings): settings/observability.yaml + PyProjectSettings observability extension`
 
@@ -434,7 +451,8 @@ signal, Observability added, Reviewers.
 Per master plan line 350: no backwards compatibility required. Per
 master plan line 356: no deprecation warnings. v5-specific migration:
 
-- Commit 0a's dep-group re-pinning means any project depending on `fastblocks` and using `sentry-sdk` via the `monitoring` group must migrate to the `observability` group. The `monitoring` group retains Logfire + urllib3 but loses Sentry.
+- **Commit 0a dep-group re-pinning** (Δ25, Δ26): PEP 735 dep-groups do NOT flow to PyPI library consumers (`pip install fastblocks` does not install `monitoring` or `observability` groups). The breaking-change surface is **workspace members** (projects using FastBlocks as `[tool.uv.sources]` workspace) that previously did `uv sync --group monitoring` and relied on `sentry-sdk` transitively. Those projects must explicitly add `sentry-sdk` to their own `[project].dependencies` or migrate to `--group observability` (which now owns Sentry). FastBlocks version bump 0.21.0 → 0.22.0 signals the change.
+- The `monitoring` group after Δ25 retains `logfire[starlette]~=4.15` only (loses `sentry-sdk[starlette]>=3.0.0a7` AND `urllib3~=2.5`, both consumed only by sentry). If a workspace member still wanted `monitoring`-style observability via Logfire, they install `monitoring`; if they want Sentry, they install `observability`.
 - Commit 0c's `ExceptionMiddleware` decoupling is non-breaking for default operators (outermost preserved) but a behavioral change for anyone who relied on `FastBlocks.get_middleware_stack()`'s hardcoded `[("ExceptionMiddleware", ExceptionMiddleware)]` first entry.
 - Commit 12's `disabled_on_import_error` default flips from `true` to `false` — operators who relied on silent Sentry soft-fail must explicitly set the flag.
 
@@ -485,7 +503,8 @@ vendoring (Δ21), pre-commit 0c with 3 ordering tests.
 - Phase 5 v4 spec: test infrastructure rebuild
 - Phase 6.5 commits: `8c5c117` (LifespanManager), `fb74d13` (trace_context binds structlog), `a102f68` (autouse fixture), `5c919f4` (htmx.py boundary fix — Δ5 closes Commit 12)
 - crackerjack-compliant-code: per-commit hygiene
-- CLAUDE.md: hard limits, **note that optional dep-group pattern is cross-project (Mahavishnu has `ai`/`gpu`/etc.; FastBlocks has `dev`/`admin`/`monitoring`/`images` — Confirmed by architecture agent round 1)**
+- CLAUDE.md: hard limits
+- **Cross-project citation correction** (Δ P1-5): the v4 claim that "optional dep-group pattern is cross-project (Mahavishnu has `ai`/`gpu`/etc.; FastBlocks has `dev`/`admin`/`monitoring`/`images`)" was correct in spirit but **misattributed the source**. The dep-group convention is documented in **Mahavishnu's CLAUDE.md** (`/Users/les/Projects/mahavishnu/.claude/CLAUDE.md`), not FastBlocks'. FastBlocks' `.claude/CLAUDE.md` is a thin agent-discovery shim with no dep-group documentation. v5 cites Mahavishnu's CLAUDE.md as the canonical source. Round 2 dependency-manager agent confirmed this distinction.
 
 ## Decisions captured during design (v5 additions only)
 
@@ -549,6 +568,38 @@ group).
     assertion was structurally correct only with respect to
     `MiddlewareManager.get_middleware_stack()` (returns dict with
     user_middleware list) but the positioning direction was wrong.
+
+**Round-2 decisions (dependency-manager review)**:
+
+28. **Version pins applied to `observability` group** (Δ22): each
+    entry uses `~=X.Y` shape matching existing FastBlocks convention
+    (`monitoring` group's `logfire[starlette]~=4.15`, `urllib3~=2.5`).
+    Unconstrained entries + alpha OTel + `uv lock --upgrade` = silent
+    breakage. Pins: `prometheus-client~=0.21`, `opentelemetry-sdk~=1.44`,
+    `opentelemetry-exporter-otlp-proto-http~=1.44`,
+    `sentry-sdk[opentelemetry]>=3.0.0a7,<3.1`.
+29. **`opentelemetry-exporter-otlp-proto-http`, not the meta-pkg** (Δ23):
+    the meta-pkg `opentelemetry-exporter-otlp` pulls BOTH
+    `proto-grpc` AND `proto-http`; since Δ9 commits to HTTP-only
+    (per `prometheus_client.exposition.choose_encoder`), pin the
+    specific `proto-http` variant. Avoids ~10 transitive deps
+    (`grpcio`, `protobuf`) that the project doesn't use.
+30. **`dev` group unchanged; observability is opt-in via `--group`** (Δ24):
+    rather than auto-bloat every `uv sync --group dev` install with
+    observability runtime deps, document the matrix in the spec.
+    Matches FastBlocks' existing `dev` framing as "project-agnostic
+    developer tools" (pyproject.toml:70-73).
+31. **Breaking change callout for `monitoring` group** (Δ25):
+    removing `sentry-sdk` from `monitoring` is a breaking change for
+    **workspace members** (not library consumers via PyPI). Bumps
+    FastBlocks version 0.21.0 → 0.22.0. PEP 735 dep-groups don't flow
+    to PyPI extras; library consumers are unaffected.
+32. **Dual-version OTel safety net** (Δ26): if `monitoring` +
+    `observability` are co-installed, `logfire~=4.15` is the de facto
+    constraint on `opentelemetry-sdk`. Spec mandates operators pin to
+    exact version when both groups are present, not just `~=`.
+33. **`urllib3~=2.5` removed from `monitoring`** (P1-2): orphaned by
+    Δ25; was sentry's transitive only.
 
 ## Spec self-review checklist
 
