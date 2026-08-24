@@ -36,8 +36,12 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from fastblocks.applications import FastBlocks
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 from fastblocks.observability.counters import Counter
+from fastblocks.observability.sentry_bridge import init_sentry
 from fastblocks.observability.tracer import (
     get_default_tracer_provider as _get_default_tracer_provider,
+)
+from fastblocks.observability.tracer import (
+    setup_default_tracer_provider as _setup_default_tracer_provider,
 )
 
 from ..oneiric_helper import resolve_instance
@@ -397,6 +401,16 @@ class FastBlocksApp(FastBlocks):
         app.state.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader("templates"),
         )
+        # Per v6 Δ11/Δ19: install the OTel TracerProvider BEFORE
+        # ``init_sentry()`` so the alpha Sentry SDK can auto-wire its
+        # ``SentrySpanProcessor`` against the active provider.
+        # ``init_sentry()`` is a no-op when ``SENTRY_DSN`` is unset;
+        # the call is safe in lean installs (raises
+        # ``SentryImportError(reason="import_error")`` only when both
+        # the DSN IS set AND the SDK cannot be imported — see the
+        # bridge module for the ALPHA contract).
+        _setup_default_tracer_provider()
+        init_sentry()
         yield
         # Per v6 Δ10/Δ18: flush pending spans via the BatchSpanProcessor
         # before app teardown so the OTLP exporter does not lose the
@@ -527,6 +541,17 @@ class App(AppBase):
             # startup failure rather than silently serving traffic.
             self.logger.exception("Error during startup")
             raise
+        # Per v6 Δ11/Δ19: same ordering contract as ``FastBlocksApp.
+        # lifespan`` — install the OTel TracerProvider first, then
+        # ``init_sentry()`` so the alpha Sentry SDK can attach its
+        # ``SentrySpanProcessor`` to the active provider. See the
+        # ``FastBlocksApp.lifespan`` comment above for the full
+        # rationale; both lifespans must honor the same ordering
+        # because ``App.lifespan`` is the runtime-instantiated path
+        # (App.fastblocks_app delegates to FastBlocksApp, but the
+        # middleware + tracer setup runs through this class first).
+        _setup_default_tracer_provider()
+        init_sentry()
         yield
         # Per v6 Δ10/Δ18 + resolved-ambiguity: flush pending spans via
         # the BatchSpanProcessor before app teardown so the OTLP
