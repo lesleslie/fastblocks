@@ -21,17 +21,17 @@ async def test_fastblocks_discovery_emits_full_schema() -> None:
     mock_tool_template = MagicMock()
     mock_tool_template.name = "validate_template"
     mock_tool_template.description = "Validate a template."
-    mock_tool_template.parameters = {"type": "object", "properties": {}}
+    mock_tool_template.inputSchema = {"type": "object", "properties": {}}
 
     mock_tool_component = MagicMock()
     mock_tool_component.name = "list_components"
     mock_tool_component.description = "List components."
-    mock_tool_component.parameters = {"type": "object", "properties": {}}
+    mock_tool_component.inputSchema = {"type": "object", "properties": {}}
 
     mock_tool_adapter = MagicMock()
     mock_tool_adapter.name = "check_adapter_health"
     mock_tool_adapter.description = "Check adapter health."
-    mock_tool_adapter.parameters = {"type": "object", "properties": {}}
+    mock_tool_adapter.inputSchema = {"type": "object", "properties": {}}
     mock_server = MagicMock()
     mock_server.list_tools = AsyncMock(
         return_value=[mock_tool_template, mock_tool_component, mock_tool_adapter]
@@ -69,7 +69,7 @@ async def test_fastblocks_discovery_query_filter() -> None:
         m = MagicMock()
         m.name = name
         m.description = desc
-        m.parameters = {"type": "object"}
+        m.inputSchema = {"type": "object"}
         mock_tools.append(m)
     mock_server = MagicMock()
     mock_server.list_tools = AsyncMock(return_value=mock_tools)
@@ -96,9 +96,9 @@ async def test_fastblocks_discovery_skipped_tool_not_in_result() -> None:
     mock_server.list_tools = AsyncMock(
         return_value=[
             MagicMock(name="validate_template", description="x",
-                      parameters={"type": "object"}),
+                      inputSchema={"type": "object"}),
             MagicMock(name="list_components", description="x",
-                      parameters={"type": "object"}),
+                      inputSchema={"type": "object"}),
         ]
     )
 

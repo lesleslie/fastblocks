@@ -386,7 +386,7 @@ async def fastblocks_discovery(
                 "name": t.name,
                 "capability": capability,
                 "description": t.description or "",
-                "inputSchema": t.parameters,
+                "inputSchema": t.inputSchema,
             }
         )
     if filter_query:
