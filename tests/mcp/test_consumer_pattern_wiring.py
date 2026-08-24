@@ -48,27 +48,25 @@ import sys
 from unittest.mock import patch
 
 import pytest
+from fastmcp import FastMCP
 from fastmcp.tools import Tool as FastMCPTool
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.tools import Tool as MCPServerTool
 
 # ---------------------------------------------------------------------------
-# Workaround #1: mcp_common + FastMCP + Python 3.14 ``add_tool`` incompatibility.
-# mcp_common passes a Tool object to server.add_tool(); FastMCP.add_tool
-# expects a function and tries Tool.from_function(fn) → fn.__name__ which
-# fails on a pydantic BaseModel instance. Short-circuit when given a Tool.
+# Workaround #1: mcp_common may pass the same Tool object to add_tool twice
+# during profile resolution. v2's LocalProvider._on_duplicate defaults to
+# "error", so a duplicate add raises ValueError. Short-circuit to return the
+# existing component (mirrors v1 monkeypatch dedup intent, adapted to v2
+# storage: self._local_provider._components keyed by tool.key).
 # ---------------------------------------------------------------------------
 _original_add_tool = FastMCP.add_tool
 
 
-def _patched_add_tool(self, fn, name=None, **kwargs):  # type: ignore[no-untyped-def]
-    if isinstance(fn, (FastMCPTool, MCPServerTool)):
-        existing = self._tool_manager._tools.get(fn.name)
+def _patched_add_tool(self, tool):  # type: ignore[no-untyped-def]
+    if isinstance(tool, FastMCPTool):
+        existing = self._local_provider._components.get(tool.key)
         if existing:
             return existing
-        self._tool_manager._tools[fn.name] = fn
-        return fn
-    return _original_add_tool(self, fn, name=name, **kwargs)
+    return _original_add_tool(self, tool)
 
 
 FastMCP.add_tool = _patched_add_tool  # type: ignore[assignment]
