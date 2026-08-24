@@ -11,9 +11,7 @@ place without coupling to a JSON library.
 """
 from __future__ import annotations
 
-import pytest
 import structlog
-
 from fastblocks.observability.loggers import (
     configure_logging,
     get_logger,
@@ -23,7 +21,6 @@ from fastblocks.observability.loggers import (
 def test_get_logger_returns_bound_logger() -> None:
     """Per brief: get_logger(name) -> structlog.stdlib.BoundLogger."""
     log = get_logger("mymod")
-    assert log is not None
     # BoundLogger has .info / .warning / .exception etc.
     assert hasattr(log, "info")
     assert hasattr(log, "warning")

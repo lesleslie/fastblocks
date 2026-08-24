@@ -37,7 +37,8 @@ the readable ``with span: ...`` form.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -136,7 +137,7 @@ class OtelMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self,
         request: Request,
-        call_next: Any,
+        call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         # Lazy import the OTel tracer so the lean-install guard in
         # ``tracer.py`` raises ``MissingDependencyError`` only when this
