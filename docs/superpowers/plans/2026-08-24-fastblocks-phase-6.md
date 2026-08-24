@@ -24,7 +24,7 @@
 - `mcp-common<0.4` pin (per Δ47; until upstream Tool pydantic bug fixed)
 - Pin versions use `~=X.Y` (per Round-2 dependency-manager): `prometheus-client~=0.21`, `opentelemetry-sdk~=1.44`, `opentelemetry-exporter-otlp-proto-http~=1.44`, `sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8` (Δ55 — alpha-locked to exact alpha range; alphas break `sentry_sdk.opentelemetry` between versions)
 - `pyproject.toml` `[tool.uv]` config: `prerelease = "allow"` (project-wide); `python_version` not set (Python 3.14 required)
-- All observability wrappers use `Counter(name, /, documentation: str, *labelnames: str)` positional-only form
+- All observability wrappers use `Counter(name: str, /, documentation: str, labelnames: tuple[str, ...] = ())` form — kwarg-able with default empty tuple, mirroring prometheus_client.Counter's native signature. **Variadic-string positional form (`Counter("foo", "docs", "label1", "label2")`) is NOT supported.** (Updated 2026-08-24 per Task 1 fix round 1 + reviewer adjudication: kwarg form was chosen because it mirrors prometheus_client API; the brief's source spec (`*labelnames`) and tests (`labelnames=(...)`) were internally inconsistent, and the tests are authoritative)
 - All `Histogram.observe` use `def observe(self, value: float, *, exemplar: dict[str, str] | None = None) -> None` keyword-only exemplar
 - `from __future__ import annotations` first non-comment line of every source file (per CLAUDE.md)
 - `pathlib.Path` (not `os.path`) for filesystem paths (per CLAUDE.md)
