@@ -7,15 +7,19 @@ Author: lesleslie <les@wedgwoodwebworks.com>
 Created: 2025-01-12
 """
 
+from __future__ import annotations
+
 import asyncio
 import typing as t
 from base64 import b64encode
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from time import perf_counter
+from typing import Literal
 from uuid import UUID
 
 import jinja2
+from pydantic import BaseModel, Field
 
 # Oneiric imports
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -33,9 +37,32 @@ main_start = perf_counter()
 Cache = Storage = None
 
 
+class MetricsSettings(BaseModel):
+    accept_dispatch: bool = True
+
+
+class TracesSettings(BaseModel):
+    shutdown_on_lifespan_exit: bool = True
+
+
+class SentrySettings(BaseModel):
+    disabled_on_import_error: bool = False
+    profiling_enabled: bool = False
+
+
+class ObservabilitySettings(BaseModel):
+    cardinality_mode: Literal["off", "audit", "warn", "enforce"] = "enforce"
+    metrics: MetricsSettings = Field(default_factory=MetricsSettings)
+    traces: TracesSettings = Field(default_factory=TracesSettings)
+    sentry: SentrySettings = Field(default_factory=SentrySettings)
+
+
 class AppSettings(AppBaseSettings):
     url: str = "http://localhost:8000"
     token_id: str | None = "_fb_"
+    observability: ObservabilitySettings = Field(
+        default_factory=ObservabilitySettings,
+    )
 
     def __init__(self, **data: t.Any) -> None:
         if not data:

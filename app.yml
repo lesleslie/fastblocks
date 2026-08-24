@@ -1,0 +1,11 @@
+# FastBlocks application configuration.
+# Observability block per Phase 6 v6 spec defaults (Commit 0b).
+observability:
+  cardinality_mode: enforce
+  metrics:
+    accept_dispatch: true
+  traces:
+    shutdown_on_lifespan_exit: true
+  sentry:
+    disabled_on_import_error: false
+    profiling_enabled: false
