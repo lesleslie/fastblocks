@@ -83,14 +83,10 @@ def add_tool_safe(server: Any, name: str, fn: Any, **kwargs: Any) -> Any:
         return fn
 
     # Plain function / callable path — delegate to the server's add_tool.
-    # ``server.add_tool(fn)`` is the v2 fastmcp signature (single
-    # positional arg; Tool name comes from ``fn.__name__`` or the Tool
-    # object's ``.name``). The legacy mcp_common / ``mcp.server.fastmcp``
-    # signature ``server.add_tool(fn, name=name)`` would fail here; we
-    # drop the ``name`` kwarg unconditionally and rely on the Tool object's
-    # own ``.name`` attribute for the canonical identity.
-    try:
-        return server.add_tool(fn, name=name, **kwargs)
-    except TypeError:
-        # v2 fastmcp signature — single positional arg.
-        return server.add_tool(fn)
+    # fastmcp>=3 signature is a single positional arg; Tool name comes from
+    # ``fn.__name__`` (for plain callables) or the Tool object's ``.name``.
+    # The legacy mcp_common / ``mcp.server.fastmcp`` signature
+    # ``server.add_tool(fn, name=name)`` was removed with the v1 module,
+    # so we no longer need the try/except TypeError fallback (per
+    # Wave 6 / Task 1).
+    return server.add_tool(fn)

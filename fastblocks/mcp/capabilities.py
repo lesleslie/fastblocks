@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP  # v2 split: fastmcp>=3 removed mcp.server.fastmcp shim
 
 # ---------------------------------------------------------------------------
 # Capability membership — pure data, exported for consumer introspection.

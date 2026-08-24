@@ -49,7 +49,13 @@ class FastBlocksMCPServer:
             # are part of `mcp_common.cli.MCPServerCLIFactory`). FastMCP gives us a
             # working MCP server; Dhara (which replaced Oneiric MCP) infrastructure
             # hooks (rate limiting, health) can be layered on later.
-            from mcp.server.fastmcp import FastMCP
+            #
+            # Per Wave 6 Task 1: migrate from the v1 path ``mcp.server.fastmcp``
+            # (removed in fastmcp>=3) to the v2 path ``fastmcp``. The v1 module
+            # raises ``ModuleNotFoundError`` under fastmcp 3.x/4.x; the previous
+            # ``except ImportError`` swallowed that failure and left
+            # ``_initialized = False`` while reporting the server as operational.
+            from fastmcp import FastMCP
 
             self._server = FastMCP(name=self.name)
 
