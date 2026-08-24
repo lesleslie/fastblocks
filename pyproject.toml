@@ -102,6 +102,7 @@ observability = [
     "opentelemetry-exporter-otlp-proto-http~=1.44",
     "sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8",  # Δ55 alpha-locked
     "mcp-common>=0.3,<0.4",  # Δ47 — lifted monkeypatch blast radius; explicit <0.4 cap
+    "structlog~=24.4",  # Δ40 — log_correlation mapping; structlog 26 not yet pinned by upstream
 ]
 images = [
     "cloudinary~=1.44",
