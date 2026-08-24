@@ -12,7 +12,7 @@ from uuid import UUID
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
 if TYPE_CHECKING:
-    from mcp.server.fastmcp import FastMCP
+    from fastmcp import FastMCP
 
 # Lazy resolver dependency. ``depends`` is left None at import time so
 # the discovery module can be imported even when ``FastblocksRegistry``
