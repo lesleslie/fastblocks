@@ -1,0 +1,391 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "FastBlocks observability overview dashboard. Ties together the per-metric instrumentation matrix from v6 spec §Decision 36 (Phase 6 runbook). Eight panels, each referencing a metric defined by Phases 6A (counters/OTel) and 6B (cardinality guards) and 6C (bridges: MCP, Sentry, a11y). Datasource: Prometheus. Schema: Grafana 10.x (schemaVersion 39).",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "MCP Tool Invocations / sec",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "Per-tool MCP invocation rate. Labels: tool_name (P1-5 enumerated), tool_status (ok/error/validation_error per Δ30). Source: Task 8 fastblocks_mcp_tool_invocations_total Counter.",
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "invocations/sec",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "expr": "sum by (tool_name) (rate(fastblocks_mcp_tool_invocations_total[5m]))",
+          "refId": "A",
+          "legendFormat": "{{tool_name}}",
+          "datasource": {"type": "prometheus", "uid": "prometheus"}
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "MCP Tool Duration p95 (seconds)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "p95 wall-clock duration of MCP tool invocations, per tool_name. Histogram source: Task 8 fastblocks_mcp_tool_duration_seconds. The dashboard queries the auto-generated _bucket suffix (Prometheus convention); the validator normalises this back to the base metric name.",
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "seconds",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (tool_name, le) (rate(fastblocks_mcp_tool_duration_seconds_bucket[5m])))",
+          "refId": "A",
+          "legendFormat": "p95 {{tool_name}}",
+          "datasource": {"type": "prometheus", "uid": "prometheus"}
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Oneiric Resolver Decisions / sec",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "Per-second rate of Oneiric resolver decisions grouped by outcome. decision ∈ Literal[\"resolved\", \"error\"] (Δ29 reduced). Source: Task 4 DecisionSpanProcessor / fastblocks_oneiric_decision_total Counter.",
+      "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "decisions/sec",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "expr": "sum by (decision) (rate(fastblocks_oneiric_decision_total[5m]))",
+          "refId": "A",
+          "legendFormat": "{{decision}}",
+          "datasource": {"type": "prometheus", "uid": "prometheus"}
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Cardinality Violations / sec (audit mode)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "Per-second rate of cardinality violations observed in audit mode. CardinalityGuard raises MetricCardinalityViolation in enforce mode; here we count audit-mode hits. Source: Task 5 fastblocks_cardinality_violations_total Counter.",
+      "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "violations/sec",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "expr": "sum by (label) (rate(fastblocks_cardinality_violations_total[5m]))",
+          "refId": "A",
+          "legendFormat": "{{label}}",
+          "datasource": {"type": "prometheus", "uid": "prometheus"}
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "/metrics Endpoint — Dispatch + Errors (table)",
+      "type": "table",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "Two targets on one panel: (A) /metrics endpoint dispatch count normalised by Accept header class (openmetrics / text / wildcard / missing / other, per Δ53 cardinality-bounded 5-value Literal). (B) /metrics endpoint error count by exception class. Sources: Task 9 fastblocks_metrics_endpoint_dispatch_total + fastblocks_metrics_endpoint_errors_total.",
+      "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "custom": {
+            "align": "auto",
+            "cellOptions": {"type": "auto"},
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null}
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false},
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "sum by (accept_header) (rate(fastblocks_metrics_endpoint_dispatch_total[5m]))",
+          "refId": "A",
+          "legendFormat": "dispatch {{accept_header}}",
+          "format": "table",
+          "instant": true,
+          "datasource": {"type": "prometheus", "uid": "prometheus"}
+        },
+        {
+          "expr": "sum by (reason) (rate(fastblocks_metrics_endpoint_errors_total[5m]))",
+          "refId": "B",
+          "legendFormat": "errors {{reason}}",
+          "format": "table",
+          "instant": true,
+          "datasource": {"type": "prometheus", "uid": "prometheus"}
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "OtelMiddleware Reset Failures / sec",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "Per-second rate of OtelMiddleware trace_context.reset(token) failures. reason label is the exception class name. Runbook threshold (Δ54): any rate > 0 indicates a programming bug — token discipline broken; restart app + open ticket. Source: Task 11 fastblocks_otel_middleware_reset_failed_total Counter.",
+      "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "failures/sec",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "expr": "sum by (reason) (rate(fastblocks_otel_middleware_reset_failed_total[5m]))",
+          "refId": "A",
+          "legendFormat": "{{reason}}",
+          "datasource": {"type": "prometheus", "uid": "prometheus"}
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Sentry Bridge Disabled / sec",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "Cumulative count of times the Sentry bridge was disabled. reason ∈ Literal[\"import_error\", \"init_runtime_error\"] (Δ39-ζ). Brief mentioned Δ57 rename to fastblocks_sentry_init_failures_total; current Task 12 code uses fastblocks_sentry_disabled_total — the canonical name in code is the metric exported today. Runbook threshold: any rate > 0 → verify Sentry SDK alpha pin (sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8 per Δ55) and sentry_sdk.opentelemetry import path. Source: Task 12 fastblocks_sentry_disabled_total Counter.",
+      "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "yellow", "value": 1},
+              {"color": "red", "value": 10}
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+        "showPercentChange": false,
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum by (reason) (increase(fastblocks_sentry_disabled_total[1h]))",
+          "refId": "A",
+          "legendFormat": "{{reason}}",
+          "datasource": {"type": "prometheus", "uid": "prometheus"}
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "a11y Bridge Dropped / sec (by region)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "description": "Per-second rate of a11y bridge events dropped due to per-region rate-limit budget (5 mutations/second). region label is the WCAG aria-live region (miss / polite / status / logs / etc. per Δ10 routing). Runbook threshold (Δ54): rate > 5/s for 1 min indicates front-end bug — WS subscription missing or DOM selector drift; check Playwright trace. Source: Task 13 fastblocks_a11y_bridge_dropped_total Counter.",
+      "gridPos": {"x": 12, "y": 24, "w": 12, "h": 8},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "palette-classic"},
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "drops/sec",
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "scaleDistribution": {"type": "linear"},
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {"group": "A", "mode": "none"},
+            "thresholdsStyle": {"mode": "off"}
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"mode": "multi", "sort": "none"}
+      },
+      "targets": [
+        {
+          "expr": "sum by (region) (rate(fastblocks_a11y_bridge_dropped_total[5m]))",
+          "refId": "A",
+          "legendFormat": "{{region}}",
+          "datasource": {"type": "prometheus", "uid": "prometheus"}
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["fastblocks", "phase-6", "observability"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "FastBlocks Overview",
+  "uid": "fastblocks-overview",
+  "version": 1,
+  "weekStart": ""
+}
