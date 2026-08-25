@@ -20,6 +20,95 @@ from typing import Any
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _reset_observability_registries() -> None:
+    """Save/restore ObservabilityRegistry state around each test in this file.
+
+    Per Wave 7 Task 3: ``tests/conftest.py:restore_module_state`` deletes
+    ``fastblocks.*`` modules from ``sys.modules`` between tests, but leaves
+    ``fastblocks.observability.registry`` (the module that owns the
+    process-global ``ObservabilityRegistry._names`` set) and
+    ``prometheus_client.REGISTRY`` (which owns the actual Counter and
+    Histogram instances) intact. Tests in this file import
+    ``fastblocks.mcp.observability`` inside each test body, which triggers
+    the module-level ``_INVOCATIONS_COUNTER, _DURATION_HISTOGRAM =
+    _build_metrics()`` on re-import. ``Counter.__init__`` and
+    ``Histogram.__init__`` both call ``ObservabilityRegistry.register(name)``,
+    which raises ``MetricNameCollisionError`` when the name is already in
+    ``_names``; the underlying ``prometheus_client.Counter`` /
+    ``prometheus_client.Histogram`` constructors raise ``ValueError``
+    against the duplicate name in ``prometheus_client.REGISTRY``.
+
+    This autouse fixture saves ``ObservabilityRegistry._names`` at setup,
+    then clears it (and unregisters the canonical collectors from
+    ``prometheus_client.REGISTRY``) so the test body can re-register
+    cleanly, then restores ``_names`` at teardown so the state observed
+    by tests in OTHER files (e.g. ``test_mcp_observability.py``'s
+    ``test_metrics_use_process_unique_metric_names`` which asserts on
+    ``_names``) is preserved across this fixture's mutation.
+
+    Without the setup half, tests 2-5 fail with ``MetricNameCollisionError``
+    while test 1 (which triggers the first module import) passes. Without
+    the teardown half, ``_names`` ends this file empty, breaking
+    ``test_mcp_observability.py::test_metrics_use_process_unique_metric_names``.
+
+    The ``fastblocks.mcp.observability`` public API is unchanged.
+    """
+    import sys
+
+    from fastblocks.observability.registry import ObservabilityRegistry
+    from prometheus_client import REGISTRY as PROM_REGISTRY
+
+    _METRIC_NAMES = (
+        "fastblocks_mcp_tool_invocations_total",
+        "fastblocks_mcp_tool_duration_seconds",
+    )
+
+    # SAVE: capture the current state of ObservabilityRegistry._names so
+    # we can restore it at teardown. ``ObservabilityRegistry._names`` is
+    # process-global; without this save/restore, the setup's clear would
+    # leak into subsequent test files that assert on _names contents.
+    saved_names = set(ObservabilityRegistry._names)
+
+    # Unregister the canonical collectors from prometheus_client.REGISTRY so
+    # the next ``Counter(name, ...)`` construction (inside the test body's
+    # re-import) doesn't raise ``ValueError("Duplicated timeseries")``.
+    # Reach into the private ``_names_to_collectors`` mapping because that
+    # is the only way to locate collectors by name after the module that
+    # owned them may have been deleted from sys.modules.
+    for metric_name in _METRIC_NAMES:
+        collector = PROM_REGISTRY._names_to_collectors.get(metric_name)
+        if collector is not None:
+            try:
+                PROM_REGISTRY.unregister(collector)
+            except KeyError:
+                # Collector was already unregistered by another path; benign.
+                pass
+
+    # Clear ObservabilityRegistry._names so the next register() call doesn't
+    # raise MetricNameCollisionError on the names we are about to re-add.
+    ObservabilityRegistry._names.clear()
+
+    # Drop the observability module from sys.modules if still present so
+    # the next ``from fastblocks.mcp.observability import ...`` triggers
+    # a fresh ``_build_metrics()`` registration against the now-empty
+    # registries. Tests that import at module level (e.g.
+    # test_mcp_observability.py) would otherwise leave a stale module
+    # object whose module-level singletons are no longer registered.
+    if "fastblocks.mcp.observability" in sys.modules:
+        del sys.modules["fastblocks.mcp.observability"]
+
+    yield
+
+    # RESTORE: remove any canonical names the test body re-registered,
+    # then re-add the saved names. This returns ``_names`` to its state
+    # at fixture setup (before any test-body re-registration) so the
+    # process-global set remains consistent for tests in other files.
+    for metric_name in _METRIC_NAMES:
+        ObservabilityRegistry._names.discard(metric_name)
+    ObservabilityRegistry._names.update(saved_names)
+
+
 @pytest.mark.unit
 async def test_instrument_tool_marks_idempotency_flag() -> None:
     """Wrapping the same func twice does NOT produce a double-wrap.
