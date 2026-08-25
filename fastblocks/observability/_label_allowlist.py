@@ -189,7 +189,7 @@ WebsocketRegion = Literal[
 # types themselves are the canonical contract.
 # ---------------------------------------------------------------------------
 
-_KNOWN_LABELS: dict[str, type[Any]] = {
+_KNOWN_LABELS: dict[str, Any] = {
     "tool_status": ToolStatus,
     "tool_name": ToolName,
     "decision": OneiricDecision,

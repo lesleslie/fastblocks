@@ -103,7 +103,7 @@ def _init_drop_counter() -> Counter:
 
 def _ensure_drop_counter_loaded() -> Counter:
     """Module-dictionary cache pattern (matches sentry_bridge)."""
-    global _DROPPED_COUNTER
+    global _DROPPED_COUNTER  # ty: ignore[unresolved-global]
     try:
         return _DROPPED_COUNTER  # type: ignore[name-defined]
     except NameError:
