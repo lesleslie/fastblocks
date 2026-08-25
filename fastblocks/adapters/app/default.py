@@ -450,7 +450,7 @@ class FastBlocksApp(FastBlocks):
         # last batch. Idempotent on the cached provider (the module-
         # level cache in ``observability.tracer`` survives across
         # lifespan invocations).
-        await _get_default_tracer_provider().shutdown()
+        _get_default_tracer_provider().shutdown()  # ty: ignore[unresolved-attribute]
         logger = getattr(self, "logger", None)
         if logger:
             logger.info("FastBlocks application shutting down")
@@ -591,7 +591,7 @@ class App(AppBase):
         # exporter does not lose the last batch. The call is on the
         # runtime path (``App.lifespan`` is the class instantiated at
         # runtime — see comment at FastBlocksApp.lifespan, line 226).
-        await _get_default_tracer_provider().shutdown()
+        _get_default_tracer_provider().shutdown()  # ty: ignore[unresolved-attribute]
         self.logger.critical("Application shut down")
         try:
             await self._shutdown_logger()

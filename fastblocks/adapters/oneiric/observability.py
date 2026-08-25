@@ -157,7 +157,7 @@ class DecisionSpanProcessor(SpanProcessor):
         # the SDK's Span wrapper exposes ``.name`` directly. Use a
         # try/except because some test mocks may not have a name.
         try:
-            name = span.name  # type: ignore[attr-defined]
+            name = span.name  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
         except AttributeError:
             return
         if name != "resolver.decision":

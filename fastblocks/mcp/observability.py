@@ -139,5 +139,5 @@ def instrument_tool(
                 )
 
     # Δ49: idempotency marker — checked on entry to ``instrument_tool``.
-    wrapper.__wrapped_by_instrument_tool__ = True  # type: ignore[attr-defined]
+    wrapper.__wrapped_by_instrument_tool__ = True  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
     return wrapper

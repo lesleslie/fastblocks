@@ -412,5 +412,19 @@ class Histogram:
         ObservabilityRegistry.register(name)
         self._inner = _PromHistogram(name, documentation, labelnames=list(labelnames), buckets=list(buckets))
 
-    def observe(self, value: float, *, exemplar: dict[str, str] | None = None) -> None:
-        self._inner.observe(value, exemplar=exemplar)
+    def observe(
+        self,
+        value: float,
+        *,
+        exemplar: dict[str, str] | None = None,
+        **labels: str,
+    ) -> None:
+        # Mirror Counter.inc (lines 393-397): if labels are passed via kwargs,
+        # delegate via _inner.labels(**labels); otherwise emit on the bare
+        # metric. This was missing in Wave 6 Task 5 — only Counter got label
+        # forwarding, leaving every labelled Histogram.observe("kwargs") call
+        # to raise TypeError, silently swallowed by mcp/observability.py:132.
+        if labels:
+            self._inner.labels(**labels).observe(value, exemplar=exemplar)
+        else:
+            self._inner.observe(value, exemplar=exemplar)
