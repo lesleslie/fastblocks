@@ -1,5 +1,5 @@
 ---
-status: superseded
+status: complete
 role: historical
 date: 2026-08-23
 last_reviewed: 2026-08-23
