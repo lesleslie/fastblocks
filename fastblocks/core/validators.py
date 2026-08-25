@@ -22,6 +22,7 @@ This module must NOT import from ``cli.py`` or
 module's exports, not the other way around.
 """
 from __future__ import annotations
+from contextlib import suppress
 
 import difflib
 import typing as t
@@ -200,12 +201,10 @@ def format_resolver_mismatch(
 
     # Run explain() and format the output
     resolver_explain = "<unavailable>"
-    try:
+    with suppress(RuntimeError, AttributeError, TypeError, ValueError, KeyError):
         explanation = depends.explain(domain, value)
         resolver_explain = format_resolution_explanation_one_line(explanation)
-    except (RuntimeError, AttributeError, TypeError, ValueError, KeyError):
-        # explain() failed; carry on with "<unavailable>"
-        pass
+        # explain() failed; carry on with "<unavailable>" — falls through
 
     # If the value isn't in StyleName, raise. The "did you mean" hint
     # only fires for typos with lexical similarity; unrelated strings

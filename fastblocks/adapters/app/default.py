@@ -220,15 +220,13 @@ class AppSettings(AppBaseSettings):
 
     def __init__(self, **data: t.Any) -> None:
         if not data:
-            try:
+            with suppress(FileNotFoundError):
                 from fastblocks.core.settings_loader import (
                     load_fastblocks_settings,
                 )
                 cwd_yaml = Path.cwd() / "app.yml"
                 if cwd_yaml.is_file():
                     data = load_fastblocks_settings(path=str(cwd_yaml)).model_dump()
-            except FileNotFoundError:
-                pass
         super().__init__(**data)
         # Note: URL configuration moved to runtime initialization
         # to avoid coroutine access in __init__

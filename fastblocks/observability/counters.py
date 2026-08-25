@@ -154,7 +154,7 @@ class CardinalityGuard:
         # still tracks cardinality. When bound via with_labelnames(...),
         # ``labelnames`` carries the Counter's labelnames tuple.
         self._labelnames: tuple[str, ...] = (
-            labelnames if labelnames else ("_default",)
+            labelnames or ("_default",)
         )
         # Metric name is set when the guard is wired to a Counter.
         self._metric_name: str = ""
@@ -232,8 +232,7 @@ class CardinalityGuard:
             # "_default" label. This is the path used by tests that call
             # ``guard.check((...))`` directly without wiring to a Counter.
             seen_set = self._seen["_default"]
-            for val in label_values:
-                seen_set.add(val)
+            seen_set.update(label_values)
             observed = len(seen_set)
             if observed > self._max_cardinality:
                 return self._handle_violation("_default", observed)

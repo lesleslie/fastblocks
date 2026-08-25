@@ -18,6 +18,7 @@ function. Consumers can then import the new tool.
 """
 
 from __future__ import annotations
+from contextlib import suppress
 
 from collections.abc import Callable
 
@@ -56,16 +57,12 @@ MANDATORY_CAPABILITIES: tuple[str, ...] = ()
 # ---------------------------------------------------------------------------
 def _is_template_available() -> bool:
     """Template capability requires Jinja2 OR HTMY importable (not lazy)."""
-    try:
+    with suppress(ImportError):
         import jinja2  # noqa: F401
         return True
-    except ImportError:
-        pass
-    try:
+    with suppress(ImportError):
         import htmy  # noqa: F401
         return True
-    except ImportError:
-        pass
     return False
 
 
@@ -174,7 +171,7 @@ _REGISTRATION_MAP: dict[str, Callable[[FastMCP], None]] = {
 
 def get_registration_map() -> dict[str, Callable[[FastMCP], None]]:
     """Public accessor for the registration map. Returns a copy."""
-    return dict(_REGISTRATION_MAP)
+    return _REGISTRATION_MAP.copy()
 
 
 # ---------------------------------------------------------------------------

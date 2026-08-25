@@ -20,6 +20,7 @@ authoritative source; the warning only catches ``--force-reinstall`` edge cases.
 """
 
 from __future__ import annotations
+from contextlib import suppress
 
 import warnings
 
@@ -66,7 +67,7 @@ from .ui import (
 # this only catches manual ``--force-reinstall`` edge cases that bypass the
 # resolver. Emitted at import time so manual installs outside the tested
 # range surface in startup logs before any render attempt.
-try:
+with suppress(ImportError):
     import fastblocks_ui as _fbu
 
     _installed = tuple(int(p) for p in _fbu.__version__.split(".")[:2])
@@ -77,10 +78,6 @@ try:
             RuntimeWarning,
             stacklevel=1,
         )
-except ImportError:
-    # fastblocks-ui is a required runtime dep (since 0.30.0); if it's missing
-    # entirely, the import error will surface elsewhere. No warning here.
-    pass
 
 
 __version__ = "0.6.0"  # bumped per C5; tracks fastblocks-htmy 0.6.x shim release
