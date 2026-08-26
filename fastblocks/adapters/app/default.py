@@ -357,18 +357,8 @@ class FastBlocksApp(FastBlocks):
 
     async def _display_fancy_startup(self) -> None:
         # MIGRATED: Removed ACB import - using Oneiric equivalent
-        # aioconsole is optional (not in deps). When missing, fall back to an
-        # async wrapper around print() so the existing `await aprint(...)` below
-        # still works without TypeError. Both import lines carry suppressions
-        # for ty's optional-dep handling (see commit history for aioconsole).
-        try:
-            from aioconsole import aprint  # ty: ignore[unresolved-import]
-        except ImportError:
-            import asyncio as _aio
-
-            async def aprint(text: str) -> None:
-                await _aio.to_thread(print, text)
-        from pyfiglet import Figlet  # type: ignore[import-not-found]  # ty: ignore[unresolved-import]
+        from aioconsole import aprint
+        from pyfiglet import Figlet
 
         config = resolve_instance(depends, "fastblocks", "config")
         app_name = getattr(config.app, "name", "FastBlocks")

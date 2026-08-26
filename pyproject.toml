@@ -51,6 +51,7 @@ dependencies = [
     "minify-html~=0.18",
     "oneiric~=0.3",
     "pydantic~=2.12",
+    "aioconsole~=0.8",
     "pyfiglet~=1.0",
     "rcssmin~=1.2",
     "rjsmin~=1.2",
@@ -102,7 +103,7 @@ observability = [
     "opentelemetry-exporter-otlp-proto-http~=1.44",
     "sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8",  # Δ55 alpha-locked
     "mcp-common>=0.3,<0.4",  # Δ47 — lifted monkeypatch blast radius; explicit <0.4 cap
-    "structlog~=24.4",  # Δ40 — log_correlation mapping; structlog 26 not yet pinned by upstream
+    "structlog>=26.1.0",  # Δ40 — log_correlation mapping; matches oneiric>=0.13.4 strict dep (was ~=24.4)
 ]
 images = [
     "cloudinary~=1.44",
@@ -301,6 +302,7 @@ paths = [
 deps-file = "pyproject.toml"
 exclude-deps = [
     "htmy",
+    "aioconsole",
     "pyfiglet",
 ]
 
