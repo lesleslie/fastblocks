@@ -5,6 +5,73 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-08-26
+
+### Added
+
+- adapters: DecisionSpanProcessor(SpanProcessor) on resolver.decision per v6 Δ8/Δ29/Δ38/Δ39-γ
+- app: /metrics endpoint with Accept-header dispatch + BatchSpanProcessor shutdown wiring per Δ9/Δ42/Δ10
+- AppSettings observability extension per Commit 0b
+- dashboards: Fastblocks-overview.json + schema-validation test with PromQL-aware extraction per v6 Decision 36 + P1-8
+- Errors.py + Counter/Histogram + ObservabilityRegistry
+- mcp: Instrument_tool wraps both paths + Tool pydantic workaround + idempotency per Δ32/Δ37/Δ49
+- observability: _label_allowlist.py + Literal binding registry with reduced Literals per Δ29/Δ30
+- observability: CardinalityGuard with audit mode + MetricCardinalityViolation per Δ7/Δ41
+- observability: Histogram self-registers; tighten Counter.inc() + Counter.__init__ contracts
+- observability: OTel Tracer + BatchSpanProcessor.shutdown contract + htmx.py regression preservation
+- observability: OtelMiddleware — outermost via add-after-reverse per Δ45/Δ48
+- observability: Sentry bridge (OpenTelemetryIntegration) with loud-fail + counter per Δ11/Δ19/Δ20/Δ34/Δ39-ζ
+- observability: Structlog Logger bound to Oneiric settings per v6 Δ40 + log_correlation mapping
+- observability: Trace_context.exemplar() helper + alias identity per Δ36 + Δ33
+- observability: Widen ErrorReason Literal to cover Task 4 exception surface
+- Scope fastblocks-stack specialists to local .claude/agents/
+- scripts: Check_metric_cardinality.py CI lint with PromQL-aware extraction
+- websocket: A11y_bridge corrected WCAG routing + dropped_total + dynamic WS test per Δ10/Δ13/Δ39-α
+
+### Changed
+
+- applications: ExceptionMiddleware decoupled at BOTH sites
+- Drop ObservabilityRegistry._collector dead-code; prometheus_client.REGISTRY is canonical
+- mcp: Migrate discovery.py TYPE_CHECKING import from v1 to v2
+- Migrate FastMCP import from v1 (mcp.server.fastmcp) to v2 (fastmcp)
+- tests: Migrate test_consumer_pattern_wiring v1 imports to v2 + adapt add_tool monkeypatch
+
+### Fixed
+
+- Apply 8 mechanical refurb modernizations
+- default: Make aioconsole import optional (fallback to async print)
+- deps: Bump oneiric + structlog pins; declare aioconsole
+- docs: Make phase-4 v2/v2.1 frontmatter conform to vocab
+- docs: V2 status superseded->complete (crackerjack vocab)
+- fastblocks: Align [tool.refurb] python_version with project target
+- fastblocks: Exclude local venvs from hatchling sdist target
+- Mechanical type-check fixes (4 sites, no behavior change)
+- observability: Resolve real runtime bugs + ty stubs gaps
+- Rename Tool.inputSchema to parameters for fastmcp v2 in discovery.list_tools
+- tests: Resolve MetricNameCollisionError in test_instrument_tool via per-test registry reset
+
+### Documentation
+
+- **BREAKING:** spec: Phase 6 v5 — apply round-2 dependency-manager corrections
+- Phase 4 v2.1 Commit 4 — ADR 0012 + CLAUDE.md + resolver xref
+- phase-6: Apply final-pass critical-audit deltas Δ76-Δ92
+- phase-6: Apply power-trio review deltas Δ50-Δ75
+- plan: Align Counter signature with Task 1 kwarg form
+- Renumber Phase 4 closeout ADR heading 0012 → 0015
+- spec: Phase 6 v4 retry — refresh-and-execute supersedes v3
+- spec: Phase 6 v5 retry — full re-skin supersedes v4
+- spec: Phase 6 v6 final — full re-skin after 3-round multi-agent review
+- spec: Phase 6 v6.1 — apply final-pass P0 corrections
+
+### Internal
+
+- .gitignore: Add /.fastblocks/ to project-specific section
+- deps: Drop acb — switch mcp-common pin to 0.20.x lineage
+- fastblocks: Uv python pin 3.14
+- mcp: Phase 4 v2.1 Commit 3 — delete opt-out stub + ASGI sync path
+- observability: Trailing newlines + dead imports + return annotations
+- pyproject: [observability] optional dep group; monitoring consolidation
+
 ## [0.30.0] - Unreleased
 
 ### Added
