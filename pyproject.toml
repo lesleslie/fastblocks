@@ -115,6 +115,28 @@ http_port = 3035
 http_host = "127.0.0.1"
 enable_http_transport = true
 
+[tool.hatch.build.targets.sdist]
+# Exclude local-only build artifacts from the source distribution. These
+# patterns are also in .gitignore, but hatchling's default sdist walker
+# only honors a subset of .gitignore rules and can package hidden venv
+# directories (which contain absolute symlinks that fail sdist unpacking).
+exclude = [
+    ".venv",
+    ".test-venv",
+    ".test-venv-v1",
+    ".test-venv-v2",
+    ".test-venv-*",
+    "dist",
+    "build",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".mypy_cache",
+    ".crackerjack",
+    "*.egg-info",
+    ".coverage",
+    "htmlcov",
+]
+
 [tool.ruff]
 target-version = "py313"
 line-length = 88
