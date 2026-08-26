@@ -309,7 +309,10 @@ exclude-deps = [
 [tool.refurb]
 enable_all = true
 quiet = true
-python_version = "3.13"
+# fastblocks targets Python 3.14 (`requires-python = ">=3.14"`). Keeping
+# refurb's grammar in sync avoids spurious 3.13-only diagnostics like
+# FURB188 flagging 3.14-clean syntax.
+python_version = "3.14"
 ignore = [
     "FURB184",
     "FURB120",
