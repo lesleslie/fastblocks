@@ -47,7 +47,7 @@ dependencies = [
     "fastblocks-ui>=0.8,<0.9",
     "granian[reload]~=2.6",
     "htmy[lxml]>=0.13,<0.14",
-    "mcp-common~=0.3",
+    "mcp-common~=0.20",
     "minify-html~=0.18",
     "oneiric~=0.3",
     "pydantic~=2.12",
@@ -102,7 +102,7 @@ observability = [
     "opentelemetry-sdk~=1.44",
     "opentelemetry-exporter-otlp-proto-http~=1.44",
     "sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8",  # Δ55 alpha-locked
-    "mcp-common>=0.3,<0.4",  # Δ47 — lifted monkeypatch blast radius; explicit <0.4 cap
+    "mcp-common~=0.20",
     "structlog>=26.1.0",  # Δ40 — log_correlation mapping; matches oneiric>=0.13.4 strict dep (was ~=24.4)
 ]
 images = [
