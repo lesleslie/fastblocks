@@ -7,7 +7,7 @@
 # FastBlocks
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
-[![Python: 3.13+](https://img.shields.io/badge/python-3.13%2B-green)](https://www.python.org/downloads/)
+[![Python: 3.14+](https://img.shields.io/badge/python-3.14%2B-green)](https://www.python.org/downloads/)
 ![Coverage](https://img.shields.io/badge/coverage-62%25-yellow)
 
 > _Last reviewed: 2025-11-19_
