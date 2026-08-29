@@ -1188,7 +1188,7 @@ requires-dist = [
     { name = "fastblocks-ui", specifier = ">=0.9,<0.10" },
     { name = "granian", extras = ["reload"], specifier = "~=2.6" },
     { name = "htmy", extras = ["lxml"], specifier = ">=0.13,<0.14" },
-    { name = "mcp-common", specifier = "~=0.20" },
+    { name = "mcp-common", specifier = ">=0.23.1" },
     { name = "minify-html", specifier = "~=0.18" },
     { name = "oneiric", specifier = ">=0.20" },
     { name = "pydantic", specifier = "~=2.12" },
@@ -1212,7 +1212,7 @@ dev = [
     { name = "crackerjack", specifier = "~=0.44" },
     { name = "detect-secrets", specifier = "~=1.5" },
     { name = "hypothesis", specifier = "~=6.0" },
-    { name = "mcp-common", specifier = "~=0.20" },
+    { name = "mcp-common", specifier = ">=0.23.1" },
     { name = "opentelemetry-exporter-otlp-proto-http", specifier = "~=1.44" },
     { name = "opentelemetry-sdk", specifier = "~=1.44" },
     { name = "penpot-mcp", specifier = "~=0.1" },
@@ -1236,7 +1236,7 @@ images = [
 ]
 monitoring = [{ name = "logfire", extras = ["starlette"], specifier = "~=4.15" }]
 observability = [
-    { name = "mcp-common", specifier = "~=0.20" },
+    { name = "mcp-common", specifier = ">=0.23.1" },
     { name = "opentelemetry-exporter-otlp-proto-http", specifier = "~=1.44" },
     { name = "opentelemetry-sdk", specifier = "~=1.44" },
     { name = "prometheus-client", specifier = "~=0.21" },
@@ -2509,7 +2509,7 @@ wheels = [
 
 [[package]]
 name = "mcp-common"
-version = "0.20.6"
+version = "0.23.1"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "cryptography" },
@@ -2524,9 +2524,9 @@ dependencies = [
     { name = "typer" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ea/e5/46b6369815ec4807869300999333c6f65f52dd742dc7adf644cd5d81ff96/mcp_common-0.20.6.tar.gz", hash = "sha256:d28cf0048a66444b8659104e7badcffe4c0ad039d5b62703721b041d2b26ff92", size = 948834, upload-time = "2026-08-26T00:53:38.959Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/c9/2be69299618a7f078f8be53dff50a2b9c671ba2523583241ca5ee699ea93/mcp_common-0.23.1.tar.gz", hash = "sha256:feefed97622891f547a7e80467091d66feeaedc8299ac37e257535c3071579ab", size = 963008, upload-time = "2026-08-29T10:45:19.614Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a2/d1/a1dedae5eec7cb92a17ac63d48602b01c1e33a7627d490a1adcc9baaa305/mcp_common-0.20.6-py3-none-any.whl", hash = "sha256:5e4e5e59f42e9f157a899349b20a572ef6f9238d90fc26f5442d0c090ccf42b4", size = 403572, upload-time = "2026-08-26T00:53:37.537Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/45/17fe8606ed407cdd7565afe7c08aeed4065fc1b693014214482940c2b423/mcp_common-0.23.1-py3-none-any.whl", hash = "sha256:99363c53ba5e71885cfa76a559ec74e4736b208b1ad5a89b3cec2f6b02e0419b", size = 404168, upload-time = "2026-08-29T10:45:17.724Z" },
 ]
 
 [[package]]
