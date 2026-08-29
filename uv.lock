@@ -1190,7 +1190,7 @@ requires-dist = [
     { name = "htmy", extras = ["lxml"], specifier = ">=0.13,<0.14" },
     { name = "mcp-common", specifier = "~=0.20" },
     { name = "minify-html", specifier = "~=0.18" },
-    { name = "oneiric", specifier = "~=0.3" },
+    { name = "oneiric", specifier = ">=0.20" },
     { name = "pydantic", specifier = "~=2.12" },
     { name = "pyfiglet", specifier = "~=1.0" },
     { name = "rcssmin", specifier = "~=1.2" },
@@ -2945,7 +2945,7 @@ wheels = [
 
 [[package]]
 name = "oneiric"
-version = "0.18.0"
+version = "0.20.0"
 source = { registry = "https://pypi.org/simple/" }
 dependencies = [
     { name = "aiobreaker" },
@@ -2967,9 +2967,9 @@ dependencies = [
     { name = "typer" },
     { name = "watchfiles" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/9c/24568307cc7dc5d0f7b6e025aae57519085bb1286766fe592a06ae0cfc92/oneiric-0.18.0.tar.gz", hash = "sha256:b9e9678e3f2f6d6bb7883e4cf7be749a882dc75e16ae00423650223e55672451", size = 334972, upload-time = "2026-08-24T15:29:05.192Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/c6/9efd73b012685dda00886f91110feafa114c02311c0430dacfbc58c71aca/oneiric-0.20.0.tar.gz", hash = "sha256:cc715b863c091b6e6658fe8e8ac3b14b11a1be3a7badb800b65a02e0e01357c2", size = 1587902, upload-time = "2026-08-29T08:39:51.2Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/f2/b71711a2916b45e3423390f021c202e59de4e3528b2e787a24bfcee16c5e/oneiric-0.18.0-py3-none-any.whl", hash = "sha256:fbb6c4e9e5b72a50cbd4aafdce4c6b2454d5f3beaa69e1d915127b66a67794ce", size = 382759, upload-time = "2026-08-24T15:29:03.737Z" },
+    { url = "https://files.pythonhosted.org/packages/33/6d/3fd5b72e3c9cda4190b465bc1956b480efd3c4ec0ef788dce30f3fbc8d72/oneiric-0.20.0-py3-none-any.whl", hash = "sha256:da4671d9f52f541f5d9910ea0a2f14fef65b2833da0c77d84390973486bf9673", size = 393424, upload-time = "2026-08-29T08:39:49.391Z" },
 ]
 
 [[package]]
