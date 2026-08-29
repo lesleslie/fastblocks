@@ -26,7 +26,13 @@ class TestCLIStructure:
         assert "def dev(" in source_code
         assert "def setup_signal_handlers(" in source_code
 
-        assert "cli = typer.Typer(" in source_code
+        # Hard cutover (task 8): the bare ``cli = typer.Typer(...)``
+        # instantiation was replaced with a FastblocksCLI subclass of
+        # oneiric.cli.base.OneiricCLIBase. Accept either form.
+        assert (
+            "cli = typer.Typer(" in source_code
+            or "cli = FastblocksCLI(" in source_code
+        )
 
         assert "@cli.command(" in source_code
 

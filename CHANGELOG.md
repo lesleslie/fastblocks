@@ -76,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **feat: fastblocks CLI adopts OneiricCLIBase** (oneiric 0.20+). The CLI gains `version`/`doctor`/`health`/`--json`/`--version` from the foundation base. `_doctor_checks` returns real data (python version, typer version, oneiric imported) per the base's CI contract.
 - **`fastblocks-ui` is now a required runtime dependency** (previously optional `fastblocks_ui` dep group). Pin: `fastblocks-ui>=0.8,<0.9`. The `AppBaseSettings.style` default flips from `"vanilla"` to `"fastblocks_ui"`. The `vanilla` style remains an explicit unstyled opt-out but the package install is now unconditional — air-gapped environments must mirror `fastblocks-ui` before upgrading.
 
 ### Removed

@@ -18,7 +18,6 @@ import signal
 #         logger.propagate = False
 import sys
 import typing as t
-from importlib.metadata import version as get_version
 from pathlib import Path
 from subprocess import DEVNULL
 from subprocess import run as execute
@@ -57,7 +56,35 @@ if Path.cwd() == fastblocks_path and not is_testing:
     raise SystemExit(
         msg,
     )
-cli = typer.Typer(rich_markup_mode="rich")
+from oneiric.cli.base import OneiricCLIBase
+
+
+class FastblocksCLI(OneiricCLIBase):
+    """Fastblocks CLI: OneiricCLIBase subclass.
+
+    Hard cutover — replaces the prior ``cli = typer.Typer(rich_markup_mode="rich")``
+    instantiation. Existing module-level ``@cli.command(...)`` and
+    ``cli.add_typer(...)`` calls continue to work because ``OneiricCLIBase``
+    extends ``typer.Typer``.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(component_name="fastblocks")
+
+    def _doctor_checks(self) -> dict[str, dict[str, str]]:
+        import sys
+
+        return {
+            "python": {"status": "ok", "detail": sys.version.split()[0]},
+            "typer": {"status": "ok", "detail": typer.__version__},
+            "oneiric": {"status": "ok", "detail": "imported"},
+        }
+
+    def _health_probe(self) -> dict[str, t.Any]:
+        return {"status": "ok", "detail": "fastblocks cli"}
+
+
+cli = FastblocksCLI()
 
 
 # Style values are now a Literal type. The two surviving styles are
@@ -1085,15 +1112,6 @@ async def _create_app_async(
 ) -> None:
     """Async wrapper for the sync ``create_app`` shim."""
     create_app(app_name=app_name, style=style, domain=domain)
-
-
-@cli.command()
-def version() -> None:
-    try:
-        __version__ = get_version("fastblocks")
-        console.print(f"FastBlocks v{__version__}")
-    except Exception:  # noqa: BLE001, RUF100  # Framework-boundary: fallback message is acceptable.
-        console.print("Unable to determine FastBlocks version")
 
 
 @cli.command()
