@@ -5,6 +5,16 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2026-08-29
+
+### Added
+
+- **feat: fastblocks CLI adopts OneiricCLIBase** (oneiric 0.20+). The CLI gains `version`/`doctor`/`health`/`--json`/`--version` from the foundation base. `_doctor_checks` returns real data (python version, typer version, oneiric imported) per the base's CI contract.
+
+### Changed
+
+- **deps: bump `mcp-common>=0.23.1` to skip broken 0.23.0.** The mcp-common 0.23.0 release on PyPI was missing the version+doctor methods due to a bump-commit mishap; 0.23.1 restores them.
+
 ## [0.23.0] - 2026-08-26
 
 ### Added
