@@ -36,7 +36,7 @@ try:
 except ImportError as _e:  # pragma: no cover - exercised only in slim envs
     _STRUCTLOG_AVAILABLE = False
     _IMPORT_ERROR = _e
-    BoundLogger = Any  # type: ignore[assignment,misc]
+    BoundLogger = Any  # type: ignore[assignment,misc]  # ty: ignore[invalid-assignment]
 
 
 def _require_structlog() -> None:
