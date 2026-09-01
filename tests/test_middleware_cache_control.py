@@ -8,12 +8,9 @@ import pytest
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
-from typing import TYPE_CHECKING
 
 from fastblocks.middleware import CacheControlMiddleware
-
-if TYPE_CHECKING:
-    from starlette.types import Scope
+from starlette.types import Scope
 
 
 @pytest.mark.asyncio

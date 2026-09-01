@@ -25,19 +25,18 @@ Per v6 Global Constraints:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from structlog.stdlib import BoundLogger
+from typing import Any
 
 try:
     import structlog
+    from structlog.stdlib import BoundLogger
 
     _STRUCTLOG_AVAILABLE = True
     _IMPORT_ERROR: Exception | None = None
 except ImportError as _e:  # pragma: no cover - exercised only in slim envs
     _STRUCTLOG_AVAILABLE = False
     _IMPORT_ERROR = _e
+    BoundLogger = Any  # type: ignore[assignment,misc]
 
 
 def _require_structlog() -> None:
