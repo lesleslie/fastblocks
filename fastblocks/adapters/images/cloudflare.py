@@ -7,7 +7,7 @@ from contextlib import suppress
 from typing import Any
 from uuid import UUID, uuid4
 
-import httpx
+import httpx2 as httpx
 from oneiric.core.logging import get_logger
 from pydantic import SecretStr
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver

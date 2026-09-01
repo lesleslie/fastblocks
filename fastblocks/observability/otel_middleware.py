@@ -35,6 +35,7 @@ request, call_next)`` shape so we can integrate with the OTel
 would require manual ``__aenter__`` / ``__aexit__`` plumbing and lose
 the readable ``with span: ...`` form.
 """
+
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
@@ -194,7 +195,8 @@ class OtelMiddleware(BaseHTTPMiddleware):
             else:
                 try:
                     span.set_attribute(
-                        "http.status_code", response.status_code,
+                        "http.status_code",
+                        response.status_code,
                     )
                 except Exception:
                     # Per the brief: span attribute writes must NEVER
@@ -218,7 +220,8 @@ class OtelMiddleware(BaseHTTPMiddleware):
                         reset_trace_context(token)
                     except Exception as exc:
                         _RESET_FAILED_COUNTER.inc(
-                            1.0, reason=type(exc).__name__,
+                            1.0,
+                            reason=type(exc).__name__,
                         )
                         _logger.exception(
                             "otel_middleware_reset_failed",

@@ -18,11 +18,11 @@
 
    All three bugs are silently swallowed by `with suppress(Exception)` at the call sites, so selecting `style="kelp"` or `style="webawesome"` registers nothing. These are not legacy waiting to be revived; they are traps.
 
-2. **`fastblocks_ui` is the only working style adapter** (`fastblocks/adapters/style/fastblocks_ui.py`). It uses the real Jinja API, lazy-imports `fastblocks_ui` (optional dep), resolves real shipped CSS/JS asset paths via `fastblocks_ui.get_css_path()` / `get_js_path()`, delegates class lookups to the real component manifest, and delegates rendering to the real (already-escaping) `fastblocks_ui` helpers. But it lives in an optional dependency group (`fastblocks_ui = ["fastblocks-ui>=0.7,<0.8"]` at `pyproject.toml:102-109`) and requires an opt-in `config.app.style = "fastblocks_ui"` to activate. The "safe default" is unstyled.
+1. **`fastblocks_ui` is the only working style adapter** (`fastblocks/adapters/style/fastblocks_ui.py`). It uses the real Jinja API, lazy-imports `fastblocks_ui` (optional dep), resolves real shipped CSS/JS asset paths via `fastblocks_ui.get_css_path()` / `get_js_path()`, delegates class lookups to the real component manifest, and delegates rendering to the real (already-escaping) `fastblocks_ui` helpers. But it lives in an optional dependency group (`fastblocks_ui = ["fastblocks-ui>=0.7,<0.8"]` at `pyproject.toml:102-109`) and requires an opt-in `config.app.style = "fastblocks_ui"` to activate. The "safe default" is unstyled.
 
-3. **`fastblocks-htmy` is a separate PyPI package** at `/Users/les/Projects/fastblocks-htmy/` — 24 source files across `fastblocks_htmy/` (`__init__.py`, `base.py`, `adapter.py`, `py.typed`), a nested `fastblocks_htmy/fastblocks/` (`__init__.py`, `adapter.py`), and `fastblocks_htmy/{ui,layout}/*.py` for typed components. It depends on `fastblocks-ui>=0.8,<0.9` + `htmy[lxml]>=0.13,<0.14` (the standalone's actual pins — `[lxml]` extra is required by the AST-sandboxed source loader) and ships a `py.typed` PEP 561 marker. It is **not** a competing CSS framework — it is a typed component layer on top of `fastblocks-ui`'s CSS. There are zero known non-fastblocks consumers (see "Pre-conditions" below for verification).
+1. **`fastblocks-htmy` is a separate PyPI package** at `/Users/les/Projects/fastblocks-htmy/` — 24 source files across `fastblocks_htmy/` (`__init__.py`, `base.py`, `adapter.py`, `py.typed`), a nested `fastblocks_htmy/fastblocks/` (`__init__.py`, `adapter.py`), and `fastblocks_htmy/{ui,layout}/*.py` for typed components. It depends on `fastblocks-ui>=0.8,<0.9` + `htmy[lxml]>=0.13,<0.14` (the standalone's actual pins — `[lxml]` extra is required by the AST-sandboxed source loader) and ships a `py.typed` PEP 561 marker. It is **not** a competing CSS framework — it is a typed component layer on top of `fastblocks-ui`'s CSS. There are zero known non-fastblocks consumers (see "Pre-conditions" below for verification).
 
-4. **`htmy.py` retains an active RCE vector** that the spec must close (this is a NEW critical finding from review). `fastblocks/adapters/templates/htmy.py:300-354` (`_load_from_cached_bytecode`) and `htmy.py:356-399` (`_load_from_source`) both use `importlib.util.spec_from_file_location()` + `spec.loader.exec_module()` — the exact RCE-vector path that CLAUDE.md:130 documents as removed by Phase 1.3's AST-sandboxed loader in `_htmy_components.py`. The advanced registry in `_htmy_components.py` correctly routes through `load_component_from_source()` (AST-sandboxed), but `HTMYTemplates.render_component` falls back to the legacy `HTMYComponentRegistry` for any path that doesn't go through `render_component_advanced`, so the unsafe path is still reachable. Task C must delete it.
+1. **`htmy.py` retains an active RCE vector** that the spec must close (this is a NEW critical finding from review). `fastblocks/adapters/templates/htmy.py:300-354` (`_load_from_cached_bytecode`) and `htmy.py:356-399` (`_load_from_source`) both use `importlib.util.spec_from_file_location()` + `spec.loader.exec_module()` — the exact RCE-vector path that CLAUDE.md:130 documents as removed by Phase 1.3's AST-sandboxed loader in `_htmy_components.py`. The advanced registry in `_htmy_components.py` correctly routes through `load_component_from_source()` (AST-sandboxed), but `HTMYTemplates.render_component` falls back to the legacy `HTMYComponentRegistry` for any path that doesn't go through `render_component_advanced`, so the unsafe path is still reachable. Task C must delete it.
 
 A second-order issue: `style` confuses two distinct axes — *where CSS comes from* and *how Python types become HTML*. `kelp` and `webawesome` are the symptom; the cause is the conflation.
 
@@ -32,10 +32,12 @@ A second-order issue: `style` confuses two distinct axes — *where CSS comes fr
 - Promote `fastblocks-ui` to the default style layer and a regular runtime dependency, pinning the version range the standalone `fastblocks-htmy` already requires (`>=0.8,<0.9`) so transitive resolution stays consistent.
 
 **Goals for 0.31.x (absorption + cross-repo shim):**
+
 - Absorb the standalone `fastblocks-htmy` PyPI package source into `fastblocks`. Drop `fastblocks-htmy` from `[project].dependencies` entirely (the spec does NOT pin the package being absorbed — that creates a self-referential dep and dual source of truth). Pin `htmy[lxml]>=0.13,<0.14` and `fastblocks-ui>=0.8,<0.9` directly. The standalone `fastblocks-htmy 0.6.x` becomes a shim-only release that re-exports from `fastblocks.adapters.templates.htmy_components`. (Lives in 0.31.x — NOT 0.30.0. The 0.30.0 release has no absorption.)
 - Close the active RCE vector in `htmy.py` (Finding 2 from fastblocks-specialist review). **This ships in 0.30.0**, not 0.31.x — the RCE fix is independent of the absorption.
 
 **Goals spanning both releases:**
+
 - Introduce the architectural separation: `style` means CSS source only (`vanilla` | `fastblocks_ui`); the `renderer` axis (`jinja2` | `htmy`) is documented as the next-iteration north star but not introduced as a config in this PR.
 - Keep `vanilla` as an explicit opt-in for unstyled apps.
 - **Behavioral verification:** gates must prove the *user-facing behavior* changed, not just that types and imports resolve. New tests cover (i) default-styled rendering emits the right HTML, (ii) `style="kelp"` raises with the documented message, (iii) absorbed components render escaped output for user-supplied payloads.
@@ -268,6 +270,7 @@ fastblocks_htmy/layout/container.py
 fastblocks_htmy/layout/nav_groups.py
 fastblocks_htmy/layout/nav_list.py
 ```
+
 (NOTE: the standalone's `layout/` subpackage has exactly **6** files — `__init__.py`, `_generated.py`, `columns.py`, `container.py`, `nav_groups.py`, `nav_list.py`. There is **no** `layout/navbar.py` — the `navbar.py` lives in `ui/`, not `layout/`. The earlier spec draft miscounted.)
 
 **Target layout** (under `fastblocks/adapters/templates/`):
@@ -315,6 +318,7 @@ see CHANGELOG.md for the migration. Users who previously pinned
 **Files to update:**
 
 - `fastblocks/core/style_registry.py` — update the module-level docstring to clarify:
+
   - `style` = CSS source only (currently `vanilla`, `fastblocks_ui`).
   - The future `renderer` axis (Python types → HTML) is the unifying abstraction for the next architectural PR. Today `jinja2` is the implicit renderer; `htmy` is available via `fastblocks/adapters/templates/htmy.py` but not exposed as a `style_registry` axis. The docstring should name the axis without introducing a config knob.
 
@@ -344,8 +348,8 @@ see CHANGELOG.md for the migration. Users who previously pinned
 **Upgrade path:**
 
 1. Edit their app's settings: `config.app.style = "fastblocks_ui"` (recommended) or `config.app.style = "vanilla"` (explicit unstyled).
-2. If they depended on kelp/webawesome's specific CSS classes or component helpers (e.g. `wa_button`, `kelp_component`), those names no longer exist. Their templates will fail at render time with `UndefinedError` from Jinja. The fix is to switch to the `fastblocks-ui` equivalents (`ui_button`, `ui_card`, etc., registered by `register_fastblocks_ui_functions`).
-3. If they had user-supplied content flowing through `kelp_component()` / `wa_button()` / `wa_card()`, that was an XSS hazard waiting for the dead-code bugs to be fixed. The fix is moot now (the helpers are gone), but they should still audit any prior app versions in production for stored XSS payloads.
+1. If they depended on kelp/webawesome's specific CSS classes or component helpers (e.g. `wa_button`, `kelp_component`), those names no longer exist. Their templates will fail at render time with `UndefinedError` from Jinja. The fix is to switch to the `fastblocks-ui` equivalents (`ui_button`, `ui_card`, etc., registered by `register_fastblocks_ui_functions`).
+1. If they had user-supplied content flowing through `kelp_component()` / `wa_button()` / `wa_card()`, that was an XSS hazard waiting for the dead-code bugs to be fixed. The fix is moot now (the helpers are gone), but they should still audit any prior app versions in production for stored XSS payloads.
 
 **No data migration is required** — this is a configuration + template change, not a database schema change. CHANGELOG lists the breaking changes under "Removed" for 0.30.0.
 
@@ -358,7 +362,8 @@ see CHANGELOG.md for the migration. Users who previously pinned
 **Deprecation cycle for `fastblocks-htmy` the PyPI package:**
 
 1. `fastblocks-htmy 0.5.x` is the **last full implementation** release. It stays installable. Users on 0.5.x see no change.
-2. `fastblocks-htmy 0.6.x` is a **shim-only release**. Its `__init__.py` contains:
+
+1. `fastblocks-htmy 0.6.x` is a **shim-only release**. Its `__init__.py` contains:
 
    ```python
    try:
@@ -389,8 +394,9 @@ see CHANGELOG.md for the migration. Users who previously pinned
 
    The explicit `ImportError` (per Sec F6) prevents the silent `ModuleNotFoundError: fastblocks` that users with only `fastblocks-htmy` installed would otherwise hit.
 
-3. After one release cycle (~30 days post-0.31.0 — NOT post-0.30.0; the shim cycle starts when the absorbed source lands), archive the standalone repo (GitHub "Archived" toggle + `pyproject.toml` `private = true`) but do NOT delete the directory on disk.
-4. After one more release cycle, deletion is a separate decision. **Out of scope for this PR.**
+1. After one release cycle (~30 days post-0.31.0 — NOT post-0.30.0; the shim cycle starts when the absorbed source lands), archive the standalone repo (GitHub "Archived" toggle + `pyproject.toml` `private = true`) but do NOT delete the directory on disk.
+
+1. After one more release cycle, deletion is a separate decision. **Out of scope for this PR.**
 
 ### For `vanilla`-style users (per Sec F7)
 
@@ -401,9 +407,9 @@ After fastblocks 0.30.0, `fastblocks-ui` becomes a **required** dependency even 
 When a task surfaces code calling an API that doesn't exist, or HTML output that escapes user input, or any other silent-failure pattern, the protocol is:
 
 1. **Stop** — don't silently fix.
-2. **Surface** — name the file, line, the wrong behavior, and what the corrected behavior is.
-3. **Ask** — confirm whether the code path is exercised or dead.
-4. **Document** — append to the spec's "Real bugs found" section so the count and resolution are tracked.
+1. **Surface** — name the file, line, the wrong behavior, and what the corrected behavior is.
+1. **Ask** — confirm whether the code path is exercised or dead.
+1. **Document** — append to the spec's "Real bugs found" section so the count and resolution are tracked.
 
 ## Sequencing & reporting
 

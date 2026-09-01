@@ -1,14 +1,6 @@
----
-status: accepted
-role: phase-5-deferral
-date: 2026-08-22
-last_reviewed: 2026-08-22
-supersedes: null
-superseded_by: null
-blocks_on: []
-decision_date: 2026-08-22
-topic: phase-5-test-infrastructure-rebuild-deferral
----
+______________________________________________________________________
+
+## status: accepted role: phase-5-deferral date: 2026-08-22 last_reviewed: 2026-08-22 supersedes: null superseded_by: null blocks_on: [] decision_date: 2026-08-22 topic: phase-5-test-infrastructure-rebuild-deferral
 
 # ADR 0012: Phase 5 Test Infrastructure Rebuild Deferral
 
@@ -86,8 +78,8 @@ document the deferred binding as Phase 6 work.
 it. All 32 absorbed components have `attrs: dict[str, Any] = field(...)`
 fields. **v3 fix** registered `object → safe_user_input` at module
 load, which covered the immediate P0 case for `object`-typed fields
-(Button.class_, Card.header/body/footer/class_, Field.label/...,
-Navbar.brand/start/end/class_, plus 8 required `object` fields in
+(Button.class\_, Card.header/body/footer/class\_, Field.label/...,
+Navbar.brand/start/end/class\_, plus 8 required `object` fields in
 `_generated.py` — 67 fields total). The `Any` types are honored by
 Hypothesis via dataclass default factories (so the strategy doesn't
 crash), but the spec text still says "Any fields require manual
@@ -146,7 +138,7 @@ Master plan and spec v1 both asserted 34 absorbed components and
 21 whitelisted attrs. Verified 2026-08-22: 32 absorbed components
 (via `htmy_components.__all__` — 32 dataclasses + FastBlocksComponent
 base + `__version__` = 34 names total) and 25 whitelisted attrs
-(class, id, role, tabindex, 3 data-*, 4 aria-*, 9 hx-*, 5 form = 25).
+(class, id, role, tabindex, 3 data-*, 4 aria-*, 9 hx-\*, 5 form = 25).
 
 v2 corrected most occurrences; v3 caught the 4 remaining stale
 references (L88, L555 for "34"; L108, L369 for "21"). All clean in
@@ -227,7 +219,7 @@ starting point after addressing the structural blockers:
 - **Coverage ratchet 65%**: defensible target.
 - **12-commit Integration Contracts**: each commit independently
   revertible.
-- **CI budget <5 min**: realistic.
+- **CI budget \<5 min**: realistic.
 - **Strategy code (v3.1 final)**: `st.from_type()` for components +
   `st.register_type_strategy(object, ...)` for the object-field
   escape hatch + `_UNSAFE_PAYLOADS` tuple inlined. This combination
@@ -238,17 +230,17 @@ land green):
 
 1. **LifespanManager doesn't exist** (Decision 2) — either drop
    the test or test the actual `@asynccontextmanager` lifespan.
-2. **`htmy_component()` memoization** (Decision 8) — small fix.
-3. **`docs/plans/TEMPLATE.md` reference** (Decision 9) — either
+1. **`htmy_component()` memoization** (Decision 8) — small fix.
+1. **`docs/plans/TEMPLATE.md` reference** (Decision 9) — either
    create the file or remove the citation.
-4. **Master plan drift**: master plan §Phase 5 line 469-470 still
+1. **Master plan drift**: master plan §Phase 5 line 469-470 still
    references `ABSORBED_COMPONENTS` and "34 absorbed components".
    Either amend the master plan or add an explicit erratum
    footnote in the spec.
-5. **Per-component fixture file** (`tests/a11y/_component_postures.py`)
+1. **Per-component fixture file** (`tests/a11y/_component_postures.py`)
    needs a documented schema (Decision 11 references the file but
    doesn't define its structure).
-6. **Drawer closed-state coverage** (Decision 4 v2 N-4) — the
+1. **Drawer closed-state coverage** (Decision 4 v2 N-4) — the
    posture asserts "off-canvas (closed state)" which yields zero
    interaction coverage. Either drop Drawer from 5C.2 or add a
    two-state (closed + open) test.

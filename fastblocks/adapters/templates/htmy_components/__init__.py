@@ -20,9 +20,9 @@ authoritative source; the warning only catches ``--force-reinstall`` edge cases.
 """
 
 from __future__ import annotations
-from contextlib import suppress
 
 import warnings
+from contextlib import suppress
 
 from .base import FastBlocksComponent
 from .layout import (

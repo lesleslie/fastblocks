@@ -22,8 +22,7 @@ from ..base import FastBlocksComponent
 
 @dataclass
 class Dropdown(FastBlocksComponent):
-    """A disclosure/navigation dropdown. Thin wrapper over
-    :func:`fastblocks_ui.dropdown`.
+    """Disclosure/navigation dropdown; thin wrapper over :func:`fastblocks_ui.dropdown`.
 
     ``items`` is a list of ``(text, href)`` tuples, matching the helper exactly.
 

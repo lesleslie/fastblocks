@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dashboards: Fastblocks-overview.json + schema-validation test with PromQL-aware extraction per v6 Decision 36 + P1-8
 - Errors.py + Counter/Histogram + ObservabilityRegistry
 - mcp: Instrument_tool wraps both paths + Tool pydantic workaround + idempotency per Δ32/Δ37/Δ49
-- observability: _label_allowlist.py + Literal binding registry with reduced Literals per Δ29/Δ30
+- observability: \_label_allowlist.py + Literal binding registry with reduced Literals per Δ29/Δ30
 - observability: CardinalityGuard with audit mode + MetricCardinalityViolation per Δ7/Δ41
 - observability: Histogram self-registers; tighten Counter.inc() + Counter.__init__ contracts
 - observability: OTel Tracer + BatchSpanProcessor.shutdown contract + htmx.py regression preservation
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - applications: ExceptionMiddleware decoupled at BOTH sites
-- Drop ObservabilityRegistry._collector dead-code; prometheus_client.REGISTRY is canonical
+- Drop ObservabilityRegistry.\_collector dead-code; prometheus_client.REGISTRY is canonical
 - mcp: Migrate discovery.py TYPE_CHECKING import from v1 to v2
 - Migrate FastMCP import from v1 (mcp.server.fastmcp) to v2 (fastmcp)
 - tests: Migrate test_consumer_pattern_wiring v1 imports to v2 + adapt add_tool monkeypatch
@@ -154,7 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fastblocks: Drop try/except fallback for SandboxedEnvironment import
 - fastblocks: Honor ChoiceLoader source contract
 - fastblocks: Honor ChoiceLoader source contract
-- fastblocks: Htmx duplicate header last-match-wins in _get_header
+- fastblocks: Htmx duplicate header last-match-wins in \_get_header
 - fastblocks: Initialize validation sanitizer state
 - fastblocks: Map wrong Resolver API calls to correct surface
 - fastblocks: Migrate Oneiric 0.13+ sync resolver API + refurb cleanup
@@ -171,7 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fastblocks: Phase 2b - unresolved-import for optional/legacy modules
 - fastblocks: Phase 2b-followup - ty ignore syntax for unresolved-imports
 - fastblocks: Phase 2c - invalid-argument-type fixes
-- fastblocks: Phase 2c-fix - repair broken indentation in _base.py
+- fastblocks: Phase 2c-fix - repair broken indentation in \_base.py
 - fastblocks: Phase 2d - missing-argument fixes
 - fastblocks: Phase 2d-followup - missing-argument via ty: ignore
 - fastblocks: Phase 2e - invalid-method-override fixes
@@ -191,7 +191,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fastblocks: Satisfy ty/refurb/mypy in W4.9 tool-profile test
 - fastblocks: Scope or remove 33 blanket `# type: ignore` suppressions
 - fastblocks: Use single-rule type: ignore on SandboxedEnvironment fallback
-- fastblocks: Wire _registration get_global_template_context to resolve_instance
+- fastblocks: Wire \_registration get_global_template_context to resolve_instance
 - fastblocks: Wire production call sites to resolve_instance
 - Fix async mock issues in component tests
 - Fix hardcoded absolute paths in structure tests
@@ -217,7 +217,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - phase4: Fix remaining sync depends.get() in MCP and templates
 - phase4: Fix sync depends.get() and class names in icon/image adapters
 - phase4: Fix sync depends.get() in initializers and template registration
-- phase4: Reduce type ignores from 129 to 110 (target <111 achieved)
+- phase4: Reduce type ignores from 129 to 110 (target \<111 achieved)
 - phase4: Suppress reportUnusedFunction for template filters (182→142)
 - Post-merge cleanup and test fixes
 - Resolve test failures for filters and HTMY component discovery
@@ -236,7 +236,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update deps, tests
 - Update filter test to use depends.get_sync()
 - Update remaining sync tests for Oneiric depends.resolve()
-- validation: Rename _check_sql_injection_in_context parameter 'sanitized' to 'context'
+- validation: Rename \_check_sql_injection_in_context parameter 'sanitized' to 'context'
 
 ### Documentation
 

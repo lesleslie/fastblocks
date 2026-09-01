@@ -24,7 +24,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Set
+from typing import Any
 from uuid import UUID
 
 # Oneiric imports
@@ -234,8 +234,8 @@ class EnhancedCacheManager:
         key: str,
         value: Any,
         ttl: int | None = None,
-        dependencies: Set[str] | None = None,
-        tags: Set[str] | None = None,
+        dependencies: builtins.set[str] | None = None,
+        tags: builtins.set[str] | None = None,
         tier: CacheTier | None = None,
     ) -> None:
         """Set value in cache with metadata."""

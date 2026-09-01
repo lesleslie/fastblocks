@@ -35,6 +35,7 @@
 ## File Structure
 
 **New files** (16):
+
 - `fastblocks/observability/errors.py` (Commit 1; Δ34/Δ46)
 - `fastblocks/observability/counters.py` (Commit 1)
 - `fastblocks/observability/registry.py` (Commit 1)
@@ -68,6 +69,7 @@
 - `dashboards/fastblocks-overview.json` (Commit 14; vendored Grafana 10.x schema alongside)
 
 **Modified files** (5):
+
 - `pyproject.toml` (Commit 0a; Δ22/Δ23/Δ47 — add `[observability]` group, version pins, remove sentry+urllib3 from monitoring, set `mcp-common<0.4`)
 - `fastblocks/applications.py:113-268` (Commit 0c; Δ3/Δ45 — ExceptionMiddleware decoupled at BOTH sites, `MiddlewareManager.get_middleware_stack()` returns dict with `user_middleware`/`system_middleware`)
 - `fastblocks/adapters/app/default.py:177-200` (Commit 3 — register BatchSpanProcessor shutdown in lifespan; Commit 9 — mount `/metrics`; Commit 11 — register OtelMiddleware LAST; Commit 12 — call sentry_init AFTER TracerProvider built)
@@ -80,18 +82,21 @@
 
 Each task = one commit. Tasks 0a/0b/0c are pre-commits that set up foundation; Tasks 1-4 are 6A foundations; Tasks 5-9 are 6B cardinality; Tasks 10-14 are 6C bridges.
 
----
+______________________________________________________________________
 
 ### Task 0a: `[observability]` optional dep group + monitoring consolidation
 
 **Files:**
+
 - Modify: `pyproject.toml:60-108` (add `[dependency-groups].observability`; remove sentry-sdk + urllib3 from monitoring)
 - Modify: `pyproject.toml:74-91` (add `{include-group = "observability"}` to `[dependency-groups].dev`)
 - Modify: `pyproject.toml` version bump (0.21.0 → 0.22.0 per Δ25 breaking-change callout)
 - Test: `tests/pyproject/test_dependency_groups.py` NEW
 
 **Interfaces:**
+
 - Consumes: existing `monitoring` group at `pyproject.toml:95-101`
+
 - Produces: `observability` group consumers import `from fastblocks.observability import Counter` (runtimes); `[dependency-groups].observability` is a `dict`-style PEP 735 array
 
 - [ ] **Step 1: Write failing test for dep-group presence and absence**
@@ -135,6 +140,7 @@ Expected: FAIL (file not yet created)
 - [ ] **Step 3: Edit `pyproject.toml` per Δ22, Δ23, Δ47**
 
 Add to `[dependency-groups]`:
+
 ```toml
 observability = [
     "prometheus-client~=0.21",
@@ -143,6 +149,7 @@ observability = [
     "sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8",  # Δ55 alpha-locked
 ]
 ```
+
 Add to existing `dev` group: `"{include-group = "observability"}"`.
 Remove from `monitoring`: `sentry-sdk[starlette]>=3.0.0a7` and `urllib3~=2.5`.
 Bump `version = "0.22.0"` at `pyproject.toml:9`.
@@ -169,17 +176,20 @@ Per v6 Δ22/Δ23/Δ47/Δ25:
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
 ### Task 0b: `app.yml` observability block + `AppSettings` extension
 
 **Files:**
+
 - Modify: `app.yml` (create if absent) — append `observability:` block
 - Modify: `fastblocks/adapters/app/default.py` — extend `AppSettings` (or add an `ObservabilitySettings` Pydantic model in same module) with `cardinality_mode`, `metrics`, `traces`, `sentry` blocks
 - Test: `tests/settings/test_observability_settings.py` NEW
 
 **Interfaces:**
+
 - Consumes: Oneiric settings load chain via `load_fastblocks_settings()` (per `fastblocks/core/settings_loader.py`)
+
 - Produces: `from fastblocks.adapters.app.default import AppSettings` exposes `app.observability.cardinality_mode`, `app.observability.metrics.accept_dispatch`, `app.observability.traces.shutdown_on_lifespan_exit`, `app.observability.sentry.disabled_on_import_error`, `app.observability.sentry.profiling_enabled`. **Δ91 path correction — earlier v6 said `settings/observability.yaml` + `fastblocks/settings/observability.py`; FastBlocks uses Oneiric's `app.yml` at repo root + `AppSettings` in `fastblocks/adapters/app/default.py` (verified by reading `settings_loader.py`).**
 
 - [ ] **Step 1: Write failing test**
@@ -205,9 +215,10 @@ Expected: FAIL (AppSettings.observability attribute not yet defined)
 - [ ] **Step 3: Implement AppSettings observability extension**
 
 In `fastblocks/adapters/app/default.py`:
+
 1. Define `class ObservabilitySettings(BaseModel)` with `cardinality_mode: Literal["off","audit","warn","enforce"] = "enforce"`, `metrics: MetricsSettings` (with `accept_dispatch: bool = True`), `traces: TracesSettings` (with `shutdown_on_lifespan_exit: bool = True`), `sentry: SentrySettings` (with `disabled_on_import_error: bool = False`, `profiling_enabled: bool = False`).
-2. Add `observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)` to `AppSettings`.
-3. Use `Literal[...]` types per Phase 2 conventions.
+1. Add `observability: ObservabilitySettings = Field(default_factory=ObservabilitySettings)` to `AppSettings`.
+1. Use `Literal[...]` types per Phase 2 conventions.
 
 If `app.yml` exists at repo root, append the `observability:` block per the v6 spec defaults; if absent, settings still work via Pydantic defaults.
 
@@ -232,11 +243,12 @@ sentry.profiling=false (only safe value when bridging OTel).
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
 ### Task 0c: ExceptionMiddleware decoupled at BOTH sites (line 250 + 368-374)
 
 **Files:**
+
 - Modify: `fastblocks/applications.py:113-268` (`MiddlewareManager.get_middleware_stack()` shape verification)
 - Modify: `fastblocks/applications.py:249-268` (remove hardcoded `[(\"ExceptionMiddleware\", ExceptionMiddleware)]` at front)
 - Modify: `fastblocks/applications.py:344-382` (`build_middleware_stack` no longer appends ExceptionMiddleware at end)
@@ -244,7 +256,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - Test: `tests/observability/test_exception_middleware_position.py` NEW (3 ordering tests per Δ3/Δ45)
 
 **Interfaces:**
+
 - Consumes: existing `MiddlewareManager.get_middleware_stack()` (returns `dict[str, Any]`); existing `FastBlocks.get_middleware_stack()` (returns `list[tuple[str, type]]` — legacy shape, normalized in follow-up)
+
 - Produces: dict-shape ordering assertions; `register_user_exception_middleware(app, *, position=\"outermost\")` callable for opt-out
 
 - [ ] **Step 1: Write failing tests asserting canonical dict shape**
@@ -323,11 +337,12 @@ is opt-in innERMOST for true-outermost OTel scope.
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
 ### Task 1: errors.py + Counter/Histogram + ObservabilityRegistry + lazy-import guard
 
 **Files:**
+
 - Create: `fastblocks/observability/errors.py` (Δ34/Δ46 — exception hierarchy)
 - Create: `fastblocks/observability/counters.py` (Δ31 — Counter/Histogram wrappers)
 - Create: `fastblocks/observability/registry.py` (Δ15 — singleton)
@@ -335,8 +350,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - Test: `tests/observability/test_errors.py`, `tests/observability/test_counters.py`, `tests/observability/test_observability_registry.py` NEW
 
 **Interfaces:**
+
 - Consumes: `prometheus_client.metrics.core` (Counter, Histogram, CollectorRegistry)
+
 - Produces:
+
   - `ObservabilityError(Exception)` + `MissingDependencyError(ObservabilityError, *, pip_group, package)` + `MetricNameCollisionError(ObservabilityError, *, metric_name)` + `SentryImportError(ObservabilityError, *, reason)` (per Δ34/Δ46)
   - `Counter(name: str, /, documentation: str, *labelnames: str)` (positional-only name + variadic labels per Δ31)
   - `Histogram(name: str, /, documentation: str, labelnames: tuple[str, ...], buckets: tuple[float, ...])`
@@ -631,12 +649,9 @@ Per P1-8: threading.Lock-protected registration.
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
-
----
-
-
+______________________________________________________________________
 
 ### Task 2: structlog Logger bound to Oneiric settings
 
@@ -650,7 +665,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(observability): structlog Logger bound to Oneiric settings per v6 Δ40 + log_correlation mapping`
 
----
+______________________________________________________________________
 
 ### Task 3: OTel Tracer + BatchSpanProcessor.shutdown contract + htmx.py regression
 
@@ -665,7 +680,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run tests (passes).
 - [ ] Commit: `feat(observability): OTel Tracer + BatchSpanProcessor.shutdown contract + htmx.py regression preservation`
 
----
+______________________________________________________________________
 
 ### Task 4: DecisionSpanProcessor(SpanProcessor) on resolver.decision spans
 
@@ -680,7 +695,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run tests (passes).
 - [ ] Commit: `feat(adapters): DecisionSpanProcessor(SpanProcessor) on resolver.decision per v6 Δ8/Δ29/Δ38/Δ39-γ`
 
----
+______________________________________________________________________
 
 ### Task 5: Typed Counter/Histogram wrappers + CardinalityGuard with audit mode
 
@@ -694,9 +709,9 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(observability): CardinalityGuard with audit mode + MetricCardinalityViolation per Δ7/Δ41`
 
----
+______________________________________________________________________
 
-### Task 6: _label_allowlist.py + Literal binding registry
+### Task 6: \_label_allowlist.py + Literal binding registry
 
 **Files:** Create `fastblocks/observability/_label_allowlist.py`; Test `tests/observability/test_label_allowlist.py`.
 
@@ -708,7 +723,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(observability): _label_allowlist.py + Literal binding registry with reduced Literals per Δ29/Δ30`
 
----
+______________________________________________________________________
 
 ### Task 7: check_metric_cardinality.py CI lint
 
@@ -722,7 +737,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(scripts): check_metric_cardinality.py CI lint with PromQL-aware extraction`
 
----
+______________________________________________________________________
 
 ### Task 8: instrument_tool — both paths + Tool pydantic workaround + idempotency
 
@@ -738,7 +753,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(mcp): instrument_tool wraps both paths + Tool pydantic workaround + idempotency per Δ32/Δ37/Δ49`
 
----
+______________________________________________________________________
 
 ### Task 9: /metrics endpoint + Accept-header dispatch + BatchSpanProcessor.shutdown
 
@@ -752,7 +767,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(app): /metrics endpoint with Accept-header dispatch + BatchSpanProcessor shutdown wiring per Δ9/Δ42/Δ10`
 
----
+______________________________________________________________________
 
 ### Task 10: trace_context public API verification (exemplar() helper)
 
@@ -766,7 +781,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(observability): trace_context.exemplar() helper + alias identity per Δ36 + Δ33`
 
----
+______________________________________________________________________
 
 ### Task 11: OtelMiddleware — truly outermost via add-after-reverse
 
@@ -781,7 +796,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(observability): OtelMiddleware — outermost via add-after-reverse per Δ45/Δ48`
 
----
+______________________________________________________________________
 
 ### Task 12: Sentry bridge (OpenTelemetryIntegration) with loud-fail
 
@@ -796,7 +811,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(observability): Sentry bridge (OpenTelemetryIntegration) with loud-fail + counter per Δ11/Δ19/Δ20/Δ34/Δ39-ζ`
 
----
+______________________________________________________________________
 
 ### Task 13: a11y_bridge — corrected WCAG routing + dropped_total + dynamic WS test
 
@@ -812,7 +827,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(websocket): a11y_bridge corrected WCAG routing + dropped_total + dynamic WS test per Δ10/Δ13/Δ39-α`
 
----
+______________________________________________________________________
 
 ### Task 14: dashboards/fastblocks-overview.json + schema validation + PromQL-aware test
 
@@ -827,7 +842,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] Run test (passes).
 - [ ] Commit: `feat(dashboards): fastblocks-overview.json + schema-validation test with PromQL-aware extraction per v6 Decision 36 + P1-8`
 
----
+______________________________________________________________________
 
 ## Self-Review
 
@@ -862,10 +877,12 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 Plan complete and saved to `docs/superpowers/plans/2026-08-24-fastblocks-phase-6.md`. Execution mode (per user directive): **Subagent-Driven** — dispatch one fresh subagent per task with worktree isolation; review between tasks.
 
 Two-stage review per task:
+
 - **Stage 1 (subagent)**: implementer subagent writes code + tests + commits in fresh worktree
 - **Stage 2 (verifier)**: separate verifier subagent (read-only) reviews the commit, files issues, no state mutation
 
 Reviewer agent types per task:
+
 - Task 0a/0b/0c: dependency-manager + python-pro
 - Task 1-4: python-pro + observability-incident-lead
 - Task 5-7: type-design-analyzer + observability-incident-lead

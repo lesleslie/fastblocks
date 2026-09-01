@@ -1,14 +1,6 @@
----
-status: accepted
-role: phase-6-deferral
-date: 2026-08-22
-last_reviewed: 2026-08-22
-supersedes: null
-superseded_by: null
-blocks_on: []
-decision_date: 2026-08-22
-topic: phase-6-observability-deferral
----
+______________________________________________________________________
+
+## status: accepted role: phase-6-deferral date: 2026-08-22 last_reviewed: 2026-08-22 supersedes: null superseded_by: null blocks_on: [] decision_date: 2026-08-22 topic: phase-6-observability-deferral
 
 # ADR 0013: Phase 6 Observability Deferral
 
@@ -170,8 +162,7 @@ ship-time coding agents will create phantom files.
 
 ### Decision 8 — P0: Sentry bridge imports wrong path for pinned version (F-OBS-003)
 
-The v1 spec used `from sentry_sdk.integrations.opentelemetry import
-OpenTelemetryIntegration`. The pinned `sentry-sdk` is `3.0.0a7`
+The v1 spec used `from sentry_sdk.integrations.opentelemetry import OpenTelemetryIntegration`. The pinned `sentry-sdk` is `3.0.0a7`
 (alpha); that release exposes the OTel bridge under
 `sentry_sdk.opentelemetry` (NOT `integrations.opentelemetry`).
 v3 dropped the specific import assertion and mandates a smoke-check
@@ -384,8 +375,7 @@ In Python 3.11+ `enum.StrEnum` is the canonical form for
 string-valued enums (PEP 663). `class X(str, Enum)` is documented as
 legacy. v3 did not update the codeblock.
 
-**Path forward**: any future Phase 6 must use `from enum import
-StrEnum` + `class AriaLiveKind(StrEnum):`. Trivial fix.
+**Path forward**: any future Phase 6 must use `from enum import StrEnum` + `class AriaLiveKind(StrEnum):`. Trivial fix.
 
 ### Decision 23 — P1: Counter `labelnames` typing comment still misleading (F-PYT-001 / F-PYTV2-005)
 
@@ -447,17 +437,17 @@ green):
 1. **LifespanManager creation** (Decision 14 / Open Review Flag #5) —
    either drop the master-plan line 478-479 test or ship a
    Phase 6.5 commit that creates the class.
-2. **`tests/observability/conftest.py` autouse fixture** (Decision 12)
+1. **`tests/observability/conftest.py` autouse fixture** (Decision 12)
    — small fixture; required for any test reliability.
-3. **Real file:line resolution for per-metric matrix** (Decision 18)
+1. **Real file:line resolution for per-metric matrix** (Decision 18)
    — `git grep` runs in implementation, not in spec.
-4. **`merge_contextvars` or custom-processor mandate** (Decision 17)
+1. **`merge_contextvars` or custom-processor mandate** (Decision 17)
    — fix codifies in §6A library choice, not §6B.7 escape hatch.
-5. **OpenMetrics `/metrics` + exemplar emit-site mandate**
+1. **OpenMetrics `/metrics` + exemplar emit-site mandate**
    (Decision 15) — full pipeline, half-codified in §6B.6.
-6. **Static asset pipeline specifics** (Decision 19) — Starlette
+1. **Static asset pipeline specifics** (Decision 19) — Starlette
    `Mount` + Jinja helper + load-order guard.
-7. **Master plan reconciliation** — `docs/superpowers/plans/2026-08-21-fastblocks-modern-framework-master-plan.md`
+1. **Master plan reconciliation** — `docs/superpowers/plans/2026-08-21-fastblocks-modern-framework-master-plan.md`
    line 478-479 still references `LifespanManager` and the
    `httpx.AsyncClient + LifespanManager` test. Either amend the
    master plan in a separate commit or add an erratum footnote.
@@ -518,7 +508,7 @@ The following items remain parked:
   to Phase 6.5 in v1; re-deferred to a separate Phase in v3 per
   Question 3 decision) — see Decision above for reasoning.
 - **Counter init Literal type-system signature** (Decision 23) —
-  needs a real generic Counter[Literal[...]] or
+  needs a real generic Counter\[Literal[...]\] or
   Counter(name, labelnames, literals=...) API.
 - **HTMY XSS for Jinja2-rendered components** (out of scope per
   master plan §Phase 5 verification line 582-583 — Phase 5
@@ -527,8 +517,7 @@ The following items remain parked:
   was Playwright + aria snapshot, which is
   structural-incomplete-verification per F-A11Y-004).
 - **Master-plan reconciliation**: master plan line 478-479 still
-  references `LifespanManager` and `httpx.AsyncClient +
-  LifespanManager`. Either amend the master plan in a separate
+  references `LifespanManager` and `httpx.AsyncClient + LifespanManager`. Either amend the master plan in a separate
   commit (mirrors ADR 0012's "Master-plan reconciliation" parked
   item) or add an erratum footnote in any future Phase 6 spec.
 

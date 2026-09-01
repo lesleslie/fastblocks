@@ -1,13 +1,6 @@
----
-status: accepted
-role: phase-4-design-spec
-date: 2026-08-22
-last_reviewed: 2026-08-22
-supersedes: null
-superseded_by: null
-decision_date: 2026-08-22
-topic: phase-4-mcp-tool-surface-organization
----
+______________________________________________________________________
+
+## status: accepted role: phase-4-design-spec date: 2026-08-22 last_reviewed: 2026-08-22 supersedes: null superseded_by: null decision_date: 2026-08-22 topic: phase-4-mcp-tool-surface-organization
 
 # Phase 4: MCP Tool Surface Organization Design
 
@@ -30,14 +23,14 @@ Phase 4 opts back in for cross-component consistency.
 1. Replace the manual `register_fastblocks_tools` body with
    `mcp_common.tools.apply_tool_profile(...)` — the canonical Bodai
    MCP registration orchestrator.
-2. Tag the 7 existing tools by capability (3 groups: template,
+1. Tag the 7 existing tools by capability (3 groups: template,
    component, adapter).
-3. Per-tool behavioral gates (`_is_X_available() -> bool`) that
+1. Per-tool behavioral gates (`_is_X_available() -> bool`) that
    gate registration when a dependency (library import, Oneiric
    resolver state) is unavailable.
-4. The `discover_tools` MCP tool is auto-registered by
+1. The `discover_tools` MCP tool is auto-registered by
    `mcp_common.tools.apply_tool_profile` (no manual implementation).
-5. Tests for capabilities, profile integration, discover_tools,
+1. Tests for capabilities, profile integration, discover_tools,
    and per-tool gates.
 
 **Out of scope:**
@@ -57,8 +50,7 @@ Phase 4 opts back in for cross-component consistency.
 
 - `ToolProfile = StrEnum(MINIMAL | STANDARD | FULL)` — the canonical
   profile enum, with comparison operators for tier gating.
-- `apply_tool_profile(server, *, profile_env_var, registrations,
-  registration_map, register_all_fn, mandatory_groups)` — the
+- `apply_tool_profile(server, *, profile_env_var, registrations, registration_map, register_all_fn, mandatory_groups)` — the
   orchestrator that wires capability → tool list → registration
   function → server.tool(...) calls.
 - `discover_tools` — auto-registered as an MCP tool named
@@ -283,6 +275,7 @@ await apply_tool_profile(
 ```
 
 `apply_tool_profile` handles:
+
 - Reading `FASTBLOCKS_TOOL_PROFILE` env var (defaults to `full` if unset).
 - Calling each registration function from `registration_map`.
 - Auto-registering `discover_tools` as the 8th MCP tool (always).

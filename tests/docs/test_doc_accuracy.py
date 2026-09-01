@@ -111,6 +111,14 @@ def _iter_doc_text() -> list[tuple[Path, str]]:
         "/superpowers/specs/",
         "/.git/",
         "/.superpowers/",
+        # ADRs document historical decisions and explicitly deleted
+        # symbols (e.g. ``FASTBLOCKS_TOOLS`` in
+        # ``docs/adr/0015-phase-4-library-aware-opt-in.md`` Decision 7).
+        # Those references are NOT orphaned env vars — they are an
+        # audit-trail record of what was removed and why. Including
+        # ADRs in the env-var parity scan would falsely flag every
+        # "deleted symbol" line as an orphan.
+        "/docs/adr/",
     )
     skip_files: set[Path] = {
         REPO_ROOT / "CHANGELOG.md",

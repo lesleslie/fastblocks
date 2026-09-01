@@ -1,14 +1,6 @@
----
-status: accepted
-role: phase-6-5-design-spec
-date: 2026-08-22
-last_reviewed: 2026-08-22
-supersedes: null
-superseded_by: null
-blocks_on: null
-decision_date: 2026-08-22
-topic: phase-6-5-structural-fixes
----
+______________________________________________________________________
+
+## status: accepted role: phase-6-5-design-spec date: 2026-08-22 last_reviewed: 2026-08-22 supersedes: null superseded_by: null blocks_on: null decision_date: 2026-08-22 topic: phase-6-5-structural-fixes
 
 # Phase 6.5: Observability Structural Fixes Design
 
@@ -27,8 +19,7 @@ no new MCP tools, no new HTTP endpoints, no new adapter contracts.
 
 **In scope** (4 commits):
 
-1. **`feat(app): bind `app.state.main_loop` + `app.state.jinja_env`
-   at lifespan startup`** — extends the existing
+1. **`feat(app): bind `app.state.main_loop`+`app.state.jinja_env` at lifespan startup`** — extends the existing
    `@asynccontextmanager async def lifespan(...)` at
    `fastblocks/adapters/app/default.py:164-178` so the master-plan
    line 478-479 lifecycle integration test passes
@@ -36,27 +27,15 @@ no new MCP tools, no new HTTP endpoints, no new adapter contracts.
    `asyncio.AbstractEventLoop` AND `app.state.jinja_env` is a
    `jinja2.Environment`).
 
-2. **`feat(observability): mandate `bind_contextvars()` in
-   `trace_context.set()`** — fixes the load-bearing log↔trace
-   correlation gap. `structlog.contextvars.merge_contextvars` reads
-   only from the stdlib `contextvars` storage: `bind_contextvars`
-   writes to `ContextVar`s whose names start with structlog's
-   `STRUCTLOG_KEY_PREFIX`; `merge_contextvars` then reads them via
-   `contextvars.copy_context()` (`Context` object iteration); raw
-   `ContextVar.set()` writes to unrelated `ContextVar`s are
-   invisible.
-   The commit makes the public `trace_context.set()` API do BOTH
-   the raw set AND `bind_contextvars(**asdict(ctx))` so trace_id
+1. \*\*`feat(observability): mandate `bind_contextvars()`in`trace_context.set()`** — fixes the load-bearing log↔trace correlation gap. `structlog.contextvars.merge_contextvars`reads only from the stdlib`contextvars`storage:`bind_contextvars`writes to`ContextVar`s whose names start with structlog's `STRUCTLOG_KEY_PREFIX`; `merge_contextvars`then reads them via`contextvars.copy_context()` (`Context`object iteration); raw`ContextVar.set()`writes to unrelated`ContextVar`s are invisible. The commit makes the public `trace_context.set()`API do BOTH the raw set AND`bind_contextvars(\*\*asdict(ctx))\` so trace_id
    reaches log lines.
 
-3. **`feat(htmx): preserve ContextVar across `_run_async_safely`
-   executor boundary`** — wraps the executor call in
+1. **`feat(htmx): preserve ContextVar across `\_run_async_safely` executor boundary`** — wraps the executor call in
    `contextvars.copy_context()` so `_current_trace` (or any other
    ContextVar set in the caller thread) reaches the coroutine
    running inside the executor's worker thread.
 
-4. **`tests(observability): conftest.py autouse fixture for
-   SpanProcessor teardown`** — **per quick-review 2026-08-22**:
+1. **`tests(observability): conftest.py autouse fixture for SpanProcessor teardown`** — **per quick-review 2026-08-22**:
    the originally-proposed snapshot-via-`_active_span_processor`
    private attribute was cargo-culted — verified at spec-author
    time via `dir(ProxyTracerProvider)` that the `ProxyTracerProvider`
@@ -166,10 +145,10 @@ async def lifespan(app):
   `set()` API does BOTH:
   1. `token = _current_trace.set(ctx)` (raw `ContextVar`, survives
      asyncio Task propagation)
-  2. `structlog.contextvars.bind_contextvars(**asdict(ctx))`
+  1. `structlog.contextvars.bind_contextvars(**asdict(ctx))`
      (structlog-visible; merge_contextvars picks up trace_id,
      span_id, parent_span_id)
-  Returns the `Token` for canonical de-allocation via `reset()`.
+     Returns the `Token` for canonical de-allocation via `reset()`.
 - *Demonstrable by:*
   `tests/observability/test_log_correlation.py::test_trace_id_in_log_line`
   — set trace_context, emit a structlog INFO line, parse the JSON
@@ -202,8 +181,7 @@ async def lifespan(app):
   `trace_context.set(TraceContext(trace_id="abc", span_id="def"))`
   in the caller thread; call
   `_run_async_safely(coro)`; inside `coro`,
-  `trace_context.get()` returns `TraceContext(trace_id="abc",
-  span_id="def")` (NOT `None`).
+  `trace_context.get()` returns `TraceContext(trace_id="abc", span_id="def")` (NOT `None`).
 - *Rollback signal:* `git revert`
 - *Observability added:* `fastblocks_trace_context_lost_total`
   no longer fires for htmx.py path (per Phase 6 v3 spec
@@ -308,8 +286,7 @@ detail discovered during the final whole-branch review: OTel's
 public `trace.set_tracer_provider` is one-shot per **process**,
 guarded by a `_TRACER_PROVIDER_SET_ONCE` flag at
 `opentelemetry/trace/__init__.py` (line `_TRACER_PROVIDER_SET_ONCE._done`).
-The second and later calls log `Overriding of current
-TracerProvider is not allowed` and silently no-op. The
+The second and later calls log `Overriding of current TracerProvider is not allowed` and silently no-op. The
 implementation therefore resets the flag
 (`_TRACER_PROVIDER_SET_ONCE._done = False`) immediately before
 each `trace.set_tracer_provider(...)` call inside the
@@ -332,6 +309,7 @@ spec below.
 
 Per master plan line 350: zero backwards compatibility required. No
 deprecation warnings in fastblocks production code. Each commit:
+
 - **Commit 1**: pure extension of existing lifespan (no behavior
   change for any existing caller); additive
 - **Commit 2**: introduces new public API; legacy `clear()` kept as
@@ -360,6 +338,7 @@ Phase 6.5 done means ALL of these pass:
 | Commit 4 test | `uv run pytest tests/observability/test_conftest_isolation.py -v` | 1 new test, 0 fails |
 
 Baseline expectations (from `git show HEAD:pyproject.toml`):
+
 - ty: 0 prod errors
 - pytest: ~1800+ tests, 0 fails
 - ruff/refurb/bandit: 0
@@ -407,19 +386,18 @@ Phase 6.5 adds ~4 tests, 4 commits. Pytest baseline must continue to hold.
    verification gate unblocked by Commit 1; trace-context API
    shipped by Commit 2 before Commit 3 depends on it; test-infra
    Commit 4 independent and last).
-2. **LifespanManager**: extend the existing `@asynccontextmanager`
+1. **LifespanManager**: extend the existing `@asynccontextmanager`
    lifespan; do NOT ship a new class. The master-plan reference
    is documentation drift, not a code requirement.
-3. **`trace_context` API shape**: `set(ctx) -> Token` + `reset(token)`.
+1. **`trace_context` API shape**: `set(ctx) -> Token` + `reset(token)`.
    The `set()` does both raw `ContextVar.set()` and
    `structlog.bind_contextvars(**asdict(ctx))` so log lines carry
    trace_id without a custom processor.
-4. **htmx.py fix pattern**: `executor.submit(ctx.run, asyncio.run,
-   coro).result()` — the canonical Python 3.13 pattern for
+1. **htmx.py fix pattern**: `executor.submit(ctx.run, asyncio.run, coro).result()` — the canonical Python 3.13 pattern for
    crossing an executor boundary with context preservation.
-5. **conftest fixture scope**: function-scope (autouse) — per ADR
+1. **conftest fixture scope**: function-scope (autouse) — per ADR
    0013 Decision 12 mandate.
-6. **No deprecation cycle** (per master plan line 350): legacy
+1. **No deprecation cycle** (per master plan line 350): legacy
    `clear()` API from Commit 2 is kept until Commit 4 removes it;
    no other commits require deprecation warnings.
 

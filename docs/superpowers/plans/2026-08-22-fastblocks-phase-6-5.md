@@ -47,16 +47,19 @@ Per the spec (`docs/superpowers/specs/2026-08-22-fastblocks-phase-6-5-design.md`
 | `get() -> TraceContext \| None` | Task 2 | Tests | `def get() -> TraceContext \| None` |
 | `_tracer_provider_isolation` (fixture) | Task 4 | Task 4 test | `@pytest.fixture(autouse=True); yields; restores in finally` |
 
----
+______________________________________________________________________
 
 ### Task 1: Bind `app.state.main_loop` + `app.state.jinja_env` at lifespan startup
 
 **Files:**
+
 - Modify: `fastblocks/adapters/app/default.py:164-178` (existing lifespan body)
 - Create: `tests/test_lifespan_app_state.py`
 
 **Interfaces:**
+
 - Consumes: None (this is the first commit; subsequent commits depend on it)
+
 - Produces: An app lifespan that binds `app.state.main_loop` (an `asyncio.AbstractEventLoop`) and `app.state.jinja_env` (a `jinja2.Environment`) at startup
 
 - [ ] **Step 1: Write the failing test**
@@ -176,18 +179,21 @@ requires. No new LifespanManager class — extend the existing one.
 The chosen jinja2.Environment factory: <document chosen factory here>"
 ```
 
----
+______________________________________________________________________
 
 ### Task 2: `trace_context.set()` mandates `bind_contextvars()` for log↔trace correlation
 
 **Files:**
+
 - Create: `fastblocks/observability/__init__.py`
 - Create: `fastblocks/observability/trace_context.py`
 - Create: `tests/observability/__init__.py` (empty; namespaces the test module)
 - Create: `tests/observability/test_log_correlation.py`
 
 **Interfaces:**
+
 - Consumes: Task 1's lifespan (provides `app.state.main_loop` for `pytest` async fixtures if needed; not directly used)
+
 - Produces: Module-level `TraceContext`, `set(ctx) -> Token`, `reset(token) -> None`, `get() -> TraceContext | None` — fully tested + docstringed
 
 - [ ] **Step 1: Write the failing test**
@@ -408,16 +414,19 @@ API surface: set(ctx) -> Token, reset(token) -> None, get() -> Context | None.
 Legacy clear() kept as deprecated alias; removed in Task 4."
 ```
 
----
+______________________________________________________________________
 
 ### Task 3: Preserve ContextVar across `_run_async_safely` executor boundary
 
 **Files:**
+
 - Modify: `fastblocks/htmx.py:29-52` (`_run_async_safely` body)
 - Create: `tests/htmx/test_trace_context_propagation.py`
 
 **Interfaces:**
+
 - Consumes: Task 2's `set_trace_context` / `reset_trace_context` (used in the test)
+
 - Produces: A `_run_async_safely` that wraps the executor submission in `contextvars.copy_context()` so any ContextVar (including `_current_trace` from Task 2) survives the executor thread boundary
 
 - [ ] **Step 1: Write the failing test**
@@ -540,17 +549,20 @@ boundary so trace_context.set() in the caller thread is visible
 inside the coroutine running on the executor."
 ```
 
----
+______________________________________________________________________
 
 ### Task 4: Autouse fixture for SpanProcessor teardown + remove legacy `clear()` alias
 
 **Files:**
+
 - Create: `tests/observability/conftest.py`
 - Create: `tests/observability/test_conftest_isolation.py`
 - Modify: `fastblocks/observability/trace_context.py` (remove legacy `clear()` alias)
 
 **Interfaces:**
+
 - Consumes: Task 2's `trace_context` module + `set_trace_context` / `reset_trace_context`
+
 - Produces: An autouse function-scoped pytest fixture that swaps in a fresh `TracerProvider` per test, restoring the previous one after. Plus removal of the legacy `clear()` alias per Task 2's commit note.
 
 - [ ] **Step 1: Write the failing test**
@@ -755,7 +767,7 @@ Also removes the legacy clear() alias from trace_context per Task 2's
 deprecation window; reset(token) is the canonical de-allocation."
 ```
 
----
+______________________________________________________________________
 
 ## Cross-Reference Map
 
@@ -773,14 +785,14 @@ Per the writing-plans skill's self-review checklist:
 1. **Spec coverage**: All 4 commits from the spec map 1:1 to Tasks 1-4.
    The spec's quick-review patches (Decision 17 narrative fix; Commit 4
    TracerProvider-swap fix) are baked into Tasks 2 and 4 respectively.
-2. **Placeholder scan**: No TBD / TODO / similar. Every code block
+1. **Placeholder scan**: No TBD / TODO / similar. Every code block
    shows the actual content an engineer needs. The `...` placeholder
    in Task 1's Step 4 is replaced with the chosen factory the
    implementer identifies in Step 3; commit body documents the choice.
-3. **Type consistency**: `TraceContext` is defined in Task 2's
+1. **Type consistency**: `TraceContext` is defined in Task 2's
    Step 3; Task 3 references the same name and uses
    `set_trace_context`/`reset_trace_context` (the public re-export
    names from `__init__.py`); Task 4 removes the legacy `clear()`
    that Task 2 introduced as a deprecated alias — no type drift.
-4. **No "Similar to Task N" references**: each task's code is
+1. **No "Similar to Task N" references**: each task's code is
    fully reproduced inline.

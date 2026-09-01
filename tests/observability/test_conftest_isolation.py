@@ -8,9 +8,18 @@ in a fresh `TracerProvider` per test, then restores the previous
 one on teardown.
 
 This regression test installs a SpanProcessor in test_a and asserts
-in test_b that the active TracerProvider has a *different* id() — i.e.
-the fixture swapped it. Without the fixture, both tests see the
-same proxy/SDK provider and id() comparison is equal (regression).
+in test_b that the active TracerProvider is a *different object* —
+i.e. the fixture swapped it. Without the fixture, both tests see the
+same proxy/SDK provider.
+
+Note on identity comparison: the previous version stored ``id(provider)``
+in ``_PROVIDERS_SEEN`` and compared integers. That is unstable because
+CPython may recycle the memory address of the previous test's
+``TracerProvider`` (which the autouse teardown drops) into the next
+test's ``TracerProvider`` — distinct objects with equal ``id()``.
+The fix stores the provider object itself and uses the ``is``
+operator (Python's true identity check, which cannot be tricked by
+memory-address reuse because it checks the object, not the address).
 """
 from __future__ import annotations
 
@@ -23,19 +32,21 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
 
 
 # Cross-test state: each invocation of `install_span_processor`
-# appends the current provider's id() to this list. pytest collects
-# test_a before test_b in this file, so list[0] is test_a's id().
-_PROVIDERS_SEEN: list[int] = []
+# appends the live provider reference to this list. pytest collects
+# test_a before test_b in this file, so list[0] is test_a's provider.
+# We keep the OBJECT reference (not ``id(...)``) so identity comparison
+# survives CPython's memory-address recycling — see module docstring.
+_PROVIDERS_SEEN: list[object] = []
 
 
 @pytest.fixture
 def install_span_processor() -> dict[str, object]:
     """Install a SpanProcessor on the fixture-managed TracerProvider.
 
-    Captures ``id(trace.get_tracer_provider())`` so test_b can assert
-    that the provider was swapped between tests. Without the autouse
-    fixture in ``conftest.py``, both tests observe the same provider
-    instance (id() comparison equal) — regression.
+    Captures ``trace.get_tracer_provider()`` so test_b can assert that
+    the provider was swapped between tests. Without the autouse fixture
+    in ``conftest.py``, both tests observe the same provider instance
+    (``is`` comparison equal) — regression.
     """
     provider = trace.get_tracer_provider()
     exporter = InMemorySpanExporter()
@@ -43,9 +54,9 @@ def install_span_processor() -> dict[str, object]:
     provider.add_span_processor(span_processor)
     info: dict[str, object] = {
         "exporter": exporter,
-        "provider_id": id(provider),
+        "provider": provider,
     }
-    _PROVIDERS_SEEN.append(info["provider_id"])  # type: ignore[arg-type]
+    _PROVIDERS_SEEN.append(provider)
     try:
         yield info
     finally:
@@ -56,13 +67,13 @@ def install_span_processor() -> dict[str, object]:
 def test_a_installs_processor(install_span_processor: dict[str, object]) -> None:
     """test_a installs a SpanProcessor on the fixture-managed provider.
 
-    Sanity check: the fixture's captured ``provider_id`` matches the
-    currently-active TracerProvider (id() equal), proving the test
-    ran inside the autouse-fixture-swapped provider.
+    Sanity check: the fixture's captured provider is the same object as
+    the currently-active TracerProvider (``is`` comparison), proving
+    the test ran inside the autouse-fixture-swapped provider.
     """
     info = install_span_processor
     assert info["exporter"] is not None
-    assert info["provider_id"] == id(trace.get_tracer_provider())
+    assert info["provider"] is trace.get_tracer_provider()
 
 
 def test_b_provider_is_fresh_after_test_a(
@@ -70,17 +81,18 @@ def test_b_provider_is_fresh_after_test_a(
 ) -> None:
     """The autouse fixture must swap the TracerProvider between tests.
 
-    test_a appended ``_PROVIDERS_SEEN[0]``. If the fixture ran, this
-    test observes a *different* provider (id() inequality). If the
-    fixture did NOT run, both ids are equal — regression signal.
+    test_a appended ``_PROVIDERS_SEEN[0]`` (the live provider object).
+    If the fixture ran, this test observes a *different* provider
+    object (``is not``). If the fixture did NOT run, both objects are
+    equal — regression signal.
     """
     assert len(_PROVIDERS_SEEN) >= 2, (
         "pytest collection order assumption broken; "
         "test_a must run before test_b"
     )
-    provider_id_a: int = _PROVIDERS_SEEN[0]
-    provider_id_b: int = id(trace.get_tracer_provider())
-    assert provider_id_b != provider_id_a, (
+    provider_a: object = _PROVIDERS_SEEN[0]
+    provider_b: object = trace.get_tracer_provider()
+    assert provider_b is not provider_a, (
         "TracerProvider swap did NOT happen between tests; "
         "test pollution will follow"
     )

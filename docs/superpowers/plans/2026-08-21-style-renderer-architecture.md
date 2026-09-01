@@ -27,7 +27,7 @@ rollback signal.
 | Concern | Single-release plan | Two-release plan |
 |---|---|---|
 | Reviewer load | One PR bundles four changes (style cleanup, dep change, security fix, source absorption); high cognitive load | Each PR has one theme; reviewer focus is sharper |
-| Rollback granularity | Reverting requires undoing everything; the broken-style trap stays until the entire PR lands | 0.30.0 can roll back to `style="vanilla"`-default for the *style* changes (A, B, D) without touching htmy code ¹ | 
+| Rollback granularity | Reverting requires undoing everything; the broken-style trap stays until the entire PR lands | 0.30.0 can roll back to `style="vanilla"`-default for the *style* changes (A, B, D) without touching htmy code ¹ |
 | PyPI blast radius | One release ships all the breaking changes; any external consumer hits them simultaneously | 0.30.0 hard-breaks `style="kelp"`/`"bulma"`/`"webawesome"`/`"custom"` (verified-zero-consumers); 0.31.x only affects users importing from `fastblocks_htmy` (zero verified external consumers per Arch F8) |
 | Failure mode visibility | If 0.31.x work fails, 0.30.0's independently-valuable fixes are blocked | 0.30.0 ships even if 0.31.x is delayed |
 
@@ -54,7 +54,7 @@ where every cell is either coherent or unavailable. Concrete renderer values
 (`jinja2` | `htmy`) and their interaction with `style` are out of scope for
 this PR — only the axis is named.
 
----
+______________________________________________________________________
 
 # Release 1: fastblocks 0.30.0 — independent fixes
 
@@ -122,7 +122,7 @@ it the default `AppBaseSettings.style`.
 
 - `pyproject.toml` — move `"fastblocks-ui>=0.8,<0.9"` from the optional `fastblocks_ui = [...]` group into `[project].dependencies` directly. **Pin corrected** from the prior plan's `>=0.7,<0.8` to `>=0.8,<0.9` to match the range the standalone `fastblocks-htmy` already requires (per spec). Delete the `fastblocks_ui = [...]` group entirely.
 - `fastblocks/adapters/app/_base.py:12` — `style: str = "vanilla"` → `style: str = "fastblocks_ui"`
-- `fastblocks/adapters/templates/_base.py:133` — `style = getattr(self.config.app, "style", "vanilla")` → `style = getattr(self.config.app, "style", "fastblocks_ui")` (matches Deliverable A's pre-emptive update)
+- `fastblocks/adapters/templates/_base.py:133` — `style = getattr(self.config.app, "style", "vanilla")` → `style = getattr(self.config.app, "style", "fastblocks_ui")` (matches Deliverable A's preemptive update)
 - `tests/adapters/style/test_fastblocks_ui_style.py` — audit tests assuming `vanilla` default
 - `tests/adapters/app/test_app_structure.py:64` (`assert AppBaseSettingsType.style == "vanilla"`) and the 7+ other test sites listed in Deliverable A — all flipped to `"fastblocks_ui"` or made explicit-construction
 
@@ -163,8 +163,8 @@ registry in `_htmy_components.py` correctly routes through
 **Files to update** — three discrete steps:
 
 1. **Delete the unsafe loaders.** Remove `_load_from_cached_bytecode` (lines 300-354) and `_load_from_source` (lines 356-399) from `htmy.py`.
-2. **Rewrite the caller.** `HTMYComponentRegistry.get_component_class` at `htmy.py:279-298` calls both deleted methods. Replace its body to defer to `AdvancedHTMYComponentRegistry.load_component_from_source(component_path, source, registry=AdvancedHTMYComponentRegistry)` from `_htmy_components.py`. If no advanced registry is available, raise `ComponentNotFound` matching the trusted-only fallback contract. Do NOT copy-paste `_load_from_source` minus the `importlib.util` guard — that would silently restore the RCE vector.
-3. **Audit tests.** Any tests in `tests/adapters/templates/` that called `HTMYTemplates.get_component_class` directly must be updated or deleted. The legacy `HTMYComponentRegistry` path is preserved (loader-free); tests asserting on `discover_components()` / `register_trusted_components()` continue to pass.
+1. **Rewrite the caller.** `HTMYComponentRegistry.get_component_class` at `htmy.py:279-298` calls both deleted methods. Replace its body to defer to `AdvancedHTMYComponentRegistry.load_component_from_source(component_path, source, registry=AdvancedHTMYComponentRegistry)` from `_htmy_components.py`. If no advanced registry is available, raise `ComponentNotFound` matching the trusted-only fallback contract. Do NOT copy-paste `_load_from_source` minus the `importlib.util` guard — that would silently restore the RCE vector.
+1. **Audit tests.** Any tests in `tests/adapters/templates/` that called `HTMYTemplates.get_component_class` directly must be updated or deleted. The legacy `HTMYComponentRegistry` path is preserved (loader-free); tests asserting on `discover_components()` / `register_trusted_components()` continue to pass.
 
 **Integration Contract (C3):**
 
@@ -245,7 +245,7 @@ in the CHANGELOG.
 - **Rollback signal:** **scoped revert preferred over full revert.** Per-task ICs above define which commits are safe to revert. C3 is NOT safe to revert in isolation (re-introduces RCE); if a C3 regression triggers, ship a follow-up patch with documented security review, not a revert. The release-level rollback signal is "scoped revert of A, B, D commits; preserve C3." The comparison table's "0.30.0 can roll back to style='vanilla'-default" wording refers to writing *new* htmy code, not to security-impacting restore via full-revert.
 - **Observability added:** startup log line `style=<value>, fastblocks_ui_version=<X.Y.Z>, htmy_path=AST-sandboxed`; counter metric `fastblocks_style_resolve_total{result, style}`; import-time assertion in `htmy.py` that the RCE grep returns 0 hits; escape contract test pinning `fastblocks_ui` helper behavior.
 
----
+______________________________________________________________________
 
 # Release 2: fastblocks 0.31.x — absorption mechanics
 
@@ -256,7 +256,7 @@ transitive deps directly, ship a cross-repo shim release so any external
 ## Pre-conditions (all must hold before any 0.31.x work begins)
 
 1. **0.30.0 merged to main.** All independently-valuable fixes are in.
-2. **PyPI reverse-deps confirmation** — protocol (per architecture-council audit; `pip install --dry-run` does NOT query reverse deps, contrary to the original plan):
+1. **PyPI reverse-deps confirmation** — protocol (per architecture-council audit; `pip install --dry-run` does NOT query reverse deps, contrary to the original plan):
    ```bash
    # 1. Confirm what fastblocks-htmy 0.5.x declared as its own deps (direct deps only — not reverse)
    curl -s https://pypi.org/pypi/fastblocks-htmy/0.5.0/json | jq '.info.requires_dist'
@@ -268,9 +268,9 @@ transitive deps directly, ship a cross-repo shim release so any external
    #    excluding known Bodai repos. Cross-reference all four sources. If any external
    #    consumer exists, abort and re-plan.
    ```
-3. **Pre-merge analysis complete.** Diff public method signatures between `fastblocks_htmy/base.py` and `_htmy_components.py`. Enumerate name collisions with proposed resolution (alias, merge, raise). Produce a commit-by-commit migration path for users who depended on either definition. Result reviewed and chosen default documented in CHANGELOG before C2 starts.
-4. **Standalone-repo pre-flight:** `git -C /Users/les/Projects/fastblocks-htmy status` must be clean before starting C5; if dirty, abort and surface (per architecture-council audit).
-5. **C1 prerequisite:** B's `fastblocks_ui = [...]` group is gone (`git grep -n "fastblocks_ui =" pyproject.toml` returns no hits) AND `fastblocks-ui>=0.8,<0.9` is in `[project].dependencies`.
+1. **Pre-merge analysis complete.** Diff public method signatures between `fastblocks_htmy/base.py` and `_htmy_components.py`. Enumerate name collisions with proposed resolution (alias, merge, raise). Produce a commit-by-commit migration path for users who depended on either definition. Result reviewed and chosen default documented in CHANGELOG before C2 starts.
+1. **Standalone-repo pre-flight:** `git -C /Users/les/Projects/fastblocks-htmy status` must be clean before starting C5; if dirty, abort and surface (per architecture-council audit).
+1. **C1 prerequisite:** B's `fastblocks_ui = [...]` group is gone (`git grep -n "fastblocks_ui =" pyproject.toml` returns no hits) AND `fastblocks-ui>=0.8,<0.9` is in `[project].dependencies`.
 
 ## Deliverables
 
@@ -352,6 +352,7 @@ If the range is no longer resolvable on PyPI, abort C1 and pin a different range
 - `CLAUDE.md` — append to "Real bugs found" / "Architecture" sections
 
 **XSS regression test scope** (per security-auditor audit — the original `instantiate each absorbed component with <script>alert(1)</script>` is field-blind): enumerate the user-controlled renderable surface per component. Cover:
+
 - `attrs: dict[str, Any]` on Button / Container / etc.
 - `content: object = None` on Container — pin behavior explicitly: `Container(content='<div>safe</div>')` returns `<div>safe</div>` (no double-escape); `Container(content='<script>')` returns `<script>` (no escape, per Container's "pre-rendered HTML" docstring contract)
 - list-valued fields: `Fieldset.entries`, `NavList.items`
@@ -413,13 +414,14 @@ The shim is published to PyPI by `les` manually. PyPI package publication is a o
 Required pre-flight before publishing:
 
 1. **PyPI 2FA confirmed active** on the `les` account. Verify at https://pypi.org/manage/account/. If 2FA is not configured, configure it before publishing — without 2FA, a phished token publishes a malicious 0.6.x.
-2. **PEP 740 attestations enabled** for the project (`pyproject.toml` `[project].attestations = { source = "publish" }` or similar). This provides cryptographic proof of the wheel's origin and contents.
-3. **Hash-pinned install** for any CI / production install of `fastblocks-htmy==0.6.x`: `pip install --require-hashes -r requirements-htmy-shim.txt` where the requirements file lists `--hash=sha256:...` for each wheel. This catches a malicious replacement even if PyPI serves a different wheel.
-4. **Threat model documented** in a one-line entry under CHANGELOG.md or the spec's Migration notes: "fastblocks-htmy 0.6.x is a security-sensitive shim; users in production environments must use hash-pinned installs."
+1. **PEP 740 attestations enabled** for the project (`pyproject.toml` `[project].attestations = { source = "publish" }` or similar). This provides cryptographic proof of the wheel's origin and contents.
+1. **Hash-pinned install** for any CI / production install of `fastblocks-htmy==0.6.x`: `pip install --require-hashes -r requirements-htmy-shim.txt` where the requirements file lists `--hash=sha256:...` for each wheel. This catches a malicious replacement even if PyPI serves a different wheel.
+1. **Threat model documented** in a one-line entry under CHANGELOG.md or the spec's Migration notes: "fastblocks-htmy 0.6.x is a security-sensitive shim; users in production environments must use hash-pinned installs."
 
 These mitigations apply to anyone installing the shim from PyPI, not just the publishing side.
 
 **Coordination contract (per architecture-council audit):**
+
 - Owner: `les` (single-owner; verified via `git -C /Users/les/Projects/fastblocks-htmy log --format='%an' | sort -u`)
 - Release ordering: ships within 24h of fastblocks 0.31.0 publication
 - PyPI publish: manual sequence (build, twine upload, manual version bump) per `crackerjack-version-bumping-manual.md`
@@ -473,7 +475,7 @@ C1 → C2 → C4 → C5. Each sub-task commits independently with its own verifi
 - **Rollback signal:** the 0.6.x shim remains a valid import path indefinitely. `fastblocks` 0.31.x users who depended on the internal module path can `git revert` the C4 absorption commit. `fastblocks-ui` / `htmy` version pins (C1) are independent. C5 rollback = yank + republish as 0.6.1.
 - **Observability added:** union of per-task observability. CHANGELOG 0.31.x "Absorbed" section; standalone `fastblocks-htmy` GitHub repo gets "Archived" toggle ~30 days post-release; CLAUDE.md updated to reflect the absorption under "Real bugs found" / "Architecture" sections; runtime counter `fastblocks_htmy_component_render_total`; pypistats download trending-to-zero.
 
----
+______________________________________________________________________
 
 # Cross-cutting concerns
 
@@ -483,10 +485,10 @@ Subagent-Driven Development per CLAUDE.md:
 
 0. **Commit the plan** to `docs/superpowers/plans/2026-08-21-style-renderer-architecture.md` on the working branch before dispatching any implementer subagent. Pin the commit SHA in the dispatched task brief. (Per outside-AI audit.)
 1. Spec approved at `/Users/les/Projects/fastblocks/docs/superpowers/specs/2026-08-21-style-renderer-architecture.md` (covering A+B+C1+C2+C3+C4+D as one cohesive design).
-2. Plan = this document. One task per sub-task (A, B, C1, C2, C3, C4, C5, D).
-3. Execute task-by-task with a fresh implementer subagent per task + scoped reviews.
-4. Commit per task. Pre-existing dirty files stay out of every commit.
-5. **Each task commit must include an Integration Contract block per CLAUDE.md §Process Discipline** — use the per-task ICs in this plan as templates. Implementer subagents should be told in their brief: "Your task's IC block defines what 'done' means."
+1. Plan = this document. One task per sub-task (A, B, C1, C2, C3, C4, C5, D).
+1. Execute task-by-task with a fresh implementer subagent per task + scoped reviews.
+1. Commit per task. Pre-existing dirty files stay out of every commit.
+1. **Each task commit must include an Integration Contract block per CLAUDE.md §Process Discipline** — use the per-task ICs in this plan as templates. Implementer subagents should be told in their brief: "Your task's IC block defines what 'done' means."
 
 ## Worktree quarantine
 
@@ -532,9 +534,9 @@ When a task surfaces code calling an API that doesn't exist, HTML output that
 fails to escape user input, or any other silent-failure pattern:
 
 1. **Stop** — don't silently fix.
-2. **Surface** — name the file, line, the wrong behavior, and the corrected behavior.
-3. **Ask** — confirm whether the code path is exercised or dead.
-4. **Document** — append to the spec's "Real bugs found" section.
+1. **Surface** — name the file, line, the wrong behavior, and the corrected behavior.
+1. **Ask** — confirm whether the code path is exercised or dead.
+1. **Document** — append to the spec's "Real bugs found" section.
 
 ## Hard don'ts
 
@@ -577,7 +579,7 @@ For each task commit dispatched for review, the read-only reviewer verifies:
 - pyproject.toml (the optional `fastblocks_ui = [...]` group that moves in Deliverable B; the existing `htmy[lxml]~=0.9` that gets replaced in C1): `/Users/les/Projects/fastblocks/pyproject.toml`
 - Standalone `fastblocks-htmy` pyproject.toml (for transitive pin ranges): `/Users/les/Projects/fastblocks-htmy/pyproject.toml`
 
----
+______________________________________________________________________
 
 # Fresh-session prompt (paste verbatim into a new session)
 

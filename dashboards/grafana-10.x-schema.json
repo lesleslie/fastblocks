@@ -1,160 +1,224 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/grafana/grafana/blob/main/public/schemas/dashboard/v2.0.x/dashboard_schema.json",
-  "title": "FastBlocks Grafana 10.x Dashboard Schema (vendored subset)",
-  "description": "Minimal JSON Schema subset for validating FastBlocks overview dashboards against Grafana 10.x shape. Vendored per v6 spec to lock the panel structure independent of upstream schema churn (Open Review Flag #4). Covers only the fields actually used by fastblocks-overview.json: dashboard.title / uid / panels / timezone / schemaVersion / refresh, plus panels[].{id, title, type, datasource, targets, gridPos, fieldConfig, options} and targets[].{expr, refId, datasource, legendFormat}.",
-  "type": "object",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "additionalProperties": true,
-  "required": ["title", "uid", "panels"],
-  "properties": {
-    "title": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Dashboard title shown in the Grafana UI header."
-    },
-    "uid": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Stable dashboard identifier. Grafana uses this for /d/<uid> URLs."
-    },
-    "description": {
-      "type": "string",
-      "description": "Optional dashboard description."
-    },
-    "tags": {
-      "type": "array",
-      "items": {"type": "string"},
-      "description": "Optional dashboard tags."
-    },
-    "timezone": {
-      "type": "string",
-      "description": "Dashboard timezone (e.g. 'browser', 'utc')."
-    },
-    "schemaVersion": {
-      "type": "integer",
-      "minimum": 30,
-      "description": "Grafana dashboard schema version. Grafana 10.x is schemaVersion 39."
-    },
-    "refresh": {
-      "type": "string",
-      "description": "Auto-refresh interval (e.g. '30s', '1m')."
-    },
-    "time": {
-      "type": "object",
-      "description": "Default time range (Grafana-native shape).",
-      "properties": {
-        "from": {"type": "string"},
-        "to": {"type": "string"}
-      },
-      "additionalProperties": true
-    },
-    "panels": {
-      "type": "array",
-      "description": "Top-level dashboard panels.",
-      "items": {"$ref": "#/definitions/panel"}
-    },
-    "templating": {
-      "type": "object",
-      "description": "Optional template variables.",
-      "additionalProperties": true
-    },
-    "annotations": {
-      "type": "object",
-      "description": "Optional annotations list.",
-      "additionalProperties": true
-    }
-  },
   "definitions": {
+    "gridPos": {
+      "additionalProperties": false,
+      "properties": {
+        "h": {
+          "maximum": 24,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "w": {
+          "maximum": 24,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "x": {
+          "maximum": 23,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "w",
+        "h"
+      ],
+      "type": "object"
+    },
     "panel": {
-      "type": "object",
-      "required": ["id", "title", "type", "gridPos"],
       "additionalProperties": true,
       "properties": {
-        "id": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "Unique panel id within the dashboard."
-        },
-        "title": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Panel title shown above the panel."
+        "datasource": {
+          "description": "Panel-level default datasource.",
+          "type": [
+            "object",
+            "string",
+            "null"
+          ]
         },
         "description": {
-          "type": "string",
-          "description": "Optional panel description."
+          "description": "Optional panel description.",
+          "type": "string"
         },
-        "type": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Grafana panel plugin type (e.g. 'timeseries', 'stat', 'table')."
-        },
-        "datasource": {
-          "type": ["object", "string", "null"],
-          "description": "Panel-level default datasource."
-        },
-        "targets": {
-          "type": "array",
-          "description": "Query targets for the panel.",
-          "items": {"$ref": "#/definitions/target"}
+        "fieldConfig": {
+          "additionalProperties": true,
+          "description": "Optional field config overrides.",
+          "type": "object"
         },
         "gridPos": {
           "$ref": "#/definitions/gridPos"
         },
-        "fieldConfig": {
-          "type": "object",
-          "description": "Optional field config overrides.",
-          "additionalProperties": true
+        "id": {
+          "description": "Unique panel id within the dashboard.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "maxDataPoints": {
+          "type": "integer"
         },
         "options": {
-          "type": "object",
+          "additionalProperties": true,
           "description": "Optional panel-type-specific options.",
-          "additionalProperties": true
+          "type": "object"
         },
-        "transparent": {"type": "boolean"},
-        "maxDataPoints": {"type": "integer"}
-      }
+        "targets": {
+          "description": "Query targets for the panel.",
+          "items": {
+            "$ref": "#/definitions/target"
+          },
+          "type": "array"
+        },
+        "title": {
+          "description": "Panel title shown above the panel.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "transparent": {
+          "type": "boolean"
+        },
+        "type": {
+          "description": "Grafana panel plugin type (e.g. 'timeseries', 'stat', 'table').",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "type",
+        "gridPos"
+      ],
+      "type": "object"
     },
     "target": {
-      "type": "object",
-      "required": ["expr", "refId"],
       "additionalProperties": true,
       "properties": {
-        "expr": {
-          "type": "string",
-          "minLength": 1,
-          "description": "PromQL expression. Must reference a known metric from the per-metric instrumentation matrix (validated separately by test_each_panel_metric_in_per_metric_matrix)."
-        },
-        "refId": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Target reference id (e.g. 'A', 'B')."
-        },
         "datasource": {
-          "type": ["object", "string", "null"],
-          "description": "Optional per-target datasource override."
+          "description": "Optional per-target datasource override.",
+          "type": [
+            "object",
+            "string",
+            "null"
+          ]
+        },
+        "exemplar": {
+          "type": "boolean"
+        },
+        "expr": {
+          "description": "PromQL expression. Must reference a known metric from the per-metric instrumentation matrix (validated separately by test_each_panel_metric_in_per_metric_matrix).",
+          "minLength": 1,
+          "type": "string"
+        },
+        "hide": {
+          "type": "boolean"
+        },
+        "instant": {
+          "type": "boolean"
+        },
+        "interval": {
+          "type": "string"
         },
         "legendFormat": {
-          "type": "string",
-          "description": "Optional legend format string."
+          "description": "Optional legend format string.",
+          "type": "string"
         },
-        "instant": {"type": "boolean"},
-        "range": {"type": "boolean"},
-        "interval": {"type": "string"},
-        "exemplar": {"type": "boolean"},
-        "hide": {"type": "boolean"}
-      }
-    },
-    "gridPos": {
-      "type": "object",
-      "required": ["x", "y", "w", "h"],
-      "additionalProperties": false,
-      "properties": {
-        "x": {"type": "integer", "minimum": 0, "maximum": 23},
-        "y": {"type": "integer", "minimum": 0},
-        "w": {"type": "integer", "minimum": 1, "maximum": 24},
-        "h": {"type": "integer", "minimum": 1, "maximum": 24}
-      }
+        "range": {
+          "type": "boolean"
+        },
+        "refId": {
+          "description": "Target reference id (e.g. 'A', 'B').",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "expr",
+        "refId"
+      ],
+      "type": "object"
     }
-  }
+  },
+  "description": "Minimal JSON Schema subset for validating FastBlocks overview dashboards against Grafana 10.x shape. Vendored per v6 spec to lock the panel structure independent of upstream schema churn (Open Review Flag #4). Covers only the fields actually used by fastblocks-overview.json: dashboard.title / uid / panels / timezone / schemaVersion / refresh, plus panels[].{id, title, type, datasource, targets, gridPos, fieldConfig, options} and targets[].{expr, refId, datasource, legendFormat}.",
+  "properties": {
+    "annotations": {
+      "additionalProperties": true,
+      "description": "Optional annotations list.",
+      "type": "object"
+    },
+    "description": {
+      "description": "Optional dashboard description.",
+      "type": "string"
+    },
+    "panels": {
+      "description": "Top-level dashboard panels.",
+      "items": {
+        "$ref": "#/definitions/panel"
+      },
+      "type": "array"
+    },
+    "refresh": {
+      "description": "Auto-refresh interval (e.g. '30s', '1m').",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "description": "Grafana dashboard schema version. Grafana 10.x is schemaVersion 39.",
+      "minimum": 30,
+      "type": "integer"
+    },
+    "tags": {
+      "description": "Optional dashboard tags.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "templating": {
+      "additionalProperties": true,
+      "description": "Optional template variables.",
+      "type": "object"
+    },
+    "time": {
+      "additionalProperties": true,
+      "description": "Default time range (Grafana-native shape).",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "timezone": {
+      "description": "Dashboard timezone (e.g. 'browser', 'utc').",
+      "type": "string"
+    },
+    "title": {
+      "description": "Dashboard title shown in the Grafana UI header.",
+      "minLength": 1,
+      "type": "string"
+    },
+    "uid": {
+      "description": "Stable dashboard identifier. Grafana uses this for /d/<uid> URLs.",
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "uid",
+    "panels"
+  ],
+  "title": "FastBlocks Grafana 10.x Dashboard Schema (vendored subset)",
+  "type": "object"
 }

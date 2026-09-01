@@ -152,7 +152,7 @@ async def safe_depends_get(
                 else default
             )
             cache_dict[key] = instance
-        except Exception:
+        except (ImportError, AttributeError, RuntimeError, TypeError, ValueError):
             # ``safe_depends_get`` is contractually safe: any resolver failure
             # (missing Oneiric, bad candidate, factory raising, etc.) falls
             # back to ``default`` rather than propagating.

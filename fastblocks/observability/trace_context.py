@@ -16,6 +16,7 @@ The public API does BOTH:
 Returns a `Token` from the typed `set` so callers can pair with
 `reset(token)` for token-safe de-allocation.
 """
+
 from __future__ import annotations
 
 from contextvars import ContextVar, Token
@@ -34,7 +35,8 @@ class TraceContext:
 
 
 _current_trace: ContextVar[TraceContext | None] = ContextVar(
-    "fastblocks_trace", default=None,
+    "fastblocks_trace",
+    default=None,
 )
 
 
@@ -68,7 +70,9 @@ def reset(token: Token) -> None:
     """Reset the typed ContextVar to its prior value and clear structlog's."""
     _current_trace.reset(token)
     structlog.contextvars.unbind_contextvars(
-        "trace_id", "span_id", "parent_span_id",
+        "trace_id",
+        "span_id",
+        "parent_span_id",
     )
 
 

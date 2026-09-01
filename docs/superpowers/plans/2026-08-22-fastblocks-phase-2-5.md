@@ -26,7 +26,7 @@ These constraints bind every task in this plan. Any deviation is a plan-level bu
 - **No bare `# noqa`** — crackerjack-compliant-code enforces.
 - **Hard limits** (crackerjack gate fails on breach):
   - Line length: 100 chars
-  - Function args: 10 (excludes self, cls, *args, **kwargs)
+  - Function args: 10 (excludes self, cls, \*args, \*\*kwargs)
   - Branches: 15
   - Returns: 6
   - Statements: 55
@@ -37,7 +37,7 @@ These constraints bind every task in this plan. Any deviation is a plan-level bu
 - **suppress(Exception) ratchet** holds at empirical 122 sites.
 - **Canary validation** — every test must be verified to fail against pre-fix code via revert/comment-out/replace pattern.
 
----
+______________________________________________________________________
 
 ## File Structure
 
@@ -50,16 +50,19 @@ These constraints bind every task in this plan. Any deviation is a plan-level bu
 | `tests/core/test_settings_loader.py` | NEW | 6 tests for loader happy path + failure modes |
 | `tests/core/test_app_settings_yaml_wiring.py` | NEW | 4 tests for end-to-end AppSettings YAML wiring |
 
----
+______________________________________________________________________
 
 ## Task 1: feat(settings) — add 4 fields to AppBaseSettings
 
 **Files:**
+
 - Modify: `fastblocks/adapters/app/_base.py:11-15` (existing AppBaseSettings class body)
 - Test: `tests/core/test_app_settings_literal.py` (existing — verify no regression)
 
 **Interfaces:**
+
 - Consumes: existing AppBaseSettings class (extending OneiricSettings); `from fastblocks.core.validators import DEFAULT_STYLE, StyleName` (existing import)
+
 - Produces: AppBaseSettings with 4 new fields: `title: str = ""`, `domain: str = ""`, `description: str = ""`, `version: str = ""`
 
 - [ ] **Step 1: Read the current AppBaseSettings class body**
@@ -102,20 +105,24 @@ Expected: `ty ratchet [split] prod: PASS (0/50)`. No new ty suppressions introdu
 Run: `cd /Users/les/Projects/fastblocks && git checkout -b task/phase2-5-appbase-fields main && git add fastblocks/adapters/app/_base.py && git -c user.name=les -c user.email=les@wedgwoodwebworks.com commit -m "feat(settings): Phase 2.5 Commit1 — AppBaseSettings.title/domain/description/version"`
 
 Then ff-merge into main:
+
 ```bash
 cd /Users/les/Projects/fastblocks && git checkout main && git merge --ff-only task/phase2-5-appbase-fields && git branch -d task/phase2-5-appbase-fields && git push origin main
 ```
 
----
+______________________________________________________________________
 
 ## Task 2: feat(settings) — `fastblocks/core/settings_loader.py` wraps Oneiric.load_settings
 
 **Files:**
+
 - Create: `fastblocks/core/settings_loader.py` (NEW, ~30 lines)
 - Create: `tests/core/test_settings_loader.py` (NEW, 6 tests)
 
 **Interfaces:**
+
 - Consumes: `oneiric.core.config.load_settings(path, project_name)` (existing function at `oneiric/core/config.py:276`); `fastblocks.adapters.app.default.AppSettings` (existing class)
+
 - Produces: `load_fastblocks_settings(path: str | Path | None = None) -> AppSettings`; re-exports `FileNotFoundError` for callers to catch explicitly
 
 - [ ] **Step 1: Write the failing test file (TDD)**
@@ -289,6 +296,7 @@ Expected: all existing `tests/core/` tests still pass (no regression). The 6 new
 - [ ] **Step 7: Commit**
 
 Run:
+
 ```bash
 cd /Users/les/Projects/fastblocks && git checkout -b task/phase2-5-settings-loader main
 git add fastblocks/core/settings_loader.py tests/core/test_settings_loader.py
@@ -299,17 +307,20 @@ git branch -d task/phase2-5-settings-loader
 git push origin main
 ```
 
----
+______________________________________________________________________
 
 ## Task 3: refactor(app) — wire AppSettings() to use loader with soft fallback
 
 **Files:**
+
 - Modify: `fastblocks/adapters/app/default.py` (the one AppSettings() call site — but the tests construct AppSettings() directly, so wire at the AppSettings.__init__ level for full coverage)
 - Create: `tests/core/test_app_settings_yaml_wiring.py` (NEW, 4 tests)
 - Modify: `fastblocks/mcp/resources.py:288` (update doc to point at AppBaseSettings as canonical schema source)
 
 **Interfaces:**
+
 - Consumes: `load_fastblocks_settings()` from Task 2; existing AppSettings constructor
+
 - Produces: `AppSettings()` instantiation that tries YAML loader first, falls back to defaults on FileNotFoundError
 
 - [ ] **Step 1: Write the failing test file (TDD)**
@@ -467,6 +478,7 @@ Expected: 1 test PASSES at 122 sites (ratchet holds; no new suppressions added).
 - [ ] **Step 10: Manual smoke test (literal validation fires for YAML values)**
 
 Run:
+
 ```bash
 cd /tmp && rm -rf phase25_smoke && mkdir phase25_smoke && cd phase25_smoke
 echo "style: kelp" > app.yml
@@ -481,6 +493,7 @@ Clean up: `rm -rf /tmp/phase25_smoke`
 - [ ] **Step 11: Commit**
 
 Run:
+
 ```bash
 cd /Users/les/Projects/fastblocks && git checkout -b task/phase2-5-app-settings-wiring main
 git add fastblocks/adapters/app/default.py fastblocks/mcp/resources.py tests/core/test_app_settings_yaml_wiring.py
@@ -491,7 +504,7 @@ git branch -d task/phase2-5-app-settings-wiring
 git push origin main
 ```
 
----
+______________________________________________________________________
 
 ## Final Verification
 
@@ -527,7 +540,7 @@ Run: `cd /Users/les/Projects/fastblocks && git status --porcelain`
 
 Expected: empty output.
 
----
+______________________________________________________________________
 
 ## Out of scope (deferred)
 
@@ -540,13 +553,14 @@ Expected: empty output.
 - Oneiric's `AppConfig` modifications
 - Phase 4 design + implementation (separate workstream)
 
----
+______________________________________________________________________
 
 ## Self-review notes
 
 The plan was written against the spec at `docs/superpowers/specs/2026-08-22-fastblocks-phase-2-5-design.md`. Placeholder scan: clean (no `TODO`, `TBD`, "fill in", or "implement later" tokens). Internal consistency: test count (6+4+7+1=18) matches the spec's "10 new tests" claim (6+4). Ambiguity: the AppSettings() call site wiring in Task 3 Step 3 uses a local import inside the try block to avoid module-load cycles — flagged in the comment so the implementer doesn't move it to the top. Scope: thin slice as defined; out-of-scope items enumerated explicitly.
 
 Cross-references:
+
 - Spec: `docs/superpowers/specs/2026-08-22-fastblocks-phase-2-5-design.md`
 - ADR: `docs/adr/0010-phase-2-mechanical-four.md` Decisions 7, 9-12
 - Master plan: `docs/superpowers/plans/2026-08-21-fastblocks-modern-framework-master-plan.md` line 312 (wiring deferred)

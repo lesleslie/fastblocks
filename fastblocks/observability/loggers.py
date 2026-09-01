@@ -22,9 +22,10 @@ Per v6 Global Constraints:
   * ``raise ... from original`` when re-raising third-party exceptions
   * No ``logger.error(..., exc_info=True)`` (use ``logger.exception(...)``)
 """
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from structlog.stdlib import BoundLogger
@@ -47,6 +48,42 @@ def _require_structlog() -> None:
             pip_group="observability",
             package="structlog",
         ) from _IMPORT_ERROR
+
+
+def _interpolate_positional_args(
+    logger: Any, method_name: str, event_dict: Any
+) -> dict[str, Any]:
+    """Interpolate ``%s`` / ``%d`` placeholders in ``event`` from positional args.
+
+    The stdlib ``BoundLogger`` accepts ``(event, *args, **kw)`` but does
+    **not** apply ``%`` formatting — it forwards the raw args to stdlib
+    ``logging``. With our ``PrintLoggerFactory`` + ``JSONRenderer`` chain
+    (no stdlib formatter), that would emit ``event="got %s"`` with a
+    detached ``positional_args=["value"]`` field instead of the
+    formatted string. To preserve the printf-style idiom used widely
+    across fastblocks (``_log.warning("msg %s", value)``) without
+    forcing 50+ call sites to switch to f-strings, we interpolate here
+    in a single processor — matching structlog's own native logger's
+    ``_maybe_interpolate`` behavior.
+
+    Args:
+        logger: Unused (structlog processor protocol).
+        method_name: Unused (structlog processor protocol).
+        event_dict: The event dict being built; mutated in place.
+
+    Returns:
+        The same ``event_dict`` with ``event`` interpolated and the
+        temporary ``positional_args`` key removed.
+    """
+    positional = event_dict.pop("positional_args", None)
+    if positional and isinstance(event_dict.get("event"), str):
+        try:
+            event_dict["event"] = event_dict["event"] % positional
+        except (TypeError, ValueError):
+            # Placeholder mismatch (e.g. event has no %s but args provided).
+            # Leave the event untouched so callers still see the raw string.
+            event_dict["positional_args"] = positional
+    return event_dict
 
 
 __all__ = [
@@ -87,9 +124,14 @@ def configure_logging() -> None:
         structlog.configure(
             processors=[
                 structlog.contextvars.merge_contextvars,
+                _interpolate_positional_args,
                 structlog.processors.JSONRenderer(),
             ],
-            wrapper_class=structlog.BoundLogger,
+            # stdlib BoundLogger supports positional ``*args`` (matches
+            # the type hint in this module). The generic
+            # ``structlog.BoundLogger`` is keyword-only and rejects
+            # ``_log.warning("msg %s", value)`` with a TypeError.
+            wrapper_class=structlog.stdlib.BoundLogger,
             context_class=dict,
             logger_factory=structlog.PrintLoggerFactory(),
         )

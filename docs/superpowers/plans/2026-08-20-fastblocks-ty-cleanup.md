@@ -19,17 +19,20 @@
 - Don't commit the working tree's pre-existing dirty state (those modifications belong to earlier work).
 - Commit per logical boundary (single file or single phase). Use `git commit -- <pathspec>` after the spec's permission gotcha is mitigated (use plain `git commit` for cleanup commits, per project memory).
 
----
+______________________________________________________________________
 
 ## Task 1: Phase 1a — Resolver API mapping
 
 **Files:**
+
 - Modify: many files across `fastblocks/` that reference `Resolver.set`, `Resolver.get_sync`, or `Resolver.config`
 - Likely hot spots: `fastblocks/__init__.py`, `fastblocks/adapters/oneiric_helper.py`, `fastblocks/mcp/registry.py`, `fastblocks/**/*.py` (broad grep)
 - Reference: `oneiric.core.resolution.Resolver` in `.venv/lib/python3.13/site-packages/oneiric/core/resolution.py`
 
 **Interfaces:**
+
 - The `Resolver` API actually exposes: `explain`, `list_active`, `list_shadowed`, `register`, `register_from_pkg`, `resolve`, `register_pkg` (factory function — call with `registry`, `package_name`, `path`, `candidates`)
+
 - Mapping the wrong-API calls to the right API is the deliverable.
 
 - [ ] **Step 1: Read the actual Resolver source to confirm the API**
@@ -103,14 +106,16 @@ mapping in docs/superpowers/specs/2026-08-20-fastblocks-ty-cleanup-design.md.
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
 ## Task 2: Phase 1b — Suppression syntax cleanup
 
 **Files:**
+
 - Modify: any file with a bare `# type: ignore` (no `[rule]` suffix)
 
 **Interfaces:**
+
 - ty syntax: `# ty: ignore[rule-code]` — discover the rule code by running ty on the line without the comment first.
 
 - [ ] **Step 1: Inventory all bare `# type: ignore` comments**
@@ -140,6 +145,7 @@ The error message includes `[rule-code]` in the form `error[rule-code]:`. Captur
 - [ ] **Step 3: Categorize each site into one of two buckets**
 
 - **Bucket A** — bare comment was masking a real error. Replace `# type: ignore` with `# ty: ignore[rule-code]`.
+
 - **Bucket B** — the underlying code was already fixed; the comment is now stale. Just remove the comment.
 
 - [ ] **Step 4: Apply Bucket A fixes**
@@ -186,14 +192,16 @@ ty uses # ty: ignore[rule-code], not the blanket mypy syntax. Removed
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
 ## Task 3: Phase 1c — invalid-await cleanup
 
 **Files:**
+
 - Modify: any file with `await depends.` or `await resolver.` where the resolver returns a sync `Candidate`
 
 **Interfaces:**
+
 - `Candidate | None` is sync. Drop `await` at call sites.
 
 - [ ] **Step 1: Inventory all `await depends.` / `await resolver.` patterns**
@@ -209,6 +217,7 @@ Expected: ~28 lines.
 - [ ] **Step 2: For each site, verify the inner call returns a sync value**
 
 Read the resolver return type (or simply test without `await`):
+
 ```bash
 # Temporarily remove the await keyword and re-run ty
 sed -i 's/await depends\./depends./' /tmp/test-file.py
@@ -220,6 +229,7 @@ If the error is gone, the fix is correct. If a different error appears, the code
 - [ ] **Step 3: Categorize each site**
 
 - **Bucket A** — straightforward `await depends.get(...)`/`set(...)` etc. where dropping `await` resolves the error. Apply the fix.
+
 - **Bucket B** — code clearly expects an async path (e.g., uses `await` for side effects in a coroutine). Surface as a real bug per the spec's "Real-bug policy" — the resolver may have been async in an older version, or the code is shaped for a different API.
 
 - [ ] **Step 4: Apply Bucket A fixes**
@@ -266,14 +276,16 @@ Resolver's actual API.
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
 ## Task 4: Phase 1d — Self@init / `_sanitizer` / `_publisher`
 
 **Files:**
+
 - Modify: any class whose methods reference `self._sanitizer`, `self._publisher`, or similar attributes before/aside from initialization
 
 **Interfaces:**
+
 - These are likely real bugs: an attribute is referenced but never set in `__init__` (or set under a different name).
 
 - [ ] **Step 1: Inventory all `Self@...` errors with their referenced attributes**
@@ -292,7 +304,9 @@ For each file:line in the inventory, open the file at the class containing the m
 - [ ] **Step 3: Categorize each site**
 
 - **Bucket A** — attribute is missing from `__init__`. Fix: add the initialization (likely as `self._sanitizer = None` or similar — match the type the consumer expects).
+
 - **Bucket B** — attribute is set under a different name (typo). Fix: rename one side to match.
+
 - **Bucket C** — code path is conditional and the attribute is set lazily elsewhere. Verify the lazy set exists; if so, fix the type annotation on the attribute to declare `Optional[T]` or similar.
 
 - [ ] **Step 4: Apply Bucket A fixes**
@@ -348,15 +362,17 @@ annotation.
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
 ## Task 5: Phase 1e — call-top-callable + Top[...]
 
 **Files:**
+
 - Modify: any file with `candidate.factory()` or similar untyped callable invocation
 - Likely hot spots: `fastblocks/mcp/tools.py`, `fastblocks/middleware.py`
 
 **Interfaces:**
+
 - Fix: either annotate the factory callable's `__call__` return type, or cast at the call site.
 
 - [ ] **Step 1: Inventory all `call-top-callable` errors**
@@ -378,7 +394,9 @@ grep -n "factory" .venv/lib/python3.13/site-packages/oneiric/core/resolution.py 
 - [ ] **Step 3: Categorize each call site**
 
 - **Bucket A** — factory is constructed dynamically and the local code uses untyped input. Fix: cast at the call site: `factory = cast(Callable[..., X], candidate.factory)`.
+
 - **Bucket B** — factory class has a `__call__` that is untyped. Add a return type annotation.
+
 - **Bucket C** — the call-site signature doesn't match `factory()`. Likely the call site is wrong (extra/lacking args). Surface as a real bug.
 
 - [ ] **Step 4: Apply Bucket A fixes**
@@ -429,14 +447,16 @@ where owned; cast at call sites where factory is dynamically constructed.
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
 ## Task 6: Phase 2 — Annotation & API-type fixes
 
 **Files:**
+
 - Modify: any file with `unresolved-reference`, `unresolved-import`, `invalid-argument-type`, `missing-argument`, `invalid-method-override`, `invalid-assignment`, `invalid-return-type`, or one-off errors
 
 **Interfaces:**
+
 - This phase is iterative. After Phase 1, re-run ty and work the residual list by category.
 
 - [ ] **Step 1: Re-run ty and bucket the remaining errors**
@@ -450,8 +470,10 @@ Note which categories still have entries. (Expected: ~60 total, dominated by `un
 
 - [ ] **Step 2: Phase 2a — Fix `unresolved-reference` (10 expected)**
 
-For each `Name \`<name>\` used when not defined`:
+For each `Name \`<name>\` used when not defined\`:
+
 - `root_path` (7) — likely a missing parameter or import. Find the actual function/method definition and either add the parameter or import the symbol. Surface as a real bug if `root_path` is genuinely undefined.
+
 - `get_adapters`, `get_adapter`, `reload_config` — define or import per the actual API.
 
 - [ ] **Step 3: Phase 2b — Fix `unresolved-import` (6 expected)**
@@ -514,11 +536,12 @@ Expected: ≥ 1714 pass.
 
 For each 2a–2h, commit the changes with a descriptive message. Don't batch into one giant commit.
 
----
+______________________________________________________________________
 
 ## Task 7: Phase 3 — Remove redundant casts
 
 **Files:**
+
 - Modify: any file with `redundant-cast` warning
 
 - [ ] **Step 1: Inventory all redundant casts**
@@ -562,11 +585,12 @@ Phase 3 of docs/superpowers/specs/2026-08-20-fastblocks-ty-cleanup-design.md.
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
----
+______________________________________________________________________
 
 ## Task 8: Phase 4 — Final verification & gate
 
 **Files:**
+
 - Read-only: `docs/superpowers/specs/2026-08-20-fastblocks-ty-cleanup-design.md` (the "Real bugs found" section, for the report)
 
 - [ ] **Step 1: ty is clean**
@@ -608,8 +632,11 @@ Expected: ty hook reports PASS (0/0 or 0/50).
 Open `docs/superpowers/specs/2026-08-20-fastblocks-ty-cleanup-design.md` and replace the "Real bugs found" running log with the final tally:
 
 - Total diagnostics at start: 374
+
 - Total diagnostics at end: 0
+
 - Real bugs found: [list]
+
 - Phases committed: [list of commit hashes]
 
 - [ ] **Step 5: Commit the spec update**
@@ -627,6 +654,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - [ ] **Step 6: Final report to user**
 
 Send a one-paragraph summary with:
+
 - Total diagnostics reduced (374 → 0)
 - Real bugs surfaced (count + list)
 - Phase commits (list)

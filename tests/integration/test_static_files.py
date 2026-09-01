@@ -34,11 +34,15 @@ from starlette.testclient import TestClient
 def static_app(fastblocks_test_app, tmp_path: Path):
     """Per-test FastBlocksApp with /static mounted on a tmp_path directory.
 
-    The bare ``fastblocks_test_app`` fixture ships with an empty router
-    (no static mount). We attach a Starlette ``Mount`` so the test exercises
-    real static-file serving without touching production code. We also
-    add ``BrotliMiddleware`` so the compression scenario can observe
-    ``content-encoding: br`` on the response.
+    ``FastBlocksApp.__init__`` already mounts ``/static`` at
+    ``fastblocks/websocket/static`` (Phase 6 Task 13, see
+    ``fastblocks/adapters/app/default.py:251-283``) so the package's
+    a11y assets are reachable in production. Starlette's router matches
+    routes in order; the existing package-static Mount would shadow any
+    later mount on the same path. We insert the per-test mount at
+    index 0 (replacing the package-static Mount) so the test exercises
+    the tmp_path contents. We also add ``BrotliMiddleware`` so the
+    compression scenario can observe ``content-encoding: br``.
     """
     static_dir = tmp_path / "static"
     static_dir.mkdir()
@@ -51,8 +55,17 @@ def static_app(fastblocks_test_app, tmp_path: Path):
     )
     (static_dir / "ui.css").write_text(css)
     fastblocks_test_app.add_middleware(BrotliMiddleware)
-    fastblocks_test_app.router.routes.append(
-        Mount("/static", app=StaticFiles(directory=str(static_dir)), name="static"),
+    # Remove the production /static Mount (package static dir) and insert
+    # the per-test one at the front so the request path resolves against
+    # tmp_path. Use index-based insertion rather than .append() so the new
+    # Mount wins the matching race.
+    fastblocks_test_app.router.routes.insert(
+        0,
+        Mount(
+            "/static",
+            app=StaticFiles(directory=str(static_dir)),
+            name="static",
+        ),
     )
     return fastblocks_test_app
 

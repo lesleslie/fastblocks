@@ -7,6 +7,7 @@
 **Architecture:** Foundation → Matrix → Adversarial decomposition (5A → 5B → 5C). Each commit is independently revertible. Phase 6.5 substrate (`app.state.main_loop` + `app.state.jinja_env` bound at lifespan startup) enables 5C.5 against the actual production path. Strict-tests-only boundary enforced by per-commit canary.
 
 **Tech Stack:**
+
 - Python 3.13+, Starlette 1.6.0 (verified `app.router.lifespan_context` API), pytest, pytest-asyncio (auto mode), hypothesis ~=6.0, playwright ~=1.40, axe-playwright-python ~=0.1
 - starlette_csrf (header-only CSRF), brotli_asgi
 - Existing: fastblocks.adapters.app.default.FastBlocksApp (lifespan binds app.state.main_loop + app.state.jinja_env at startup)
@@ -55,11 +56,12 @@ scripts/
 pyproject.toml                                     # MODIFIED (Tasks 1, 12) — dev-deps, markers, coverage ratchet
 ```
 
----
+______________________________________________________________________
 
 ## Task 1: Install dev dependencies
 
 **Files:**
+
 - Modify: `pyproject.toml` (add dev-dependencies)
 
 **Produces:** `pyproject.toml` with hypothesis ~=6.0, playwright ~=1.40, axe-playwright-python ~=0.1
@@ -67,6 +69,7 @@ pyproject.toml                                     # MODIFIED (Tasks 1, 12) — 
 - [ ] **Step 1: Add dev-dependencies to pyproject.toml**
 
 Edit `pyproject.toml` `[project.optional-dependencies]` block (or equivalent dev section). Add:
+
 ```toml
 "hypothesis~=6.0",
 "playwright~=1.40",
@@ -95,24 +98,30 @@ git add pyproject.toml uv.lock
 git commit -m "chore(tests): install hypothesis, playwright, axe-playwright-python"
 ```
 
----
+______________________________________________________________________
 
 ## Task 2: Create tests/strategies.py with 4 Hypothesis strategies
 
 **Files:**
+
 - Create: `tests/strategies.py`
 
 **Produces:** `tests/strategies.py` exporting `safe_user_input`, `unsafe_input`, `attrs_dict`, `htmy_component`. Per Erratum 14, splits into module-load `_build_components()`, `_register_object_strategy()`, and cached `htmy_component()`.
 
 **Interfaces:**
+
 - `safe_user_input: st.SearchStrategy[str]` — text with HTML-delimiter alphabet
+
 - `unsafe_input: st.SearchStrategy[str]` — 15 SSTI vectors + random text with Po chars
+
 - `attrs_dict: st.SearchStrategy[dict[str, str]]` — 25-name whitelist × safe ∪ unsafe
+
 - `htmy_component() -> st.SearchStrategy` — cached, returns `st.one_of(*[st.from_type(c) for c in _build_components()])`
 
 - [ ] **Step 1: Write the file with module-load helpers + cached strategy**
 
 Create `tests/strategies.py`:
+
 ```python
 """Phase 5 Hypothesis strategies — shared between 5B and 5C tests.
 
@@ -267,11 +276,12 @@ git add tests/strategies.py
 git commit -m "feat(tests): tests/strategies.py — 4 Hypothesis strategies with split cache + module-load registration"
 ```
 
----
+______________________________________________________________________
 
 ## Task 3: Hypothesis profiles, fixtures, markers, posture schema, canary script
 
 **Files:**
+
 - Modify: `tests/conftest.py` (add profile mechanics, 2 fixtures)
 - Modify: `pyproject.toml` (add 3 markers)
 - Create: `tests/a11y/_component_postures.py`
@@ -280,15 +290,21 @@ git commit -m "feat(tests): tests/strategies.py — 4 Hypothesis strategies with
 **Produces:** Hypothesis profile mechanics, `clean_axe_core_page` and `fastblocks_test_app` fixtures, 3 markers (`a11y`, `property`, `slow`), `ComponentPosture` dataclass + `POSTURES` tuple (32 entries), canary script
 
 **Interfaces:**
+
 - `clean_axe_core_page` fixture (function scope) — fresh Playwright page per test
+
 - `fastblocks_test_app` fixture (function scope) — fresh FastBlocksApp per test
+
 - `ComponentPosture` dataclass: `name`, `scaffold`, `axe_rules`, `expected_landmark`, `accessible_name_source`, `exclusion_rules`
+
 - `POSTURES: tuple[ComponentPosture, ...]` — 32 entries
+
 - `scripts/check_no_production_changes.sh` — exits non-zero if `fastblocks/` paths in changeset
 
 - [ ] **Step 1: Write the canary script**
 
 Create `scripts/check_no_production_changes.sh`:
+
 ```bash
 #!/usr/bin/env bash
 # Strict-tests-only boundary enforcer (Erratum 10).
@@ -323,6 +339,7 @@ Run: `chmod +x scripts/check_no_production_changes.sh`
 - [ ] **Step 2: Add Hypothesis profile mechanics to tests/conftest.py**
 
 Append to `tests/conftest.py`:
+
 ```python
 import logging
 import os
@@ -355,6 +372,7 @@ settings.load_profile(HYPOTHESIS_PROFILE)
 - [ ] **Step 3: Add 2 fixtures to tests/conftest.py**
 
 Append to `tests/conftest.py`:
+
 ```python
 import pytest_asyncio
 from playwright.async_api import async_playwright
@@ -393,6 +411,7 @@ def fastblocks_test_app():
 - [ ] **Step 4: Add 3 markers to pyproject.toml**
 
 Edit `pyproject.toml` `[tool.pytest.ini_options]` block:
+
 ```toml
 markers = [
     # ... existing markers from CLAUDE.md ...
@@ -402,9 +421,10 @@ markers = [
 ]
 ```
 
-- [ ] **Step 5: Create tests/a11y/_component_postures.py**
+- [ ] **Step 5: Create tests/a11y/\_component_postures.py**
 
 Create `tests/a11y/_component_postures.py`:
+
 ```python
 """Per-component axe-core test posture (Erratum 3 + Erratum 18 schema).
 
@@ -496,7 +516,7 @@ Expected: "0 errors" or similar; no xdist-specific failures.
 - [ ] **Step 8: Verify canary script (against current branch)**
 
 Run: `bash scripts/check_no_production_changes.sh`
-Expected: prints "OK: no production code changes" (current diff is tests/conftest.py + scripts/ + tests/a11y/_component_postures.py + pyproject.toml — no fastblocks/ paths).
+Expected: prints "OK: no production code changes" (current diff is tests/conftest.py + scripts/ + tests/a11y/\_component_postures.py + pyproject.toml — no fastblocks/ paths).
 
 - [ ] **Step 9: Commit**
 
@@ -505,21 +525,24 @@ git add tests/conftest.py pyproject.toml tests/a11y/_component_postures.py scrip
 git commit -m "chore(tests): zero-collection-error + Hypothesis profiles + canary script + posture schema"
 ```
 
----
+______________________________________________________________________
 
 ## Task 4: Property-based style × renderer matrix
 
 **Files:**
+
 - Create: `tests/templates/test_style_renderer_property.py`
 
 **Produces:** 4 property-based tests (4 cells × 100 examples each)
 
 **Interfaces:**
+
 - Consumes: `safe_user_input`, `unsafe_input` from `tests/strategies.py`
 
 - [ ] **Step 1: Write the failing test**
 
 Create `tests/templates/test_style_renderer_property.py`:
+
 ```python
 """Property-based style × renderer matrix (master plan line 469).
 
@@ -606,21 +629,24 @@ git add tests/templates/test_style_renderer_property.py
 git commit -m "test(templates): property-based style × renderer matrix (4 cells × 100 examples)"
 ```
 
----
+______________________________________________________________________
 
 ## Task 5: HTMY XSS matrix for all 32 absorbed components
 
 **Files:**
+
 - Create: `tests/xss/test_htmy_component_xss_matrix.py`
 
 **Produces:** 32 components × 3 attack vectors = ~100+ tests (master plan §C4 attack classes per Erratum 19)
 
 **Interfaces:**
+
 - Consumes: `htmy_component()`, `unsafe_input`, `attrs_dict` from `tests/strategies.py`
 
 - [ ] **Step 1: Write the failing test**
 
 Create `tests/xss/test_htmy_component_xss_matrix.py`:
+
 ```python
 """HTMY XSS matrix for all 32 absorbed components.
 
@@ -704,22 +730,25 @@ git add tests/xss/test_htmy_component_xss_matrix.py
 git commit -m "test(xss): HTMY XSS matrix for all 32 absorbed components (3 attack vectors)"
 ```
 
----
+______________________________________________________________________
 
 ## Task 6: Jinja2 SSTI regression + ssti_payloads.json
 
 **Files:**
+
 - Create: `tests/xss/ssti_payloads.json`
 - Create: `tests/templates/test_jinja2_ssti.py`
 
 **Produces:** 15-vector SSTI corpus (per Erratum 17), 4 SSTI scenarios
 
 **Interfaces:**
+
 - Consumes: `unsafe_input` from `tests/strategies.py` (15-vector tuple, not yet migrated to JSON per Erratum 17)
 
 - [ ] **Step 1: Create tests/xss/ssti_payloads.json**
 
 Create `tests/xss/ssti_payloads.json`:
+
 ```json
 {
   "_comment": "15-vector SSTI corpus per Erratum 17. Migrated from tests/strategies.py _UNSAFE_PAYLOADS when corpus grows beyond 30 vectors (currently 15, so still inline).",
@@ -752,6 +781,7 @@ Create `tests/xss/ssti_payloads.json`:
 - [ ] **Step 2: Write the failing test**
 
 Create `tests/templates/test_jinja2_ssti.py`:
+
 ```python
 """Jinja2 SSTI regression — asserts no autoescape bypass.
 
@@ -832,18 +862,20 @@ git add tests/xss/ssti_payloads.json tests/templates/test_jinja2_ssti.py
 git commit -m "test(templates): Jinja2 SSTI regression (4 scenarios + 15-vector corpus)"
 ```
 
----
+______________________________________________________________________
 
-## Task 7: HTMY hx_* kwargs contract test
+## Task 7: HTMY hx\_\* kwargs contract test
 
 **Files:**
+
 - Create: `tests/adapters/templates/test_htmy_hx_kwargs.py`
 
-**Produces:** 5 hx_* scenarios (covers 9 whitelisted hx-* attrs)
+**Produces:** 5 hx\_\* scenarios (covers 9 whitelisted hx-\* attrs)
 
 - [ ] **Step 1: Write the failing test**
 
 Create `tests/adapters/templates/test_htmy_hx_kwargs.py`:
+
 ```python
 """HTMY hx_* kwargs contract test.
 
@@ -905,21 +937,24 @@ git add tests/adapters/templates/test_htmy_hx_kwargs.py
 git commit -m "test(adapters): HTMY hx_* kwargs contract test (9 attrs + 2 JSON variants)"
 ```
 
----
+______________________________________________________________________
 
 ## Task 8: MCP server integration canary
 
 **Files:**
+
 - Create: `tests/mcp/test_server_canary.py`
 
 **Produces:** 3 MCP canary scenarios (tools tuple + ASGI spy + suppress-mask regression)
 
 **Interfaces:**
+
 - Consumes: `mock.patch` on `fastblocks.mcp.tools.register_fastblocks_tools`
 
 - [ ] **Step 1: Write the failing test**
 
 Create `tests/mcp/test_server_canary.py`:
+
 ```python
 """MCP server integration canary.
 
@@ -1003,16 +1038,18 @@ git add tests/mcp/test_server_canary.py
 git commit -m "test(mcp): server integration canary (3 scenarios — added suppress-mask regression)"
 ```
 
----
+______________________________________________________________________
 
 ## Task 9: axe-core a11y on 32 components
 
 **Files:**
+
 - Create: `tests/a11y/test_components_a11y.py`
 
 **Produces:** Parameterized test loop over 32 components from `POSTURES`, 0 axe-core violations expected
 
 **Interfaces:**
+
 - Consumes: `clean_axe_core_page` fixture (from Task 3), `POSTURES` from `tests/a11y/_component_postures.py`
 
 - [ ] **Step 1: Verify POSTURES has 32 entries**
@@ -1023,6 +1060,7 @@ Expected: prints "32". If not, populate the 31 missing entries in Task 3's `POST
 - [ ] **Step 2: Write the failing test**
 
 Create `tests/a11y/test_components_a11y.py`:
+
 ```python
 """axe-core a11y on 32 absorbed components.
 
@@ -1082,21 +1120,24 @@ git add tests/a11y/test_components_a11y.py
 git commit -m "chore(tests): tests/a11y/ — axe-core on 32 components (10-rule subset)"
 ```
 
----
+______________________________________________________________________
 
 ## Task 10: CSRF + HTMX integration (3 scenarios)
 
 **Files:**
+
 - Create: `tests/integration/test_csrf_htmx.py`
 
 **Produces:** 3 CSRF scenarios (was 4 in v3.1; Erratum 6 dropped the form→header scenario)
 
 **Interfaces:**
+
 - Consumes: `fastblocks_test_app` fixture (from Task 3)
 
 - [ ] **Step 1: Write the failing test**
 
 Create `tests/integration/test_csrf_htmx.py`:
+
 ```python
 """CSRF + HTMX integration test (3 scenarios per Erratum 6).
 
@@ -1155,22 +1196,25 @@ git add tests/integration/test_csrf_htmx.py
 git commit -m "test(integration): CSRF + HTMX (3 scenarios per Erratum 6 — dropped form-fallback)"
 ```
 
----
+______________________________________________________________________
 
 ## Task 11: Static files + lifecycle integration
 
 **Files:**
+
 - Create: `tests/integration/test_static_files.py`
 - Create: `tests/integration/test_lifespan.py`
 
 **Produces:** 2 static files scenarios (was 3 in v3.1; Erratum 7 dropped Cache-Control assertion), 2 lifecycle tests (binds at startup + emits shutdown log per Erratum 12)
 
 **Interfaces:**
+
 - Consumes: `fastblocks_test_app` fixture (from Task 3), `caplog` fixture
 
 - [ ] **Step 1: Write static files test**
 
 Create `tests/integration/test_static_files.py`:
+
 ```python
 """Static files integration test (2 scenarios per Erratum 7).
 
@@ -1211,6 +1255,7 @@ def test_static_brotli_compression(fastblocks_test_app) -> None:
 - [ ] **Step 2: Write lifecycle test (Erratum 12: caplog)**
 
 Create `tests/integration/test_lifespan.py`:
+
 ```python
 """Lifespan integration test — asserts Phase 6.5's app.state bindings + shutdown log.
 
@@ -1282,11 +1327,12 @@ git add tests/integration/test_static_files.py tests/integration/test_lifespan.p
 git commit -m "test(integration): static files + lifecycle (2+2 scenarios per Erratum 7/12)"
 ```
 
----
+______________________________________________________________________
 
 ## Task 12: Bump coverage ratchet to 65%
 
 **Files:**
+
 - Modify: `pyproject.toml` (update `--cov-fail-under`)
 
 **Produces:** pyproject.toml with `--cov-fail-under=65`
@@ -1301,6 +1347,7 @@ Expected: total coverage ≥ 65%. If not, add more tests before proceeding.
 - [ ] **Step 2: Update pyproject.toml coverage ratchet**
 
 Edit `pyproject.toml` line 206:
+
 ```toml
 "--cov-fail-under=65",
 ```
@@ -1324,7 +1371,7 @@ git add pyproject.toml
 git commit -m "chore(ci): bump coverage ratchet to 65% (per Erratum 21 — last commit)"
 ```
 
----
+______________________________________________________________________
 
 ## Acceptance Gate
 

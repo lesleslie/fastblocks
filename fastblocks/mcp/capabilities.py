@@ -18,9 +18,9 @@ function. Consumers can then import the new tool.
 """
 
 from __future__ import annotations
-from contextlib import suppress
 
 from collections.abc import Callable
+from contextlib import suppress
 
 from fastmcp import FastMCP  # v2 split: fastmcp>=3 removed mcp.server.fastmcp shim
 
@@ -59,9 +59,11 @@ def _is_template_available() -> bool:
     """Template capability requires Jinja2 OR HTMY importable (not lazy)."""
     with suppress(ImportError):
         import jinja2  # noqa: F401
+
         return True
     with suppress(ImportError):
         import htmy  # noqa: F401
+
         return True
     return False
 
@@ -70,14 +72,14 @@ def _is_component_available() -> bool:
     """Component capability requires absorbed htmy_components importable."""
     try:
         from fastblocks.adapters.templates import htmy_components  # noqa: F401
+
         return True
     except ImportError:
         return False
 
 
 def _is_adapter_available() -> bool:
-    """Adapter capability requires Oneiric resolver bootstrapped with at
-    least one active candidate in the ``fastblocks`` domain.
+    """Adapter capability requires Oneiric resolver bootstrapped with one active candidate.
 
     Probes via the Phase 1.5 facade (not lazy construction). If no
     candidates are registered yet, the gate returns False and the
@@ -85,9 +87,10 @@ def _is_adapter_available() -> bool:
     """
     try:
         from fastblocks.core.resolver import FastblocksRegistry, get_resolver
+
         registry = FastblocksRegistry(get_resolver())
         return bool(registry.list_active("fastblocks"))
-    except Exception:
+    except (ImportError, AttributeError, RuntimeError):
         return False
 
 

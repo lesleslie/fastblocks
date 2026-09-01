@@ -1,13 +1,6 @@
----
-status: accepted
-role: phase-2-closeout
-date: 2026-08-21
-last_reviewed: 2026-08-22
-superseded_by: null
-blocks_on: []
-decision_date: 2026-08-22
-topic: phase-2-type-safe-configuration-mechanical-four-closeout
----
+______________________________________________________________________
+
+## status: accepted role: phase-2-closeout date: 2026-08-21 last_reviewed: 2026-08-22 superseded_by: null blocks_on: [] decision_date: 2026-08-22 topic: phase-2-type-safe-configuration-mechanical-four-closeout
 
 # ADR 0010: Phase 2 Mechanical-Four Closeout
 
@@ -79,7 +72,7 @@ deleted. Future Phase 7 (final dead-code pass) may lower the count;
 the test passes on a lower count. Master plan line 313 records 123
 but the empirical count (verified via
 `git grep -c 'suppress(Exception)' -- fastblocks/` on 2026-08-21) is
-122. The ratchet locks the empirical number; the master plan
+122\. The ratchet locks the empirical number; the master plan
 reference is documented as off-by-one for future amendment.
 
 ### Decision 7: `app.yml` → `AppBaseSettings` wiring deferred to Phase 2.5
@@ -131,7 +124,7 @@ match dispatcher were dropped from Phase 2 finish scope. Two findings:
    htmy.py:781-827) doesn't expose an "Environment" abstraction matching
    the proposed `TemplateAdapter.init_envs() -> t.Any` signature.
 
-2. **HTMY bypasses the style adapter entirely.** `htmy_components/adapter.py:194-207`
+1. **HTMY bypasses the style adapter entirely.** `htmy_components/adapter.py:194-207`
    `inline_css()` is hardcoded to `Path(fastblocks_ui.get_css_path()).read_text(...)`,
    ignoring `style_name`. A `style="vanilla"` + `renderer="htmy"` config
    would still bundle fastblocks-ui CSS via the HTMY renderer — the
@@ -164,7 +157,7 @@ ship path untenable:
    skips `mark_safe` still gets safe behavior via runtime escape) makes
    the type a misleading affordance.
 
-2. **Duplicate type.** `htmy_components/base.py:5` already imports
+1. **Duplicate type.** `htmy_components/base.py:5` already imports
    `from htmy import SafeStr` and `FastBlocksComponent.htmy(context)`
    returns `SafeStr(self._markup(context))`. Adding `SafeHTMLStr`
    alongside creates two incompatible types for one concept; every
@@ -172,7 +165,7 @@ ship path untenable:
    from a nested component) requires a coercion that the new type
    breaks.
 
-3. **Nested-component test broken.** `tests/xss/test_component_xss.py:156-171`
+1. **Nested-component test broken.** `tests/xss/test_component_xss.py:156-171`
    (`test_nested_rendering_each_layer_escapes`) constructs
    `Container(content=Column(content=Field(label=PAYLOAD).htmy({})).htmy({}))`.
    `Field(...).htmy({})` returns `SafeStr`, not `str`. Narrowing
@@ -201,7 +194,7 @@ prior calculus:
    (`key="vanilla"` line 92, `key="styles"` line 234). Overwriting it
    would destroy the CSS-class mapping and resolver registrations.
 
-2. **Protocol method-name mismatch (real bug in mechanical-four).**
+1. **Protocol method-name mismatch (real bug in mechanical-four).**
    `validators.py:60` declares `StyleAdapter.register_style_functions(env)`
    as the Protocol method (single-name). The live runtime dispatcher
    at `style_registry.py:60` calls `getattr(module, f"register_{style_name}_functions", None)`

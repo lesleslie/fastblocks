@@ -68,9 +68,7 @@ Cache = Storage = None
 # the ``prometheus_client`` namespace.
 # ---------------------------------------------------------------------------
 
-_OPENMETRICS_CONTENT_TYPE = (
-    "application/openmetrics-text; version=1.0.0; charset=utf-8"
-)
+_OPENMETRICS_CONTENT_TYPE = "application/openmetrics-text; version=1.0.0; charset=utf-8"
 _PLAIN_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
 _MISSING_ACCEPT_LABEL = "missing"
 
@@ -224,6 +222,7 @@ class AppSettings(AppBaseSettings):
                 from fastblocks.core.settings_loader import (
                     load_fastblocks_settings,
                 )
+
                 cwd_yaml = Path.cwd() / "app.yml"
                 if cwd_yaml.is_file():
                     data = load_fastblocks_settings(path=str(cwd_yaml)).model_dump()
@@ -273,7 +272,9 @@ class FastBlocksApp(FastBlocks):
             from starlette.routing import Mount
             from starlette.staticfiles import StaticFiles
 
-            static_dir = Path(__file__).resolve().parent.parent.parent / "websocket" / "static"
+            static_dir = (
+                Path(__file__).resolve().parent.parent.parent / "websocket" / "static"
+            )
             self.routes.append(
                 Mount(
                     "/static",
@@ -445,8 +446,16 @@ class FastBlocksApp(FastBlocks):
         # before app teardown so the OTLP exporter does not lose the
         # last batch. Idempotent on the cached provider (the module-
         # level cache in ``observability.tracer`` survives across
-        # lifespan invocations).
-        _get_default_tracer_provider().shutdown()  # ty: ignore[unresolved-attribute]
+        # lifespan invocations). ``shutdown`` returns a coroutine that
+        # must be awaited the FIRST time; on subsequent calls (the
+        # OTel SDK short-circuits to ``None`` after its internal
+        # shutdown flag flips) ``await None`` raises TypeError. Gate
+        # the await behind an ``iscoroutine`` check so re-entrant
+        # teardown — common in tests that drive the lifespan twice in
+        # the same process — stays silent instead of crashing.
+        _shutdown_result = _get_default_tracer_provider().shutdown()  # ty: ignore[unresolved-attribute]
+        if asyncio.iscoroutine(_shutdown_result):
+            await _shutdown_result
         logger = getattr(self, "logger", None)
         if logger:
             logger.info("FastBlocks application shutting down")
@@ -587,7 +596,16 @@ class App(AppBase):
         # exporter does not lose the last batch. The call is on the
         # runtime path (``App.lifespan`` is the class instantiated at
         # runtime — see comment at FastBlocksApp.lifespan, line 226).
-        _get_default_tracer_provider().shutdown()  # ty: ignore[unresolved-attribute]
+        # ``shutdown`` returns a coroutine that must be awaited the
+        # FIRST time; on subsequent calls the OTel SDK short-circuits
+        # to ``None`` (``shutdown_in_progress`` flag flips), so plain
+        # ``await`` would raise TypeError on re-entry. Gate behind an
+        # ``iscoroutine`` check so re-entrant teardown — the same
+        # reason this branch exists on ``FastBlocksApp.lifespan`` —
+        # stays silent instead of crashing.
+        _shutdown_result = _get_default_tracer_provider().shutdown()  # ty: ignore[unresolved-attribute]
+        if asyncio.iscoroutine(_shutdown_result):
+            await _shutdown_result
         self.logger.critical("Application shut down")
         try:
             await self._shutdown_logger()

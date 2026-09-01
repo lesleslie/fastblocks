@@ -2,8 +2,20 @@
 
 Per Δ46: __all__ defines the explicit public surface.
 """
+
 from __future__ import annotations
 
+from .counters import Counter, Histogram
+from .errors import (
+    MetricNameCollisionError,
+    MissingDependencyError,
+    ObservabilityError,
+    SentryImportError,
+)
+from .registry import (
+    ObservabilityRegistry,
+    get_default_registry,
+)
 from .trace_context import (
     TraceContext,
     exemplar,
@@ -11,30 +23,19 @@ from .trace_context import (
     reset_trace_context,
     set_trace_context,
 )
-from .errors import (
-    ObservabilityError,
-    MissingDependencyError,
-    MetricNameCollisionError,
-    SentryImportError,
-)
-from .counters import Counter, Histogram
-from .registry import (
-    ObservabilityRegistry,  # noqa: F401 — singleton instance (Δ52)
-    get_default_registry,
-)
 
 __all__ = [
+    "Counter",
+    "Histogram",
+    "MetricNameCollisionError",
+    "MissingDependencyError",
+    "ObservabilityError",
+    "ObservabilityRegistry",
+    "SentryImportError",
     "TraceContext",
     "exemplar",
+    "get_default_registry",
     "get_trace_context",
     "reset_trace_context",
     "set_trace_context",
-    "ObservabilityError",
-    "MissingDependencyError",
-    "MetricNameCollisionError",
-    "SentryImportError",
-    "Counter",
-    "Histogram",
-    "ObservabilityRegistry",
-    "get_default_registry",
 ]

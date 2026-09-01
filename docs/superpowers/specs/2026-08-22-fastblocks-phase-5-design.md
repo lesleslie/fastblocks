@@ -1,15 +1,6 @@
----
-status: accepted
-role: phase-5-design-spec
-date: 2026-08-22
-last_reviewed: 2026-08-22
-supersedes: null
-superseded_by: null
-decision_date: 2026-08-22
-topic: phase-5-test-infrastructure-rebuild
-version: v4
-supersedes_v3_1: 8787293
----
+______________________________________________________________________
+
+## status: accepted role: phase-5-design-spec date: 2026-08-22 last_reviewed: 2026-08-22 supersedes: null superseded_by: null decision_date: 2026-08-22 topic: phase-5-test-infrastructure-rebuild version: v4 supersedes_v3_1: 8787293
 
 # Phase 5: Test Infrastructure Rebuild Design — v4 Retry
 
@@ -23,29 +14,30 @@ spec (commit `8787293`) is preserved in git history. v4 addresses:
 1. **Decision 2 P0 (LifespanManager)** — Phase 6.5 now binds `app.state.main_loop`
    and `app.state.jinja_env` at the actual `@asynccontextmanager` lifespan.
    5C.5 rewritten per Option A: drive Starlette's actual startup path.
-2. **Decision 8 (memoization)** — `htmy_component()` gets `@functools.cache`.
-3. **Decision 9 (TEMPLATE.md ref)** — Dead reference removed; IC template inlined.
-4. **Decision 11 (posture schema)** — `tests/a11y/_component_postures.py` schema
+1. **Decision 8 (memoization)** — `htmy_component()` gets `@functools.cache`.
+1. **Decision 9 (TEMPLATE.md ref)** — Dead reference removed; IC template inlined.
+1. **Decision 11 (posture schema)** — `tests/a11y/_component_postures.py` schema
    defined inline.
-5. **Decision 12 (master plan drift)** — Erratum footnote + future master plan
+1. **Decision 12 (master plan drift)** — Erratum footnote + future master plan
    amendment noted.
 
 Multi-agent review strategy: **single cycle** (5 lenses), one fix round if P0s
 surface, then SDD execution per the v3.1 12-commit Integration Contract.
 
 Companion documents:
+
 - v3.1 spec: commit `8787293` (preserved)
 - ADR 0012: `docs/adr/0012-phase-5-deferral.md`
 - Master plan: `docs/superpowers/plans/2026-08-21-fastblocks-modern-framework-master-plan.md`
 - Phase 6.5 spec: `docs/superpowers/specs/2026-08-22-fastblocks-phase-6-5-design.md`
   (substrate enabler — `app.state.main_loop` + `app.state.jinja_env` binding)
 
----
+______________________________________________________________________
 
 ## Pre-flight erratum (v3.1 → v4)
 
 The v3.1 spec at commit `8787293` is structurally sound (Foundation → Matrix →
-Adversarial decomposition; 12 commits; <5 min CI budget). The 3 review cycles
+Adversarial decomposition; 12 commits; \<5 min CI budget). The 3 review cycles
 that produced v3.1 surfaced 1 load-bearing P0 (`LifespanManager`) plus 11 P0/P1
 items, most of which are spec-side edits rather than production-code changes.
 
@@ -265,9 +257,10 @@ without adding a custom middleware (production-code change, violating
 the strict-tests-only boundary).
 
 **v4 fix:** Drop scenario 3. CSRF coverage ships with 3 scenarios:
+
 1. POST without CSRF token → 403
-2. POST with valid X-CSRF-Token header → 200
-3. POST with expired token → 403
+1. POST with valid X-CSRF-Token header → 200
+1. POST with expired token → 403
 
 Form-field CSRF promotion is deferred to a future phase that allows
 middleware changes (or a one-line amendment to the strict-tests-only
@@ -278,16 +271,16 @@ commit #10.
 
 ### Erratum 7 — F-L3-2: Static files Cache-Control scenario dropped
 
-**v3.1 §5C.4 scenario 1:** "GET /static/ui.css → 200 with `Cache-Control:
-public, max-age=31536000, immutable`."
+**v3.1 §5C.4 scenario 1:** "GET /static/ui.css → 200 with `Cache-Control: public, max-age=31536000, immutable`."
 
 **Verified 2026-08-23 (L3 adversarial-coverage review):** Three
 independent checks:
+
 1. Starlette's default `StaticFiles` constructor has no Cache-Control
    handling (`starlette/staticfiles.py:39-56`).
-2. `fastblocks/adapters/routes/default.py:259-265` mounts static files
+1. `fastblocks/adapters/routes/default.py:259-265` mounts static files
    with only `directory=static_path`, no `headers=` kwarg.
-3. `fastblocks/middleware.py:327-386` defines `CacheControlMiddleware`
+1. `fastblocks/middleware.py:327-386` defines `CacheControlMiddleware`
    but it is **never registered** in `_register_default_middleware`
    (lines 480-487) or `_register_conditional_middleware` (lines 489-528).
 
@@ -376,8 +369,7 @@ L3 review found this is impossible because `mcp_instance` is local to
 happened with a FastMCP instance, not object identity.
 
 Additionally, add a third scenario per L3's suggestion: patch
-`register_fastblocks_tools` with `side_effect=RuntimeError("simulated
-failure")` and assert `_get_http_app()` still returns non-None. This
+`register_fastblocks_tools` with `side_effect=RuntimeError("simulated failure")` and assert `_get_http_app()` still returns non-None. This
 catches the `with suppress(Exception)` orphan path ADR 0011 Decision 6
 warned about. Scenario count goes from 2 to 3 (within IC #8 budget).
 
@@ -418,8 +410,7 @@ detects teardown-path regressions.
 
 **Verified 2026-08-23 (L1 foundation-correctness review):** Master plan
 line 178 (Approach paragraph) says `max_examples=1000, derandomize=True`.
-Master plan line 468 (Verification gate) says `max_examples=100,
-derandomize=False`. Both exist on the same master plan file.
+Master plan line 468 (Verification gate) says `max_examples=100, derandomize=False`. Both exist on the same master plan file.
 
 **v4 fix:** Pin to line 468 (correct for CI budget reasons:
 `max_examples=1000` × 4 cells × 32 components × 100ms/example
@@ -438,12 +429,12 @@ include this contradiction.
 same cache-miss exception to every test.
 
 **v4 fix:** Restructure `htmy_component()` into three pieces:
+
 1. Module-load `_build_components()` (NOT cached): filters `__all__`,
    asserts count == 32.
-2. Module-load `_register_object_strategy()` (NOT cached): calls
+1. Module-load `_register_object_strategy()` (NOT cached): calls
    `register_type_strategy(object, safe_user_input)`.
-3. Cached `htmy_component()`: returns `st.one_of(*[st.from_type(c) for c
-   in _build_components()])`.
+1. Cached `htmy_component()`: returns `st.one_of(*[st.from_type(c) for c in _build_components()])`.
 
 This way the assert and registration are deterministic at import time;
 only the strategy object is cached. Implementer makes these changes in
@@ -534,8 +525,7 @@ master plan §C4's 3 attack vectors without enumerating.
 > (b) CSS-context vectors — values containing `"; { } ()` Po chars
 > injected into CSS-relevant attrs (class, style); assert no script
 > execution context
-> (c) aria-* attribute injection — values like `aria-label="x"
-> onmouseover=...` injected into aria-* attrs; assert no event handler
+> (c) aria-\* attribute injection — values like `aria-label="x" onmouseover=...` injected into aria-\* attrs; assert no event handler
 > injection
 
 ### Erratum 20 — F-L5-4: §Failure modes line range
@@ -596,7 +586,7 @@ question open; spec omits the bound-method mechanism for
 **Verified 2026-08-23 (L4 review):** HYPOTHESIS_PROFILE env var has
 three edge cases not documented:
 (a) `settings.register_profile` is process-global; double registration
-    raises `hypothesis.errors.InvalidArgument`.
+raises `hypothesis.errors.InvalidArgument`.
 (b) `settings.load_profile(HYPOTHESIS_PROFILE)` is last-writer-wins.
 (c) With pytest-xdist, env var must propagate to each worker.
 
@@ -645,7 +635,7 @@ table, 25-attr whitelist, 32-component enumeration) is preserved by
 reference in v3.1 §Architecture." This avoids the misleading "verbatim"
 framing.
 
----
+______________________________________________________________________
 
 ## What v4 inherits from v3.1 unchanged
 
@@ -665,7 +655,7 @@ The following sections of v3.1 (`8787293`) are **preserved verbatim** in v4:
   at teardown).
 - **§5A.4 three new markers (line 307-325)** — `a11y`, `property`, `slow`.
 - **§5B.1-5B.4 matrix coverage (line 327-423)** — 4 cells × 100 examples,
-  32-component XSS matrix, SSTI regression, hx_* kwargs contract.
+  32-component XSS matrix, SSTI regression, hx\_\* kwargs contract.
 - **§5C.1 MCP canary (line 425-470)** — except for the `docs/plans/TEMPLATE.md`
   reference (Erratum 2). Spy-based assertion on `_get_http_app` to catch
   ADR 0011 Decision 6's `with suppress(Exception)` orphan.
@@ -688,7 +678,7 @@ The following sections of v3.1 (`8787293`) are **preserved verbatim** in v4:
 **Total content preserved from v3.1:** ~85% (lines 20-695 minus the 5
 errata). The 5 errata are surgical edits to the load-bearing items.
 
----
+______________________________________________________________________
 
 ## Architecture (preserved from v3.1)
 
@@ -697,19 +687,20 @@ Three layers, with `tests/strategies.py` as the shared root.
 | Layer | Deliverable | Hard dependency |
 |---|---|---|
 | **5A Foundation** | `tests/strategies.py` (4 strategies), Hypothesis profiles, fixtures, markers, zero-collection-error verification | None |
-| **5B Matrix coverage** | Property-based style×renderer (4 cells × 100), HTMY XSS (32 components), Jinja2 SSTI, hx_* kwargs | 5A's `tests/strategies.py` |
+| **5B Matrix coverage** | Property-based style×renderer (4 cells × 100), HTMY XSS (32 components), Jinja2 SSTI, hx\_\* kwargs | 5A's `tests/strategies.py` |
 | **5C Adversarial integration** | MCP canary, axe-core on 32, CSRF+HTMX, static files, lifecycle | 5A's `fastblocks_test_app` fixture |
 
 **Sub-phase order:** 5A → 5B → 5C.
 
 **Substrate from Phase 6.5 (unblocks v3.1's P0):**
+
 - `app.state.main_loop` + `app.state.jinja_env` bound at lifespan startup
   (commit `8c5c117`) → 5C.5 lifecycle test now driveable against Starlette's
   actual startup path
 - `tests/observability/conftest.py` autouse fixture → template for
   `fastblocks_test_app` fixture isolation pattern
 
----
+______________________________________________________________________
 
 ## Per-commit Integration Contracts (12 implementation + 1 coverage lift = 13 commits)
 
@@ -721,7 +712,7 @@ Three layers, with `tests/strategies.py` as the shared root.
 | 4 | `test(templates): property-based style × renderer matrix` | `tests/templates/test_style_renderer_property.py` | 4 property-based tests pass; cells 3/4 marked `@pytest.mark.xfail` per multi-agent review RC-1 |
 | 5 | `test(xss): HTMY XSS matrix for all 32 absorbed components` (Erratum 19: 3 attack vectors field-injection / CSS-context / aria-*) | `tests/xss/test_htmy_component_xss_matrix.py` | ~59 tests pass across 32 components (vector a) + Button vectors b/c; full count = 32×3 = 96 parametrized cases, 9 skipped (enum validators) |
 | 6 | `test(templates): Jinja2 SSTI regression` (Erratum 17: 15-vector corpus / 4 categories) | `tests/templates/test_jinja2_ssti.py` + `tests/xss/ssti_payloads.json` | 4 SSTI scenarios pass |
-| 7 | `test(adapters): HTMY hx_* kwargs contract test` | `tests/adapters/templates/test_htmy_hx_kwargs.py` | 11 hx_* scenarios pass (9 attrs + 2 JSON variants) |
+| 7 | `test(adapters): HTMY hx_* kwargs contract test` | `tests/adapters/templates/test_htmy_hx_kwargs.py` | 11 hx\_* scenarios pass (9 attrs + 2 JSON variants) |
 | 8 | `test(mcp): server integration canary` (Erratum 11: 3 scenarios including suppress-mask regression) | `tests/mcp/test_server_canary.py` | 3 scenarios pass (tools tuple + ASGI spy + suppress-mask regression) |
 | 9 | `chore(tests): tests/a11y/ — axe-core on 32 components` (uses `_component_postures.py` from #3; Erratum 16: 10-rule subset) | `tests/a11y/test_components_a11y.py` + `clean_axe_core_page` fixture | 32 axe-core tests pass; 0 axe-core violations per component |
 | 10 | `test(integration): CSRF + HTMX` (Erratum 6: 3 scenarios, form-fallback dropped) | `tests/integration/test_csrf_htmx.py` + `fastblocks_test_app` fixture | 3 CSRF scenarios pass |
@@ -734,7 +725,7 @@ Three layers, with `tests/strategies.py` as the shared root.
 **Cumulative runtime estimate:** ~150 tests, ~100-150s (1.5-2.5 min). Well
 under 5-min CI budget.
 
----
+______________________________________________________________________
 
 ## Multi-agent review strategy
 
@@ -754,6 +745,7 @@ Pre-flighting Decisions 8/9/11/12 reduces the surface area by ~30%.
 ### Refuter threshold
 
 3 refuters per surviving finding:
+
 - 3-of-3 confirm → carry forward at original severity
 - 2-of-3 confirm, 1 refutes → carry forward at original severity + `confidence: medium`
 - 1-of-3 confirms, 2 refute → carry forward at severity −1 + `disputed: true`
@@ -762,6 +754,7 @@ Pre-flighting Decisions 8/9/11/12 reduces the surface area by ~30%.
 ### GO/NO-GO gate
 
 NO-GO if any of:
+
 - P0 correctness bug, confidence=high
 - P0 strict-tests-only violation (production code touched)
 - Phase 6.5 substrate mismatch (5C.5 test doesn't exercise actual `lifespan` startup)
@@ -774,9 +767,10 @@ NO-GO if any of:
 - Refuter dispatches exceed 50 → cap and proceed
 
 **Cost estimate:** ~850k-1.1M tokens worst case (5 reviewers + 15-25 refuters
-+ 1 synthesis + coordination). Within budget.
 
----
+- 1 synthesis + coordination). Within budget.
+
+______________________________________________________________________
 
 ## Failure modes + recovery
 
@@ -795,7 +789,7 @@ NO-GO if any of:
 exercises the Phase 6.5 substrate. A failure means Phase 6.5's Task 1 is
 broken — that's a Phase 6.5 regression, not a Phase 5 test issue.
 
----
+______________________________________________________________________
 
 ## Coverage ratchet (preserved from v3.1)
 
@@ -806,7 +800,7 @@ observability hooks.
 
 | Source | Lift |
 |---|---|
-| 5B matrix + XSS + SSTI + hx_* | ~5pp |
+| 5B matrix + XSS + SSTI + hx\_\* | ~5pp |
 | 5C MCP canary | ~1pp |
 | 5C integration (CSRF, static, lifecycle) | ~3pp |
 | 5C axe-core | ~1pp |
@@ -816,24 +810,24 @@ observability hooks.
 observability hooks (counters, log assertions, trace context). Lifting the
 ratchet beyond 65% before Phase 6 ships creates a brittle floor.
 
----
+______________________________________________________________________
 
 ## Acceptance criteria for "Phase 5 retry done"
 
 1. **Zero collection errors** — `pytest --collect-only -q -p no:xdist` AND
    `pytest --collect-only -q -p xdist -n auto` both return 0.
-2. **All 13 verification items pass** (master plan §Phase 5 line 464-479;
+1. **All 13 verification items pass** (master plan §Phase 5 line 464-479;
    asyncio.TaskGroup deferred to Phase 6).
-3. **Coverage ≥ 65%** — `pytest --cov-fail-under=65` exits 0.
-4. **CI budget < 5 min** — Total runtime < 300s.
-5. **No production code changes** — `git diff main..HEAD --stat` shows only
+1. **Coverage ≥ 65%** — `pytest --cov-fail-under=65` exits 0.
+1. **CI budget < 5 min** — Total runtime < 300s.
+1. **No production code changes** — `git diff main..HEAD --stat` shows only
    `tests/`, `pyproject.toml`, `docs/`.
-6. **Strict-tests-only boundary preserved** — Per-commit IC verified.
-7. **Master plan drift documented** — Erratum footnote present in spec
+1. **Strict-tests-only boundary preserved** — Per-commit IC verified.
+1. **Master plan drift documented** — Erratum footnote present in spec
    (this section above).
-8. **Multi-agent review approved** — GO verdict from synthesis agent.
+1. **Multi-agent review approved** — GO verdict from synthesis agent.
 
----
+______________________________________________________________________
 
 ## Out of scope (deferred)
 
@@ -846,7 +840,7 @@ ratchet beyond 65% before Phase 6 ships creates a brittle floor.
   Separate PR (cross-cutting scope; out of scope for Phase 5 retry).
 - **Production code changes** → Strict-tests-only boundary preserved.
 
----
+______________________________________________________________________
 
 ## Cross-references
 
@@ -874,7 +868,7 @@ ratchet beyond 65% before Phase 6 ships creates a brittle floor.
 - **CLAUDE.md**: `fastblocks/CLAUDE.md` (no §Process Discipline section;
   IC template inlined per commit instead of cross-referenced per Erratum 2).
 
----
+______________________________________________________________________
 
 ## Summary
 

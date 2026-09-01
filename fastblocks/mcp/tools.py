@@ -605,6 +605,7 @@ async def register_fastblocks_tools(server: Any) -> None:
             # every invocation emits Counter + Histogram metrics. The
             # wrapping is idempotent (Δ49) so repeated calls are safe.
             from .observability import instrument_tool
+
             register(tool_name)(instrument_tool(tool_name, tool_fn))
 
         logger.info(f"Registered {len(tools)} FastBlocks MCP tools")

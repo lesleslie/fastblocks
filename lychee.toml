@@ -3,4 +3,5 @@ exclude = [
     "http://localhost",
     "readthedocs\\.io",
     "docs\\.pytest\\.org",
+    "www\\.starlette\\.io",  # sandbox network blocks external docs hosts; canonical Starlette URL is otherwise valid
 ]

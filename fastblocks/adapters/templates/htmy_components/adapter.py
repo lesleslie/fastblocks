@@ -38,7 +38,9 @@ This adapter exposes:
 Example (FastBlocks/Starlette-style)::
 
     from fastblocks.adapters.templates.htmy_components import (
-        asset_paths, template_globals, register_with_htmy_adapter,
+        asset_paths,
+        template_globals,
+        register_with_htmy_adapter,
     )
 
     app.mount(
@@ -50,6 +52,7 @@ Example (FastBlocks/Starlette-style)::
 
     # During app startup, once the FastBlocks htmy adapter is importable:
     from fastblocks.adapters.templates.htmy import HTMYTemplates
+
     await register_with_htmy_adapter(HTMYTemplates())
 
 Then in a FastBlocks template's base layout (recommended -- inline, no extra request,
@@ -108,9 +111,7 @@ from . import (
 
 
 def trusted_components() -> dict[str, type]:
-    """Typed htmy component classes this package ships, keyed by the name
-    they should be resolvable under via FastBlocks' ``render_component()``
-    template global.
+    """Typed htmy component classes shipped, keyed by name resolvable via FastBlocks' ``render_component()``.
 
     These are already-imported, already-vetted Python classes (this
     package's own installed code) — a different trust tier from arbitrary
@@ -160,8 +161,7 @@ def trusted_components() -> dict[str, type]:
 
 
 async def register_with_htmy_adapter(htmy_adapter: Any) -> None:
-    """Register this package's typed components as trusted components on a
-    live FastBlocks htmy adapter instance.
+    """Register this package's typed components on a live FastBlocks htmy adapter instance.
 
     ``htmy_adapter`` is expected to expose an async
     ``register_trusted_components(dict[str, type])`` method, matching
@@ -192,8 +192,9 @@ def asset_urls(
 
 
 def inline_css() -> SafeHTML:
-    """Return the shipped fastblocks-ui CSS bundle wrapped in a ``<style>`` tag,
-    read fresh from disk on every call (no caching here -- the app's own
+    """Return the shipped fastblocks-ui CSS bundle wrapped in a ``<style>`` tag.
+
+    Reads fresh from disk on every call (no caching here -- the app's own
     response/page cache is the right layer for that).
 
     Marked ``SafeHTML`` (implements ``__html__``) so it renders unescaped through
@@ -208,9 +209,9 @@ def inline_css() -> SafeHTML:
 
 
 def inline_js() -> SafeHTML:
-    """Return the shipped fastblocks-ui enhancement JS wrapped in a
-    ``<script type="module">`` tag, read fresh from disk on every call --
-    same rationale as ``inline_css()``.
+    """Return the shipped fastblocks-ui enhancement JS wrapped in a ``<script type="module">`` tag.
+
+    Reads fresh from disk on every call -- same rationale as ``inline_css()``.
 
     Deliberately reads ``static/js/enhance.js`` directly rather than
     ``fastblocks_ui.get_js_path()`` (which points at ``fastblocks-ui.js``, a

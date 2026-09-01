@@ -41,16 +41,19 @@ These constraints apply to every task below. Inherited from `CLAUDE.md` and the 
 
 **Why Commit6 first:** the ratchet baseline (123 sites per master plan line 313) could shift if any Phase 2 commit accidentally adds or removes a `suppress(Exception)` site. Running Commit6 first locks the baseline *before* any Phase 2 work touches `fastblocks/`. If Commit4's `format_resolver_mismatch()` accidentally adds a `with suppress(Exception):` somewhere, Commit6's ratchet test will fail on re-run — surfacing the regression at the commit that caused it.
 
----
+______________________________________________________________________
 
 ## Task 1: Commit6 — Baseline-lock the `suppress(Exception)` ratchet
 
 **Files:**
+
 - Create: `tests/core/test_suppress_exception_ratchet.py`
 - Test: `tests/core/test_suppress_exception_ratchet.py`
 
 **Interfaces:**
+
 - Consumes: shell `git grep -c 'suppress(Exception)' -- fastblocks/` output
+
 - Produces: a passing assertion that the count is ≤ 123 (master plan baseline)
 
 - [ ] **Step 1.1: Write the ratchet test**
@@ -157,17 +160,21 @@ git checkout main
 git merge --ff-only task/phase2-ratchet-test
 ```
 
----
+______________________________________________________________________
 
 ## Task 2: Commit1 — Create `core/validators.py` (source of truth)
 
 **Files:**
+
 - Create: `fastblocks/core/validators.py`
 - Test: `tests/core/test_validators_module.py` (smoke test — Commit1 ships a smoke test, not the full Protocol surface)
 
 **Interfaces:**
+
 - Consumes: nothing — this module is the root of the dependency chain
+
 - Produces:
+
   - `StyleName = Literal["vanilla", "fastblocks_ui"]`
   - `DEFAULT_STYLE: StyleName = "fastblocks_ui"`
   - `@runtime_checkable class StyleAdapter(Protocol)` with methods: `register_style_functions`, `get_css_path`, `get_js_path`, `escape_user_input`
@@ -578,16 +585,19 @@ git checkout main
 git merge --ff-only task/phase2-validators-module
 ```
 
----
+______________________________________________________________________
 
 ## Task 3: Commit2 — `AppBaseSettings.style: str` → `StyleName`
 
 **Files:**
+
 - Modify: `fastblocks/adapters/app/_base.py:1-14` (import + field annotation)
 - Test: `tests/core/test_app_settings_literal.py` (NEW, 7 tests: 2 legal + 1 default + 4 parametrize illegal values)
 
 **Interfaces:**
+
 - Consumes: `StyleName`, `DEFAULT_STYLE` from `fastblocks.core.validators` (Commit1)
+
 - Produces: `AppBaseSettings.style` field becomes `Literal["vanilla", "fastblocks_ui"]` typed
 
 - [ ] **Step 3.1: Write the Literal validation tests**
@@ -666,11 +676,11 @@ Expected: FAIL. The current `AppBaseSettings.style` is `str`, so any value passe
 Open `/Users/les/Projects/fastblocks/fastblocks/adapters/app/_base.py`. The file currently lacks `from __future__ import annotations` — add it as the first non-comment line per CLAUDE.md / crackerjack-compliant-code. The change:
 
 1. Add `from __future__ import annotations` as line 1 (above `import typing as t`).
-2. Add the validators import below the existing Oneiric import (around line 4-5):
+1. Add the validators import below the existing Oneiric import (around line 4-5):
    ```python
    from fastblocks.core.validators import DEFAULT_STYLE, StyleName
    ```
-3. Change the `style` field annotation (around line 12):
+1. Change the `style` field annotation (around line 12):
    ```python
    # before
    style: str = "fastblocks_ui"
@@ -730,16 +740,19 @@ git checkout main
 git merge --ff-only task/phase2-app-settings-literal
 ```
 
----
+______________________________________________________________________
 
 ## Task 4: Commit3 — `cli.py` inline Literals → `StyleName` import
 
 **Files:**
+
 - Modify: `fastblocks/cli.py` (5 sites: lines 913, 941, 974, 1068, 1082 per spec — verify against current file)
 - Test: `tests/core/test_validators_sync.py` (Commit3 ships 4 of the 5 sync tests; Commit4 ships the 5th)
 
 **Interfaces:**
+
 - Consumes: `StyleName`, `DEFAULT_STYLE` from `fastblocks.core.validators` (Commit1)
+
 - Produces: every `Literal["vanilla", "fastblocks_ui"]` annotation in `cli.py` collapses to `StyleName`
 
 - [ ] **Step 4.1: Write the sync tests (4 of 5)**
@@ -921,10 +934,12 @@ Expected: FAIL. `test_cli_imports_style_name_from_validators` fails because cli.
 Open `/Users/les/Projects/fastblocks/fastblocks/cli.py`. The change has two parts:
 
 1. Add the import (top of file, near the existing `from typing import Annotated, Literal`):
+
    ```python
    from fastblocks.core.validators import DEFAULT_STYLE, StyleName
    ```
-2. Replace each inline `Literal["vanilla", "fastblocks_ui"]` annotation with `StyleName`:
+
+1. Replace each inline `Literal["vanilla", "fastblocks_ui"]` annotation with `StyleName`:
 
    - Line ~913 (`create_app`): `style: Annotated[Literal["vanilla", "fastblocks_ui"], typer.Option(...)] = "vanilla"` → `style: Annotated[StyleName, typer.Option(...)] = "vanilla"`
    - Line ~941 (`create_template`): same pattern, replace `Literal[...]` with `StyleName`
@@ -983,11 +998,12 @@ git checkout main
 git merge --ff-only task/phase2-cli-literals
 ```
 
----
+______________________________________________________________________
 
 ## Task 5: Commit4 — `register_style_candidate` + `format_resolver_mismatch` tests + Protocol tests + `_fresh_registry` lift + Scenario 3+5 regression tests + 5th sync test (PEP 646)
 
 **Files:**
+
 - Modify: `fastblocks/adapters/oneiric_helper.py` — add `register_style_candidate`
 - Modify: `tests/conftest.py` — add public `fresh_registry` fixture (lifted from Card5)
 - Modify: `tests/core/test_resolve_instance.py` — remove local `_fresh_registry`, consume `fresh_registry` fixture
@@ -1000,7 +1016,9 @@ git merge --ff-only task/phase2-cli-literals
 - Modify: `tests/core/test_validators_sync.py` — add 5th test (PEP 646 `Literal[*values]` rejection)
 
 **Interfaces:**
+
 - Consumes: `StyleAdapter`, `TemplateAdapter`, `ResolverMismatchError`, `format_resolver_mismatch`, `_protocol_missing_methods` from Commit1
+
 - Produces: `register_style_candidate(depends, style_name, module) -> None` in `oneiric_helper.py`
 
 - [ ] **Step 5.1: Add the 5th sync test (PEP 646 rejection)**
@@ -1081,8 +1099,8 @@ def fresh_registry() -> FastblocksRegistry:
 Modify `/Users/les/Projects/fastblocks/tests/core/test_resolve_instance.py`:
 
 1. Delete the local `_fresh_registry` function definition (lines 37-39).
-2. For every test in the file that calls `registry = _fresh_registry()` inline, refactor to consume the fixture as a parameter: change `def test_X() -> None:` to `def test_X(fresh_registry) -> None:` and remove the inline `registry = _fresh_registry()` line.
-3. The `_patch_resolver` helper Card5 uses (with `monkeypatch`) is unaffected — it takes the fixture-injected registry as a parameter.
+1. For every test in the file that calls `registry = _fresh_registry()` inline, refactor to consume the fixture as a parameter: change `def test_X() -> None:` to `def test_X(fresh_registry) -> None:` and remove the inline `registry = _fresh_registry()` line.
+1. The `_patch_resolver` helper Card5 uses (with `monkeypatch`) is unaffected — it takes the fixture-injected registry as a parameter.
 
 Verify by reading the test file end-to-end and confirming every test that used `_fresh_registry()` now uses the `fresh_registry` fixture.
 
@@ -1406,10 +1424,15 @@ def test_emit_startup_log_reports_shadowed_count(
 ```
 
 The import path is verified empirically:
+
 - `Candidate` at `/Users/les/Projects/fastblocks/.venv/lib/python3.13/site-packages/oneiric/core/resolution.py:41`
+
 - `CandidateSource` at line 34
+
 - `Resolver` in the same file
+
 - `FastblocksRegistry.register(candidate)` at `/Users/les/Projects/fastblocks/fastblocks/core/resolver.py:213`
+
 - The structured-log capture pattern at `/Users/les/Projects/fastblocks/tests/core/test_resolver_metrics.py:203-235`
 
 - [ ] **Step 5.7: Write the Scenario 5 regression test**
@@ -1535,7 +1558,9 @@ def test_register_style_candidate_narrows_missing_method_list(
 
 Run: `.venv/bin/pytest tests/core/test_register_style_candidate.py -v`
 Expected: FAIL with `ImportError` or `AttributeError` (the function doesn't exist yet). Specifically:
+
 - `test_register_style_candidate_accepts_valid_adapter` fails because `register_style_candidate` doesn't exist.
+
 - `test_register_style_candidate_raises_for_missing_method` fails for the same reason.
 
 - [ ] **Step 5.9: Add `register_style_candidate` to `oneiric_helper.py`**
@@ -1666,11 +1691,12 @@ git checkout main
 git merge --ff-only task/phase2-protocol-gates
 ```
 
----
+______________________________________________________________________
 
 ## Task 6: Commit5 — ADR 0010 closeout
 
 **Files:**
+
 - Create: `docs/adr/0010-phase-2-mechanical-four.md`
 
 - [ ] **Step 6.1: Write the ADR**
@@ -1811,7 +1837,7 @@ git checkout main
 git merge --ff-only task/phase2-adr-0010
 ```
 
----
+______________________________________________________________________
 
 ## Task 7: Final verification
 
@@ -1860,7 +1886,7 @@ Per-file breakdown (parametrize cases expand):
 
 If any verification step required a fix, commit the fix in a separate "Phase 2 verification" commit. Otherwise the plan is complete.
 
----
+______________________________________________________________________
 
 ## Self-Review Checklist
 

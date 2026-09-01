@@ -242,4 +242,3 @@ apply_tool_profile(
 The framework-internal `FastBlocksMCPServer` is unchanged and continues
 to register all 7 tools via the existing `register_fastblocks_tools`
 function. This preserves CLAUDE.md:157-190's library-not-server posture.
-

@@ -25,6 +25,7 @@ Wraps BOTH registration paths:
 ``func.__name__`` — never read the latter for the metric label, always
 use the passed ``tool_name`` argument.
 """
+
 from __future__ import annotations
 
 import functools

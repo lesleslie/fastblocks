@@ -176,9 +176,7 @@ def compute_metrics_snapshot(
         "phase": _phase_label,
         "registry_size_total": compute_registry_size_total(),
         "registration_count_total": compute_registration_count_total(),
-        "shadow_count_total": compute_shadow_count_total(
-            facade, domains=domains
-        ),
+        "shadow_count_total": compute_shadow_count_total(facade, domains=domains),
         "domains_observed": list(domains) if domains is not None else None,
     }
 

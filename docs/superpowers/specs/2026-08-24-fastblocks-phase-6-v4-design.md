@@ -1,4 +1,5 @@
----
+______________________________________________________________________
+
 status: accepted
 role: phase-6-design-spec-v4
 date: 2026-08-24
@@ -9,13 +10,15 @@ decision_date: 2026-08-24
 topic: phase-6-observability-v4-retry
 version: v4
 blocks_on:
-  - phase-1.5 (registry facade shipped)
-  - phase-2 (Literal types shipped)
-  - phase-2.5 (AppSettings wiring shipped)
-  - phase-4-v2.1 (register_fastblocks_tools non-orphan per ADR 0015)
-  - phase-5-v4 (test infra rebuild, ADR 0014)
-  - phase-6.5 (LifespanManager + trace_context shipped)
----
+
+- phase-1.5 (registry facade shipped)
+- phase-2 (Literal types shipped)
+- phase-2.5 (AppSettings wiring shipped)
+- phase-4-v2.1 (register_fastblocks_tools non-orphan per ADR 0015)
+- phase-5-v4 (test infra rebuild, ADR 0014)
+- phase-6.5 (LifespanManager + trace_context shipped)
+
+______________________________________________________________________
 
 # Phase 6: Observability Design — v4 Retry
 
@@ -36,11 +39,13 @@ explicitly tabulated.
 ## Scope decision (carried from v3 §"Scope decision")
 
 In scope:
+
 1. **6A** — Foundational observability layer.
-2. **6B** — Cardinality-safe metrics.
-3. **6C** — Trace propagation + a11y bridges.
+1. **6B** — Cardinality-safe metrics.
+1. **6C** — Trace propagation + a11y bridges.
 
 Out of scope (deferred):
+
 - `asyncio.TaskGroup` migration (Phase 6.5; structural refactor; addressed separately).
 - Cardinality budget tuning per metric (depends on real Prometheus data; Phase 7+).
 - HTMY XSS for Jinja2-rendered components (master plan §Phase 5 v580+).
@@ -152,7 +157,7 @@ gets **2 reviewers**; pre-commits 0a/0b/0c get 1 reviewer each.
 - *Returns to / updates:* `pyproject.toml` adds `[dependency-groups]` entry `observability = ["prometheus-client", "opentelemetry-sdk", "opentelemetry-exporter-otlp", "sentry-sdk"]`
 - *Demonstrable by:*
   1. `uv sync` (lean) does NOT install the group; `python -c "import fastblocks.observability.counters"` raises `RuntimeError` with install hint
-  2. `uv sync --group observability` installs; the same import succeeds
+  1. `uv sync --group observability` installs; the same import succeeds
 - *Rollback signal:* `git revert`; pure pyproject edit
 - *Reviewers:* 1 (python-pro for dep-group conformance to CLAUDE.md pattern)
 
@@ -173,8 +178,8 @@ gets **2 reviewers**; pre-commits 0a/0b/0c get 1 reviewer each.
   - NEW `tests/observability/test_exception_middleware_position.py` — proves ordering for both `outermost_default` and `innermost_opt_out` cases
 - *Demonstrable by:*
   1. `tests/observability/test_exception_middleware_position.py::test_outermost_default` passes (default behavior preserved)
-  2. `tests/observability/test_exception_middleware_position.py::test_innermost_opt_out` passes (opt-out works)
-  3. `pytest -q -m "not slow"` baseline ≥ current 2290 tests, 0 fails
+  1. `tests/observability/test_exception_middleware_position.py::test_innermost_opt_out` passes (opt-out works)
+  1. `pytest -q -m "not slow"` baseline ≥ current 2290 tests, 0 fails
 - *Rollback signal:* `git revert`; restore hardcoded `ExceptionMiddleware` position
 - *Reviewers:* 1 (starlette-specialist — high blast radius on 5xx handling)
 
@@ -212,8 +217,8 @@ gets **2 reviewers**; pre-commits 0a/0b/0c get 1 reviewer each.
 - *Precondition artifact (commit message body):* output of `python -c "import oneiric; from fastblocks.adapters.oneiric.observability import DecisionSpanProcessor; ..."` showing BARE `domain`, `key`, `provider`, `decision` attribute names on emitted spans
 - *Demonstrable by:*
   1. `scripts/verify_oneiric_otel_attrs.py` exits 0 with all 4 attribute names verified
-  2. Unit test triggers Oneiric resolution; SpanProcessor emits structlog line and increments counter
-  3. The autouse fixture in `tests/observability/conftest.py` tears down SpanProcessor; next test sees clean `TracerProvider`
+  1. Unit test triggers Oneiric resolution; SpanProcessor emits structlog line and increments counter
+  1. The autouse fixture in `tests/observability/conftest.py` tears down SpanProcessor; next test sees clean `TracerProvider`
 - *Rollback signal:* `git revert`
 - *Reviewers:* 2 (oneiric-specialist; observability-incident-lead)
 
@@ -271,9 +276,9 @@ gets **2 reviewers**; pre-commits 0a/0b/0c get 1 reviewer each.
 - *Returns to / updates:* NEW `fastblocks/observability/otel_middleware.py`; mounted as the LAST entry in `user_middleware` after Commit 0c decoupled `ExceptionMiddleware`
 - *Demonstrable by:*
   1. Request through the app → OTel root span created → `trace_context.get()` non-None inside handler
-  2. `Manager.get_middleware_stack()["user_middleware"][-1]["class"] == "OtelMiddleware"` (per v3 F-STRV2-2 correction — manager returns dict, not list)
-  3. NEW `tests/observability/test_otel_middleware_outermost.py` confirms positioning + 5xx-with-OTel-trace coverage
-  4. `try/finally` clears `trace_context` even on handler exception (regression test asserts)
+  1. `Manager.get_middleware_stack()["user_middleware"][-1]["class"] == "OtelMiddleware"` (per v3 F-STRV2-2 correction — manager returns dict, not list)
+  1. NEW `tests/observability/test_otel_middleware_outermost.py` confirms positioning + 5xx-with-OTel-trace coverage
+  1. `try/finally` clears `trace_context` even on handler exception (regression test asserts)
 - *Rollback signal:* `git revert`
 - *Reviewers:* 2 (starlette-specialist; observability-incident-lead)
 
@@ -292,8 +297,8 @@ gets **2 reviewers**; pre-commits 0a/0b/0c get 1 reviewer each.
 - *Precondition artifact (commit message body):* output of `python -c "import sentry_sdk; print(sentry_sdk.__version__)"` and `python -c "from sentry_sdk import opentelemetry; print(opentelemetry.__file__)"` — captured as IC evidence
 - *Demonstrable by:*
   1. With `SENTRY_DSN` set, single span tree in both Sentry and OTel collector
-  2. Without `SENTRY_DSN`, no-op
-  3. `observability.sentry.disabled_on_import_error: bool = true` lets operators ship if import path drifts
+  1. Without `SENTRY_DSN`, no-op
+  1. `observability.sentry.disabled_on_import_error: bool = true` lets operators ship if import path drifts
 - *Rollback signal:* `git revert`
 - *Reviewers:* 2 (observability-incident-lead; oneiric-specialist)
 
@@ -306,7 +311,7 @@ gets **2 reviewers**; pre-commits 0a/0b/0c get 1 reviewer each.
   - Rendered in default HTMY template; `:8680/static/a11y_bridge.css` mount point in default app
 - *Demonstrable by:*
   1. `render_broadcast_as_a11y(kind=POLITE, message="hit", role="status")` returns escaped HTML containing `data-fb-aria-live="true"` and the namespaced class
-  2. Playwright test boots app + WebSocket adapter; assertion (a) finds the node via `[data-fb-aria-live="true"]`, (b) asserts `classList` contains `"sr-only--fastblocks-a11y-bridge"`, (c) asserts `getComputedStyle(el).clipPath === 'inset(50%)'`, (d) asserts `getComputedStyle(el).width === '1px'`
+  1. Playwright test boots app + WebSocket adapter; assertion (a) finds the node via `[data-fb-aria-live="true"]`, (b) asserts `classList` contains `"sr-only--fastblocks-a11y-bridge"`, (c) asserts `getComputedStyle(el).clipPath === 'inset(50%)'`, (d) asserts `getComputedStyle(el).width === '1px'`
 - *Rollback signal:* `git revert`
 - *Reviewers:* 2 (accessibility-auditor; websocket-specialist)
 
@@ -316,7 +321,7 @@ gets **2 reviewers**; pre-commits 0a/0b/0c get 1 reviewer each.
 - *Returns to / updates:* NEW `dashboards/fastblocks-overview.json`; NEW `tests/dashboards/test_fastblocks_dashboard_schema.py`
 - *Demonstrable by:*
   1. Dashboard JSON parses against Grafana 10.x schema
-  2. Per-dashboard ground-truth test scans each panel's `targets[].expr`, extracts metric name, asserts metric appears in per-metric instrumentation matrix
+  1. Per-dashboard ground-truth test scans each panel's `targets[].expr`, extracts metric name, asserts metric appears in per-metric instrumentation matrix
 - *Rollback signal:* `git revert`
 - *Reviewers:* 2 (observability-incident-lead; python-pro for schema assertion)
 
@@ -388,9 +393,9 @@ degradation.
 **v4-specific decisions**:
 
 8. **17-commit sequence adds 2 pre-commits (Δ1+Δ2)**: dep-group + ExceptionMiddleware decouple. v3's 15 commits remain unchanged; the pre-commits are load-bearing for v3's own deliverables (Commit 1 needs the dep group; Commit 11 needs ExceptionMiddleware out of the way).
-9. **Delta-vs-v3 doc structure (Approach C)**: v4 is a delta + commit ICs; v3 is referenced, not re-stated. Phase 5 v4 retry used this same shape.
-10. **Open Review Flags #1, #5, #6 are CLOSED**: Phase 4 v2.1 made `register_fastblocks_tools` non-orphan; Phase 6.5 bound `app.state.main_loop` at lifespan. Flag #7 (dep-group import guard) and Flag #8 (Sentry alpha path) are NEW and mitigated.
-11. **`[observability]` dep group, NOT core deps**: matches CLAUDE.md §"Optional Dependency Groups" pattern. Lean installs opt out; dev installs pull it. Commit 1's `RuntimeError` wrapper handles the loud-failure transition.
+1. **Delta-vs-v3 doc structure (Approach C)**: v4 is a delta + commit ICs; v3 is referenced, not re-stated. Phase 5 v4 retry used this same shape.
+1. **Open Review Flags #1, #5, #6 are CLOSED**: Phase 4 v2.1 made `register_fastblocks_tools` non-orphan; Phase 6.5 bound `app.state.main_loop` at lifespan. Flag #7 (dep-group import guard) and Flag #8 (Sentry alpha path) are NEW and mitigated.
+1. **`[observability]` dep group, NOT core deps**: matches CLAUDE.md §"Optional Dependency Groups" pattern. Lean installs opt out; dev installs pull it. Commit 1's `RuntimeError` wrapper handles the loud-failure transition.
 
 ## Spec self-review checklist (to be completed after writing)
 

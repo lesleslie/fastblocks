@@ -202,7 +202,9 @@ def get_workflow_service() -> FastBlocksWorkflowService:
     """Get the singleton FastBlocksWorkflowService instance."""
     global _workflow_service
     if _workflow_service is None:
-        _workflow_service = t.cast(FastBlocksWorkflowService, FastBlocksWorkflowService())
+        _workflow_service = t.cast(
+            FastBlocksWorkflowService, FastBlocksWorkflowService()
+        )
     return _workflow_service
 
 

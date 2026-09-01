@@ -6,7 +6,7 @@ requires = [
 
 [project]
 name = "fastblocks"
-version = "0.24.0"
+version = "0.24.1"
 description = "Starlette based app for the rapid delivery of HTMX/Jinja template blocks"
 readme = "README.md"
 keywords = [
@@ -44,6 +44,7 @@ classifiers = [
 dependencies = [
     "anyio~=4.11",
     "brotli-asgi~=1.5",
+    "httpx2>=0.28.1",
     "fastblocks-ui>=0.9,<0.10",
     "granian[reload]~=2.6",
     "htmy[lxml]>=0.13,<0.14",
@@ -102,8 +103,8 @@ observability = [
     "opentelemetry-sdk~=1.44",
     "opentelemetry-exporter-otlp-proto-http~=1.44",
     "sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8",  # Δ55 alpha-locked
-    "mcp-common>=0.23.1",
-    "structlog>=26.1.0",  # Δ40 — log_correlation mapping; matches oneiric>=0.13.4 strict dep (was ~=24.4)
+    "mcp-common>=0.23.1",  # Δ47 — <0.4 cap removed (prevents resolution against 0.24.x ecosystem as of 2026-08-31)
+    "structlog~=26.1",  # Δ40 — log_correlation mapping; matches oneiric>=0.13.4 strict dep (was ~=24.4)
 ]
 images = [
     "cloudinary~=1.44",

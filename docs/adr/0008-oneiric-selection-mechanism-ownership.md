@@ -1,13 +1,6 @@
----
-status: accepted
-role: canonical
-date: 2026-08-21
-last_reviewed: 2026-08-21
-superseded_by: null
-blocks_on: []
-decision_date: 2026-08-21
-topic: oneiric-selection-ownership
----
+______________________________________________________________________
+
+## status: accepted role: canonical date: 2026-08-21 last_reviewed: 2026-08-21 superseded_by: null blocks_on: [] decision_date: 2026-08-21 topic: oneiric-selection-ownership
 
 # ADR 0008: Oneiric Selection Mechanism Ownership
 
@@ -35,7 +28,7 @@ Two ownership questions surfaced during the Phase 1.5 review:
    helper push the change upstream into Oneiric or keep it
    fastblocks-local?
 
-2. **Selection mechanism.** Oneiric's `Candidate` carries
+1. **Selection mechanism.** Oneiric's `Candidate` carries
    `priority`, `stack_level`, and `provider` fields that score
    candidates during `resolve()`. Should fastblocks ever set
    these fields explicitly, or are they always inherited from
@@ -143,11 +136,11 @@ between the user-facing surface and Oneiric's selection.
 Literal-driven validation lives in a single, discoverable
 module per boundary rather than scattered across the codebase:
 
-| Validation kind             | Home                                                     |
+| Validation kind | Home |
 |-----------------------------|----------------------------------------------------------|
-| CLI `Literal[...]` choices  | `fastblocks/cli.py` (inline — Typer kwargs)              |
-| `AppBaseSettings` fields    | `fastblocks/applications.py` (the SettingsPydantic model)|
-| Shared Literal sets         | `fastblocks/core/validators.py` (NEW — Phase 2 home)     |
+| CLI `Literal[...]` choices | `fastblocks/cli.py` (inline — Typer kwargs) |
+| `AppBaseSettings` fields | `fastblocks/applications.py` (the SettingsPydantic model)|
+| Shared Literal sets | `fastblocks/core/validators.py` (NEW — Phase 2 home) |
 | Per-adapter schema/validators | alongside the adapter, e.g. `fastblocks/adapters/styles/_base.py` |
 
 The new `fastblocks/core/validators.py` is the home for any

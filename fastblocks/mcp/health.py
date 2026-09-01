@@ -153,7 +153,6 @@ class HealthCheckSystem:
         warnings = []
 
         try:
-
             # Use Oneiric resolver (0.13+ sync API; resolve returns Candidate).
             depends = FastblocksRegistry(get_resolver())
 

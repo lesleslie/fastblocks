@@ -58,6 +58,7 @@ Per v6 Global Constraints:
   * No ``logger.error(..., exc_info=True)`` (use ``logger.exception(...)``)
   * ``pathlib.Path`` NOT ``os.path``
 """
+
 from __future__ import annotations
 
 import typing as t

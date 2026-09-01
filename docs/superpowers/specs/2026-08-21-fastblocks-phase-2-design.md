@@ -1,13 +1,6 @@
----
-status: accepted
-role: phase-2-design-spec
-date: 2026-08-21
-last_reviewed: 2026-08-21
-supersedes: null
-superseded_by: null
-decision_date: 2026-08-21
-topic: phase-2-type-safe-configuration-mechanical-four
----
+______________________________________________________________________
+
+## status: accepted role: phase-2-design-spec date: 2026-08-21 last_reviewed: 2026-08-21 supersedes: null superseded_by: null decision_date: 2026-08-21 topic: phase-2-type-safe-configuration-mechanical-four
 
 # Phase 2: Type-safe Configuration — Mechanical-Four Design
 
@@ -22,9 +15,9 @@ Phase 2 of the master plan (§Phase 2 line 303-313) lists six sub-tasks. The
 scope decision for THIS spec is **mechanical four**:
 
 1. `Literal[...]` types for the `style` domain (CLI + settings)
-2. CLI↔settings Literal sync test
-3. Oneiric-`explain()`-based error contract for registered-but-not-in-Literal drift
-4. `Protocol`-based adapter contracts (`StyleAdapter`) with `isinstance` enforcement.
+1. CLI↔settings Literal sync test
+1. Oneiric-`explain()`-based error contract for registered-but-not-in-Literal drift
+1. `Protocol`-based adapter contracts (`StyleAdapter`) with `isinstance` enforcement.
    `TemplateAdapter` is **defined** for Phase 6's Prometheus cardinality lint
    (Phase 6's label-set `Literal[...]` rule needs a stable type to lint
    against), but its `register_template_candidate` decorator is **deferred**
@@ -114,8 +107,7 @@ class AppBaseSettings(OneiricSettings):
 
 Pydantic v2 raises `ValidationError` at app startup with a clear message
 naming the offending value and the legal set. Actual message format:
-`Input should be 'vanilla' or 'fastblocks_ui' [type=literal_error,
-input_value='kelp', input_type=str]`. No custom validator code; this
+`Input should be 'vanilla' or 'fastblocks_ui' [type=literal_error, input_value='kelp', input_type=str]`. No custom validator code; this
 is the Literal-type validation Pydantic provides for free.
 
 ### Layer 3 — `fastblocks/cli.py` (CLI consumer)
@@ -146,11 +138,11 @@ Four assertions:
 
 1. `validators.StyleName`'s `Literal` members equal `AppBaseSettings.style`'s
    resolved annotation members.
-2. Every `cli.py` call site that imports `StyleName` references the same
-   module-level name (not a re-declared inline Literal).
-3. No inline `Literal["vanilla", "fastblocks_ui"]` exists outside
+1. Every `cli.py` call site that imports `StyleName` references the same
+   module-level name (not a redeclared inline Literal).
+1. No inline `Literal["vanilla", "fastblocks_ui"]` exists outside
    `validators.py`.
-4. `DEFAULT_STYLE` is one of `StyleName`'s members.
+1. `DEFAULT_STYLE` is one of `StyleName`'s members.
 
 **AST visitor specification** (correctness I4 fix). `ast.literal_eval`
 cannot parse `Literal[...]` — it's an `ast.Subscript` node, not a
@@ -335,8 +327,8 @@ error still surfaces.
 
 `app.yml` → Oneiric Settings loader → `AppBaseSettings.__init__` → Literal
 validator runs → Pydantic raises `ValidationError` "Input should be
-'vanilla' or 'fastblocks_ui' [type=literal_error, input_value='kelp',
-input_type=str]" → startup fails. **No new code in Phase 2** for the
+'vanilla' or 'fastblocks_ui' \[type=literal_error, input_value='kelp',
+input_type=str\]" → startup fails. **No new code in Phase 2** for the
 type itself; the wiring path (how `app.yml` reaches `AppBaseSettings`) is
 **out of Phase 2 scope** (see caveat below).
 

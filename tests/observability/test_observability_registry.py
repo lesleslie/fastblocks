@@ -9,13 +9,29 @@ from fastblocks.observability.registry import (
 )
 
 
-def test_counter_collision_raises_via_prometheus_chain():
-    """Per Δ35: raise from prometheus_client.ValueError to preserve chain."""
-    Counter("collide_test", "first", labelnames=("a",))
-    with pytest.raises(MetricNameCollisionError) as exc_info:
-        Counter("collide_test", "second", labelnames=("a",))
-    assert exc_info.value.metric_name == "collide_test"
-    assert isinstance(exc_info.value.__cause__, ValueError)
+def test_counter_reuse_returns_existing_collector():
+    """Module-reload safety: a second ``Counter(name, ...)`` call returns the
+    existing collector instead of crashing with ``MetricNameCollisionError``.
+
+    Pre-change behavior was to raise ``MetricNameCollisionError`` on every
+    second registration of the same name. That collided with pytest's
+    ``importlib.reload`` pattern (used in
+    ``tests/unit/test_websocket_auth.py`` and elsewhere) where a module's
+    module-level ``Counter(...)`` constructs re-execute against the same
+    process-global prometheus_client REGISTRY. Without the reuse branch,
+    the second pass crashed with
+    ``ValueError: Duplicated timeseries: ...`` and the entire test
+    session aborted. Silent reuse is the right tradeoff here: the
+    collector is already wired, the increments are indistinguishable,
+    and any caller that genuinely wants strict-name collision detection
+    can inspect ``ObservabilityRegistry._names`` directly.
+    """
+    first = Counter("collide_test", "first", labelnames=("a",))
+    second = Counter("collide_test", "second", labelnames=("a",))
+    # Reuse: same backing collector. ``_inner`` identity is what matters
+    # for increment forwarding — a label change in the second call would
+    # be ignored, but the metric name collision is silent.
+    assert first._inner is second._inner
 
 def test_concurrent_register_thread_safe():
     """Per P1-8: registration-only lock; concurrent Counter calls race-safely."""

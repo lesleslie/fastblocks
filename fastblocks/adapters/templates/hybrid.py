@@ -36,7 +36,6 @@ class AdapterStatus:
     EXPERIMENTAL = "EXPERIMENTAL"
 
 
-
 # Oneiric resolver for dependency injection
 depends = FastblocksRegistry(get_resolver())
 from starlette.requests import Request

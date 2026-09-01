@@ -1,13 +1,6 @@
----
-status: accepted
-role: phase-2-5-design-spec
-date: 2026-08-22
-last_reviewed: 2026-08-22
-supersedes: null
-superseded_by: null
-decision_date: 2026-08-22
-topic: phase-2-5-app-yml-wiring
----
+______________________________________________________________________
+
+## status: accepted role: phase-2-5-design-spec date: 2026-08-22 last_reviewed: 2026-08-22 supersedes: null superseded_by: null decision_date: 2026-08-22 topic: phase-2-5-app-yml-wiring
 
 # Phase 2.5: app.yml → AppBaseSettings Wiring Design
 
@@ -32,14 +25,14 @@ not on `app.yml`-driven config. Phase 2.5 brings the validation to life.
 1. Add 4 fields to `AppBaseSettings` matching the documented
    `mcp/resources.py:288` schema: `title`, `domain`, `description`,
    `version`.
-2. Add `fastblocks/core/settings_loader.py` — thin wrapper around
+1. Add `fastblocks/core/settings_loader.py` — thin wrapper around
    Oneiric's `load_settings(path, project_name)` that returns
    `AppSettings` (not raw OneiricSettings).
-3. Wire `AppSettings()` call sites to use the loader with a **soft
+1. Wire `AppSettings()` call sites to use the loader with a **soft
    fallback** when `app.yml` is absent (defaults preserved).
-4. Document the canonical schema source in `mcp/resources.py` (point
+1. Document the canonical schema source in `mcp/resources.py` (point
    readers at `AppBaseSettings`).
-5. Test the load path + failure modes.
+1. Test the load path + failure modes.
 
 **Out of scope:**
 
@@ -61,11 +54,11 @@ The mechanical work is small:
    (verified at `oneiric/core/config.py:245` with
    `model_config = SettingsConfigDict(env_prefix="ONEIRIC_", ...)`).
    The YAML-loading machinery is already in the inheritance chain.
-2. Oneiric's `load_settings(path, project_name)` is the
+1. Oneiric's `load_settings(path, project_name)` is the
    XDG-compliant layered YAML loader with priority order (path arg >
    env var > XDG user > project local > project committed > defaults).
    Phase 2.5 wraps it for fastblocks defaults.
-3. The documented `app.yml` schema in `mcp/resources.py:288` is
+1. The documented `app.yml` schema in `mcp/resources.py:288` is
    **drifted** from `AppBaseSettings` actual fields (different field
    names). Phase 2.5 reconciles by making `AppBaseSettings` the
    source of truth.
@@ -151,9 +144,9 @@ def load_fastblocks_settings(
 
 1. Pins `project_name="fastblocks"` so XDG paths resolve to
    `~/.config/fastblocks/config.yaml` (not Oneiric's default).
-2. Returns `AppSettings`, not `OneiricSettings` — callers don't need
+1. Returns `AppSettings`, not `OneiricSettings` — callers don't need
    to know about the Oneiric intermediary type.
-3. Provides a single place to add fastblocks-specific loading
+1. Provides a single place to add fastblocks-specific loading
    extensions later (e.g., CLI args, environment-prefix overrides).
 
 ### Layer 3 — Call site wiring

@@ -29,6 +29,7 @@ Per v6 Global Constraints:
   * ``raise ... from original`` when re-raising third-party exceptions
   * No ``logger.error(..., exc_info=True)`` (use ``logger.exception(...)``)
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

@@ -401,7 +401,6 @@ def scaffold(
 
     async def scaffold_component() -> None:
         try:
-
             # Get HTMY adapter using Oneiric resolver
             depends = FastblocksRegistry(get_resolver())
             htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
@@ -484,7 +483,6 @@ def list_components() -> None:
 
     async def list_all_components() -> None:
         try:
-
             # Get HTMY adapter using Oneiric resolver
             depends = FastblocksRegistry(get_resolver())
             htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
@@ -562,7 +560,6 @@ def validate(
 
     async def validate_component() -> None:
         try:
-
             # Get HTMY adapter using Oneiric resolver
             depends = FastblocksRegistry(get_resolver())
             htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
@@ -622,7 +619,6 @@ def info(
 
     async def get_component_info() -> None:
         try:
-
             # Get HTMY adapter using Oneiric resolver
             depends = FastblocksRegistry(get_resolver())
             htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
@@ -701,7 +697,6 @@ def syntax_check(
         try:
             from pathlib import Path
 
-
             # Get syntax support using Oneiric resolver
             depends = FastblocksRegistry(get_resolver())
             syntax_support = resolve_instance(depends, "fastblocks", "syntax_support")
@@ -745,7 +740,6 @@ def format_template(
     async def format_file() -> None:
         try:
             from pathlib import Path
-
 
             # Get syntax support using Oneiric resolver
             depends = FastblocksRegistry(get_resolver())
@@ -889,7 +883,6 @@ def start_language_server(
 
     async def start_server() -> None:
         try:
-
             # Get language server using Oneiric resolver
             depends = FastblocksRegistry(get_resolver())
             language_server = resolve_instance(depends, "fastblocks", "language_server")
@@ -980,9 +973,7 @@ def create_template(
         Path(f"templates/{style}/theme"),
     ):
         p.mkdir(parents=True, exist_ok=True)
-    console.print(
-        f"[green]✓ Template skeleton created for style: {style}[/green]"
-    )
+    console.print(f"[green]✓ Template skeleton created for style: {style}[/green]")
 
 
 @create.command("ide-config")

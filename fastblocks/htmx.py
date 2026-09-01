@@ -93,7 +93,7 @@ STARLETTE_AVAILABLE = _starlette_available
 
 
 class HtmxDetails:
-    def __init__(self, scope: "Scope") -> None:
+    def __init__(self, scope: Scope) -> None:
         self._scope = scope
         debug(
             f"HtmxDetails: Processing HTMX headers for {scope.get('path', 'unknown')}"
@@ -171,7 +171,7 @@ class HtmxDetails:
         return {k: v for k, v in headers.items() if v is not None}
 
 
-def _get_header(scope: "Scope", key: bytes) -> str | None:
+def _get_header(scope: Scope, key: bytes) -> str | None:
     key_lower = key.lower()
     value: str | None = None
     should_unquote = False

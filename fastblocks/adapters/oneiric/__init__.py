@@ -7,6 +7,7 @@ scoped to the DecisionSpanProcessor — heavier Oneiric integration
 ``fastblocks.core.resolver`` which is the canonical Phase 1.5
 singleton owner.
 """
+
 from __future__ import annotations
 
 from .observability import DecisionSpanProcessor

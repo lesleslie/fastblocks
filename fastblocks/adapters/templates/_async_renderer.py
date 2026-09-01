@@ -136,7 +136,9 @@ class AsyncTemplateRenderer:
         """Initialize the async renderer."""
         if not self.base_templates:
             try:
-                self.base_templates = resolve_instance(depends, "fastblocks", "templates")
+                self.base_templates = resolve_instance(
+                    depends, "fastblocks", "templates"
+                )
             except Exception as exc:  # noqa: BLE001
                 _log.warning(
                     "AsyncTemplateRenderer.initialize: templates fallback: %s",
@@ -304,7 +306,9 @@ class AsyncTemplateRenderer:
 
             return TemplateValidationResult(
                 is_valid=False,
-                errors=[TemplateValidationError(message="base_templates not initialized")],
+                errors=[
+                    TemplateValidationError(message="base_templates not initialized")
+                ],
             )
 
         try:

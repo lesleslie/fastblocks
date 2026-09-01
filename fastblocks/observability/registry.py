@@ -15,6 +15,7 @@ Per Wave 6 Task 3: this registry tracks name collisions only; the canonical
         field was never populated and served only as a silent-failure trap
         for callers who might have tried to scrape from it. Removed in Task 3.
 """
+
 from __future__ import annotations
 
 import threading
@@ -27,16 +28,20 @@ __all__ = [
 
 _registry: _Registry | None = None
 
+
 class _Registry:
     def __init__(self) -> None:
         from fastblocks.observability.counters import (
             _IMPORT_ERROR,
             _PROMETHEUS_AVAILABLE,
         )
+
         if not _PROMETHEUS_AVAILABLE:
             from fastblocks.observability.errors import MissingDependencyError
+
             raise MissingDependencyError(
-                pip_group="observability", package="prometheus-client",
+                pip_group="observability",
+                package="prometheus-client",
             ) from _IMPORT_ERROR
         self._names: set[str] = set()
         self._lock = threading.Lock()
@@ -45,17 +50,20 @@ class _Registry:
         with self._lock:
             if name in self._names:
                 from fastblocks.observability.errors import MetricNameCollisionError
+
                 try:
                     raise ValueError(f"Duplicated timeseries: {name}")
                 except ValueError as e:
                     raise MetricNameCollisionError(metric_name=name) from e
             self._names.add(name)
 
+
 def get_default_registry() -> _Registry:
     global _registry
     if _registry is None:
         _registry = _Registry()
     return _registry
+
 
 # Δ52 + Δ76: singleton INSTANCE (not module-level property). Module-level
 # property(...) would return a descriptor object that lacks .register(...),

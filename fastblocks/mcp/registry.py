@@ -99,10 +99,7 @@ class AdapterRegistry:
         # Any other exception is a programming error and must
         # propagate so callers see it.
         candidate = depends.resolve("fastblocks", adapter_name)
-        if (
-            candidate is not None
-            and callable(candidate.factory)
-        ):
+        if candidate is not None and callable(candidate.factory):
             try:
                 adapter = cast(Callable[..., Any], candidate.factory)()
             except (KeyError, AttributeError, TypeError):

@@ -1,14 +1,6 @@
----
-status: accepted
-role: phase-5-coverage-ratchet-amendment
-date: 2026-08-23
-last_reviewed: 2026-08-23
-supersedes: null
-superseded_by: null
-blocks_on: []
-decision_date: 2026-08-23
-topic: phase-5-coverage-ratchet-amendment
----
+______________________________________________________________________
+
+## status: accepted role: phase-5-coverage-ratchet-amendment date: 2026-08-23 last_reviewed: 2026-08-23 supersedes: null superseded_by: null blocks_on: [] decision_date: 2026-08-23 topic: phase-5-coverage-ratchet-amendment
 
 # ADR 0014: Phase 5 v4 Coverage Ratchet Amendment
 
@@ -38,15 +30,15 @@ strict-tests-only boundary that bound Phase 5 v4:
    "adapter available" branch — which contains the bulk of the
    missing statements — requires real adapter state that's out of
    scope for unit tests.
-2. **CLI integration paths**: `fastblocks/cli.py` has 132 uncovered
+1. **CLI integration paths**: `fastblocks/cli.py` has 132 uncovered
    statements in CLI subcommands (`run`, `dev`, `validate`, `info`,
    `syntax-check`, `format-template`, `start-language-server`) that
    require live uvicorn/granian servers and HTMX adapter resolution.
-3. **Asset/icon adapters**: `materialicons.py`, `phosphor.py`,
+1. **Asset/icon adapters**: `materialicons.py`, `phosphor.py`,
    `twicpics.py`, `cloudflare.py` adapter modules are wrappers
    around installed optional deps — tests without the deps only
    exercise the fallback path.
-4. **TLS configuration**: `fastblocks/websocket/tls_config.py`
+1. **TLS configuration**: `fastblocks/websocket/tls_config.py`
    (0% coverage) requires a live TLS server.
 
 Per Erratum 21's explicit guidance, three options were available:

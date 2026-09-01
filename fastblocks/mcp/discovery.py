@@ -150,7 +150,14 @@ class AdapterDiscoveryServer:
             # skipped, not silently absorbed for the whole pass.
             try:
                 instance = self._resolve_candidate_instance(candidate)
-            except (AttributeError, KeyError, RuntimeError, TypeError, ImportError, ValueError) as exc:
+            except (
+                AttributeError,
+                KeyError,
+                RuntimeError,
+                TypeError,
+                ImportError,
+                ValueError,
+            ) as exc:
                 self._log_candidate_resolution_failure(candidate.key, exc)
                 continue
 
@@ -161,7 +168,8 @@ class AdapterDiscoveryServer:
 
             adapter_cls = instance.__class__
             adapter_name = (
-                adapter_cls.__name__.lower().replace("adapter", "").strip("_") or candidate.key
+                adapter_cls.__name__.lower().replace("adapter", "").strip("_")
+                or candidate.key
             )
 
             if adapter_name in self._discovered_adapters:
@@ -195,7 +203,8 @@ class AdapterDiscoveryServer:
         import logging
 
         logging.getLogger(__name__).warning(
-            "fastblocks.mcp.discovery: registry probe failed: %s", exc,
+            "fastblocks.mcp.discovery: registry probe failed: %s",
+            exc,
         )
 
     @staticmethod
@@ -208,7 +217,9 @@ class AdapterDiscoveryServer:
         import logging
 
         logging.getLogger(__name__).warning(
-            "fastblocks.mcp.discovery: skipping candidate %r: %s", key, exc,
+            "fastblocks.mcp.discovery: skipping candidate %r: %s",
+            key,
+            exc,
         )
 
     @staticmethod
@@ -289,7 +300,7 @@ class AdapterDiscoveryServer:
         doc = cls.__doc__
         if doc:
             first_line = doc.split("\n")[0]
-            return first_line.strip().strip('"\'.')
+            return first_line.strip().strip("\"'.")
         return ""
 
     def _extract_protocols(self, cls: type) -> list[str]:
@@ -367,9 +378,7 @@ class AdapterDiscoveryServer:
 # NOT in ``server.list_tools()`` (gate failures skip registration
 # entirely, per mcp_common contract).
 # ---------------------------------------------------------------------------
-async def fastblocks_discovery(
-    server: FastMCP, filter_query: str | None
-) -> list[dict]:
+async def fastblocks_discovery(server: FastMCP, filter_query: str | None) -> list[dict]:
     """Emit {name, capability, description, inputSchema}.
 
     Walks the server's registered tools and looks up each name in

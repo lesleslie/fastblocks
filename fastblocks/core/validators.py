@@ -21,11 +21,12 @@ This module must NOT import from ``cli.py`` or
 ``fastblocks/adapters/app/_base.py`` — those are consumers of this
 module's exports, not the other way around.
 """
+
 from __future__ import annotations
-from contextlib import suppress
 
 import difflib
 import typing as t
+from contextlib import suppress
 from typing import Literal, runtime_checkable
 
 # ---------------------------------------------------------------------------
@@ -73,9 +74,7 @@ class TemplateAdapter(t.Protocol):
     site today).
     """
 
-    def render(
-        self, template: str, context: t.Mapping[str, t.Any]
-    ) -> str: ...
+    def render(self, template: str, context: t.Mapping[str, t.Any]) -> str: ...
     def init_envs(self) -> t.Any: ...
 
 
@@ -173,8 +172,7 @@ def format_resolver_mismatch(
     domain: str,
     value: str,
 ) -> None:
-    """Raise ``ResolverMismatchError`` if ``value`` is registered but
-    not in StyleName (or vice versa).
+    """Raise if ``value`` is registered but not in StyleName (or vice versa).
 
     Returns None on success (the value IS in StyleName — caller should
     proceed). Raises ``ResolverMismatchError`` on mismatch.
@@ -194,9 +192,7 @@ def format_resolver_mismatch(
     # Find nearest neighbor for typo hints
     nearest: str | None = None
     if legal_tuple:
-        candidates = difflib.get_close_matches(
-            value, legal_tuple, n=1, cutoff=0.6
-        )
+        candidates = difflib.get_close_matches(value, legal_tuple, n=1, cutoff=0.6)
         nearest = candidates[0] if candidates else None
 
     # Run explain() and format the output

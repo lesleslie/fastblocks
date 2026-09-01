@@ -16,6 +16,7 @@ second call short-circuits and returns the existing registration.
 Exposes ``add_tool_safe(server, name, fn, **kwargs) -> None`` — same
 contract as ``server.add_tool(...)`` minus the pydantic-compat bug.
 """
+
 from __future__ import annotations
 
 from typing import Any

@@ -1,13 +1,6 @@
----
-status: accepted
-role: phase-4-closeout
-date: 2026-08-23
-last_reviewed: 2026-08-23
-supersedes: null
-superseded_by: null
-decision_date: 2026-08-23
-topic: phase-4-mcp-tool-surface-organization-library-aware-opt-in-closeout
----
+______________________________________________________________________
+
+## status: accepted role: phase-4-closeout date: 2026-08-23 last_reviewed: 2026-08-23 supersedes: null superseded_by: null decision_date: 2026-08-23 topic: phase-4-mcp-tool-surface-organization-library-aware-opt-in-closeout
 
 # ADR 0015: Phase 4 Library-Aware Opt-In Closeout
 
@@ -56,15 +49,13 @@ integration tests verify the callable-list dispatch.
 
 `fastblocks/mcp/discovery.py` ships `fastblocks_discovery` as an
 optional override. Consumers pass it as `discovery_fn=...` to their
-own `apply_tool_profile` call. Schema: `{name, capability,
-description, inputSchema}`. No `is_available` field — tools that fail
+own `apply_tool_profile` call. Schema: `{name, capability, description, inputSchema}`. No `is_available` field — tools that fail
 a capability gate are NOT in `server.list_tools()` (gate failures
 skip registration entirely, per mcp_common contract).
 
 ### Decision 4: Probe-not-construct gates
 
-`_is_adapter_available()` probes via `FastblocksRegistry(
-get_resolver()).list_active('fastblocks')` — checks **resolved
+`_is_adapter_available()` probes via `FastblocksRegistry( get_resolver()).list_active('fastblocks')` — checks **resolved
 state**, not lazy construction. If no candidates are registered yet,
 the gate returns False and the ADAPTER capability is silently
 skipped. Same posture for `_is_template_available()` (checks
@@ -90,14 +81,17 @@ continues to assert ≤ baseline.
 ### Decision 7: Deleted symbols are documented, not deprecated
 
 The following symbols are **deleted**, not deprecated:
+
 - `apply_fastblocks_tool_profile`
 - `FASTBLOCKS_TOOLS`
 - `PROFILE_REGISTRATIONS`
 - `_FallbackToolProfile`
 - `_get_http_app`, `get_http_app`, `_http_app_cache`, `http_app`
 
-Deprecation aliases (e.g., `apply_fastblocks_tool_profile = ...
-# DEPRECATED`) are NOT added. The deletion is clean; consumers that
+Deprecation aliases (e.g., \`apply_fastblocks_tool_profile = ...
+
+# DEPRECATED\`) are NOT added. The deletion is clean; consumers that
+
 imported the symbols must update to the new capability primitives.
 
 ### Decision 8: YAML-driven profile deferred

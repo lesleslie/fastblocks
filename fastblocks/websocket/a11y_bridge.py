@@ -55,6 +55,7 @@ users while keeping it readable by assistive tech. The CSS uses the
 modern ``clip-path: inset(50%)`` pattern (NOT the legacy ``clip:
 rect(...)`` or 1px-border hacks).
 """
+
 from __future__ import annotations
 
 import time

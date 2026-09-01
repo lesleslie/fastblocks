@@ -86,4 +86,3 @@ def test_counter_init_raises_on_labelless_with_guard():
             name, "task5 labelless+guard test", labelnames=(),
             cardinality_guard=guard,
         )
-

@@ -1,14 +1,6 @@
----
-status: accepted
-role: phase-4-deferral
-date: 2026-08-22
-last_reviewed: 2026-08-22
-supersedes: null
-superseded_by: null
-blocks_on: []
-decision_date: 2026-08-22
-topic: phase-4-mcp-tool-surface-organization-deferral
----
+______________________________________________________________________
+
+## status: accepted role: phase-4-deferral date: 2026-08-22 last_reviewed: 2026-08-22 supersedes: null superseded_by: null blocks_on: [] decision_date: 2026-08-22 topic: phase-4-mcp-tool-surface-organization-deferral
 
 # ADR 0011: Phase 4 MCP Tool Surface Organization Deferral
 
@@ -44,8 +36,7 @@ can succeed is recorded in Decisions 2-6.
 function. Its tail checks for a running event loop and raises
 `RuntimeError` if one exists. Calling it via `await apply_tool_profile(...)`
 from the async `FastBlocksMCPServer.initialize()` would either return
-`None` (making `await` raise `TypeError: object NoneType can't be used
-in 'await' expression`) or raise `RuntimeError`. Either way, the MCP
+`None` (making `await` raise `TypeError: object NoneType can't be used in 'await' expression`) or raise `RuntimeError`. Either way, the MCP
 server fails to initialize.
 
 The fix: use the async sibling `_apply_tool_profile_async` (dispatch.py:337).
@@ -112,9 +103,9 @@ a standalone production MCP server" with a load-bearing three-part
 justification:
 
 1. The 7 tools are embedded in a consumer app's MCP (SplashStand).
-2. Production servers that need profile-based dispatch live in the
+1. Production servers that need profile-based dispatch live in the
    consumer.
-3. `apply_fastblocks_tool_profile` is a deliberate no-op stub with a
+1. `apply_fastblocks_tool_profile` is a deliberate no-op stub with a
    regression test (`tests/mcp/test_tool_profile.py`) pinning the opt-out.
 
 The spec's one-line reversal ("Phase 4 opts back in for cross-component
@@ -147,6 +138,7 @@ exclude ASGI from Phase 4 scope with a tracking issue.
 ### Decision 7 — P1: `_is_adapter_available()` is self-fulfilling
 
 The spec writes:
+
 ```python
 def _is_adapter_available() -> bool:
     try:
@@ -176,6 +168,7 @@ off `get_resolver()` and onto `FastblocksRegistry(get_resolver())` —
 the facade is where observability counters (`registry_size`) fire.
 
 The fix: route the gate through the facade:
+
 ```python
 def _is_adapter_available() -> bool:
     try:
@@ -198,8 +191,7 @@ Oneiric's settings chain.
 
 ### Decision 10 — P1: `apply_tool_profile` signature mismatch
 
-The spec lists required kwargs (`profile_env_var, registrations,
-registration_map, register_all_fn, mandatory_groups`) but the call
+The spec lists required kwargs (`profile_env_var, registrations, registration_map, register_all_fn, mandatory_groups`) but the call
 site omits `register_all_fn` and `mandatory_groups`. Either those are
 required (the call site must provide them) or optional (the API
 description is wrong).
@@ -247,6 +239,7 @@ maintainers can use it as a starting point after addressing the P0s.
 ## Known Issues (parked, deferred to future Phase 4 attempt)
 
 The following P2/P3 issues from the review are recorded but not blocking:
+
 - Dead `TYPE_CHECKING` block in capabilities.py example (python-pro F1)
 - `except Exception` asymmetry in `_is_adapter_available` (python-pro F1)
 - Function-body imports unsorted (python-pro F2)

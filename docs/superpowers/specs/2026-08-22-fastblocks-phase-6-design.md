@@ -1,14 +1,6 @@
----
-status: accepted
-role: phase-6-design-spec
-date: 2026-08-22
-last_reviewed: 2026-08-22
-supersedes: null
-superseded_by: null
-blocks_on: null
-decision_date: 2026-08-22
-topic: phase-6-observability
----
+______________________________________________________________________
+
+## status: accepted role: phase-6-design-spec date: 2026-08-22 last_reviewed: 2026-08-22 supersedes: null superseded_by: null blocks_on: null decision_date: 2026-08-22 topic: phase-6-observability
 
 # Phase 6: Observability Design
 
@@ -30,9 +22,9 @@ labels."
 
 1. Observability primitives layer (6A): `Counter`/`Histogram`/`Logger`/`Tracer`
    wrappers; Oneiric observability adapter (consume, don't duplicate).
-2. Cardinality-safe metrics (6B): typed `Literal[...]` label discipline;
+1. Cardinality-safe metrics (6B): typed `Literal[...]` label discipline;
    CI lint guard; MCP tool instrumentation; `/metrics` endpoint.
-3. Trace propagation + a11y bridges (6C): `trace_context` ContextVar
+1. Trace propagation + a11y bridges (6C): `trace_context` ContextVar
    binding across the htmx.py per-thread loop boundary; OTel middleware
    as outermost layer; Sentry+OTel root-span bridge; WebSocket →
    aria-live bridge; Grafana dashboard.
@@ -124,11 +116,9 @@ that intercepts spans named `resolver.decision`. For each such span:
   `oneiric.decision.X` was FABRICATED); the actual emitted keys are
   plain. The Commit 4 verify-script asserts these FOUR EXACT NAMES.
 - Emit a `structlog` line at INFO with shape:
-  `event="decision_resolved" domain="<domain>" key="<key>" provider="<provider>"
-  decision="<decision>" trace_id="<hex>" span_id="<hex>"`.
+  `event="decision_resolved" domain="<domain>" key="<key>" provider="<provider>" decision="<decision>" trace_id="<hex>" span_id="<hex>"`.
 - Increment counter `fastblocks_oneiric_decision_total{domain, decision}`
-  where `domain` ∈ `Literal["fastblocks.style", "fastblocks.renderer",
-  "fastblocks.adapter", "unknown"]` (`"unknown"` covers the
+  where `domain` ∈ `Literal["fastblocks.style", "fastblocks.renderer", "fastblocks.adapter", "unknown"]` (`"unknown"` covers the
   provider-None coercion path at `oneiric/core/observability.py:55`;
   per F-ONEV2-010) and `decision ∈ Literal["resolved"]` (single
   value today; included for forward-compat if Oneiric adds failure
@@ -275,10 +265,11 @@ style_resolve_total = Counter(
 
 1. `Counter.__init__` does the input-shape check; rejects mismatched
    literal sets at registration time (eager failure).
-2. `Counter.inc()` does the value-shape check; rejects runtime values
+1. `Counter.inc()` does the value-shape check; rejects runtime values
    not in the literal set (lazy failure).
 
 Failure behavior per `cardinality_mode`:
+
 - `"enforce"` (production default): `ValueError` raised; ingestion
   fails loudly; `fastblocks_cardinality_violations_total{label}`
   incremented before raise.
@@ -289,13 +280,13 @@ Failure behavior per `cardinality_mode`:
 safety net. AST-based, no runtime:
 
 1. Walk all `.py` files under `fastblocks/` and `tests/`.
-2. For each `Counter(name=..., labelnames=(...))` call, extract the
+1. For each `Counter(name=..., labelnames=(...))` call, extract the
    `labelnames` tuple.
-3. Resolve each label name against the symbol table of its module.
-4. Assert: each label name corresponds to a `Literal[...]` annotation
+1. Resolve each label name against the symbol table of its module.
+1. Assert: each label name corresponds to a `Literal[...]` annotation
    OR appears in the global allowlist at
    `fastblocks/observability/_label_allowlist.py`.
-5. On violation: print file:line + offending label name + suggested
+1. On violation: print file:line + offending label name + suggested
    `Literal[...]` form; exit 1.
 
 Why AST + symbol-table, not regex: `re.sub()` `re.S` patterns can
@@ -409,7 +400,8 @@ annotation rejects, known labels resolve, unknown label rejects at
 Counter init, allowlist lookup works, untyped labelnames lint fails,
 typed labelnames lint passes, allowlist entry lint passes, lint runs
 end-to-end on fixture, instrument_tool increments counter on ok
-+ error.
+
+- error.
 
 ### 6B.7 — Cardinality safety rule (per multi-agent review F-OBS-001)
 
@@ -425,13 +417,14 @@ Phase 6 forbids the following as Prometheus label values, full stop:
 | `domain` from Oneiric | New `domain` types can be added at runtime; permit a per-metric `Literal["fastblocks.style", "fastblocks.renderer", "fastblocks.adapter", ...]` allowlist keyed to `Counter` registration | `Literal[...]` per-metric |
 
 **Correlation policy**: cross-signal correlation (logs ↔ traces ↔ metrics) MUST go through:
+
 1. **OTel context** (Python's `opentelemetry.context` propagation through `ContextVar`s).
-2. **Logs** (structlog `merge_contextvars` for what it covers, plus a custom structlog processor reading `_current_trace` for trace_id/span_id).
-3. **Exemplars** on Prometheus histograms (`observe(exemplar={"trace_id": <hex>})`).
+1. **Logs** (structlog `merge_contextvars` for what it covers, plus a custom structlog processor reading `_current_trace` for trace_id/span_id).
+1. **Exemplars** on Prometheus histograms (`observe(exemplar={"trace_id": <hex>})`).
 
 NOT through Prometheus labels. This is the design's iron rule.
 
----
+______________________________________________________________________
 
 ### 6C — Trace propagation + a11y bridges (4-5 commits)
 
@@ -646,6 +639,7 @@ def init_observability_with_sentry() -> None:
   §5.6 Open Review Flags.
 
 Failure modes:
+
 - `SENTRY_DSN` unset → bridge is a no-op; OTel works alone.
 - `sentry_init` raises (bad DSN) → app startup fails with clear error.
 - OTel bridge path differs from spec's expected import location →
@@ -655,6 +649,7 @@ Failure modes:
   being repaired.
 
 Failure modes:
+
 - `SENTRY_DSN` unset → bridge is a no-op; OTel works alone.
 - `sentry_init` raises (bad DSN) → app startup fails with clear error.
 - `OpenTelemetryIntegration()` mis-versioned → `ImportError`; bridge
@@ -853,6 +848,7 @@ Phase 6 done means ALL of these pass:
 | Manual smoke | `fastblocks mcp serve` then `curl :8680/metrics` | text-format metrics exported; named counter names present |
 
 Baseline expectations (from `git show HEAD:pyproject.toml`):
+
 - ty: 0 prod errors
 - pytest: ~1800+ tests, 0 fails
 - ruff/refurb/bandit: 0
@@ -870,9 +866,8 @@ reviewer requirements in its IC.
 - *Triggered from:* Pillar 6 (master plan §6 line 174-180); §Phase 6
   line 342; Section 2 §6A.1
 - *Returns to / updates:* NEW `fastblocks/observability/__init__.py`
-  + `counters.py`; initial test
-- *Demonstrable by:* `python -c "from fastblocks.observability import
-  Counter; Counter(name='demo', labelnames=('r',))"` works
+  - `counters.py`; initial test
+- *Demonstrable by:* `python -c "from fastblocks.observability import Counter; Counter(name='demo', labelnames=('r',))"` works
 - *Rollback signal:* `git revert`; pure addition
 - *Observability added:* none (this IS the observability)
 - *Reviewers:* 2 (one python-pro for typing; one observability-incident-lead for label discipline)
@@ -951,8 +946,7 @@ reviewer requirements in its IC.
 - *Returns to / updates:* NEW `fastblocks/mcp/observability.py`;
   `fastblocks/mcp/server.py` registered tools wrapped
 - *Demonstrable by:* `validate_template(...)` call increments
-  `fastblocks_mcp_tool_invocations_total{tool_name="validate_template",
-  status="ok"}`
+  `fastblocks_mcp_tool_invocations_total{tool_name="validate_template", status="ok"}`
 - *Rollback signal:* `git revert`; tools return to un-instrumented
 - *Observability added:* MCP metrics live
 - *Reviewers:* 2 (mcp-integration-expert; observability-incident-lead)
@@ -1020,8 +1014,7 @@ reviewer requirements in its IC.
   **namespaced** `.sr-only--fastblocks-a11y-bridge` rule using
   modern `clip-path: inset(50%)` per multi-agent review F-A11YV2-001
   / F-A11YV2-003 / F-A11YV2-008 — without this CSS file SHIPPED and
-  LOADED, the bridge's emitted `<div data-fb-aria-live="true"
-  class="sr-only--fastblocks-a11y-bridge">` is neither visible to
+  LOADED, the bridge's emitted `<div data-fb-aria-live="true" class="sr-only--fastblocks-a11y-bridge">` is neither visible to
   sighted users nor reachable by screen readers, silently failing the
   WCAG SC 4.1.3 contract from master plan line 492);
   rendered in default HTMY template
@@ -1029,17 +1022,15 @@ reviewer requirements in its IC.
   1. `render_broadcast_as_a11y(kind=POLITE, message="hit", role="status")`
      returns the expected escaped HTML containing
      `data-fb-aria-live="true"` and the namespaced class.
-  2. Playwright test boots app + WebSocket adapter, fires request
+  1. Playwright test boots app + WebSocket adapter, fires request
      triggering a fastblocks_websocket event. The assertion MUST:
      (a) find the node via `[data-fb-aria-live="true"]`,
      (b) assert its `classList` contains `"sr-only--fastblocks-a11y-bridge"`,
-     (c) assert the computed style via `await expect(page.locator('[data-fb-aria-live="true"]').first().evaluate(
-       'el => getComputedStyle(el).clipPath')).resolves.toBe('inset(50%)')`,
-     (d) assert `await expect(page.locator('[data-fb-aria-live="true"]').first().evaluate(
-       'el => getComputedStyle(el).width')).resolves.toBe('1px')`.
+     (c) assert the computed style via `await expect(page.locator('[data-fb-aria-live="true"]').first().evaluate(   'el => getComputedStyle(el).clipPath')).resolves.toBe('inset(50%)')`,
+     (d) assert `await expect(page.locator('[data-fb-aria-live="true"]').first().evaluate(   'el => getComputedStyle(el).width')).resolves.toBe('1px')`.
      The `clip-path: inset(50%)` half is the load-bearing one (per
      F-A11YV2-001 — if it fails, the shipped CSS isn't loaded).
-  3. Manual screen-reader smoke gate (NVDA + VoiceOver) — recorded as
+  1. Manual screen-reader smoke gate (NVDA + VoiceOver) — recorded as
      a known limitation of automated testing, documented inline.
 - *Rollback signal:* `git revert`
 - *Observability added:* a11y bridge live (NOT user-observable until
@@ -1074,29 +1065,28 @@ reviewer requirements in its IC.
    a non-orphaned mount path (per ADR 0011 Decisions 6/11). If Phase 4
    follow-up hasn't landed before Phase 6 starts, alternative mount path
    required.
-2. **Master plan Phase 6 verification gate item**: "Lifecycle integration
+1. **Master plan Phase 6 verification gate item**: "Lifecycle integration
    test (`httpx.AsyncClient` + `LifespanManager`) asserts
    `app.state.main_loop` and `app.state.jinja_env` are bound at startup,
    not per-request" — referenced from §Phase 5 verification line
    478-479. Re-read at handoff: this might be Phase 5 verification debt
    rolled into Phase 6. If so, Phase 6 inherits the `LifespanManager`
    doesn't-exist P0 from ADR 0012 Decision 2.
-3. **Oneiric `Decisions.events()` API** *(closed in v2)*: Phase 6
+1. **Oneiric `Decisions.events()` API** *(closed in v2)*: Phase 6
    originally assumed an event-stream contract that did not exist.
    Replaced with SpanProcessor consuming actual `resolver.decision`
    OTel spans emitted by Oneiric's `traced_decision()` context manager.
    Pre-condition artifact (verify_oneiric_otel_attrs.py output)
    shipped as a Commit 4 smoke-check gate.
-4. **Grafana dashboard version**: pinned to Grafana 10.x. If operator
+1. **Grafana dashboard version**: pinned to Grafana 10.x. If operator
    uses different version, the schema assertion will fail. Document as
    expected behavior; treat as known limitation.
-5. **Commit 12 boundary fix**: trace_context propagation across
+1. **Commit 12 boundary fix**: trace_context propagation across
    `fastblocks/htmx.py:_run_async_safely` is recorded as a regression
    test only; the production-code fix (`executor.submit(copy_context().run, asyncio.run, coro)`)
    is split off as a Phase 6.5 commit. Recorded as Phase 6's known-gap
    in §6C.2. **Phase 6.5 ORDERING CONSTRAINT** (per v3 review F-STRV2-4):
-   the master-plan-specified `asyncio.run_coroutine_threadsafe(coro,
-   app.state.main_loop)` fix REQUIRES `app.state.main_loop` to be
+   the master-plan-specified `asyncio.run_coroutine_threadsafe(coro, app.state.main_loop)` fix REQUIRES `app.state.main_loop` to be
    bound at lifespan start. No `LifespanManager` class exists in
    fastblocks (`fastblocks/adapters/app/default.py:164-178` defines an
    `@asynccontextmanager async def lifespan` that doesn't bind
@@ -1106,7 +1096,7 @@ reviewer requirements in its IC.
    v3 marks this as a structural deferred item — out of Phase 6's 15-commit
    scope, but a HARD PREREQUISITE for any future htmx.py trace
    fix.
-6. **Open Review Flag #2 (LifespanManager inheritance)** is
+1. **Open Review Flag #2 (LifespanManager inheritance)** is
    EFFECTIVELY OPEN in v3. v2 marked it "open" without fixing; v3
    adds the Phase 6.5 ordering constraint explicitly. Per ADR 0012
    Decision 2, the underlying test (master plan line 478-479) cannot
@@ -1139,17 +1129,17 @@ reviewer requirements in its IC.
 1. **Single coherent design, decomposed execution** (Section 1): mirror
    Phase 5's Foundation→Matrix→Adversarial shape as
    Foundations→Metrics→Bridges.
-2. **Hybrid test boundary**: structural + smoke + Playwright for a11y;
+1. **Hybrid test boundary**: structural + smoke + Playwright for a11y;
    no live Prometheus/OTel stack in CI.
-3. **Primitives + HTMY render path migration**: ship primitives +
+1. **Primitives + HTMY render path migration**: ship primitives +
    instrument the highest-traffic paths; defer `asyncio.TaskGroup`
    migration to Phase 6.5.
-4. **Bridge in 6C; verify via Playwright + aria snapshot**: matches the
+1. **Bridge in 6C; verify via Playwright + aria snapshot**: matches the
    WCAG SC 4.1.3 requirement without depending on Phase 5's deferred
    axe-core integration.
-5. **`prometheus_client` + `structlog` + `opentelemetry-sdk`** as the
+1. **`prometheus_client` + `structlog` + `opentelemetry-sdk`** as the
    library stack; rejects `statsd`/`loguru`/direct OTel Meter.
-6. **`Literal[...]` typing + CI AST lint + per-metric allowlist** as
+1. **`Literal[...]` typing + CI AST lint + per-metric allowlist** as
    three-tier cardinality safety.
-7. **HTMY XSS for Jinja2-rendered components is out of scope** per
+1. **HTMY XSS for Jinja2-rendered components is out of scope** per
    master plan §Phase 5 verification line 582-583.

@@ -59,9 +59,37 @@ def _set_provider_silently(provider: _TracerProviderBase) -> None:
     ``ProxyTracerProvider`` returned by ``trace.get_tracer_provider()``
     inherit from it, so this signature accepts the previous provider
     and the fresh provider without a widening-to-``object`` cast.
+
+    Note: ``ProxyTracerProvider`` cannot be safely re-installed as
+    the active provider. Its ``get_tracer`` method falls back to
+    ``opentelemetry.trace._TRACER_PROVIDER`` (the global module
+    variable), and storing the proxy ITSELF in that slot creates an
+    infinite recursion — ``proxy.get_tracer()`` -> ``_TRACER_PROVIDER.
+    get_tracer()`` -> ``proxy.get_tracer()`` -> ... -> RecursionError.
+    Callers should pass the underlying SDK provider or ``None``
+    instead. This helper accepts the type for backward compatibility
+    but is no longer used to install a captured proxy — see
+    ``_tracer_provider_isolation`` for the run-time guard.
     """
     _TRACER_PROVIDER_SET_ONCE._done = False
-    trace.set_tracer_provider(provider)
+    # Defensive: do NOT call set_tracer_provider with a
+    # ProxyTracerProvider. The fixture captures ``previous_provider``
+    # via ``trace.get_tracer_provider()`` which returns a
+    # ``ProxyTracerProvider`` when nothing has been set yet, and
+    # also returns the previously-stored proxy on subsequent calls.
+    # Re-installing it would cause the RecursionError described in
+    # the docstring. Treat any ProxyTracerProvider as ``None`` so
+    # ``trace.get_tracer_provider()`` returns the static default
+    # proxy (``_PROXY_TRACER_PROVIDER``) which is recursion-safe.
+    from opentelemetry.trace import ProxyTracerProvider
+
+    if isinstance(provider, ProxyTracerProvider):
+        # Clear the global so the next get_tracer_provider() returns
+        # the static _PROXY_TRACER_PROVIDER (which has a special
+        # "no _TRACER_PROVIDER set" fallback in get_tracer()).
+        trace._TRACER_PROVIDER = None  # type: ignore[attr-defined]
+    else:
+        trace.set_tracer_provider(provider)
 
 
 @pytest.fixture(autouse=True)

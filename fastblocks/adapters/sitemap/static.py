@@ -28,7 +28,6 @@ def debug(msg: str) -> None:
     print(f"[DEBUG] {msg}")
 
 
-
 from ..oneiric_helper import register_candidate
 from ._base import SitemapBase, SitemapBaseSettings
 from .core import BaseSitemap, SitemapApp

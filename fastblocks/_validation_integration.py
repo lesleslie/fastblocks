@@ -746,7 +746,9 @@ def get_validation_service() -> FastBlocksValidationService:
     """Get the singleton FastBlocksValidationService instance."""
     global _validation_service
     if _validation_service is None:
-        _validation_service = t.cast(FastBlocksValidationService, FastBlocksValidationService())
+        _validation_service = t.cast(
+            FastBlocksValidationService, FastBlocksValidationService()
+        )
     return _validation_service
 
 

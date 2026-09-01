@@ -13,6 +13,7 @@ Per Δ39-γ compatibility: the exception class is ValueError-derived so
         DecisionSpanProcessor's existing ``except Exception`` naturally
         catches it (no engineered coupling — pure coincidence of inheritance).
 """
+
 from __future__ import annotations
 
 import dataclasses
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
 try:
     from prometheus_client import Counter as _PromCounter
     from prometheus_client import Histogram as _PromHistogram
+
     _PROMETHEUS_AVAILABLE = True
     _IMPORT_ERROR: Exception | None = None
 except ImportError as _e:
@@ -36,6 +38,7 @@ except ImportError as _e:
 def _require_prometheus() -> None:
     if not _PROMETHEUS_AVAILABLE:
         from fastblocks.observability.errors import MissingDependencyError
+
         raise MissingDependencyError(
             pip_group="observability",
             package="prometheus-client",
@@ -70,9 +73,10 @@ class CardinalityAction(enum.Enum):
     a member of this enum. Counter.inc() interprets the return value to
     decide whether to drop the increment (DROP) or proceed (OK / RECORD).
     """
-    OK = "ok"             # no violation; proceed with increment.
-    RECORD = "record"     # audit mode: violation observed + counted; proceed.
-    DROP = "drop"         # warn mode: violation observed; drop the increment.
+
+    OK = "ok"  # no violation; proceed with increment.
+    RECORD = "record"  # audit mode: violation observed + counted; proceed.
+    DROP = "drop"  # warn mode: violation observed; drop the increment.
 
 
 @dataclasses.dataclass(slots=True, kw_only=True, frozen=True)
@@ -98,6 +102,7 @@ class MetricCardinalityViolation(ValueError):
     threshold : int
         Configured ``max_cardinality`` for the offending guard.
     """
+
     metric_name: str
     label_name: str
     observed: int
@@ -153,9 +158,7 @@ class CardinalityGuard:
         # "_default" label so direct ``guard.check(("a",))`` style use
         # still tracks cardinality. When bound via with_labelnames(...),
         # ``labelnames`` carries the Counter's labelnames tuple.
-        self._labelnames: tuple[str, ...] = (
-            labelnames or ("_default",)
-        )
+        self._labelnames: tuple[str, ...] = labelnames or ("_default",)
         # Metric name is set when the guard is wired to a Counter.
         self._metric_name: str = ""
         # Per-label seen-set.
@@ -199,6 +202,7 @@ class CardinalityGuard:
         if cls._VIOLATION_COUNTER is None:
             _require_prometheus()
             from fastblocks.observability.registry import ObservabilityRegistry
+
             ObservabilityRegistry.register("fastblocks_cardinality_violations_total")
             cls._VIOLATION_COUNTER = _PromCounter(
                 "fastblocks_cardinality_violations_total",
@@ -281,6 +285,7 @@ class CardinalityGuard:
             return CardinalityAction.RECORD
         if self._mode == "warn":
             from fastblocks.observability.loggers import get_logger
+
             get_logger("fastblocks.observability.counters").warning(
                 "cardinality_violation",
                 counter=self._metric_name or "<unknown>",
@@ -319,13 +324,30 @@ class Counter:
                 f"for counter {name!r}); a guard on a labelless counter "
                 f"cannot enforce any cardinality budget."
             )
-        from fastblocks.observability.registry import ObservabilityRegistry
-        # Δ74: register FIRST so duplicate names surface as MetricNameCollisionError
-        # (not raw prometheus_client.ValueError). _Registry.register() catches
-        # prometheus_client.ValueError and re-raises as the typed exception
-        # via raise from (Δ35).
-        ObservabilityRegistry.register(name)
-        self._inner = _PromCounter(name, documentation, labelnames=labelnames)
+        # Module-reload idempotency: when ``importlib.reload`` re-executes
+        # this module, prometheus_client's global REGISTRY already has the
+        # metric — calling ``_PromCounter(name, ...)`` a second time would
+        # crash with ``ValueError: Duplicated timeseries``. Reuse the
+        # existing collector in that case; the metric is semantically
+        # the same, just re-bound by the re-import. Detect the existing
+        # collector via prometheus_client's internal name→collector map
+        # BEFORE calling ``ObservabilityRegistry.register`` so genuine
+        # collisions (same name, different intent — covered by
+        # ``TestObservabilityRegistry::test_counter_collision_*``) still
+        # raise ``MetricNameCollisionError`` cleanly.
+        from prometheus_client import REGISTRY as _PROM_REGISTRY
+
+        existing = _PROM_REGISTRY._names_to_collectors.get(name)  # type: ignore[attr-defined]
+        if existing is not None:
+            self._inner: _PromCounter = existing  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+        else:
+            from fastblocks.observability.registry import ObservabilityRegistry
+
+            # Δ74: register FIRST so duplicate names surface as MetricNameCollisionError
+            # prometheus_client.ValueError and re-raises as the typed exception
+            # via raise from (Δ35).
+            ObservabilityRegistry.register(name)
+            self._inner = _PromCounter(name, documentation, labelnames=labelnames)
         # Cache the labelnames tuple for ``inc()`` so it can validate the
         # ``**labels`` kwargs without round-tripping through prometheus_client
         # internals. The guard (when wired) carries a parallel tuple; we
@@ -341,7 +363,8 @@ class Counter:
             self._guard: CardinalityGuard | None = None
         else:
             self._guard = cardinality_guard.with_labelnames(
-                labelnames, metric_name=name,
+                labelnames,
+                metric_name=name,
             )
 
     def inc(self, amount: float = 1.0, **labels: str) -> None:
@@ -392,12 +415,25 @@ class Counter:
 class Histogram:
     def __init__(
         self,
-        name: str, /,
+        name: str,
+        /,
         documentation: str,
         labelnames: tuple[str, ...],
         buckets: tuple[float, ...],
     ) -> None:
         _require_prometheus()
+        # Same module-reload safety as ``Counter.__init__``: if the
+        # collector already exists in the prometheus_client global
+        # REGISTRY (e.g. a prior ``importlib.reload`` of the owning
+        # module already created it), reuse it instead of crashing with
+        # ``ValueError: Duplicated timeseries`` from
+        # ``prometheus_client.Histogram(...)``.
+        from prometheus_client import REGISTRY as _PROM_REGISTRY
+
+        existing = _PROM_REGISTRY._names_to_collectors.get(name)  # type: ignore[attr-defined]
+        if existing is not None:
+            self._inner: _PromHistogram = existing  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+            return
         # Wave 6 Task 5: self-register in ``ObservabilityRegistry`` parallel
         # to ``Counter.__init__`` (line 313 above). The manual call at
         # ``fastblocks/mcp/observability.py:84`` is now redundant — Histogram
@@ -409,7 +445,9 @@ class Histogram:
         from fastblocks.observability.registry import ObservabilityRegistry
 
         ObservabilityRegistry.register(name)
-        self._inner = _PromHistogram(name, documentation, labelnames=list(labelnames), buckets=list(buckets))
+        self._inner = _PromHistogram(
+            name, documentation, labelnames=list(labelnames), buckets=list(buckets)
+        )
 
     def observe(
         self,

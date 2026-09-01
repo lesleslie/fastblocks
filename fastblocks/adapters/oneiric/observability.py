@@ -39,6 +39,7 @@ Per v6 Global Constraints:
     ObservabilityRegistry singleton (process-global) is not required
     to know our metric names at construction time
 """
+
 from __future__ import annotations
 
 from typing import Any, Literal

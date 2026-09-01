@@ -62,6 +62,7 @@ Literal types that bound each label's value set:
   Task 4's emit-failed counter uses exception class names too, so
   the same set bounds both surfaces.
 """
+
 from __future__ import annotations
 
 from typing import Any, Literal

@@ -8,7 +8,7 @@ from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
-import httpx
+import httpx2 as httpx
 from oneiric.core.logging import get_logger
 from pydantic import SecretStr
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver

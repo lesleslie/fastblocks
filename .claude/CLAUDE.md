@@ -9,7 +9,7 @@ This project has access to **specialized AI agents** from two locations:
 1. **Local agents**: `/Users/les/Projects/fastblocks/.claude/agents/`
    - FastBlocks-stack specialists: `web-components-specialist`, `pwa-specialist`,
      `htmx-specialist`, `htmy-specialist`, `fastblocks-specialist`
-2. **Global agents**: `/Users/les/.claude/agents/`
+1. **Global agents**: `/Users/les/.claude/agents/`
    - Bodai ecosystem specialists + mycelium-core plugins (loaded automatically
      via `.claude/settings.local.json#permissions.additionalDirectories`)
 
@@ -19,6 +19,7 @@ global `/Users/les/.claude/skills/` and `/Users/les/.claude/commands/`.
 ### How to Use Agents
 
 **Via Task tool:**
+
 ```
 Use the Task tool with subagent_type="agent-name"
 Example: subagent_type="htmx-specialist" for HTMX hypermedia patterns

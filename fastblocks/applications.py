@@ -369,6 +369,21 @@ class FastBlocks(Starlette):
         for position, middleware in self._system_middleware.items():
             position_index = self._middleware_position_map[position]
 
+            # ``add_system_middleware`` stores ``(cls, kwargs)`` tuples
+            # for compactness; the rest of the build path expects each
+            # entry to be a ``Middleware`` instance so
+            # ``_apply_middleware_to_app`` can unpack three elements
+            # (``cls``, ``args``, ``kwargs``) from each entry. Convert
+            # here — without this, the override list contains raw
+            # 2-tuples and ``build_middleware_stack`` raises
+            # ``ValueError: not enough values to unpack (expected 3,
+            # got 2)`` when ``reversed(middleware_list)`` reaches the
+            # 2-tuple entry (the test surface that exposed this is
+            # ``tests/integration/test_csrf_htmx.py``).
+            if isinstance(middleware, tuple) and not isinstance(middleware, Middleware):
+                cls, kwargs = middleware
+                middleware = Middleware(cls, **kwargs)
+
             # Phase 6 Δ45: boundary positions are handled before the
             # standard index-replace-or-append fallback. OUTERMOST
             # inserts at the front of the list; INNERMOST appends at
@@ -424,7 +439,7 @@ class FastBlocks(Starlette):
             return self._middleware_stack_cache  # type: ignore[return-value]  # ty: ignore[invalid-return-type]  # Cached middleware stack
 
         config, logger = self._get_dependencies(config, logger)
-        error_handler, exception_handlers = self._separate_exception_handlers()
+        error_handler, _exception_handlers = self._separate_exception_handlers()
 
         from .middleware import middlewares
 

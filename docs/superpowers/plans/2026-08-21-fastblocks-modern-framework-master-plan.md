@@ -8,7 +8,7 @@
 **Scope:** Multi-quarter architectural rewrite. No backwards compatibility required (zero external users, zero websites in production).
 **Companion documents:** Style/renderer spec + plan at `docs/superpowers/{specs,plans}/2026-08-21-style-renderer-architecture.md` (Phase 1 detail).
 
----
+______________________________________________________________________
 
 ## TL;DR
 
@@ -19,25 +19,25 @@ Read §Subsystem status (line 174) and §Verification standards (line 380) befor
 ## Table of Contents
 
 1. [Ecosystem context](#ecosystem-context)
-2. [Context](#context)
-3. [Framing choice: internal infrastructure](#framing-choice-internal-infrastructure)
-4. [Vision](#vision)
-5. [Architectural pillars](#architectural-pillars)
-6. [Subsystem status](#subsystem-status)
-7. [Phase 1: Style/renderer consolidation (already specced)](#phase-1-stylerenderer-consolidation-already-specced)
-8. [Phase 1.5: Oneiric Adapter Registry Consolidation](#phase-15-oneiric-adapter-registry-consolidation)
-9. [Phase 2: Type-safe configuration](#phase-2-type-safe-configuration)
-10. [Phase 3-8: Subsequent work](#phase-3-8-subsequent-work)
-11. [Master roadmap](#master-roadmap)
-12. [Migration strategy: no backwards compatibility](#migration-strategy-no-backwards-compatibility)
-13. [Verification standards](#verification-standards)
-14. [Risks](#risks)
-15. [Out of scope](#out-of-scope)
-16. [Reference artifacts](#reference-artifacts)
-17. [Process](#process)
-18. [Fresh-session prompt](#fresh-session-prompt)
+1. [Context](#context)
+1. [Framing choice: internal infrastructure](#framing-choice-internal-infrastructure)
+1. [Vision](#vision)
+1. [Architectural pillars](#architectural-pillars)
+1. [Subsystem status](#subsystem-status)
+1. [Phase 1: Style/renderer consolidation (already specced)](#phase-1-stylerenderer-consolidation-already-specced)
+1. [Phase 1.5: Oneiric Adapter Registry Consolidation](#phase-15-oneiric-adapter-registry-consolidation)
+1. [Phase 2: Type-safe configuration](#phase-2-type-safe-configuration)
+1. [Phase 3-8: Subsequent work](#phase-3-8-subsequent-work)
+1. [Master roadmap](#master-roadmap)
+1. [Migration strategy: no backwards compatibility](#migration-strategy-no-backwards-compatibility)
+1. [Verification standards](#verification-standards)
+1. [Risks](#risks)
+1. [Out of scope](#out-of-scope)
+1. [Reference artifacts](#reference-artifacts)
+1. [Process](#process)
+1. [Fresh-session prompt](#fresh-session-prompt)
 
----
+______________________________________________________________________
 
 ## Ecosystem context (for new readers)
 
@@ -76,21 +76,21 @@ backwards compatibility needed**.
 This plan treats fastblocks as **internal infrastructure for the Bodai ecosystem**, consistent with CLAUDE.md. Consequences:
 
 1. The "modern Python web framework" framing (which the v1 draft leaned toward) over-promises on axes fastblocks doesn't need. This plan's vision is scoped to what internal infrastructure actually needs.
-2. "Tutorial for new contributors" (Pillar 8) means **maintainer onboarding**, not external-user documentation.
-3. "Modern" is redefined as: type-safe, observable, dead-code-free, internally-consistent — not feature-rich.
+1. "Tutorial for new contributors" (Pillar 8) means **maintainer onboarding**, not external-user documentation.
+1. "Modern" is redefined as: type-safe, observable, dead-code-free, internally-consistent — not feature-rich.
 
 ## Vision
 
 A modern internal Python framework with the following characteristics at plan completion:
 
 1. **Type-safe configuration with loud failures.** Every configuration value has a runtime-checked type. Unknown `style`, `renderer`, or adapter names fail at startup with a clear message pointing to the offending value. **No `with suppress(Exception)` in adapter boundaries** — and the gate that enforces this (Phase 2) reaches `fastblocks/core/style_registry.py` (currently missed by the glob in v1 of this plan).
-2. **Two-axis rendering architecture** (`style` × `renderer`) with explicit matrix semantics, Jinja2 env contract pinned, Custom Element layer acknowledged, HTMX response-shape contract defined.
-3. **One source of truth per concern.** Packages that have value outside fastblocks (`fastblocks-ui`, `htmy`) stay separate. Packages that don't (`fastblocks-htmy`) are absorbed. No self-referential dependencies. **External packages register via the documented mechanism (Pillar 3 decision); fastblocks doesn't invent a parallel string-import convention.**
-4. **Tool surface organized by capability.** The 7 read-only MCP tools are tagged by capability (`template`, `component`, `adapter`). Phase 1.5 makes the resolution layer functional so the tools actually work, not just register.
-5. **Observability as a first-class concern** — built on Oneiric's existing resolution events (`explain()`, `list_shadowed()`, `DecisionEvent`), not a parallel counter stack.
-6. **Test infrastructure rebuilt.** Zero pre-existing collection errors, property-based testing, XSS regression matrix, axe-core a11y integration, MCP server integration canary.
-7. **Dead code removed ruthlessly.** Broken adapters, fallback paths, backup files, and `with suppress(Exception)` everywhere they mask bugs.
-8. **Maintainer-facing documentation.** API docs auto-generated, ADRs, onboarding doc that lets a new maintainer orient in <30 minutes.
+1. **Two-axis rendering architecture** (`style` × `renderer`) with explicit matrix semantics, Jinja2 env contract pinned, Custom Element layer acknowledged, HTMX response-shape contract defined.
+1. **One source of truth per concern.** Packages that have value outside fastblocks (`fastblocks-ui`, `htmy`) stay separate. Packages that don't (`fastblocks-htmy`) are absorbed. No self-referential dependencies. **External packages register via the documented mechanism (Pillar 3 decision); fastblocks doesn't invent a parallel string-import convention.**
+1. **Tool surface organized by capability.** The 7 read-only MCP tools are tagged by capability (`template`, `component`, `adapter`). Phase 1.5 makes the resolution layer functional so the tools actually work, not just register.
+1. **Observability as a first-class concern** — built on Oneiric's existing resolution events (`explain()`, `list_shadowed()`, `DecisionEvent`), not a parallel counter stack.
+1. **Test infrastructure rebuilt.** Zero pre-existing collection errors, property-based testing, XSS regression matrix, axe-core a11y integration, MCP server integration canary.
+1. **Dead code removed ruthlessly.** Broken adapters, fallback paths, backup files, and `with suppress(Exception)` everywhere they mask bugs.
+1. **Maintainer-facing documentation.** API docs auto-generated, ADRs, onboarding doc that lets a new maintainer orient in \<30 minutes.
 
 ## Architectural pillars
 
@@ -114,9 +114,9 @@ A modern internal Python framework with the following characteristics at plan co
 
 1. **Server-side rendering component model.** Jinja2 templates with autoescape and a documented `init_envs()` registration site (singleton on `app.state.jinja_env`); HTMY components with AST-sandboxed source loader and `hx_*` kwargs contract.
 
-2. **Client-side progressive enhancement layer.** `fastblocks-ui`'s `enhance.js` ships **3 live `extends HTMLElement` classes** (`UiTabsElement`, `UiDialogElement`, `UiMenuElement`). The Python helper layer has a `custom_element: bool = False` flag that opts into host-tag rendering. Phase 1A documents this layer explicitly.
+1. **Client-side progressive enhancement layer.** `fastblocks-ui`'s `enhance.js` ships **3 live `extends HTMLElement` classes** (`UiTabsElement`, `UiDialogElement`, `UiMenuElement`). The Python helper layer has a `custom_element: bool = False` flag that opts into host-tag rendering. Phase 1A documents this layer explicitly.
 
-3. **HTMX transport.** Renderer describes only what produces markup. Response shape (full page vs HTMX partial vs OOB swap vs SSE stream vs WebSocket update) is an orthogonal transport concern handled at the middleware/route layer via `HTMXResponse(HTMLResponse)`.
+1. **HTMX transport.** Renderer describes only what produces markup. Response shape (full page vs HTMX partial vs OOB swap vs SSE stream vs WebSocket update) is an orthogonal transport concern handled at the middleware/route layer via `HTMXResponse(HTMLResponse)`.
 
 **Jinja2 env contract** (Phase 1A docstring pin, Phase 6 enforcement):
 
@@ -185,7 +185,7 @@ A modern internal Python framework with the following characteristics at plan co
 
 ### Pillar 8: Maintainer-facing documentation
 
-**Target state.** API docs auto-generated from docstrings. ADRs under `docs/adr/`. A maintainer onboarding doc that lets a new maintainer orient in <30 minutes.
+**Target state.** API docs auto-generated from docstrings. ADRs under `docs/adr/`. A maintainer onboarding doc that lets a new maintainer orient in \<30 minutes.
 
 **Approach.** Phase 8. **Parallelizable from Phase 1** (docs work doesn't depend on code changes; it documents the current state at any point). Phase 8 verification includes: docs site passes axe-core with 0 violations of color-contrast, heading-order, landmark-one-main, region, skip-link, focus-order-semantics.
 
@@ -265,7 +265,7 @@ Phase 1 of this master plan is fully specified in:
 - **C1. Pin transitive deps.** Edit `htmy[lxml]~=0.9` to `htmy[lxml]>=0.13,<0.14` (preserve `lxml` extra).
 - **C2. Reconcile base classes.** `FastBlocksComponent` canonical, `ComponentBase` preserved for legacy discovery loader. NOT interchangeable. **Dataclass config** (per python-pro audit): `@dataclass(slots=True, kw_only=True, frozen=True)` on every absorbed typed component unless source explicitly mutates.
 - **C3.5.** `fastblocks/adapters/templates/jinja2.py` gets explicit handling. Pin: "The `init_envs()` function is the canonical Jinja2 registration site. Renderer-axis filter/globals registration MUST live here, not in style adapters."
-- **C4. Absorb source.** Move 22 source files from `fastblocks-htmy/fastblocks_htmy/` into `fastblocks/adapters/templates/htmy_components/`. Hoist `adapter.py` to top level. Replace `_check_fastblocks_ui` runtime check with a soft `warnings.warn(..., DeprecationWarning, stacklevel=2)`. **XSS regression test scope** covers: (a) `attrs` dict-key escaping, (b) CSS-context vectors, (c) aria-* attribute injection. **Jinja2 XSS matrix parallel** for `autoescape` blocks, `|safe` filter, `|e` modes, `Markup` round-trip. **`SafeHTMLStr = NewType('SafeHTMLStr', str)` for trust boundaries.** `htx_*` kwargs contract test. **PEP 561 `py.typed` markers verified at every parent package.**
+- **C4. Absorb source.** Move 22 source files from `fastblocks-htmy/fastblocks_htmy/` into `fastblocks/adapters/templates/htmy_components/`. Hoist `adapter.py` to top level. Replace `_check_fastblocks_ui` runtime check with a soft `warnings.warn(..., DeprecationWarning, stacklevel=2)`. **XSS regression test scope** covers: (a) `attrs` dict-key escaping, (b) CSS-context vectors, (c) aria-\* attribute injection. **Jinja2 XSS matrix parallel** for `autoescape` blocks, `|safe` filter, `|e` modes, `Markup` round-trip. **`SafeHTMLStr = NewType('SafeHTMLStr', str)` for trust boundaries.** `htx_*` kwargs contract test. **PEP 561 `py.typed` markers verified at every parent package.**
 - **C5. Cross-repo shim release.** `fastblocks-htmy 0.6.x` re-exports from `fastblocks`. Manual PyPI publish. Required supply-chain mitigations: PyPI 2FA, PEP 740 attestations, hash-pinned install for CI / production. 24-hour-after-fastblocks-0.31.x release ordering. Owner: `les`.
 
 ## Phase 1.5: Oneiric Adapter Registry Consolidation (NEW — blocking)
@@ -291,12 +291,12 @@ Phase 1 of this master plan is fully specified in:
 
 0. **(NEW per code-architect) Create `FastblocksRegistry` facade** in `fastblocks/core/resolver.py`. The mechanical substitution alone commits fastblocks to Oneiric's current surface with no isolation layer; any Oneiric 0.17+ API change breaks every registration site simultaneously. The facade wraps every Oneiric method call (register, resolve, explain, list_shadowed) so future upstream evolution has exactly one place to absorb. Same posture as `apply_fastblocks_tool_profile` wrapping `apply_tool_profile` in `fastblocks/mcp/profiles.py:91-134`.
 1. **Consolidate all 77 Resolver() instances onto `FastblocksRegistry`** (which wraps `get_resolver()`). Use **AST-driven transformation** (per `bulk-ruff-cleanup-script-dangers.md` memory) — NOT bare sed — because the substitution must respect `from __future__ import annotations` ordering (first non-comment line) and import sorting (`known-first-party = ["fastblocks"]`). Post-conditions: ruff I001 clean per modified file, ty/mypy unchanged. Run `git grep -rn '= Resolver()' fastblocks/ | grep -v core/resolver.py` to verify 0 hits.
-2. **(NEW per mahavishnu-specialist) Singleton ownership boundary.** `fastblocks.core.resolver.get_resolver()` returns fastblocks's OWN singleton, not Oneiric's process-wide one. Cross-component consumers (if any future need exists) must call `oneiric.core.resolver.get_resolver()` directly. CI guard: `git grep -nE "from fastblocks.core.resolver import" /Users/les/Projects/{mahavishnu,akosha,dhara,session-buddy,crackerjack,oneiric,mcp-common}/ 2>/dev/null` returns 0 hits. The singleton's lifetime is process-wide (one per process); multi-pool workers each get their own singleton but share no state across pools.
-3. **CI guard test.** `tests/mcp/test_ci_guard.py` shape: assert no `= Resolver()` outside `core/resolver.py` (and no Bodai repos import `fastblocks.core.resolver`).
-4. **Cross-module resolution test.** Register from `tests/_fixtures/test_adapter.py`, resolve from `tests/_fixtures/test_resolver_consistency.py`, assert same identity. Use `clean_resolver` (function-scoped, autouse) fixture in `tests/conftest.py` that calls `get_resolver().clear()` (or upstream equivalent) at setup AND teardown.
-5. **MCP tools resolution integration test.** Register a known test adapter via `mcp_canary_server` session-scoped fixture, assert `check_adapter_health` and `list_components` return non-empty results via the MCP server surface.
-6. **Remove `mcp/registry.py`'s `with suppress(Exception)`** inside the registration path (per ONEIRIC-11). Resolve or delete the ACB TODO at line 55.
-7. **Document** the Oneiric selection mechanism (`priority`/`stack_level`/`provider`) is the upstream layer's job; fastblocks Literal types own "what values are legal," Oneiric's selection owns "which candidate serves a legal value." Add this to ADR 0008.
+1. **(NEW per mahavishnu-specialist) Singleton ownership boundary.** `fastblocks.core.resolver.get_resolver()` returns fastblocks's OWN singleton, not Oneiric's process-wide one. Cross-component consumers (if any future need exists) must call `oneiric.core.resolver.get_resolver()` directly. CI guard: `git grep -nE "from fastblocks.core.resolver import" /Users/les/Projects/{mahavishnu,akosha,dhara,session-buddy,crackerjack,oneiric,mcp-common}/ 2>/dev/null` returns 0 hits. The singleton's lifetime is process-wide (one per process); multi-pool workers each get their own singleton but share no state across pools.
+1. **CI guard test.** `tests/mcp/test_ci_guard.py` shape: assert no `= Resolver()` outside `core/resolver.py` (and no Bodai repos import `fastblocks.core.resolver`).
+1. **Cross-module resolution test.** Register from `tests/_fixtures/test_adapter.py`, resolve from `tests/_fixtures/test_resolver_consistency.py`, assert same identity. Use `clean_resolver` (function-scoped, autouse) fixture in `tests/conftest.py` that calls `get_resolver().clear()` (or upstream equivalent) at setup AND teardown.
+1. **MCP tools resolution integration test.** Register a known test adapter via `mcp_canary_server` session-scoped fixture, assert `check_adapter_health` and `list_components` return non-empty results via the MCP server surface.
+1. **Remove `mcp/registry.py`'s `with suppress(Exception)`** inside the registration path (per ONEIRIC-11). Resolve or delete the ACB TODO at line 55.
+1. **Document** the Oneiric selection mechanism (`priority`/`stack_level`/`provider`) is the upstream layer's job; fastblocks Literal types own "what values are legal," Oneiric's selection owns "which candidate serves a legal value." Add this to ADR 0008.
 
 **Sub-task 1.5.b — htmx.py + WebSocket fix already moved to Phase 1A+** (per starlette-specialist urgency).
 
@@ -404,7 +404,7 @@ Each phase has a gate. The gate is the *minimum* to declare the phase done; pass
 ### Phase 1B verification
 
 - `python -c "from fastblocks.adapters.templates.htmy_components import *"` imports all 34 names
-- XSS regression test passes per `xss_surface.json` (covers HTMY + Jinja2 surfaces, attrs-key + CSS-context + aria-* injection)
+- XSS regression test passes per `xss_surface.json` (covers HTMY + Jinja2 surfaces, attrs-key + CSS-context + aria-\* injection)
 - **`python -c "from fastblocks.adapters.templates.jinja2 import init_envs; env = init_envs(); assert env.autoescape is not False; tmpl = env.from_string('{{ x }}'); assert tmpl.render(x='<script>') == '&lt;script&gt;'"`** passes
 - **`python -c "env.from_string('[[ x ]]').render(x='<script>') == '&lt;script&gt;'"`** passes (fragment delimiter autoescape)
 - **`python -c "from fastblocks.adapters.templates.jinja2 import init_envs; from fastblocks_ui import register_fastblocks_ui_functions; env = init_envs(); register_fastblocks_ui_functions(env)"`** succeeds
@@ -426,6 +426,7 @@ All 4 sub-task deliverables landed. PyPI publish deferred (crackerjack will hand
 | **C5** — cross-repo shim release | `29ee515 chore(fastblocks-htmy): 0.6.0 shim-only release` (standalone repo) | ✅ shim edit landed; PyPI publish deferred |
 
 **Verification gates run:**
+
 - `from fastblocks.adapters.templates.htmy_components import *` → all 34 names (32 components + FastBlocksComponent + __version__)
 - `find fastblocks -name py.typed` → 4 markers (`fastblocks/`, `fastblocks/adapters/`, `fastblocks/adapters/templates/`, `fastblocks/adapters/templates/htmy_components/`)
 - `diff -r fastblocks/adapters/templates/htmy_components/ /Users/les/Projects/fastblocks-htmy/fastblocks_htmy/` → expected reconcile differences only
@@ -435,12 +436,13 @@ All 4 sub-task deliverables landed. PyPI publish deferred (crackerjack will hand
 - tests/xss/test_component_xss.py → 9 passed, 21 skipped (components not accepting `label=` kwarg covered indirectly via fastblocks_ui escape contract test from Phase 1A B)
 
 **User-deferred actions (PyPI publish cycle, per crackerjack-version-bumping-manual.md):**
+
 1. Version bump fastblocks 0.21.0 → 0.31.x (or whatever the crackerjack plan decides)
-2. Build wheel: `uv build` in fastblocks repo
-3. Publish: `twine upload dist/fastblocks-0.31.x-*`
-4. Verify PyPI 2FA active + PEP 740 attestations enabled
-5. Publish standalone shim: `twine upload dist/fastblocks-htmy-0.6.0-*`
-6. Wait ~30 days post-0.31.x publication; then archive standalone repo (GitHub "Archived" toggle + `private = true` in pyproject)
+1. Build wheel: `uv build` in fastblocks repo
+1. Publish: `twine upload dist/fastblocks-0.31.x-*`
+1. Verify PyPI 2FA active + PEP 740 attestations enabled
+1. Publish standalone shim: `twine upload dist/fastblocks-htmy-0.6.0-*`
+1. Wait ~30 days post-0.31.x publication; then archive standalone repo (GitHub "Archived" toggle + `private = true` in pyproject)
 
 ### Phase 1.5 verification
 
@@ -548,13 +550,13 @@ Per CLAUDE.md Subagent-Driven Development:
 
 0. **Re-preflight per phase** (above). Zero matches → proceed. Any match → add Phase N.5.
 1. Master plan approved.
-2. Each phase gets a sub-spec and sub-plan before implementation, including per-phase verification gates.
-3. Each phase executes with fresh implementer subagents per task + scoped reviews.
-4. Each task commit includes an Integration Contract block (Triggered from / Returns to / Demonstrable by / Rollback signal / Observability added). **For Phase 6 and Phase 7 (high-blast-radius), one extra reviewer per task commit.**
-5. Phase N+1 begins only after Phase N ships and stabilizes.
-6. **Phase 1.5 inserts between Phase 1 and Phase 2.** It's a 1-week scope (mechanical refactor); blocking.
+1. Each phase gets a sub-spec and sub-plan before implementation, including per-phase verification gates.
+1. Each phase executes with fresh implementer subagents per task + scoped reviews.
+1. Each task commit includes an Integration Contract block (Triggered from / Returns to / Demonstrable by / Rollback signal / Observability added). **For Phase 6 and Phase 7 (high-blast-radius), one extra reviewer per task commit.**
+1. Phase N+1 begins only after Phase N ships and stabilizes.
+1. **Phase 1.5 inserts between Phase 1 and Phase 2.** It's a 1-week scope (mechanical refactor); blocking.
 
----
+______________________________________________________________________
 
 ## Fresh-session prompt (paste verbatim into a new session)
 
@@ -567,7 +569,7 @@ uv run pytest -q -m "not slow" --no-header | tail -3
 
 The numbers in this prompt are illustrative; treat the live state as authoritative.
 
-```
+````
 # Task: FastBlocks master plan execution — internal infrastructure rewrite
 
 **Working directory:** `/Users/les/Projects/fastblocks` (main branch)
@@ -601,7 +603,7 @@ git -C /Users/les/Projects/fastblocks grep -lE "(from|import)\s+(mahavishnu|akos
 
 # Zero matches → proceed. Any match → add Phase N.5 with migration steps.
 # If fastblocks has reverse-dependencies, document them in ADR 0009 (Bodai Coupling ADR) and pin a contract for each.
-```
+````
 
 **MHV-FB-05 (added per mahavishnu-specialist) — fastblocks is not a Mahavishnu pool.** Document the contract explicitly: fastblocks does NOT register as a Mahavishnu worker pool. Operators running `mcp__mahavishnu__pool_route_execute(pool_selector='fastblocks')` get a 'unknown pool' error, not a silent fallback to LEAST_LOADED. Pool selection for fastblocks tasks must go through the consumer app's MCP server (e.g. splashstand), which embeds fastblocks's `discover_tools` helper. Phase 4 verification gate: assert the unknown-pool error is raised, not silent fallback.
 
@@ -662,6 +664,7 @@ Phase 1A has a complete spec + plan, with additions from the 4-reviewer audit:
 - Plan: `/Users/les/Projects/fastblocks/docs/superpowers/plans/2026-08-21-style-renderer-architecture.md`
 
 Phase 1A deliverables (extended from the original sub-plan per 4th-pass review):
+
 - A: drop broken styles (kelp, webawesome, bulma, custom)
 - B: promote fastblocks-ui to default (verify standalone's actual pin first; check all three pin locations: fastblocks/pyproject.toml [project].dependencies, the deleted fastblocks_ui optional group, and fastblocks-htmy/pyproject.toml)
 - MCP writer functions deletion: `create_template`, `create_component`, `configure_adapter` from `fastblocks/mcp/tools.py`
@@ -670,7 +673,7 @@ Phase 1A deliverables (extended from the original sub-plan per 4th-pass review):
 - **Oneiric version pin**: `oneiric>=0.16.5,<0.17` instead of `~=0.3`. Add compat test.
 - **CSRF + HTMX wiring**: add to `fastblocks/middleware.py`. Wire either `htmx.config.csrfToken` in enhance.js or middleware that copies `csrf_token` form field to `X-CSRF-Token` header.
 - **Middleware order pin**: document OTel outermost, secure, brotli, csrf, error-handler innermost.
-- Backup purge: enumerate all *.backup + *.backup.json, delete in one commit
+- Backup purge: enumerate all \*.backup + \*.backup.json, delete in one commit
 - C3: close RCE in htmy.py (3 steps: delete loaders, rewrite caller, audit tests)
 - D: document renderer axis (Jinja2 env contract + Custom Element layer + HTMX transport contract)
 
@@ -725,4 +728,6 @@ Task-specific gates listed in the master plan's per-phase verification sections.
 - Source of `fastblocks-htmy` to absorb: `/Users/les/Projects/fastblocks-htmy/fastblocks_htmy/`
 - CLAUDE.md: `/Users/les/Projects/fastblocks/CLAUDE.md`
 - Working style adapter for `fastblocks-ui`: `/Users/les/Projects/fastblocks/fastblocks/adapters/style/fastblocks_ui.py`
+
+```
 ```

@@ -1,13 +1,6 @@
----
-status: complete
-role: historical
-date: 2026-08-23
-last_reviewed: 2026-08-23
-supersedes: docs/superpowers/specs/2026-08-22-fastblocks-phase-4-design.md
-superseded_by: docs/superpowers/specs/2026-08-23-fastblocks-phase-4-v2.1-design.md
-decision_date: 2026-08-23
-topic: phase-4-v2-design
----
+______________________________________________________________________
+
+## status: complete role: historical date: 2026-08-23 last_reviewed: 2026-08-23 supersedes: docs/superpowers/specs/2026-08-22-fastblocks-phase-4-design.md superseded_by: docs/superpowers/specs/2026-08-23-fastblocks-phase-4-v2.1-design.md decision_date: 2026-08-23 topic: phase-4-v2-design
 
 # Phase 4 v2: MCP Tool Surface Organization — Library-Aware Opt-In Design
 
@@ -29,14 +22,13 @@ blockers:
 
 1. `apply_tool_profile` is sync; spec wrote `await apply_tool_profile(...)` —
    server fails to initialize.
-2. `registrations` dict passed tool-name strings, causing duplicate
+1. `registrations` dict passed tool-name strings, causing duplicate
    `server.tool()` calls per element.
-3. `discover_tools` response schema invented `{name, capability,
-   is_available}` but `mcp_common._default_discovery` returns
+1. `discover_tools` response schema invented `{name, capability, is_available}` but `mcp_common._default_discovery` returns
    `{name, description, inputSchema, group: None}`.
-4. Spec's "opt back in wholesale" overrode CLAUDE.md:155-190's
+1. Spec's "opt back in wholesale" overrode CLAUDE.md:155-190's
    load-bearing library-not-server rationale without weighing it.
-5. `_get_http_app` (sync uvicorn path) was orphaned; spec only updated
+1. `_get_http_app` (sync uvicorn path) was orphaned; spec only updated
    async `initialize()`.
 
 Plus 6 P1 issues: gates self-fulfilling (lazy `get_resolver()` constructs
@@ -59,21 +51,21 @@ Phase 4 v2 delivers the master plan's Pillar 4 and Phase 4 row with a
    registration map, and the per-tool dependency gates. Consumers
    (SplashStand) import these and pass them to their own
    `apply_tool_profile` calls.
-2. **fastblocks-internal server wiring** — `FastBlocksMCPServer._register_tools`
+1. **fastblocks-internal server wiring** — `FastBlocksMCPServer._register_tools`
    wires the same primitives via `_apply_tool_profile_async` (the async
    sibling at `mcp_common/tools/dispatch.py:150` — fixes P0 #1).
-3. **Custom discovery schema** — a fastblocks-specific `discovery_fn`
+1. **Custom discovery schema** — a fastblocks-specific `discovery_fn`
    that emits `{name, capability, is_available, description, inputSchema}`
    (fixes P0 #3) and is passed as the `discovery_fn=` kwarg.
-4. **Delete the orphaned sync ASGI path** — `_get_http_app`,
+1. **Delete the orphaned sync ASGI path** — `_get_http_app`,
    `get_http_app`, `_http_app_cache`, `http_app` all removed; no
    external consumers found (verified via grep across
    `/Users/les/Projects`).
-5. **Delete the no-op opt-out stub** — `apply_fastblocks_tool_profile`,
+1. **Delete the no-op opt-out stub** — `apply_fastblocks_tool_profile`,
    `FASTBLOCKS_TOOLS`, `PROFILE_REGISTRATIONS`, `_FallbackToolProfile`
    all removed from `fastblocks/mcp/profiles.py`. Their replacements
    are the real primitives in `mcp_common` and `capabilities.py`.
-6. **Test surface** — 16 new tests + 9 deleted tests (the no-op stub
+1. **Test surface** — 16 new tests + 9 deleted tests (the no-op stub
    tests and the ASGI canary tests) = +7 net.
 
 **Out of scope** (deferred):
@@ -375,8 +367,7 @@ async def fastblocks_discovery(
 ### Layer 3 — `fastblocks/mcp/server.py` (MODIFIED)
 
 Replace `FastBlocksMCPServer._register_tools` body. The async path
-(P0 #1 fix: use `_apply_tool_profile_async`, NOT `await
-apply_tool_profile`). Removal of `_get_http_app`/`get_http_app`/
+(P0 #1 fix: use `_apply_tool_profile_async`, NOT `await apply_tool_profile`). Removal of `_get_http_app`/`get_http_app`/
 `_http_app_cache`/`http_app = None`.
 
 ```python
@@ -645,7 +636,7 @@ Four commits, additive-then-deletive.
 
 ### Commit 3 — `chore(mcp): delete _get_http_app + opt-out stub + related tests`
 
-- *Triggered from:* Commits 1-2 make the deletion safe (capability metadata + wiring replace both stubs); user choice (asked + answered "Delete _get_http_app")
+- *Triggered from:* Commits 1-2 make the deletion safe (capability metadata + wiring replace both stubs); user choice (asked + answered "Delete \_get_http_app")
 - *Returns to / updates:* `fastblocks/mcp/server.py` — remove `_get_http_app`, `get_http_app`, `_http_app_cache`, `http_app = None`; `fastblocks/mcp/profiles.py` — delete entire file; `tests/mcp/test_server_canary.py` — remove 3 `_get_http_app` tests; `tests/mcp/test_tool_profile.py` — remove all 6 tests
 - *Demonstrable by:* `from fastblocks.mcp.server import _get_http_app` raises `ImportError`; `from fastblocks.mcp.profiles import apply_fastblocks_tool_profile` raises `ImportError`; full sweep passes (2225 + 21 - 9 = 2237 tests)
 - *Rollback signal:* `git revert`; both stubs restored
@@ -676,7 +667,7 @@ Four commits, additive-then-deletive.
 - mcp_common dispatch: `/Users/les/Projects/mcp-common/mcp_common/tools/dispatch.py:150` (async sibling), `:253` (sync wrapper), `:52-84` (env → yaml → FULL resolver)
 - mcp_common profiles: `/Users/les/Projects/mcp-common/mcp_common/tools/profiles.py` (ToolProfile StrEnum)
 - mcp_common descriptions: `/Users/les/Projects/mcp-common/mcp_common/tools/descriptions.py` (`trim_description`)
-- FastBlocksMCPServer current state: `fastblocks/mcp/server.py:33-67` (initialize), `:74-82` (current _register_tools), `:141-170` (orphaned _get_http_app, to be deleted)
+- FastBlocksMCPServer current state: `fastblocks/mcp/server.py:33-67` (initialize), `:74-82` (current \_register_tools), `:141-170` (orphaned \_get_http_app, to be deleted)
 - Oneiric resolver: `fastblocks/core/resolver.py:138-141` (lazy init), `:144-162` (`FastblocksRegistry` facade)
 - Phase 1.5x Card 1: `register_candidate_strict` foundation
 - Phase 2 spec: `docs/superpowers/specs/2026-08-21-fastblocks-phase-2-design.md` (Literal types + Protocol gates; this spec reuses the same architectural pattern of "single source of truth + thin consumers")

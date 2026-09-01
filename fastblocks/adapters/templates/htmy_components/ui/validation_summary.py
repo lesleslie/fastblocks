@@ -19,8 +19,7 @@ from ..base import FastBlocksComponent
 
 @dataclass
 class ValidationSummary(FastBlocksComponent):
-    """Aggregated form-error summary. Thin wrapper over
-    :func:`fastblocks_ui.validation_summary`.
+    """Aggregated form-error summary; thin wrapper over :func:`fastblocks_ui.validation_summary`.
 
     ``errors`` accepts a ``dict[field_name, error_message]`` (renders each
     value as a link to ``#field_name``) or a flat ``list``/``tuple`` of

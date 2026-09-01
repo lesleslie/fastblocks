@@ -63,12 +63,12 @@ The biggest single hammer. Three wrong API patterns:
 **Procedure:**
 
 1. Grep all uses across `fastblocks/`.
-2. Read `oneiric.core.resolution.Resolver` source to confirm the actual API surface (`resolve`, `register`, `register_from_pkg`, `register_pkg`, `list_active`, `list_shadowed`, `explain`).
-3. For each call site, map:
+1. Read `oneiric.core.resolution.Resolver` source to confirm the actual API surface (`resolve`, `register`, `register_from_pkg`, `register_pkg`, `list_active`, `list_shadowed`, `explain`).
+1. For each call site, map:
    - `get_sync(name)` → likely `resolve(domain, name)` (sync)
    - `set(name, value)` → likely `register(...)` or `register_from_pkg(...)`
    - `config.X` → likely `Resolver._config` or `resolver.config` (private) — surface-correct use may need to import the config object directly
-4. Surface any cases where the mapping is unclear or where the code was calling a method that never existed. These are real-bug candidates (dead code paths or function never returned what the caller expected). Document and ask before fixing per the agreed real-bug policy.
+1. Surface any cases where the mapping is unclear or where the code was calling a method that never existed. These are real-bug candidates (dead code paths or function never returned what the caller expected). Document and ask before fixing per the agreed real-bug policy.
 
 **Verification:** `uv run ty check fastblocks/ 2>&1 | grep -c "error\|warning"` should drop ~150+.
 
@@ -79,8 +79,8 @@ The biggest single hammer. Three wrong API patterns:
 **Procedure:**
 
 1. Grep all `# type: ignore` (without `[rule]`).
-2. For each, look at the underlying diagnostic ty would emit. If the underlying code is correct, convert to `# ty: ignore[rule-code]`. If the suppression is no longer needed (the code was fixed elsewhere), remove it.
-3. Verify with ty (the count should drop as new diagnostics become visible — they need addressing in subsequent phases).
+1. For each, look at the underlying diagnostic ty would emit. If the underlying code is correct, convert to `# ty: ignore[rule-code]`. If the suppression is no longer needed (the code was fixed elsewhere), remove it.
+1. Verify with ty (the count should drop as new diagnostics become visible — they need addressing in subsequent phases).
 
 **Verification:** Count of `unused-type-ignore-comment` goes to 0. Net ty diagnostic count may *increase* briefly as newly-visible errors emerge.
 
@@ -91,8 +91,8 @@ The biggest single hammer. Three wrong API patterns:
 **Procedure:**
 
 1. Grep `await depends\.` patterns.
-2. For each, drop the `await` (Candidate is the already-resolved value).
-3. Surface cases where the code appears to expect an async path (e.g., calling `await` on something that wasn't the resolver result). These may be real bugs.
+1. For each, drop the `await` (Candidate is the already-resolved value).
+1. Surface cases where the code appears to expect an async path (e.g., calling `await` on something that wasn't the resolver result). These may be real bugs.
 
 **Verification:** `invalid-await` count drops to 0.
 
@@ -103,9 +103,9 @@ Methods that reference `self._sanitizer` etc. before/aside from initialization. 
 **Procedure:**
 
 1. Grep for class definitions containing `_sanitizer` / `_publisher` etc.
-2. Verify each method's reference is preceded by a setter call (init or lazy assignment).
-3. If missing, add init (real bug fix — call out per policy).
-4. If typo, fix the typo.
+1. Verify each method's reference is preceded by a setter call (init or lazy assignment).
+1. If missing, add init (real bug fix — call out per policy).
+1. If typo, fix the typo.
 
 **Verification:** `Self@init` and related vanish.
 
@@ -116,8 +116,8 @@ Methods that reference `self._sanitizer` etc. before/aside from initialization. 
 **Procedure:**
 
 1. Identify the factory class/function definitions.
-2. Add `__call__` return type annotations.
-3. At call sites where factory is dynamic, use `cast(Callable[..., X], candidate.factory)`.
+1. Add `__call__` return type annotations.
+1. At call sites where factory is dynamic, use `cast(Callable[..., X], candidate.factory)`.
 
 **Verification:** `call-top-callable` drops to 0.
 
@@ -151,9 +151,9 @@ Remove 5 `redundant-cast` warnings.
 When ty diagnostics reveal code calling a method that doesn't exist (e.g., `discovery.py:249` `Resolver.get()` earlier), the agreed protocol is:
 
 1. **Stop** — don't silently fix.
-2. **Surface** — name the file, line, the wrong API call, and what the corrected API is.
-3. **Ask** — confirm whether the code path is exercised (real bug) or dead code (safe to rewire).
-4. **Document** — append to the spec's "Real bugs found" section so the count and resolution are tracked.
+1. **Surface** — name the file, line, the wrong API call, and what the corrected API is.
+1. **Ask** — confirm whether the code path is exercised (real bug) or dead code (safe to rewire).
+1. **Document** — append to the spec's "Real bugs found" section so the count and resolution are tracked.
 
 ## Sequencing & reporting
 
@@ -192,7 +192,7 @@ When ty diagnostics reveal code calling a method that doesn't exist (e.g., `disc
 
 Authorised by user via AskUserQuestion option "Fix all three to resolve_instance". Commit `9c5bf6f`.
 
----
+______________________________________________________________________
 
 ## Final tally
 
@@ -202,13 +202,13 @@ Authorised by user via AskUserQuestion option "Fix all three to resolve_instance
 - **Crackerjack ty hook**: PASS (0/50 prod gate)
 - **Real bugs found** (7 distinct issues; see inline sections above):
   1. **`Resolver.get()` Bucket B misuse** (3 sites) — `resolver.py` has no `.get()` method; `actions/gather/application.py:263`, `adapters/sitemap/_routes.py:40`, `adapters/templates/jinja2.py:137` were calling it (the first silently swallowed the `AttributeError` via `except`, the second raised at runtime, the third had a `hasattr` guard). Fixed to `resolve_instance(depends, "fastblocks", key)`. Commit `9c5bf6f`.
-  2. **`actions/gather/models.py:21-31` indentation bug** — `get_adapters()` and `root_path()` were accidentally nested inside `debug()`. Real bug from a prior migration. Fixed by hoisting to module level. Commit `bec59ed` (Phase 2a).
-  3. **`actions/sync/settings.py:635` `reload_config()` doesn't exist** — replaced with `await resolve_component_async(depends, "fastblocks", "config")`. Commit `93855e8` (Phase 2g).
-  4. **`EventPriority` constants untyped** — `_events_integration.py` had class attrs without `int` annotations, causing `Event.__init__(priority: EventPriority)` to reject `int` literals. Typed constants as `int`, changed `Event.__init__` and `create_event` params to `int`. (Real semantic change: `EventPriority` is now a namespace for `int` constants — values are still `int` objects.) Commit `5bec6a5` (Phase 2c).
-  5. **Image adapter parent/override signature mismatch** — `ImagesProtocol.upload_image` declared `-> str`, overrides returned `dict[str, Any]`. Changed base to `dict[str, Any]`; wrapped Cloudflare/TwicPics string returns in dicts. Real semantic change for Cloudflare adapter (now returns `{"image_id": ...}` instead of bare string). Commit `0c5cf2b` (Phase 2i).
-  6. **`HtmxDetails._get_header` "first match wins" → "last match wins"** — duplicates with first empty silently ignored second. Fixed to last-match-wins (HTTP convention). Pre-existing bug uncovered by Hypothesis in `test_htmx_request_detection`. Test updated to iterate `reversed(scope["headers"])`. User authorised. Commit `818bbe0`.
-  7. **Schema migration tooling exposed** — `fastblocks/__init__.py:62-63` `register_pkg()` replaced with `pass` (disables auto-registration). Spec didn't call this out explicitly; user should confirm auto-registration is not relied upon.
-  8. **`SandboxedEnvironment.allowed_tags` / `allowed_attributes` dead code** — `_advanced_manager.py:371-372` set these attributes on `sandbox_env` but they don't exist on Jinja2's `SandboxedEnvironment` (actual security attributes are `binop_table`, `unop_table`, `intercepted_binops`, `intercepted_unops`). Pre-existing no-op masked by `# type: ignore[attr-defined]`. Commit `7e50145` removed the dead code.
+  1. **`actions/gather/models.py:21-31` indentation bug** — `get_adapters()` and `root_path()` were accidentally nested inside `debug()`. Real bug from a prior migration. Fixed by hoisting to module level. Commit `bec59ed` (Phase 2a).
+  1. **`actions/sync/settings.py:635` `reload_config()` doesn't exist** — replaced with `await resolve_component_async(depends, "fastblocks", "config")`. Commit `93855e8` (Phase 2g).
+  1. **`EventPriority` constants untyped** — `_events_integration.py` had class attrs without `int` annotations, causing `Event.__init__(priority: EventPriority)` to reject `int` literals. Typed constants as `int`, changed `Event.__init__` and `create_event` params to `int`. (Real semantic change: `EventPriority` is now a namespace for `int` constants — values are still `int` objects.) Commit `5bec6a5` (Phase 2c).
+  1. **Image adapter parent/override signature mismatch** — `ImagesProtocol.upload_image` declared `-> str`, overrides returned `dict[str, Any]`. Changed base to `dict[str, Any]`; wrapped Cloudflare/TwicPics string returns in dicts. Real semantic change for Cloudflare adapter (now returns `{"image_id": ...}` instead of bare string). Commit `0c5cf2b` (Phase 2i).
+  1. **`HtmxDetails._get_header` "first match wins" → "last match wins"** — duplicates with first empty silently ignored second. Fixed to last-match-wins (HTTP convention). Pre-existing bug uncovered by Hypothesis in `test_htmx_request_detection`. Test updated to iterate `reversed(scope["headers"])`. User authorised. Commit `818bbe0`.
+  1. **Schema migration tooling exposed** — `fastblocks/__init__.py:62-63` `register_pkg()` replaced with `pass` (disables auto-registration). Spec didn't call this out explicitly; user should confirm auto-registration is not relied upon.
+  1. **`SandboxedEnvironment.allowed_tags` / `allowed_attributes` dead code** — `_advanced_manager.py:371-372` set these attributes on `sandbox_env` but they don't exist on Jinja2's `SandboxedEnvironment` (actual security attributes are `binop_table`, `unop_table`, `intercepted_binops`, `intercepted_unops`). Pre-existing no-op masked by `# type: ignore[attr-defined]`. Commit `7e50145` removed the dead code.
 - **Phase commits (chronological)**:
   - Task 1 (Resolver API rewiring across 46 files): `9f93910`, `42584b6`, plus 3 helper-wiring commits `265e533`, `1608c42`, `d9409e1`
   - Task 2 (suppression syntax): `35c1746`
@@ -219,4 +219,3 @@ Authorised by user via AskUserQuestion option "Fix all three to resolve_instance
   - Bug fix (`_get_header` last-match-wins): `818bbe0`
   - Task 7 (6 redundant casts removed): `0d11b20`
   - Task 8 (4 unused `ty: ignore` directives): `0bf466c`
-

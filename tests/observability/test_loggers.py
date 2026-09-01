@@ -153,9 +153,25 @@ def test_structlog_pinned_in_observability_dep_group() -> None:
 
     pyproject = tomllib.loads(Path("pyproject.toml").read_text())
     group = pyproject["dependency-groups"]["observability"]
+    # Split on every PEP 508 operator in priority order (``~=``,
+    # ``>=``, ``==``, etc.) so the leading token is the bare package
+    # name. The previous parser only handled ``~=`` (splitting on
+    # ``~``) and then ``=``, which left a trailing ``>`` on ``>=``
+    # entries (``"structlog>=26.1.0"`` → ``"structlog>"``).
+    _OPS = ("~=", ">=", "<=", "==", "!=", ">", "<", "~")
     matches = [
         entry for entry in group
-        if entry.split("[")[0].split("~")[0].split("=")[0].strip() == "structlog"
+        if next(
+            (
+                entry.split(op)[0]
+                for op in _OPS
+                if op in entry.split("[")[0]
+            ),
+            entry,
+        )
+        .split("[")[0]
+        .strip()
+        == "structlog"
     ]
     assert matches, (
         "structlog must be pinned in the [dependency-groups].observability "
