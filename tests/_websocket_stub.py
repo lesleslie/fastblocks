@@ -263,7 +263,27 @@ def _install_mcp_common_websocket_stub() -> None:
     Idempotent. Safe to call from ``pytest_configure`` and from
     ``pytest_runtest_setup``; the latter is needed for the per-process
     worker isolation that xdist requires.
+
+    When the real ``mcp_common`` package is importable (the W4
+    tool-profile wiring in ``fastblocks.mcp.tools.profiles`` depends on
+    ``mcp_common.tools.dispatch``), the stub is skipped entirely —
+    installing the empty stub would shadow the real package and break
+    those imports. The stub is only useful in environments where
+    mcp-common is not installed.
     """
+    # Probe for the real package BEFORE installing the stub. If the
+    # import succeeds, the real mcp_common is in this venv and any stub
+    # install would shadow it (breaking mcp_common.tools.dispatch
+    # imports in fastblocks/mcp/tools/profiles.py).
+    if "mcp_common" not in sys.modules:
+        try:
+            import mcp_common  # noqa: F401
+
+            # Real package is importable — skip stub installation.
+            return
+        except ImportError:
+            pass
+
     if "mcp_common" in sys.modules and "mcp_common.websocket" in sys.modules:
         return
 

@@ -175,6 +175,17 @@ SplashStand (W4.10) is a fastblocks consumer with its own MCP server
 and mutating tools; it needs the full pattern. The framework's internal
 server is read-only.
 
+**W4 (2026-09-18) — `FASTBLOCKS_TOOL_PROFILE` env var:** the framework's
+own `FastBlocksMCPServer._register_tools` now dispatches through
+`mcp_common.tools.dispatch._apply_tool_profile` with
+`profile_env_var="FASTBLOCKS_TOOL_PROFILE"`. The default profile is
+`full` (current behavior); set `FASTBLOCKS_TOOL_PROFILE=minimal` to
+expose only the `discover_tools` meta-tool, or `=standard` for the
+same set as `full`. The dispatch surface lives in
+`fastblocks/mcp/tools/profiles.py` (`PROFILE_REGISTRATIONS`,
+`REGISTRATION_MAP`, `FASTBLOCKS_MANDATORY_GROUPS`). This is additive —
+consumer apps that wire their own `apply_tool_profile` are unaffected.
+
 Full justification, decision matrix, and a note for the W4.10 splashstand
 wave: `docs/architecture/tool-profile-rationale.md`.
 

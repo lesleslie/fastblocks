@@ -80,16 +80,36 @@ class FastBlocksMCPServer:
     async def _register_tools(self) -> None:
         """Register FastBlocks MCP tools.
 
-        Per Task 8 (Δ37): delegate to ``register_fastblocks_tools`` which
-        wraps every tool function with ``instrument_tool`` before passing
-        to ``server.tool(...)``. The server-side call site lives in
-        ``tools.py:register_fastblocks_tools``; this wrapper just calls
-        into it.
+        Per Task 22 (W4 tool-profile adoption): dispatch through
+        :func:`mcp_common.tools.dispatch._apply_tool_profile` so the
+        ``FASTBLOCKS_TOOL_PROFILE`` env var gates the registered surface.
+        The single registration map key (``register_fastblocks_tools``)
+        delegates to :func:`fastblocks.mcp.tools.register_fastblocks_tools`,
+        which wraps every tool function with ``instrument_tool`` before
+        passing to ``server.tool(...)``. This keeps the callable-mode
+        shape of the dispatcher intact (no decorator-mode refactor).
         """
-        from .tools import register_fastblocks_tools
+        from mcp_common.tools.dispatch import _apply_tool_profile
 
-        await register_fastblocks_tools(self._server)
-        logger.debug("FastBlocks MCP tools registered")
+        from .tools.profiles import (
+            FASTBLOCKS_MANDATORY_GROUPS,
+            PROFILE_REGISTRATIONS,
+            REGISTRATION_MAP,
+            register_all_tool_groups,
+        )
+
+        await _apply_tool_profile(
+            self._server,
+            profile_env_var="FASTBLOCKS_TOOL_PROFILE",
+            registrations=PROFILE_REGISTRATIONS,
+            registration_map=REGISTRATION_MAP,
+            register_all_fn=register_all_tool_groups,
+            mandatory_groups=FASTBLOCKS_MANDATORY_GROUPS,
+            essential_tool_names=set(),
+            discovery_fn=None,
+            yaml_loader=None,
+        )
+        logger.debug("FastBlocks MCP tools registered via profile dispatch")
 
     async def _register_resources(self) -> None:
         """Register FastBlocks MCP resources.

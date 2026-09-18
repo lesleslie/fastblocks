@@ -10,8 +10,8 @@ from typing import Any, cast
 from oneiric.core.logging import get_logger
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
-from .discovery import AdapterDiscoveryServer
-from .health import HealthCheckSystem
+from ..discovery import AdapterDiscoveryServer
+from ..health import HealthCheckSystem
 
 logger = get_logger(__name__)
 
@@ -526,7 +526,7 @@ async def check_adapter_health(adapter_name: str | None = None) -> dict[str, Any
         Dict with health check results
     """
     try:
-        from .registry import AdapterRegistry
+        from ..registry import AdapterRegistry
 
         # Create registry and health system
         registry = AdapterRegistry()
@@ -604,7 +604,7 @@ async def register_fastblocks_tools(server: Any) -> None:
             # Per Task 8 (Δ37): wrap the function with instrument_tool so
             # every invocation emits Counter + Histogram metrics. The
             # wrapping is idempotent (Δ49) so repeated calls are safe.
-            from .observability import instrument_tool
+            from ..observability import instrument_tool
 
             register(tool_name)(instrument_tool(tool_name, tool_fn))
 
