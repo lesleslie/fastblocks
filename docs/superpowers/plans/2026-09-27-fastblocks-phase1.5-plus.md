@@ -191,7 +191,7 @@ Expected: line 155 shows `(ImportError, AttributeError, RuntimeError, TypeError,
 
 Run:
 ```bash
-.venv/bin/pytest tests/test_safe_depends_get.py -v --no-cov
+.venv/bin/pytest tests/test_exceptions.py::test_safe_depends_get_cached tests/test_exceptions_comprehensive.py::TestSafeDependsGet -v --no-cov
 ```
 
 Expected: PASS (the test that prompted Phase 1.5 Task 4's original widening). If FAIL, the change is not safe — investigate before proceeding.
@@ -214,7 +214,7 @@ Replace:
 
 Run:
 ```bash
-.venv/bin/pytest tests/test_safe_depends_get.py -v --no-cov
+.venv/bin/pytest tests/test_exceptions.py::test_safe_depends_get_cached tests/test_exceptions_comprehensive.py::TestSafeDependsGet -v --no-cov
 ```
 
 Expected: PASS. If FAIL, revert and investigate (some test depends on a specific exception TYPE).
@@ -285,6 +285,7 @@ Wave A, sub-step 1C. Write-tool artifact from Phase 1.5 Task 7."
 - `docs/spec-failure-inventory.md` exists and matches Step 1.4's verification
 - `fastblocks/exceptions.py:155` shows `(Exception,)`
 - `tail -c 1 tests/a11y/conftest.py | xxd` shows `0a`
+- `tests/test_exceptions.py::test_safe_depends_get_cached` and `tests/test_exceptions_comprehensive.py::TestSafeDependsGet` still pass
 - Reviewer verifies all three sub-steps independently
 
 ---
@@ -292,169 +293,171 @@ Wave A, sub-step 1C. Write-tool artifact from Phase 1.5 Task 7."
 ### Task 2: Wave B — Force-reload guard refactor
 
 **Files:**
-- Read first: `tests/adapters/templates/conftest.py` (existing — uses `pytest_ignore_collect` only, NOT a fixture)
-- Read first: `tests/adapters/templates/test_jinja2.py` (lines 1-60; module-level sys.modules mocking)
-- Read first: `tests/adapters/templates/test_rendering_jinja2.py` (lines 1-50; similar module-level mocking)
-- Modify: both test files (move sys.modules stubs into a `scope="module"` autouse fixture with explicit `try/finally` teardown)
-- Possibly Create: new `tests/adapters/templates/conftest.py` fixture (if shared between test files)
-- Possibly Modify: `tests/conftest.py` if a hook is needed for cleanup ordering
+- Modify: `tests/adapters/templates/conftest.py` (rewrite — preserve existing `pytest_ignore_collect`; add `pytest_sessionstart` + `pytest_sessionfinish` hooks for the stub)
+- Modify: `tests/adapters/templates/test_jinja2.py` (lines 14-48 area; remove module-level `sys.modules` stubs + `MockAsyncJinja2Templates` class + `MockAsyncBaseLoader` class)
+- Modify: `tests/adapters/templates/test_rendering_jinja2.py` (lines 14-49 area; same removals)
 
 **Interfaces:**
-- Consumes: existing module-level `sys.modules["jinja2_async_environment"] = types.ModuleType(...)` patterns at the top of both test files
-- Produces: a `scope="module"` autouse fixture in the test directory's conftest.py that sets up the stub and tears it down via explicit `try/finally` (not `monkeypatch`, per Bodai memory note `monkeypatch-inline-import-target.md`)
+- Consumes: existing module-level `sys.modules["jinja2_async_environment"] = types.ModuleType(...)` patterns at the top of both test files; existing `pytest_ignore_collect` in `tests/adapters/templates/conftest.py` (8 lines)
+- Produces: `pytest_sessionstart` hook in `tests/adapters/templates/conftest.py` that installs the complete stub (including top-level `jinja2_async_environment.AsyncRedisBytecodeCache` per `fastblocks/adapters/templates/jinja2.py:96`, plus `jinja2_async_environment.bccache.AsyncRedisBytecodeCache` alias, plus `jinja2_async_environment.loaders.AsyncBaseLoader` + `SourceType`); `pytest_sessionfinish` hook that restores the original `sys.modules` entries; module-level stubs removed from both test files
 
-**Why `try/finally` not `monkeypatch`:** `monkeypatch` cannot undo `sys.modules` insertions (Bodai memory note). Use explicit teardown.
+**Why `pytest_sessionstart` not a fixture:** 7 test files in `tests/adapters/templates/` do `from fastblocks.adapters.templates.jinja2 import ...` at module level (collection time), and `fastblocks/adapters/templates/jinja2.py:96` does `from jinja2_async_environment import AsyncRedisBytecodeCache` at its own module load. The stub MUST be in `sys.modules` before pytest even starts collecting test files. A `scope="module"` autouse fixture runs AFTER collection, too late. Mirrors the existing `_install_mcp_common_websocket_stub()` pattern at `tests/conftest.py:154-157` (called from `pytest_collection_modifyitems` in `tests/conftest.py:131-153`).
 
-- [ ] **Step 1: Locate the `not hasattr(...)` brittle check**
+**Why explicit teardown not `monkeypatch`:** pytest's `monkeypatch.setattr` does not track dict insertions to `sys.modules`. Use the `pytest_sessionstart` / `pytest_sessionfinish` hook pair (standard pytest contract).
 
-Run:
+- [ ] **Step 1: Verify the `not hasattr(...)` brittle guard does NOT exist (vacuous-work check)**
+
+Per the Phase 1.5 ledger entry on Task 5: "guard condition uses `not hasattr(...)` — brittle to future refactors". Run:
+
 ```bash
-grep -rn "not hasattr" tests/adapters/templates/
+grep -rn "if not hasattr" tests/adapters/templates/ || echo "OK: no stub-guard hasattr patterns"
 ```
 
-Expected output: 1-2 lines in `test_jinja2.py` and/or `test_rendering_jinja2.py`. These are the brittle checks to remove.
+**Distinguish guards from assertions:**
+- `assert not hasattr(HTMYTemplates, "_load_from_cached_bytecode")` at `test_htmy_loader_safety.py:116,119` — XSS-defense regression assertions on REMOVED methods. LEGITIMATE, must NOT be removed.
+- `assert not hasattr(mock_env, "variable_start_string")` at `test_filters_comprehensive.py:538` — delimiter preservation assertion. LEGITIMATE, must NOT be removed.
 
-If no hits found: the brittle check has already been removed (the spec assumed it was still there; verify by inspecting the test files directly).
+Only `if not hasattr(...) # ad-hoc stub setup` patterns (defensive guards around stub installation) are in scope. Expected: `OK: no stub-guard hasattr patterns`. If 1+ hits found: STOP — real guard exists and needs removal; surface to reviewer.
 
-- [ ] **Step 2: Locate the module-level sys.modules stubs**
+- [ ] **Step 2: Replace `tests/adapters/templates/conftest.py` with the sessionstart/sessionfinish hook version**
 
-Run:
-```bash
-grep -n "sys.modules\[.jinja2_async_environment.\]" tests/adapters/templates/*.py
-```
-
-Expected output: lines in `test_jinja2.py` (around line 31-37) and/or `test_rendering_jinja2.py`. These are the module-level stubs to move into a fixture.
-
-- [ ] **Step 3: Write the failing test (TDD: behavior preservation)**
-
-Create `tests/adapters/templates/conftest.py` (overwrite the existing minimal one):
+Replace the existing 8-line conftest (which only has `pytest_ignore_collect`) with:
 
 ```python
 """Conftest for templates test configuration.
 
-Per Phase 1.5+ Wave B: replaces module-level sys.modules mocking
-in test_jinja2.py and test_rendering_jinja2.py with a scope="module"
-autouse fixture that uses explicit try/finally teardown. The
-not hasattr(...) brittle check is replaced with the fixture's
-guarantee.
+Per Phase 1.5+ Wave B: installs the jinja2_async_environment stub at
+SESSION START (not fixture time), because 7 test files in this
+directory do module-level imports of
+fastblocks.adapters.templates.jinja2 which transitively imports
+jinja2_async_environment.AsyncRedisBytecodeCache at module-load.
+A scope="module" autouse fixture runs AFTER collection, too late
+to satisfy the import.
 
-WHY try/finally not monkeypatch: per Bodai memory note
-monkeypatch-inline-import-target.md, monkeypatch cannot undo
-sys.modules insertions.
+Mirrors the existing _install_mcp_common_websocket_stub() pattern
+at tests/conftest.py:154-157 (called from pytest_collection_modifyitems
+in tests/conftest.py:131-153).
+
+WHY pytest_sessionstart not pytest_collection_start: sessionstart
+fires once at the very start of the pytest run, before any
+collection. It is the safest hook to guarantee the stub is in place
+before any test file is even imported.
+
+WHY pytest_sessionfinish for teardown: standard pytest contract; fires
+once at session end after all tests complete.
 """
 from __future__ import annotations
 
 import sys
 import types
+from pathlib import Path
+from unittest.mock import MagicMock
 
-import pytest
+
+def pytest_ignore_collect(collection_path: Path, config):
+    """Ignore collection of test_components directory (preserved from prior conftest)."""
+    return "test_components" in str(collection_path)
 
 
-@pytest.fixture(autouse=True, scope="module")
-def _jinja2_async_environment_stub():
-    """Provide the jinja2_async_environment stub for tests in this directory.
+_SAVED_SYS_MODULES: dict[str, object | None] = {}
 
-    Set up before any test in the module runs; torn down after the
-    module's last test, regardless of pass/fail. Replaces the previous
-    module-level sys.modules stub in test_jinja2.py / test_rendering_jinja2.py
-    which leaked across modules.
+
+def pytest_sessionstart(session):
+    """Install jinja2_async_environment stub before any test file is collected.
+
+    Without this, the 7 test files in tests/adapters/templates/ that
+    import fastblocks.adapters.templates.jinja2 at module level would
+    fail with "cannot import name 'AsyncRedisBytecodeCache' from
+    'jinja2_async_environment'" — see test_rendering_jinja2.py:39-44
+    for the production-side rationale and test_rendering_jinja2.py:220-234
+    for the regression test that enforces this stub shape.
     """
-    # Save current state for teardown
-    saved_keys = {}
-    for key in [
+    keys = [
         "jinja2_async_environment",
         "jinja2_async_environment.loaders",
+        "jinja2_async_environment.bccache",
         "starlette_async_jinja",
-    ]:
-        if key in sys.modules:
-            saved_keys[key] = sys.modules[key]
+    ]
+    for key in keys:
+        _SAVED_SYS_MODULES[key] = sys.modules.get(key)
+
+    # starlette_async_jinja stub
+    mock_async_jinja2_templates_module = types.ModuleType("starlette_async_jinja")
+
+    class _MockAsyncJinja2Templates:
+        def __init__(self, *args, **kwargs) -> None:
+            self.env = MagicMock()
+            self.TemplateResponse = MagicMock()
+            self.render_block = MagicMock()
+
+    mock_async_jinja2_templates_module.AsyncJinja2Templates = _MockAsyncJinja2Templates
+    sys.modules["starlette_async_jinja"] = mock_async_jinja2_templates_module
+
+    # jinja2_async_environment stub (top-level)
+    mock_jinja2_async_env = types.ModuleType("jinja2_async_environment")
+    sys.modules["jinja2_async_environment"] = mock_jinja2_async_env
+
+    # AsyncRedisBytecodeCache MUST be on the top-level module
+    # (production code at fastblocks/adapters/templates/jinja2.py:96
+    # imports from the top-level package, not from .bccache).
+    # The regression test at test_rendering_jinja2.py:220-234 enforces this.
+    mock_jinja2_async_env.AsyncRedisBytecodeCache = MagicMock
+
+    # jinja2_async_environment.loaders submodule
+    mock_loaders = types.ModuleType("jinja2_async_environment.loaders")
+    mock_jinja2_async_env.loaders = mock_loaders
+    sys.modules["jinja2_async_environment.loaders"] = mock_loaders
+
+    class _MockAsyncBaseLoader:
+        def __init__(self, *args, **kwargs):
+            self.searchpath = args[0] if args else []
+
+        async def get_source(self, environment, template):
+            return None, None, None
+
+    mock_loaders.AsyncBaseLoader = _MockAsyncBaseLoader
+    mock_loaders.SourceType = tuple
+
+    # jinja2_async_environment.bccache submodule (also reachable via
+    # the bccache.AsyncRedisBytecodeCache alias; see
+    # test_rendering_jinja2.py:228-232).
+    mock_bccache = types.ModuleType("jinja2_async_environment.bccache")
+    mock_bccache.AsyncRedisBytecodeCache = MagicMock
+    mock_jinja2_async_env.bccache = mock_bccache
+    sys.modules["jinja2_async_environment.bccache"] = mock_bccache
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Restore sys.modules state installed by pytest_sessionstart."""
+    for key, saved_value in _SAVED_SYS_MODULES.items():
+        if saved_value is None:
+            sys.modules.pop(key, None)
         else:
-            saved_keys[key] = None
-
-    # Set up the stub
-    try:
-        # starlette_async_jinja stub (synchronous MockAsyncJinja2Templates)
-        mock_async_jinja2_templates_module = types.ModuleType("starlette_async_jinja")
-
-        class _MockAsyncJinja2Templates:
-            def __init__(self, *args, **kwargs) -> None:
-                from unittest.mock import MagicMock
-                self.env = MagicMock()
-                self.TemplateResponse = MagicMock()
-                self.render_block = MagicMock()
-
-        mock_async_jinja2_templates_module.AsyncJinja2Templates = _MockAsyncJinja2Templates
-        sys.modules["starlette_async_jinja"] = mock_async_jinja2_templates_module
-
-        # jinja2_async_environment stub
-        mock_jinja2_async_env = types.ModuleType("jinja2_async_environment")
-        sys.modules["jinja2_async_environment"] = mock_jinja2_async_env
-
-        mock_loaders = types.ModuleType("jinja2_async_environment.loaders")
-        mock_jinja2_async_env.loaders = mock_loaders
-        sys.modules["jinja2_async_environment.loaders"] = mock_loaders
-
-        class _MockAsyncBaseLoader:
-            def __init__(self, *args, **kwargs):
-                self.searchpath = args[0] if args else []
-
-            async def get_source(self, environment, template):
-                return None, None, None
-
-        mock_loaders.AsyncBaseLoader = _MockAsyncBaseLoader
-        mock_loaders.SourceType = tuple
-
-        yield  # tests run here
-
-    finally:
-        # Explicit teardown: restore the saved state
-        for key, saved_value in saved_keys.items():
-            if saved_value is None:
-                sys.modules.pop(key, None)
-            else:
-                sys.modules[key] = saved_value
+            sys.modules[key] = saved_value
+    _SAVED_SYS_MODULES.clear()
 ```
 
-- [ ] **Step 4: Remove module-level sys.modules stubs from test files**
+- [ ] **Step 3: Remove module-level sys.modules stubs from test files**
 
 In `tests/adapters/templates/test_jinja2.py`:
-- Delete lines 14-37 (the module-level `sys.modules["starlette_async_jinja"] = ...` and `sys.modules["jinja2_async_environment"] = ...` block)
-- Delete the `MockAsyncJinja2Templates` class (lines 19-23)
-- Delete `mock_jinja2_async_env` and `mock_loaders` variables (lines 31-37)
-- Delete `MockAsyncBaseLoader` class (lines 40-48)
+- Delete lines 14-48 (the module-level `sys.modules["starlette_async_jinja"] = ...`, `sys.modules["jinja2_async_environment"] = ...`, `sys.modules["jinja2_async_environment.loaders"] = ...` block; plus the `MockAsyncJinja2Templates` class at lines 19-23; plus `mock_jinja2_async_env` and `mock_loaders` at lines 31-37; plus `MockAsyncBaseLoader` class at lines 40-48)
 - Keep `import sys`, `import typing as t`, `import types` only if they're used elsewhere in the file
 
 In `tests/adapters/templates/test_rendering_jinja2.py`:
-- Same removals (lines vary; inspect first)
+- Same removals (line numbers vary — `grep -n "sys.modules\[" tests/adapters/templates/test_rendering_jinja2.py` to locate; inspect first)
 
-- [ ] **Step 5: Remove `not hasattr(...)` brittle checks**
-
-In both test files, replace any:
-
-Find:
-```python
-if not hasattr(some_object, "some_attr"):
-    # ad-hoc stub setup
-```
-
-Replace:
-```python
-# Removed per Phase 1.5+ Wave B — the conftest.py fixture
-# guarantees the stub is in place.
-```
-
-- [ ] **Step 6: Run tests in serial mode**
+- [ ] **Step 4: Run tests in serial mode**
 
 Run:
 ```bash
 .venv/bin/pytest tests/adapters/templates/ -p no:xdist -v --no-cov
 ```
 
-Expected: PASS. The fixture's setup runs before any test; teardown runs after.
+Expected: PASS. The `pytest_sessionstart` hook installs the stub before any test is collected; module-level imports in test files succeed.
 
-If FAIL: revert the changes (git checkout -- tests/adapters/templates/) and investigate. Common failure mode: a test imports something at module level that depends on the stub, but the fixture runs at function scope, not module level. The fix is to keep the fixture at `scope="module"` (already set) — verify pytest is using it.
+If FAIL: check that the conftest hook actually ran — `pytest --collect-only tests/adapters/templates/test_boot.py` should succeed without `ImportError`.
 
-- [ ] **Step 7: Run tests in xdist mode**
+- [ ] **Step 5: Run tests in xdist mode**
 
 Run:
 ```bash
@@ -463,9 +466,18 @@ Run:
 
 Expected: PASS, same test count as serial mode.
 
-If a test fails ONLY in xdist mode: that test was depending on shared module state; the fixture is correctly scoped but a specific test still leaks. Investigate with `pytest tests/path/to/test.py --dist=loadfile -v`.
+If FAIL: investigate with `pytest tests/path/to/test.py --dist=loadfile -v`.
 
-- [ ] **Step 8: Run 5 consecutive times in both modes**
+- [ ] **Step 6: Verify test_components collection is still skipped**
+
+Run:
+```bash
+.venv/bin/pytest tests/adapters/templates/ --collect-only -q 2>&1 | grep -c test_components || true
+```
+
+Expected: 0 (the `pytest_ignore_collect` for `test_components` still works; preserved from the prior conftest).
+
+- [ ] **Step 7: Run 5 consecutive times in both modes**
 
 Serial:
 ```bash
@@ -483,30 +495,50 @@ done
 
 Expected: all 10 runs PASS.
 
-- [ ] **Step 9: Verify `hasattr` check is gone**
+- [ ] **Step 8: Verify module-level sys.modules stubs are gone from test files**
 
 Run:
 ```bash
-grep -rn "not hasattr" tests/adapters/templates/ || echo "OK: hasattr check gone"
+grep -n "sys.modules\[.jinja2_async_environment.\]\s*=" tests/adapters/templates/test_jinja2.py tests/adapters/templates/test_rendering_jinja2.py 2>/dev/null || echo "OK: module-level stubs gone"
 ```
 
-Expected: `OK: hasattr check gone`.
+Expected: `OK: module-level stubs gone`.
 
-- [ ] **Step 10: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add tests/adapters/templates/conftest.py tests/adapters/templates/test_jinja2.py tests/adapters/templates/test_rendering_jinja2.py
-git commit -m "refactor(fastblocks): Wave B force-reload guard fixture
+git commit -m "refactor(fastblocks): Wave B sessionstart sys.modules stub
 
 Moves module-level sys.modules stubs from test_jinja2.py and
-test_rendering_jinja2.py into a scope=module autouse fixture in
-tests/adapters/templates/conftest.py. Replaces the not hasattr(...)
-brittle check with the fixture's guarantee. Uses explicit
-try/finally teardown (not monkeypatch) per Bodai memory note
-monkeypatch-inline-import-target.md.
+test_rendering_jinja2.py into a pytest_sessionstart hook in
+tests/adapters/templates/conftest.py. Restoration via
+pytest_sessionfinish.
+
+Stub shape matches production requirements: top-level
+jinja2_async_environment.AsyncRedisBytecodeCache (per
+fastblocks/adapters/templates/jinja2.py:96), plus
+jinja2_async_environment.bccache.AsyncRedisBytecodeCache alias,
+plus jinja2_async_environment.loaders.AsyncBaseLoader.
+
+WHY pytest_sessionstart not a scope=module fixture: 7 test files
+in this directory do module-level imports of
+fastblocks.adapters.templates.jinja2 at collection time, which
+transitively imports jinja2_async_environment.AsyncRedisBytecodeCache.
+A fixture runs AFTER collection, too late.
+
+WHY explicit teardown not monkeypatch: pytest's monkeypatch.setattr
+does not track dict insertions to sys.modules.
+
+Preserves existing pytest_ignore_collect for test_components/ subdir.
 
 Verified: 5 consecutive runs in both -p no:xdist and --dist=loadfile
-modes all pass."
+modes all pass; test_components/ collection still skipped.
+
+Note on the Phase 1.5 ledger's claimed 'not hasattr(...) brittle
+check': no such guard exists in the codebase today (verified via
+grep -rn 'if not hasattr' tests/adapters/templates/). Ledger entry
+was inaccurate or already resolved."
 ```
 
 ---
@@ -560,11 +592,16 @@ For each test in the delta set, choose ONE treatment:
 
 | Treatment | Criterion |
 |---|---|
-| `@pytest.mark.serial` | The test shares module-level state (a module-level fixture, a singleton registry, a global cache) that another test in another file mutates |
-| Root-cause fix | The test mutates global state without restoring it; add `try/finally` teardown in the test or extract to a fixture with teardown |
-| Punt to Wave E | The test is flaky in BOTH serial and xdist modes (genuine nondeterminism); document with target date |
+| **Root-cause fix** | The test mutates global state without restoring it AND the fix is localized to one test file. Add `try/finally` teardown in the test or extract to a fixture with teardown. |
+| `@pytest.mark.serial` | The pollution source is across files (shared module-level state, singleton registry, global cache that another test in another file mutates). The fix is harder than marking one test serial. |
+| Punt to Wave E | The test is flaky in BOTH serial and xdist modes (genuine nondeterminism) AND requires >30 min to root-cause. Document with target date. |
 
-If unsure between treatments, default to serial-mark (safest; can be revisited).
+**Default order when unsure** (fix-first, serial-only-if-needed):
+1. Root-cause fix (if localized to one test file)
+2. `@pytest.mark.serial` (if the pollution source is across files)
+3. Punt (only if neither fix is tractable in this cycle)
+
+If both "root-cause fix" and "serial-mark" fit, prefer the root-cause fix — over-marking serial undermines xdist's parallelism benefit (the 5-runs gate's "non-serial-marked tests pass" criterion makes the cost visible).
 
 - [ ] **Step 5: Apply serial-marks**
 
@@ -660,10 +697,10 @@ consecutive -p no:xdist runs all green (regression check)."
 
 Run:
 ```bash
-.venv/bin/pytest --cov=fastblocks --cov-report=term-missing --no-cov -q 2>&1 | tail -100
+.venv/bin/pytest --cov=fastblocks --cov-report=term-missing -q 2>&1 | tail -100
 ```
 
-(Note: the `--no-cov` after `--cov=fastblocks` disables any extra coverage; we're explicitly using `--cov-report=term-missing` to see line-level gaps.)
+(Note: `--no-cov` would disable coverage measurement and produce no missing-line info. Omit it.)
 
 Expected: total coverage 67.6% (or similar). The output's bottom shows the lowest-coverage modules with missing line numbers.
 
@@ -677,7 +714,7 @@ Choose ONE module from Step 2's list. Criterion: smallest number of uncovered li
 
 If multiple modules tie, prefer the one with the simplest API surface (easiest to test).
 
-- [ ] **Step 4: Write the failing test (TDD)**
+- [ ] **Step 4: Write the test (coverage backfill — NOT TDD, since no production code change)**
 
 For the chosen module, identify 1-3 functions/methods with uncovered lines. Write a test that exercises each.
 
@@ -701,9 +738,9 @@ def test_<thing>_<other_branch>():
     assert <expected>
 ```
 
-- [ ] **Step 5: Run the test to verify it passes (TDD reverse)**
+- [ ] **Step 5: Run the test to verify it passes (backfill: expect pass; no production code change)**
 
-Since this is closing a coverage gap, the test may already pass if the code is correct. Verify:
+Since this is closing a coverage gap, the test should pass if the existing production code is correct. Verify:
 ```bash
 .venv/bin/pytest tests/path/to/new_test.py -v --no-cov
 ```
@@ -716,7 +753,7 @@ If FAIL: the uncovered code path has a bug. STOP. Surface to the reviewer — th
 
 Run:
 ```bash
-.venv/bin/pytest --cov=fastblocks --cov-report=term-missing --no-cov -q 2>&1 | tail -5
+.venv/bin/pytest --cov=fastblocks --cov-report=term-missing -q 2>&1 | tail -5
 ```
 
 Expected: total coverage increased. If still below 67.81%, repeat Steps 3-5 with the next module.
@@ -790,29 +827,38 @@ untestable code paths. Each entry has a removal plan."
 - Consumes: `docs/spec-failure-inventory.md` from Task 1
 - Produces: 3 originally-deferred failures each with a disposition (fix/serial/punt-with-date); `scripts/phase1.5-plus-gate.sh` audit script
 
-- [ ] **Step 1: Read the fresh spec failure inventory**
+- [ ] **Step 1: Verify the spec failure inventory is fresh; read it**
 
 Run:
 ```bash
+# Check inventory freshness (regenerated >24h ago is stale)
+last_regen=$(grep -oE "Last regenerated: [0-9-]+" docs/spec-failure-inventory.md | head -1)
+echo "Inventory header: $last_regen"
+# If the date is >24h old or the file is missing, regenerate first
+# (re-run the entire Wave A sub-step 1A flow)
+
 cat docs/spec-failure-inventory.md
 ```
 
-Locate the 3 originally-deferred test failures (per the Phase 1.5
-ledger: at minimum `test_no_broken_release_in_dep_specs` and
-`test_jinja2_environment_default_autoescape_is_true`; the third
-is whatever the fresh inventory surfaces).
+**Reconciliation with Phase 1.5 ledger's "Deferred-minors" section:**
+
+Expected reconciliation:
+- Tests **serial-marked in Phase 1.5 final fix wave** (e.g., `test_jinja2_environment_default_autoescape_is_true`) will NOT appear in the inventory (the inventory only counts FAILED/ERROR, not skipped). Verify these tests are still skipped via the serial hook and the rationale still applies; if not, remove the serial mark and re-evaluate.
+- Tests addressed by Wave C (xdist-order-pollution) and Wave D (coverage gate slip) should be absent from the inventory.
+- Remaining deferred tests (per the Phase 1.5 ledger) need fresh disposition in Wave E Steps 2-5.
+
+The 3 originally-deferred test failures (per the Phase 1.5 ledger: at minimum `test_no_broken_release_in_dep_specs` and `test_jinja2_environment_default_autoescape_is_true`; the third is whatever the fresh inventory surfaces) — note the second is serial-marked and will not appear in the fresh inventory; handle it explicitly in Step 2 (verify the serial mark still applies; if yes, document that it was already addressed in Phase 1.5's final fix wave).
 
 - [ ] **Step 2: Triage each originally-deferred failure**
 
-For each test, choose ONE disposition:
+**Default triage order when unsure (fix-first, punt-last):**
 
-| Disposition | When to apply | Implementation |
-|---|---|---|
-| **Quick fix** (≤30 min OR ≤20 lines of test change) | The test's failure has an obvious cause; the fix is bounded | Edit the test, run it locally, commit |
-| **Mark serial** | The test is genuinely xdist-polluting (Wave C missed it) | Add `@pytest.mark.serial` and update `tests/conftest.py` rationale comment |
-| **Punt to Phase 1.5++** | The test is broken for reasons that don't fit this cycle's scope | Add entry to `docs/known-claim-gaps.md` with target date |
+1. **Quick fix** — if the failure has an obvious cause and ≤30 min OR ≤20 lines of test change. Edit the test, run it locally, commit.
+2. **Mark serial** — if the test is xdist-polluting and Wave C missed it (verify by running `pytest -p no:xdist` and confirming the test passes). Add `@pytest.mark.serial`; update `tests/conftest.py` rationale comment.
+3. **Root-cause fix** — if the test has a real defect (e.g., the test asserts behavior that production code doesn't implement, OR the test is testing an aspirational claim that should be marked as such). Surface to reviewer; do not silently punt.
+4. **Punt to Phase 1.5++** — only if NONE of the above fit this cycle's scope. Add entry to `docs/known-claim-gaps.md` with a target date within 6 months (the gate enforces this horizon).
 
-If unsure, default to "punt with target date" — preserves the work item without blocking Phase 2.
+**Punting is the LAST resort.** Phase 1.5's "punt items pile up" risk already manifested as the 7-item deferred-minors list this initiative exists to clear — defaulting to punt here reproduces the same anti-pattern.
 
 - [ ] **Step 3: Apply quick fixes (if any)**
 
@@ -851,6 +897,11 @@ cd "$(dirname "$0")/.."
 
 echo "=== Phase 1.5+ gate ==="
 
+# Sanity: venv exists (otherwise pytest fails cryptically)
+[ -x .venv/bin/pytest ] \
+    || { echo "FAIL: .venv/bin/pytest missing — run uv sync first"; exit 1; }
+echo "OK: venv present"
+
 # Wave A: spec failure inventory exists
 test -f docs/spec-failure-inventory.md \
     || { echo "FAIL: docs/spec-failure-inventory.md missing (Wave A #1)"; exit 1; }
@@ -867,17 +918,43 @@ grep -q "except (Exception,):" fastblocks/exceptions.py \
     || { echo "FAIL: exception tuple not collapsed (Wave A #4)"; exit 1; }
 echo "OK: exception tuple collapsed"
 
-# Wave B: hasattr check gone from templates tests
-if grep -rq "not hasattr" tests/adapters/templates/; then
-    echo "FAIL: hasattr check still present in templates tests (Wave B #5)"
+# Wave B: module-level sys.modules stubs gone from templates test files
+# (The "not hasattr(...) brittle check" described in the Phase 1.5 ledger
+# does not exist in the codebase today — verified via grep -rn 'if not
+# hasattr' tests/adapters/templates/ returns nothing. The legitimate
+# `assert not hasattr` patterns at test_htmy_loader_safety.py:116,119 and
+# test_filters_comprehensive.py:538 are XSS-defense regression assertions
+# and are NOT in scope for removal.)
+if grep -l "sys.modules\[.jinja2_async_environment.\]\s*=" \
+        tests/adapters/templates/test_jinja2.py \
+        tests/adapters/templates/test_rendering_jinja2.py 2>/dev/null; then
+    echo "FAIL: module-level sys.modules stub still present in templates tests (Wave B #5)"
     exit 1
 fi
-echo "OK: templates tests clean of hasattr brittleness"
+echo "OK: module-level sys.modules stubs gone from templates tests"
 
-# Wave C: serial-marks documented
+# Wave C: serial-marks documented (rationale comment block)
 grep -q "Phase 1.5+ Wave C serial-marks" tests/conftest.py \
     || { echo "FAIL: no Wave C serial-marks rationale in tests/conftest.py"; exit 1; }
 echo "OK: Wave C serial-marks documented"
+
+# Wave E: punt horizon check (target date within 6 months from today)
+if [ -f docs/known-claim-gaps.md ]; then
+    TODAY=$(date +%Y-%m-%d)
+    SIX_MONTHS_OUT=$(date -v+6m +%Y-%m-%d 2>/dev/null || date -d "+6 months" +%Y-%m-%d)
+    # Extract Target: YYYY-MM-DD rows; check each is in range
+    BAD_PUNT=$(awk -F'|' '/Target: [0-9]{4}-[0-9]{2}-[0-9]{2}/ {
+        match($0, /Target: ([0-9]{4}-[0-9]{2}-[0-9]{2})/, arr)
+        target = arr[1]
+        if (target < "'"$TODAY"'" || target > "'"$SIX_MONTHS_OUT"'") print NR": "$0
+    }' docs/known-claim-gaps.md)
+    if [ -n "$BAD_PUNT" ]; then
+        echo "FAIL: punt target date outside 6-month window (today=$TODAY, horizon=$SIX_MONTHS_OUT):"
+        echo "$BAD_PUNT"
+        exit 1
+    fi
+    echo "OK: punt target dates within 6-month horizon"
+fi
 
 # 5 consecutive serial runs
 echo "Running 5 consecutive serial pytest runs..."
@@ -888,12 +965,16 @@ done
 echo "OK: 5/5 serial runs passed"
 
 # 5 consecutive xdist runs
+# Note: PASS = all non-serial-marked tests pass; serial-marked tests
+# are SKIPPED under xdist per the pytest_collection_modifyitems hook at
+# tests/conftest.py:131-153. Serial-marked tests are verified in the
+# serial-mode regression check above.
 echo "Running 5 consecutive xdist pytest runs..."
 for i in 1 2 3 4 5; do
     .venv/bin/pytest --no-cov --dist=loadfile -q \
-        || { echo "FAIL: xdist run $i"; exit 1; }
+        || { echo "FAIL: xdist run $i (non-serial tests); exit 1; }
 done
-echo "OK: 5/5 xdist runs passed"
+echo "OK: 5/5 xdist runs passed (non-serial tests; serial-marked tests skipped per hook)"
 
 # 5 consecutive coverage-gate runs
 echo "Running 5 consecutive coverage-gate runs..."

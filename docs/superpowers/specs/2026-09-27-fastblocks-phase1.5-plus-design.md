@@ -38,10 +38,10 @@ in scope or deliberately punted:
    inventory
 2. **Coverage gate slip** — measured 67.6% vs 67.81% floor (0.21%
    gap)
-3. **xdist-order-pollution flakes** — 8 failing tests per run,
-   varying across runs; affects `test_htmy_*`, `test_actions/sync/*`,
-   `test_register_candidate_strict`, `test_consumer_pattern_wiring`,
-   `test_integration_contracts`
+3. **xdist-order-pollution flakes** — 7-21 failing tests per run
+   (varying across runs; measured range per Phase 1.5 ledger); affects
+   `test_htmy_*`, `test_actions/sync/*`, `test_register_candidate_strict`,
+   `test_consumer_pattern_wiring`, `test_integration_contracts`
 4. **Exception tuple redundancy** — `fastblocks/exceptions.py:155`
    has 5 redundant subclasses alongside `Exception`
 5. **Force-reload guard brittleness** — `not hasattr(...)` check
@@ -148,8 +148,10 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
 - **Approach:** collapse `(ImportError, AttributeError, RuntimeError,
   TypeError, ValueError, Exception)` to `(Exception,)`. The 5
   subclasses are redundant with `Exception`. Verify
-  `tests/test_safe_depends_get.py` (the tests that prompted the
-  original widening in Phase 1.5 Task 4) still pass.
+  `tests/test_exceptions.py::test_safe_depends_get_cached` and
+  `tests/test_exceptions_comprehensive.py::TestSafeDependsGet`
+  (the tests that prompted the original widening in Phase 1.5
+  Task 4) still pass.
 - **Done:** line is shorter; tests still pass; diff is 1 file / 1 line.
 - **Risk:** low — tests don't depend on specific exception types.
 
@@ -162,21 +164,53 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
 #### Wave B — Force-reload guard refactor
 
 **#5 — Force-reload guard refactor**
-- **Files:** `tests/adapters/templates/test_jinja2.py` (line 31-32
-  area), `tests/adapters/templates/test_rendering_jinja2.py` (line
-  28-33 area); possibly new `tests/adapters/templates/conftest.py`
-- **Approach:** move the `sys.modules["jinja2_async_environment"] = ...`
-  stub into a `scope="module"` autouse fixture. Add teardown that
-  restores the original module state via explicit `try/finally` or
-  fixture finalizer (not `monkeypatch`, per Bodai memory note
-  `monkeypatch-inline-import-target.md` — `monkeypatch` can't undo
-  `sys.modules` insertions). Replace the `not hasattr(...)` brittle
-  check with the fixture's guarantee.
-- **Done:** stub lives in module-scoped fixture only; `hasattr` check
-  is gone; tests pass 5 consecutive runs in both `--dist=loadfile`
-  and `-p no:xdist` modes.
-- **Risk:** `monkeypatch` doesn't reach `sys.modules` — use explicit
-  teardown.
+- **Files:** `tests/adapters/templates/conftest.py` (rewrite — preserve
+  existing `pytest_ignore_collect`; add `pytest_sessionstart` +
+  `pytest_sessionfinish` hooks for the stub); `tests/adapters/templates/test_jinja2.py`
+  (lines 1-60 area; remove module-level `sys.modules` stubs);
+  `tests/adapters/templates/test_rendering_jinja2.py` (lines 1-60 area;
+  remove module-level `sys.modules` stubs)
+- **Approach:** install the `sys.modules["jinja2_async_environment"] = ...`
+  stub at **session start** (via `pytest_sessionstart` in
+  `tests/adapters/templates/conftest.py`) — NOT in a fixture. Reason:
+  7 test files in `tests/adapters/templates/` do
+  `from fastblocks.adapters.templates.jinja2 import ...` at module
+  level (collection time), and `fastblocks/adapters/templates/jinja2.py:96`
+  does `from jinja2_async_environment import AsyncRedisBytecodeCache`
+  at its own module load. The stub MUST be in `sys.modules` before
+  pytest even starts collecting test files. A `scope="module"` autouse
+  fixture runs AFTER collection, too late. Mirrors the existing
+  `_install_mcp_common_websocket_stub()` pattern at
+  `tests/conftest.py:154-157`. Teardown via `pytest_sessionfinish` hook
+  restores the original `sys.modules` entries. Explicit `try/finally`
+  not needed — `pytest_sessionstart`/`pytest_sessionfinish` pair is
+  the standard pytest hook contract.
+- **Stub shape (MUST match what production code expects):**
+  - `starlette_async_jinja.AsyncJinja2Templates` (synchronous mock class)
+  - `jinja2_async_environment.AsyncRedisBytecodeCache` (top-level —
+    production imports from here at `jinja2.py:96`; regression test at
+    `test_rendering_jinja2.py:220-234` enforces this)
+  - `jinja2_async_environment.loaders.AsyncBaseLoader` + `SourceType`
+  - `jinja2_async_environment.bccache.AsyncRedisBytecodeCache`
+    (also reachable via the `bccache` submodule alias)
+- **Note on the `not hasattr(...)` brittle check from the Phase 1.5
+  ledger:** per implementation review (2026-09-27), no such guard
+  currently exists in `tests/adapters/templates/`. The Phase 1.5 ledger
+  entry on Task 5 described the guard as a fragility concern, but
+  either it was already resolved in Phase 1.5 itself or the ledger
+  was inaccurate. Wave B's `not hasattr` removal step is therefore
+  a no-op verification: grep the tree, confirm no such guard exists,
+  document in the report.
+- **Done:** module-level `sys.modules` stubs removed from
+  `test_jinja2.py` and `test_rendering_jinja2.py`; conftest installs
+  the stub at session start; tests pass 5 consecutive runs in both
+  `--dist=loadfile` and `-p no:xdist` modes; existing
+  `pytest_ignore_collect` for `test_components/` is preserved.
+- **Risk:** pytest_sessionstart is run once per session; if any test
+  mutates `sys.modules["jinja2_async_environment"]` after session
+  start, the teardown in `pytest_sessionfinish` restores to the
+  pre-session value. Acceptable trade-off; pytest's contract is that
+  test code shouldn't mutate module-level singletons outside fixtures.
 
 #### Wave C — xdist-order-pollution hybrid
 
@@ -258,13 +292,15 @@ Phase 1.5+ ships when ALL of the following hold for 5 consecutive
 runs:
 
 ```bash
-# From /Users/les/Projects/fastblocks
-pytest --cov=fail_under=67.81 --no-cov -p no:xdist     # Wave C baseline
-pytest --cov=fail_under=67.81 --dist=loadfile          # Wave C+D combined
-find . -name "*.backup*" -not -path "./.git/*"          # D0 regression (still empty)
-test -f docs/spec-failure-inventory.md                 # Wave A #1 deliverable
-grep -r "hasattr" tests/adapters/templates/            # Wave B cleanup
+# From /Users/les/Projects/fastblocks — run the audit-cleared gate
+bash scripts/phase1.5-plus-gate.sh
 ```
+
+The gate internally runs:
+- 5 consecutive `.venv/bin/pytest --no-cov -p no:xdist -q` (serial baseline)
+- 5 consecutive `.venv/bin/pytest --no-cov --dist=loadfile -q` (xdist baseline; non-serial-marked tests pass; serial-marked tests skipped per hook)
+- 5 consecutive `.venv/bin/pytest --cov=fail_under=67.81 -q` (coverage gate)
+- 4 sanity checks: `docs/spec-failure-inventory.md` exists; `tests/a11y/conftest.py` ends with `\n`; `fastblocks/exceptions.py` has `except (Exception,):`; no module-level `sys.modules` stubs in `tests/adapters/templates/test_jinja2.py` or `test_rendering_jinja2.py`; punt target dates in `docs/known-claim-gaps.md` within 6-month horizon.
 
 The 5-consecutive-runs gate catches any pollution regression from
 Wave C's serial-marks, Wave B's fixture change, or Wave D's coverage
@@ -274,7 +310,7 @@ work. If any single run fails, Phase 1.5+ is not done.
 
 | Wave | Pass criterion |
 |---|---|
-| A | `docs/spec-failure-inventory.md` exists; `tests/test_safe_depends_get.py` passes; `tail -c 1 tests/a11y/conftest.py` returns `\n` |
+| A | `docs/spec-failure-inventory.md` exists; `tests/test_exceptions.py::test_safe_depends_get_cached` and `tests/test_exceptions_comprehensive.py::TestSafeDependsGet` pass; `tail -c 1 tests/a11y/conftest.py` returns `\n` |
 | B | 5 consecutive pytest runs in both serial + xdist pass for `tests/adapters/templates/`; `hasattr` check gone |
 | C | 5 consecutive `pytest --dist=loadfile` runs all green; serial-marks documented in conftest rationale |
 | D | 5 consecutive `pytest --cov=fail_under=67.81` runs all pass; carve-outs in `known-test-gaps.md` if any |
@@ -303,7 +339,7 @@ work. If any single run fails, Phase 1.5+ is not done.
 | Nondeterministic tests in Wave C pollute the pollution set (genuine randomness, not order-dependence) | Medium | Low | Punt to Wave E with `xfail` or explicit skip; not serial-mark |
 | Spec inventory regen takes longer than expected | Low | Low | Read-only + categorization is mechanical; 1-2 hours max |
 | Punted items pile up (if Wave E has >3 punts, Phase 1.5++ becomes a real cycle) | Medium | Medium | Each punt requires target date; if >3 punts, evaluate whether to extend Phase 1.5+ scope |
-| Wave B's `monkeypatch` can't undo `sys.modules` (per Bodai memory `monkeypatch-inline-import-target.md`) | High | Low | Use explicit `try/finally` teardown or fixture finalizer instead of monkeypatch |
+| Wave B's `monkeypatch` can't undo `sys.modules` (pytest's `monkeypatch.setattr` does not track dict insertions to `sys.modules`) | High | Low | Use `pytest_sessionstart` + `pytest_sessionfinish` hook pair (standard pytest contract) for stub install + teardown |
 
 ---
 
