@@ -176,7 +176,7 @@ class ApplicationInitializer:
 
     def _configure_logging(self) -> None:
         if get_installed_adapter("logfire"):
-            from logfire import instrument_starlette
+            from logfire import instrument_starlette  # ty: ignore[unresolved-import]
 
             instrument_starlette(self.app)
         interceptor_class = self._acb_modules[3]

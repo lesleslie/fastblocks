@@ -41,7 +41,7 @@ class Admin(AdminBase):
         **kwargs: t.Any,
     ) -> None:
         super().__init__()
-        from sqladmin import Admin as SqlAdminBase
+        from sqladmin import Admin as SqlAdminBase  # ty: ignore[unresolved-import]
 
         if app is None:
             app = FastBlocks()

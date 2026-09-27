@@ -965,7 +965,7 @@ class Templates(TemplatesBase):
             try:
                 from sqladmin.helpers import (
                     get_object_identifier,
-                )
+                )  # ty: ignore[unresolved-import]
             except ImportError:
 
                 def get_object_identifier(obj: t.Any) -> t.Any:
