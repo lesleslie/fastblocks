@@ -39,9 +39,22 @@ framework wrapper around it.
 from __future__ import annotations
 
 import asyncio
+import sys
 import time
 
-from jinja2_async_environment import AsyncEnvironment
+# Force-reload the real `jinja2_async_environment` package if a prior test file
+# (e.g. tests/adapters/templates/test_jinja2.py, test_rendering_jinja2.py)
+# stubbed it in sys.modules during collection. Without this, the stub shadows
+# the real package and `from jinja2_async_environment import AsyncEnvironment`
+# raises `ImportError: cannot import name 'AsyncEnvironment' from
+# 'jinja2_async_environment' (unknown location)`.
+if "jinja2_async_environment" in sys.modules and not hasattr(
+    sys.modules["jinja2_async_environment"], "AsyncEnvironment",
+):
+    for _key in [k for k in sys.modules if k == "jinja2_async_environment" or k.startswith("jinja2_async_environment.")]:
+        del sys.modules[_key]
+
+from jinja2_async_environment import AsyncEnvironment  # noqa: E402
 
 
 SLOW_FILTER_SECONDS = 0.2  # 200ms per filter invocation

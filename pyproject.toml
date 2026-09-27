@@ -240,7 +240,8 @@ addopts = [
     "--cov-report=term",
     "--cov-fail-under=62",
     "-n", "auto",
-    "--dist=loadfile"
+    "--dist=loadfile",
+    "--import-mode=importlib"
 ]
 filterwarnings = [
     "ignore::pytest_benchmark.logger.PytestBenchmarkWarning",
