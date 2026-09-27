@@ -5,6 +5,22 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.4] - 2026-09-26
+
+### Added
+
+- mcp: Adopt apply_tool_profile for FASTBLOCKS_TOOL_PROFILE (W4 Task 22)
+
+### Documentation
+
+- Add docs/assets/images/ + .scratch/ convention
+
+### Internal
+
+- fastblocks: Refresh uv.lock for mcp-common 0.30.1
+- fastblocks: Trailing-newline auto-fixes from crackerjack fast hooks
+- gitignore: Apply Bodai canonical snippet
+
 ## [0.24.2] - 2026-08-31
 
 ### Fixed
