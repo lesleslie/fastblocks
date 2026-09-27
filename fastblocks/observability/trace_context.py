@@ -45,7 +45,7 @@ def get() -> TraceContext | None:
     return _current_trace.get()
 
 
-def set(ctx: TraceContext) -> Token:
+def set(ctx: TraceContext) -> Token[TraceContext | None]:
     """Set the active trace context.
 
     Both writes happen:
@@ -66,7 +66,7 @@ def set(ctx: TraceContext) -> Token:
     return token
 
 
-def reset(token: Token) -> None:
+def reset(token: Token[TraceContext | None]) -> None:
     """Reset the typed ContextVar to its prior value and clear structlog's."""
     _current_trace.reset(token)
     structlog.contextvars.unbind_contextvars(

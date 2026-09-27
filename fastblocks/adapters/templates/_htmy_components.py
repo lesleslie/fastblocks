@@ -46,9 +46,14 @@ def debug(msg: str) -> None:
 
 
 try:
-    from pydantic import BaseModel
+    from pydantic import BaseModel as _BaseModel
 except ImportError:
-    BaseModel = t.cast(t.Any, None)
+    _BaseModel = None  # type: ignore[assignment,misc]
+
+# Re-export under the canonical name used throughout this module so
+# downstream references (``if BaseModel:``, ``issubclass(...)``) work
+# cleanly when pydantic is absent.
+BaseModel: t.Any = _BaseModel
 
 
 class ComponentStatus(StrEnum):
@@ -973,7 +978,11 @@ class AdvancedHTMYComponentRegistry:
 
         metadata = await self._validate_component_exists(component_name)
 
-        source = await metadata.path.read_text()  # ty: ignore[unresolved-attribute]
+        if metadata.path is None:
+            raise ComponentValidationError(
+                f"Component '{component_name}' has no resolvable source path"
+            )
+        source = await metadata.path.read_text()
         component_class = await self._load_component_from_source(source, metadata)
 
         if component_class is None:

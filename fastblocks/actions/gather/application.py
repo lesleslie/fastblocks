@@ -467,9 +467,14 @@ async def create_application_manager(
     gather_result: ApplicationGatherResult,
 ) -> t.Any:
     try:
-        from fastblocks.applications import (
-            ApplicationManager,  # type: ignore[unresolved-import]  # ty: ignore[unresolved-import]
-        )
+        # ``ApplicationManager`` is intentionally imported lazily
+        # (avoid loading the full app surface at module import
+        # time). mypy sees it as missing because the symbol is
+        # resolved at runtime only when ``fastblocks.applications``
+        # is reachable. Removal plan: add a Protocol + runtime
+        # import shim, or expose ``ApplicationManager`` from a
+        # module mypy can statically resolve.
+        from fastblocks.applications import ApplicationManager  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]
     except ImportError:
 
         class SimpleApplicationManager:

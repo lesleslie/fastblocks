@@ -144,7 +144,14 @@ def _apply_template_replacements(source: bytes, deployed: bool = False) -> bytes
     return source
 
 
-class BaseTemplateLoader(AsyncBaseLoader):
+class BaseTemplateLoader(AsyncBaseLoader):  # type: ignore[misc]
+    # ``AsyncBaseLoader`` is imported from ``jinja2_async_environment``;
+    # mypy treats it as ``Any`` because the package ships without a
+    # ``py.typed`` marker and ``ignore_missing_imports = true`` widens
+    # the import. Runtime resolution works because jinja2_async_environment
+    # is a hard dep. Removal plan: switch to ``TYPE_CHECKING`` import +
+    # runtime import shim once jinja2_async_environment publishes stubs,
+    # or vendor a minimal ``AsyncBaseLoader`` Protocol locally.
     config: t.Any = None
     cache: t.Any = None
     storage: t.Any = None
@@ -269,7 +276,7 @@ class LoaderProtocol(t.Protocol):
     config: t.Any
     storage: t.Any
 
-    async def get_source_async(  # type: ignore[override]
+    async def get_source_async(
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -411,7 +418,8 @@ class FileSystemLoader(BaseTemplateLoader):
         if self.cache is not None:
             await self.cache.set(Templates.get_cache_key(storage_path), resp)
 
-    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
+    async def get_source_async(# ty: ignore[invalid-method-override]
+
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -444,7 +452,8 @@ class FileSystemLoader(BaseTemplateLoader):
         async def uptodate() -> bool:
             return int((await path.stat()).st_mtime) == local_mtime
 
-        return (resp.decode(), str(storage_path), uptodate)  # type: ignore[return-value]  # ty: ignore[invalid-return-type]
+        return (resp.decode(), str(storage_path), uptodate)# ty: ignore[invalid-return-type]
+
 
     async def list_templates_async(self) -> list[str]:
         return await self._list_templates_for_extensions(
@@ -508,7 +517,8 @@ class StorageLoader(BaseTemplateLoader):
             stat = await self.storage.templates.stat(storage_path)
             return resp, round(stat.get("mtime").timestamp())
 
-    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
+    async def get_source_async(# ty: ignore[invalid-method-override]
+
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -573,7 +583,8 @@ class StorageLoader(BaseTemplateLoader):
 
 
 class RedisLoader(BaseTemplateLoader):
-    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
+    async def get_source_async(# ty: ignore[invalid-method-override]
+
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -662,7 +673,8 @@ class PackageLoader(BaseTemplateLoader):
             )
         self._template_root = AsyncPath(template_root)
 
-    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
+    async def get_source_async(# ty: ignore[invalid-method-override]
+
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -711,7 +723,8 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
         super().__init__(searchpath or AsyncPath("templates"))
         self.loaders = loaders
 
-    async def get_source_async(  # type: ignore[override]  # ty: ignore[invalid-method-override]
+    async def get_source_async(# ty: ignore[invalid-method-override]
+
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -729,8 +742,10 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
                 # ``mock('name', 'name')`` for downstream
                 # ``AsyncMock`` children whose contract is
                 # single-arg.
-                result = await loader.get_source_async(str(template))  # type: ignore[arg-type,call-arg,invalid-argument-type]  # ty: ignore[missing-argument,invalid-argument-type]
-                return result  # type: ignore[return-value]  # ty: ignore[invalid-return-type]
+                result = await loader.get_source_async(str(template))# ty: ignore[missing-argument,invalid-argument-type]
+
+                return result# ty: ignore[invalid-return-type]
+
             except TemplateNotFound:
                 # The next loader may have it; only "missing template"
                 # is a recoverable signal at this level. Loader
@@ -884,8 +899,8 @@ class Templates(TemplatesBase):
 
         # Compute cache key inputs from instance state. Changing any of these
         # triggers a fresh loader build (via reload_loader()).
-        deployed = bool(self.config.deployed)  # type: ignore[attr-defined]
-        production = bool(self.config.debug.production)  # type: ignore[attr-defined]
+        deployed = bool(self.config.deployed)
+        production = bool(self.config.debug.production)
         template_set_id = ",".join(str(p) for p in template_paths)
         is_admin_set = bool(
             self.enabled_admin and template_paths == self.admin_searchpaths
@@ -916,7 +931,7 @@ class Templates(TemplatesBase):
         _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
         _imported_extensions = [
             import_module(e)
-            for e in self.config.templates.extensions  # type: ignore[attr-defined]
+            for e in self.config.templates.extensions
         ]
         for e in _imported_extensions:
             _extensions.extend(
@@ -932,7 +947,7 @@ class Templates(TemplatesBase):
         if cache is not None:
             bytecode_cache = AsyncRedisBytecodeCache(prefix="bccache", client=cache)
         context_processors: list[t.Callable[..., t.Any]] = []
-        for processor_path in self.config.templates.context_processors:  # type: ignore[attr-defined]
+        for processor_path in self.config.templates.context_processors:
             module_path, func_name = processor_path.rsplit(".", 1)
             module = import_module(module_path)
             processor = getattr(module, func_name)
@@ -947,23 +962,23 @@ class Templates(TemplatesBase):
         loader = self.get_loader(template_paths)
         if loader:
             templates.env.loader = loader
-        elif self.config.templates.loader:  # type: ignore[attr-defined]
-            templates.env.loader = literal_eval(self.config.templates.loader)  # type: ignore[attr-defined]
-        for delimiter, value in self.config.templates.delimiters.items():  # type: ignore[attr-defined]
+        elif self.config.templates.loader:
+            templates.env.loader = literal_eval(self.config.templates.loader)
+        for delimiter, value in self.config.templates.delimiters.items():
             setattr(templates.env, delimiter, value)
         # Type cast globals dict to avoid assignment type errors
         globals_dict: dict[str, t.Any] = templates.env.globals
-        globals_dict["config"] = self.config  # type: ignore[attr-defined]
+        globals_dict["config"] = self.config
         globals_dict["render_block"] = templates.render_block
         globals_dict["render_component"] = self._get_htmy_component_renderer()
         with suppress(Exception):
             from fastblocks.core.style_registry import register_style_functions
 
-            style_name = getattr(getattr(self.config, "app", None), "style", None)  # type: ignore[attr-defined]
+            style_name = getattr(getattr(self.config, "app", None), "style", None)
             register_style_functions(templates.env, style_name)
         if admin:
             try:
-                from sqladmin.helpers import (  # ty: ignore[unresolved-import]
+                from sqladmin.helpers import (
                     get_object_identifier,
                 )
             except ImportError:
@@ -976,7 +991,7 @@ class Templates(TemplatesBase):
             globals_dict["admin"] = self
             globals_dict["is_list"] = lambda x: isinstance(x, list)
             globals_dict["get_object_identifier"] = get_object_identifier
-        for k, v in self.config.templates.globals.items():  # type: ignore[attr-defined]
+        for k, v in self.config.templates.globals.items():
             globals_dict[k] = v
         return templates
 
@@ -993,15 +1008,15 @@ class Templates(TemplatesBase):
     def _log_loader_info(self) -> None:
         if self.app and self.app.env.loader and hasattr(self.app.env.loader, "loaders"):
             for loader in self.app.env.loader.loaders:  # ty: ignore[not-iterable]
-                self.logger.debug(f"{loader.__class__.__name__} initialized")  # type: ignore[attr-defined]
+                self.logger.debug(f"{loader.__class__.__name__} initialized")
 
     def _log_extension_info(self) -> None:
         if self.app and hasattr(self.app.env, "extensions"):
             for ext in self.app.env.extensions:
-                self.logger.debug(f"{ext.split('.')[-1]} loaded")  # type: ignore[attr-defined]
+                self.logger.debug(f"{ext.split('.')[-1]} loaded")
 
     async def _clear_debug_cache(self, cache: t.Any | None) -> None:
-        if getattr(self.config.debug, "templates", False):  # type: ignore[attr-defined]
+        if getattr(self.config.debug, "templates", False):
             try:
                 for namespace in (
                     "templates",
@@ -1012,14 +1027,14 @@ class Templates(TemplatesBase):
                 ):
                     if cache is not None:
                         await cache.clear(namespace)
-                self.logger.debug("Template caches cleared")  # type: ignore[attr-defined]
+                self.logger.debug("Template caches cleared")
                 with suppress(Exception):
                     htmy_adapter = resolve_instance(depends, "fastblocks", "htmy")
                     if htmy_adapter:
                         await htmy_adapter.clear_component_cache()
-                        self.logger.debug("HTMY component caches cleared via adapter")  # type: ignore[attr-defined]
+                        self.logger.debug("HTMY component caches cleared via adapter")
             except (NotImplementedError, AttributeError) as e:
-                self.logger.debug(f"Cache clear not supported: {e}")  # type: ignore[attr-defined]
+                self.logger.debug(f"Cache clear not supported: {e}")
 
     def _get_htmy_component_renderer(self) -> t.Callable[..., t.Any]:
         async def render_component(
@@ -1239,9 +1254,9 @@ class Templates(TemplatesBase):
         extensions_list = getattr(
             getattr(self, "settings", None),
             "extensions",
-            self.config.templates.extensions,  # type: ignore[attr-defined]
+            self.config.templates.extensions,
         )
-        _imported_extensions = [import_module(e) for e in extensions_list]  # type: ignore[union-attr]
+        _imported_extensions = [import_module(e) for e in extensions_list]
         for e in _imported_extensions:
             _extensions.extend(
                 [

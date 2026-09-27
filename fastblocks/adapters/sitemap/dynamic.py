@@ -53,7 +53,7 @@ class DynamicSitemap(BaseSitemap[dict[str, t.Any]], SitemapBase):
     sitemap: SitemapApp | None = None
 
     async def items(self) -> list[dict[str, t.Any]]:
-        strategy_options = self.config.strategy_options  # type: ignore[attr-defined]
+        strategy_options = self.config.strategy_options
         model_configs = strategy_options.get("model_configs", [])
         all_items = []
         for model_config in model_configs:

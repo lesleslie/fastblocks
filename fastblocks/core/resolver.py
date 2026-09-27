@@ -23,7 +23,7 @@ is invoked synchronously by design.
 from __future__ import annotations
 
 import inspect
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Coroutine
 from typing import Any, cast
 
 from oneiric.core.logging import get_logger
@@ -226,11 +226,19 @@ class FastblocksRegistry:
 
     def list_shadowed(self, domain: str) -> list[Candidate]:
         """List shadowed candidates in ``domain`` (registered but not selected)."""
-        return self._resolver.list_shadowed(domain)
+        # Assign through a ``list[Candidate]`` annotation so mypy sees
+        # the return as ``list[Candidate]`` rather than the ``Any``
+        # inferred from ``self._resolver.list_shadowed``. ``ty``
+        # treats the same code as already-typed (no narrowing
+        # needed).
+        shadowed: list[Candidate] = self._resolver.list_shadowed(domain)
+        return shadowed
 
     def list_active(self, domain: str) -> list[Candidate]:
         """List active candidates in ``domain``."""
-        return self._resolver.list_active(domain)
+        # Same mypy-narrowing rationale as ``list_shadowed``.
+        active: list[Candidate] = self._resolver.list_active(domain)
+        return active
 
     # --- Consolidated helpers (moved from oneiric_helper.py) ---
 
@@ -365,8 +373,10 @@ def resolve_component(resolver: Resolver, domain: str, key: str) -> object | Non
     value = _candidate_value(resolver, domain, key)
     if inspect.isawaitable(value):
         # Close the coroutine so it isn't garbage-collected unawaited (which
-        # emits a RuntimeWarning under "auto" asyncio mode).
-        value.close()  # ty: ignore[unresolved-attribute]
+        # emits a RuntimeWarning under "auto" asyncio mode). Cast to
+        # ``Coroutine`` so mypy + ty see ``.close()``; ``inspect.isawaitable``
+        # is too broad to narrow the type for the checker.
+        cast(Coroutine[Any, Any, Any], value).close()
         raise TypeError(
             f"Async factory requires resolve_component_async: {domain}:{key}"
         )
@@ -383,5 +393,5 @@ async def resolve_component_async(
     """
     value = _candidate_value(resolver, domain, key)
     if inspect.isawaitable(value):
-        return await value
+        return await cast(Awaitable[object | None], value)
     return value

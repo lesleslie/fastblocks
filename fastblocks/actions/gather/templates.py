@@ -162,7 +162,7 @@ def _build_template_gather_tasks(
 
     tasks.append(_gather_template_globals())
 
-    return tasks  # type: ignore[return-value]
+    return tasks
 
 
 def _process_template_gather_results(

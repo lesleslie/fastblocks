@@ -93,7 +93,7 @@ class GoogleFonts(FontsBase):
         url = f"https://fonts.googleapis.com/css2?{query_string}"
 
         # Generate link tags
-        links = []
+        links: list[str] = []
 
         # Add preconnect for performance
         if self.settings.preconnect:

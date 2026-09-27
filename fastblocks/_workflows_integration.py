@@ -202,10 +202,13 @@ def get_workflow_service() -> FastBlocksWorkflowService:
     """Get the singleton FastBlocksWorkflowService instance."""
     global _workflow_service
     if _workflow_service is None:
-        _workflow_service = t.cast(
-            FastBlocksWorkflowService, FastBlocksWorkflowService()
-        )
-    return _workflow_service
+        _workflow_service = FastBlocksWorkflowService()  # ty: ignore[invalid-assignment]
+        # ty narrows ``FastBlocksWorkflowService()`` to ``object``
+        # because the dataclass-derived ``__init__`` parameters are
+        # widened to ``Any``; runtime always returns a
+        # ``FastBlocksWorkflowService`` instance.
+    return _workflow_service  # ty: ignore[invalid-return-type]
+    # Same singleton-narrowing rationale as the constructor call.
 
 
 def _build_cache_steps(

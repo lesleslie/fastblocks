@@ -4,19 +4,31 @@
 # without re-running ``uv lock``. This is the cheap, deterministic
 # catch for the failure mode uv sync --upgrade can introduce (see
 # feedback-crackerjack-gitignore-sync-dev-dep-downgrade).
-name: lock-check
+#
+# D2: Type-system CI gates. ``mypy`` + ``ty`` are blocking; ``pyright``
+# is informational and tracked via docs/known-type-issues.md (any new
+# rule fails the gate).
+name: quality
 
 on:
   pull_request:
     paths:
       - "pyproject.toml"
       - "uv.lock"
+      - "mypy.ini"
+      - "fastblocks/**"
+      - "scripts/check_pyright_known_issues.py"
+      - "docs/known-type-issues.md"
   push:
     branches:
       - main
     paths:
       - "pyproject.toml"
       - "uv.lock"
+      - "mypy.ini"
+      - "fastblocks/**"
+      - "scripts/check_pyright_known_issues.py"
+      - "docs/known-type-issues.md"
   workflow_dispatch:
 
 permissions:
@@ -47,3 +59,71 @@ jobs:
           echo "    uv lock"
           echo "Then commit the regenerated uv.lock alongside the"
           echo "pyproject.toml change."
+
+  mypy:
+    # D2 gate (blocking). mypy is one of two CI-blocking type
+    # checkers; ty is the other. ``mypy.ini`` sets
+    # ``python_version = 3.14`` so the parse-time syntax of
+    # Python 3.14 (e.g. ``except A, B:`` in upstream
+    # ``mcp_common``) is accepted.
+    name: mypy (D2 gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install project + dev deps (my deps live in [dependency-groups].dev)
+        run: uv sync --frozen --group dev
+
+      - name: Run mypy on fastblocks/
+        run: uv run mypy fastblocks
+
+  ty:
+    # D2 gate (blocking). ``ty check`` is the second half of the
+    # type system gate; both must exit 0 for CI to pass.
+    name: ty (D2 gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install project + dev deps
+        run: uv sync --frozen --group dev
+
+      - name: Run ty on fastblocks/
+        run: uv run ty check fastblocks
+
+  pyright-info:
+    # D2 informational gate. Pyright output is parsed by
+    # ``scripts/check_pyright_known_issues.py`` and compared against
+    # ``docs/known-type-issues.md``. Any new rule fails the job.
+    # Path-prefix drift inside a known rule is allowed (the table
+    # documents prefix distributions for reviewer convenience).
+    name: pyright (D2 informational gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install project + dev deps
+        run: uv sync --frozen --group dev
+
+      # Pyright is not in the uv.lock; pin to a specific version so
+      # CI does not silently float when uvx resolves a different
+      # release.
+      - name: Run pyright (informational; result validated by the gate script below)
+        run: |
+          uvx --from "pyright@1.1.391" pyright fastblocks 2>&1 | tee /tmp/pyright.txt || true
+          # ``|| true`` so the gate job's exit code is governed by the
+          # ``check_pyright_known_issues.py`` script, not by pyright
+          # itself (pyright exits non-zero on any diagnostic, even
+          # documented ones).
+
+      - name: Validate pyright output against docs/known-type-issues.md
+        run: uv run python scripts/check_pyright_known_issues.py

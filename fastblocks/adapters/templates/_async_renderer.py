@@ -22,6 +22,7 @@ from collections.abc import AsyncIterator
 from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import cast
 from uuid import UUID
 
 from anyio import Path as AsyncPath
@@ -313,7 +314,7 @@ class AsyncTemplateRenderer:
 
         try:
             # Get template source
-            env = self.base_templates.app.env  # type: ignore[union-attr]
+            env = self.base_templates.app.env
             source, _, _ = env.loader.get_source(env, render_context.template_name)  # ty: ignore[unresolved-attribute]
 
             return await self.hybrid_manager.validate_template(
@@ -391,7 +392,12 @@ class AsyncTemplateRenderer:
             template = env.get_template(render_context.template_name)
 
         rendered = await template.render_async(render_context.context)
-        return rendered
+        # ``template.render_async`` is typed ``Awaitable[Any]`` on the
+        # Jinja2 ``Template`` stub; bind the result to ``str`` so mypy
+        # sees the return as ``str`` (no-Any widening). ``ty`` already
+        # narrows the same expression to ``str``.
+        rendered_str: str = rendered
+        return rendered_str
 
     async def _render_fragment(self, render_context: RenderContext) -> str:
         """Render template fragment for HTMX."""
@@ -423,7 +429,8 @@ class AsyncTemplateRenderer:
             render_context.template_name
         )
         # render_block exists in Jinja2 runtime but not in type stubs
-        rendered = template.render_block(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+        rendered = template.render_block(# ty: ignore[unresolved-attribute]
+
             render_context.block_name, render_context.context
         )
         return t.cast(str, rendered)
@@ -681,7 +688,7 @@ class AsyncTemplateRenderer:
         if not self.base_templates or not self.base_templates.app:
             return False
         with suppress(Exception):
-            env = self.base_templates.app.env  # type: ignore[union-attr]
+            env = self.base_templates.app.env
             _, filename, _ = env.loader.get_source(env, template_name)  # ty: ignore[unresolved-attribute]
 
             if filename:

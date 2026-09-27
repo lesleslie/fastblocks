@@ -4,8 +4,8 @@ from pathlib import Path
 
 # Oneiric imports
 from oneiric.adapters.bootstrap import (
-    register_adapter_metadata,  # type: ignore[attr-defined]
-    register_builtin_adapters,  # type: ignore[attr-defined]
+    register_adapter_metadata,
+    register_builtin_adapters,
 )
 from fastblocks.adapters.oneiric_helper import resolve_instance
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver

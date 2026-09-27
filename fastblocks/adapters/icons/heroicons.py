@@ -300,12 +300,12 @@ class HeroiconsIcons(IconsBase):
 
     def _get_icon_size(self, size: str | None, variant: str) -> str:
         """Determine icon size based on input and variant."""
-        if size and size in self.settings.size_presets:  # type: ignore[union-attr]
-            return self.settings.size_presets[size]  # type: ignore[union-attr]
+        if size and size in self.settings.size_presets:
+            return self.settings.size_presets[size]
         elif size and size.isdigit():
             return size
         # Default size based on variant
-        return "20" if variant == "mini" else self.settings.default_size  # type: ignore[union-attr]
+        return "20" if variant == "mini" else self.settings.default_size
 
     def _build_icon_class(
         self, icon_name: str, variant: str, size: str | None, attributes: dict[str, Any]
@@ -315,7 +315,7 @@ class HeroiconsIcons(IconsBase):
         icon_class = self.get_icon_class(icon_name, variant)
 
         # Add size class if using preset
-        if size and size in self.settings.size_presets:  # type: ignore[union-attr]
+        if size and size in self.settings.size_presets:
             icon_class += f" heroicon-{size}"
 
         # Add custom classes
@@ -371,7 +371,7 @@ class HeroiconsIcons(IconsBase):
 
         return svg_attrs
 
-    def get_icon_tag(  # type: ignore[override]
+    def get_icon_tag(
         self,
         icon_name: str,
         variant: str | None = None,

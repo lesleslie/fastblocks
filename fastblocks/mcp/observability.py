@@ -9,6 +9,13 @@ function so every invocation emits:
               labels: ``(tool_name,)``
               buckets: latency-tuned tuples (seconds)
 
+``from __future__ import annotations`` is required so that
+``Callable[..., Any]`` is treated as a string annotation (matching
+the ``mcp/tools/__init__.py`` consumer); without it, mypy narrows the
+return type to the runtime ``function`` builtin because
+``Callable[..., Any]`` evaluates to ``typing.Callable`` which mypy
+treats as the bare ``function`` type under strict mode.
+
 Per Δ49: ``func.__wrapped_by_instrument_tool__ = True`` after wrapping;
 the marker is checked on entry so double-wrap is a no-op (idempotency).
 

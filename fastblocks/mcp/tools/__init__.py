@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import operator
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any, cast
 
@@ -569,7 +569,7 @@ async def register_fastblocks_tools(server: Any) -> None:
         # MIGRATED: Removed ACB MCP registration - Oneiric MCP not yet available
 
         # Define tool registry
-        tools = {
+        tools: dict[str, Callable[..., Awaitable[dict[str, Any]]]] = {
             # Template tools
             "validate_template": validate_template,
             "list_templates": list_templates,

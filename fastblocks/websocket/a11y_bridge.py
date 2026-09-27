@@ -75,6 +75,12 @@ _REGION_LOCK: Lock = Lock()
 _MUTATIONS_PER_SECOND: int = 5
 _WINDOW_SECONDS: float = 1.0
 
+# Lazy-initialised prometheus counter; assigned on first call to
+# ``_ensure_drop_counter_loaded()``. Declared at module scope so mypy
+# can resolve the name in the ``global``/``return`` flow without
+# complaining about ``name-defined`` on a try/except-only assignment.
+_DROPPED_COUNTER: Counter | None = None
+
 __all__ = [
     "get_dropped_counter",
     "render_broadcast_as_a11y",
@@ -104,12 +110,10 @@ def _init_drop_counter() -> Counter:
 
 def _ensure_drop_counter_loaded() -> Counter:
     """Module-dictionary cache pattern (matches sentry_bridge)."""
-    global _DROPPED_COUNTER  # ty: ignore[unresolved-global]
-    try:
-        return _DROPPED_COUNTER  # type: ignore[name-defined]
-    except NameError:
+    global _DROPPED_COUNTER
+    if _DROPPED_COUNTER is None:
         _DROPPED_COUNTER = _init_drop_counter()
-        return _DROPPED_COUNTER
+    return _DROPPED_COUNTER
 
 
 def get_dropped_counter() -> Counter:

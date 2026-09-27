@@ -337,7 +337,7 @@ class Counter:
         # raise ``MetricNameCollisionError`` cleanly.
         from prometheus_client import REGISTRY as _PROM_REGISTRY
 
-        existing = _PROM_REGISTRY._names_to_collectors.get(name)  # type: ignore[attr-defined]
+        existing = _PROM_REGISTRY._names_to_collectors.get(name)
         if existing is not None:
             self._inner: _PromCounter = existing  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
         else:
@@ -430,7 +430,7 @@ class Histogram:
         # ``prometheus_client.Histogram(...)``.
         from prometheus_client import REGISTRY as _PROM_REGISTRY
 
-        existing = _PROM_REGISTRY._names_to_collectors.get(name)  # type: ignore[attr-defined]
+        existing = _PROM_REGISTRY._names_to_collectors.get(name)
         if existing is not None:
             self._inner: _PromHistogram = existing  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
             return

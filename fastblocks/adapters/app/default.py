@@ -453,7 +453,12 @@ class FastBlocksApp(FastBlocks):
         # the await behind an ``iscoroutine`` check so re-entrant
         # teardown — common in tests that drive the lifespan twice in
         # the same process — stays silent instead of crashing.
-        _shutdown_result = _get_default_tracer_provider().shutdown()  # ty: ignore[unresolved-attribute]
+        _shutdown_result = _get_default_tracer_provider().shutdown()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+        # ``opentelemetry.sdk.trace.TracerProvider.shutdown()`` is on
+        # the runtime class but absent from the bundled stubs; mypy
+        # cannot see it without a ``py.typed`` marker. Removal plan:
+        # switch to ``cast(Any, provider).shutdown()`` once opentelemetry
+        # ships complete stubs, or add a Protocol that declares it.
         if asyncio.iscoroutine(_shutdown_result):
             await _shutdown_result
         logger = getattr(self, "logger", None)
@@ -603,7 +608,9 @@ class App(AppBase):
         # ``iscoroutine`` check so re-entrant teardown — the same
         # reason this branch exists on ``FastBlocksApp.lifespan`` —
         # stays silent instead of crashing.
-        _shutdown_result = _get_default_tracer_provider().shutdown()  # ty: ignore[unresolved-attribute]
+        _shutdown_result = _get_default_tracer_provider().shutdown()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+        # See comment above ``FastBlocksApp.lifespan`` — same
+        # stub-gap rationale.
         if asyncio.iscoroutine(_shutdown_result):
             await _shutdown_result
         self.logger.critical("Application shut down")

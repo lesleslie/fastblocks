@@ -449,7 +449,7 @@ class HybridTemplatesManager:
     @staticmethod
     def _get_available_variables(context: dict[str, t.Any] | None = None) -> set[str]:
         """Get all available variables from context and adapters."""
-        available = set()
+        available: set[str] = set()
 
         # Add context variables
         if context:

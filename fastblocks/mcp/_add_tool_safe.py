@@ -65,7 +65,7 @@ def add_tool_safe(server: Any, name: str, fn: Any, **kwargs: Any) -> Any:
     existing = None
     tool_manager = getattr(server, "_tool_manager", None)
     if tool_manager is not None:
-        existing = tool_manager._tools.get(name)  # type: ignore[attr-defined]
+        existing = tool_manager._tools.get(name)
 
     if existing is not None:
         return existing
@@ -80,7 +80,7 @@ def add_tool_safe(server: Any, name: str, fn: Any, **kwargs: Any) -> Any:
                 "cannot register Tool instance directly"
             )
             raise AttributeError(msg)
-        tool_manager._tools[name] = fn  # type: ignore[attr-defined]
+        tool_manager._tools[name] = fn
         return fn
 
     # Plain function / callable path — delegate to the server's add_tool.

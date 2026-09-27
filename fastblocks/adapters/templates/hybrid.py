@@ -314,7 +314,7 @@ class HybridTemplates:
             validate=validate,
         )
 
-        result = await self.block_renderer.render_block(block_request)  # type: ignore[union-attr]
+        result = await self.block_renderer.render_block(block_request)
 
         from starlette.responses import HTMLResponse
 
@@ -332,7 +332,7 @@ class HybridTemplates:
         if not self.async_renderer:
             await self.initialize()
 
-        return await self.async_renderer.render_htmx_fragment(  # type: ignore[union-attr]
+        return await self.async_renderer.render_htmx_fragment(
             request, fragment_name, context, template_name, **kwargs
         )
 
@@ -398,7 +398,7 @@ class HybridTemplates:
         if not self.block_renderer:
             await self.initialize()
 
-        return await self.block_renderer.get_block_info(block_id)  # type: ignore[union-attr]
+        return await self.block_renderer.get_block_info(block_id)
 
     def get_htmx_attributes_for_block(self, block_id: str) -> str:
         """Get HTMX attributes string for a block."""
@@ -415,7 +415,7 @@ class HybridTemplates:
         if not self.async_renderer:
             await self.initialize()
 
-        return await self.async_renderer.get_performance_metrics(template_name)  # type: ignore[union-attr]
+        return await self.async_renderer.get_performance_metrics(template_name)
 
     def clear_caches(self) -> None:
         """Clear all template caches."""
@@ -431,7 +431,7 @@ class HybridTemplates:
         if not self.hybrid_manager:
             await self.initialize()
 
-        compiled = await self.hybrid_manager.precompile_templates()  # type: ignore[union-attr]
+        compiled = await self.hybrid_manager.precompile_templates()
         return {name: True for name in compiled}
 
     async def get_template_dependencies(self, template_name: str) -> list[str]:
@@ -439,7 +439,7 @@ class HybridTemplates:
         if not self.hybrid_manager:
             await self.initialize()
 
-        deps = await self.hybrid_manager.get_template_dependencies(template_name)  # type: ignore[union-attr]
+        deps = await self.hybrid_manager.get_template_dependencies(template_name)
         return list(deps)
 
 

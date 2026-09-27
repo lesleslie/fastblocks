@@ -21,6 +21,7 @@ import typing as t
 from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 from uuid import UUID
 
 from jinja2 import Environment, meta
@@ -435,7 +436,7 @@ class BlockRenderer:
         if not block_def:
             return []
 
-        dependencies = []
+        dependencies: list[Any] = []
 
         # Add template dependencies
         if self.hybrid_manager:

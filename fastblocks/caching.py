@@ -39,7 +39,7 @@ def get_adapter(adapter_name: str) -> t.Any:
     """Simple adapter getter for Oneiric (replaces ACB's get_adapter)."""
     with suppress(Exception):
         from oneiric.adapters.bootstrap import (
-            Resolver as AdapterResolver,  # type: ignore[attr-defined]
+            Resolver as AdapterResolver,
         )
 
         resolver = AdapterResolver()

@@ -595,7 +595,12 @@ async def register_fastblocks_event_handlers() -> bool:
         True if registration successful, False if event system unavailable
     """
     try:
-        publisher = t.cast(FastBlocksEventPublisher, FastBlocksEventPublisher())
+        publisher: FastBlocksEventPublisher = FastBlocksEventPublisher()  # ty: ignore[invalid-assignment]
+        # ty narrows the metaclass ``SingletonMeta``-driven
+        # constructor return to ``object``; runtime always returns
+        # a ``FastBlocksEventPublisher``. Removal plan: replace
+        # ``SingletonMeta`` with a regular ``__new__``-based singleton
+        # so the constructor's static return type matches the class.
 
         if publisher._publisher is None:
             return False
@@ -677,7 +682,13 @@ def get_event_publisher() -> FastBlocksEventPublisher | None:
     Returns:
         Event publisher instance
     """
-    return t.cast(FastBlocksEventPublisher, FastBlocksEventPublisher())
+    return FastBlocksEventPublisher()  # ty: ignore[invalid-return-type]
+    # ty narrows the metaclass ``SingletonMeta``-driven constructor
+    # return to ``object``; runtime always returns a
+    # ``FastBlocksEventPublisher`` instance. Removal plan: switch
+    # ``SingletonMeta`` to a regular class with ``__new__``-based
+    # caching, or provide a Protocol for the singleton contract that
+    # ty can statically resolve.
 
 
 # Module metadata for Oneiric compatibility

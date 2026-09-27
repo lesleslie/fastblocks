@@ -25,7 +25,7 @@ Per v6 Global Constraints:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 try:
     import structlog
@@ -82,7 +82,7 @@ def _interpolate_positional_args(
             # Placeholder mismatch (e.g. event has no %s but args provided).
             # Leave the event untouched so callers still see the raw string.
             event_dict["positional_args"] = positional
-    return event_dict
+    return cast(dict[str, Any], event_dict)
 
 
 __all__ = [
@@ -153,4 +153,4 @@ def get_logger(name: str) -> BoundLogger:
     """
     _require_structlog()
     configure_logging()
-    return structlog.get_logger(name)
+    return cast(BoundLogger, structlog.get_logger(name))

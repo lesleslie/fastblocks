@@ -35,7 +35,7 @@ Configuration (precedence order):
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from mcp_common.tools import ALL_TOOLS, ToolProfile
 
@@ -69,7 +69,7 @@ FULL_REGISTRATIONS: list[str] = ["register_fastblocks_tools"]
 
 
 PROFILE_REGISTRATIONS: dict[
-    ToolProfile, list[str] | list[str | Callable] | type[ALL_TOOLS]
+    ToolProfile, list[str] | list[str | Callable[..., Any]] | type[ALL_TOOLS]
 ] = {
     ToolProfile.MINIMAL: MINIMAL_REGISTRATIONS,
     ToolProfile.STANDARD: STANDARD_REGISTRATIONS,

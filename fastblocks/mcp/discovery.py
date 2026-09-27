@@ -6,7 +6,7 @@ import importlib
 import inspect
 from contextlib import suppress
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
@@ -32,7 +32,7 @@ def resolve_depends() -> FastblocksRegistry:
     """
     module_depends = globals().get("depends")
     if module_depends is not None:
-        return module_depends
+        return cast(FastblocksRegistry, module_depends)
     global _depends
     if _depends is None:
         _depends = FastblocksRegistry(get_resolver())
@@ -378,7 +378,7 @@ class AdapterDiscoveryServer:
 # NOT in ``server.list_tools()`` (gate failures skip registration
 # entirely, per mcp_common contract).
 # ---------------------------------------------------------------------------
-async def fastblocks_discovery(server: FastMCP, filter_query: str | None) -> list[dict]:
+async def fastblocks_discovery(server: FastMCP, filter_query: str | None) -> list[dict[str, Any]]:
     """Emit {name, capability, description, inputSchema}.
 
     Walks the server's registered tools and looks up each name in
@@ -387,7 +387,7 @@ async def fastblocks_discovery(server: FastMCP, filter_query: str | None) -> lis
     from fastblocks.mcp.capabilities import get_tool_capability
 
     tools = await server.list_tools()
-    result: list[dict] = []
+    result: list[dict[str, Any]] = []
     for t in tools:
         capability = get_tool_capability(t.name)
         result.append(

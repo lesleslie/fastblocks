@@ -148,7 +148,7 @@ class OtelMiddleware(BaseHTTPMiddleware):
         from fastblocks.observability.tracer import get_tracer
 
         tracer = get_tracer("fastblocks.observability")
-        token: Token | None = None
+        token: Token[TraceContext | None] | None = None
         with tracer.start_as_current_span("http.request") as span:
             # Bind trace_context BEFORE call_next so inner handlers
             # (route handlers, downstream middleware) observe the

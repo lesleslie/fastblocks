@@ -127,7 +127,7 @@ def _prepare_model_gather_config(
 
 
 def _get_default_model_base_classes() -> list[type]:
-    base_classes = []
+    base_classes: list[type] = []
     with suppress(ImportError):
         from sqlmodel import SQLModel
 
@@ -159,7 +159,7 @@ def _build_model_gather_tasks(
     if "custom" in sources:
         tasks.append(_gather_custom_models(patterns, base_classes))
 
-    return tasks  # type: ignore[return-value]
+    return tasks
 
 
 def _process_model_gather_results(
@@ -543,7 +543,11 @@ def _is_valid_model_class(attr: t.Any, module: t.Any, base_classes: list[type]) 
 async def _gather_admin_models(
     all_models: dict[str, type],
 ) -> list[type]:
-    admin_models = [
+    # ty infers the list-comprehension element as ``(type & Protocol)``
+    # (intersection of ``type`` and the ``hasattr``-derived attribute
+    # protocol). Widen the local annotation to ``list[type]`` so the
+    # return-statement's expected type matches without an explicit cast.
+    admin_models: list[type] = [
         model_class
         for model_class in all_models.values()
         if (
@@ -556,7 +560,7 @@ async def _gather_admin_models(
 
     debug(f"Found {len(admin_models)} admin-enabled models")
 
-    return t.cast("list[type]", admin_models)
+    return admin_models
 
 
 def _is_sql_model(model_class: type) -> bool:

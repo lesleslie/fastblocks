@@ -448,7 +448,7 @@ async def async_optimized_font_loading(fonts: list[str], critical: bool = True) 
             result = await font_adapter.get_optimized_loading(fonts, critical=critical)
             return str(result) if result is not None else ""
 
-    html_parts = []
+    html_parts: list[str] = []
     for font in fonts:
         font_family = font.replace(" ", "+")
         if critical:

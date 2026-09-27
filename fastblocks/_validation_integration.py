@@ -746,10 +746,13 @@ def get_validation_service() -> FastBlocksValidationService:
     """Get the singleton FastBlocksValidationService instance."""
     global _validation_service
     if _validation_service is None:
-        _validation_service = t.cast(
-            FastBlocksValidationService, FastBlocksValidationService()
-        )
-    return _validation_service
+        _validation_service = FastBlocksValidationService()  # ty: ignore[invalid-assignment]
+        # ty narrows ``FastBlocksValidationService()`` to ``object``
+        # because the dataclass-derived ``__init__`` parameters are
+        # widened to ``Any``; runtime always returns a
+        # ``FastBlocksValidationService`` instance.
+    return _validation_service  # ty: ignore[invalid-return-type]
+    # Same singleton-narrowing rationale as the constructor call.
 
 
 # Decorators for automatic validation

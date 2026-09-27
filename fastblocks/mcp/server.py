@@ -113,7 +113,18 @@ class FastBlocksMCPServer:
         await _apply_tool_profile(
             self._server,
             profile_env_var="FASTBLOCKS_TOOL_PROFILE",
-            registrations=PROFILE_REGISTRATIONS,  # ty: ignore[invalid-argument-type]
+            registrations=PROFILE_REGISTRATIONS,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+            # ``PROFILE_REGISTRATIONS`` is typed as
+            # ``dict[ToolProfile, list[str] | list[str | Callable[..., Any]] | type[ALL_TOOLS]]``
+            # but the dispatcher expects
+            # ``dict[ToolProfile, list[str | Callable[..., Any]] | type[ALL_TOOLS]]``.
+            # The wider union is intentional — the runtime narrows on
+            # each ToolProfile key (every entry is either a ``list[str]``
+            # of group names or a ``type[ALL_TOOLS]`` sentinel). mypy's
+            # variance check is too strict here. Removal plan: drop the
+            # ``list[str]`` arm of ``PROFILE_REGISTRATIONS`` and convert
+            # entries to ``list[str | Callable[..., Any]]`` so the
+            # dispatcher's invariant parameter accepts them.
             registration_map=REGISTRATION_MAP,
             register_all_fn=register_all_tool_groups,
             mandatory_groups=FASTBLOCKS_MANDATORY_GROUPS,
@@ -147,7 +158,13 @@ class FastBlocksMCPServer:
             # ty thinks FastMCP.run returns None; the installed fastmcp
             # version exposes an async run() — pre-existing in this repo,
             # silently OK at runtime.
-            await self._server.run()  # ty: ignore[invalid-await]
+            await self._server.run()  # type: ignore[func-returns-value,misc]  # ty: ignore[invalid-await]
+            # The bundled fastmcp stub types ``run()`` as ``None``
+            # return; the installed fastmcp 3.x exposes it as an
+            # awaitable. mypy emits ``func-returns-value`` and
+            # ``misc`` (await on None). Removal plan: pin fastmcp stub
+            # version with correct return type, or guard with
+            # ``if asyncio.iscoroutine(self._server.run())``.
         except Exception:
             logger.exception("MCP server error")
             raise
@@ -161,7 +178,11 @@ class FastBlocksMCPServer:
             logger.info("Stopping FastBlocks MCP server...")
             # Server shutdown will be handled by Oneiric
             # ty doesn't see .stop() on FastMCP; it's added at runtime.
-            await self._server.stop()  # ty: ignore[unresolved-attribute]
+            await self._server.stop()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+            # ``FastMCP[Any]`` stubs don't expose ``.stop()``; runtime
+            # adds it via the transport mixin. Removal plan: cast to
+            # ``Any`` before calling or vendor a minimal Protocol
+            # describing the lifecycle surface.
         except Exception:
             logger.exception("Error stopping MCP server")
 

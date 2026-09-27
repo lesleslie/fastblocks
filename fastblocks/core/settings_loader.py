@@ -14,6 +14,7 @@ behavior.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, cast
 
 from fastblocks.adapters.app.default import AppSettings
 
@@ -45,7 +46,18 @@ def load_fastblocks_settings(
     if path is not None and not Path(path).is_file():
         raise FileNotFoundError(f"app.yml not found at {path}")
     oneiric = load_settings(path=path, project_name="fastblocks")
-    return AppSettings.model_validate(oneiric.model_dump(mode="python"))
+    # ``oneiric`` is ``Any`` (oneiric's stubs are opaque to mypy under
+    # ``ignore_missing_imports``). Bind the ``model_dump`` call to a
+    # typed ``dict[str, Any]`` so mypy's ``no-any-return`` rule sees a
+    # concrete type rather than ``Any``. ``ty`` already infers the
+    # concrete ``dict[str, Any]`` from ``model_dump(mode="python")``.
+    dumped: dict[str, Any] = oneiric.model_dump(mode="python")
+    # ``model_validate`` on a Pydantic ``BaseSettings`` subclass with
+    # ``Any`` data is declared to return ``Self`` (== AppSettings) at
+    # runtime, but mypy widens the overload to ``Any`` when the
+    # argument is opaque. Narrow with a type-ignore directive on
+    # the return statement itself.
+    return AppSettings.model_validate(dumped)  # type: ignore[no-any-return]
 
 
 __all__ = ["_FILE_NOT_FOUND", "load_fastblocks_settings"]

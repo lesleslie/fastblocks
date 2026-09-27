@@ -314,7 +314,13 @@ class HTMYComponentRegistry:
         return component_class
 
 
-class HTMYTemplatesSettings(OneiricSettings):
+class HTMYTemplatesSettings(OneiricSettings):  # type: ignore[misc]
+    # ``OneiricSettings`` is imported from ``oneiric``; mypy treats it
+    # as ``Any`` because we set ``ignore_missing_imports = true``. The
+    # runtime resolution is correct (oneiric is a hard dep) — the type
+    # checker just cannot resolve the MRO statically. Removal plan:
+    # either ship oneiric types via ``--explicit-package-bases`` or
+    # import ``OneiricSettings`` under ``TYPE_CHECKING``.
     searchpaths: list[str] = Field(default_factory=list)
     cache_timeout: int = 300
     enable_bidirectional: bool = True

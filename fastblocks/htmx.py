@@ -60,7 +60,7 @@ def _run_async_safely[T](coro: Coroutine[t.Any, t.Any, T]) -> T:
     except RuntimeError:
         with ThreadPoolExecutor(max_workers=1) as executor:
             ctx = contextvars.copy_context()
-            return cast(T, executor.submit(ctx.run, asyncio.run, coro).result())
+            return executor.submit(ctx.run, asyncio.run, coro).result()  # ty: ignore[invalid-return-type]
     raise RuntimeError("use the native async path inside an active event loop")
 
 
@@ -184,7 +184,22 @@ def _get_header(scope: Scope, key: bytes) -> str | None:
             if k.lower() == b"%s-uri-autoencoded" % key_lower and v == b"true":
                 should_unquote = True
     except (KeyError, UnicodeDecodeError) as e:
-        debug(f"HtmxDetails: Error processing header {key}: {e}")
+        # ``KeyError.args[0]`` and ``UnicodeDecodeError`` payloads can be
+        # bytes (e.g. raw header values); mypy's ``str-bytes-safe``
+        # rule flags ``f"{e}"`` and ``f"{key}"`` because the formatter
+        # could embed a bytes-literal repr. Decode any bytes payloads
+        # through ``errors="replace"`` so the formatted output is
+        # always ``str`` even for invalid UTF-8 sequences. ``key`` is
+        # declared as ``bytes`` (HTTP wire format) — decode the same
+        # way for the debug log.
+        first = e.args[0] if e.args else ""
+        msg: str = (
+            first.decode("utf-8", errors="replace")
+            if isinstance(first, bytes)
+            else str(first)
+        )
+        key_str = key.decode("utf-8", errors="replace")
+        debug(f"HtmxDetails: Error processing header {key_str}: {msg}")
         return None
 
     # Return None if no value found
@@ -195,13 +210,13 @@ def _get_header(scope: Scope, key: bytes) -> str | None:
     try:
         return unquote(value) if should_unquote else value
     except (ValueError, UnicodeDecodeError) as e:
-        debug(f"HtmxDetails: Error unquoting header value: {e}")
+        debug(f"HtmxDetails: Error unquoting header value: {e!r}")
         return value
 
 
 HtmxScope = dict[str, t.Any]
 
-if STARLETTE_AVAILABLE and StarletteRequest is not t.Any:
+if STARLETTE_AVAILABLE:
 
     class HtmxRequest(StarletteRequest):
         scope: HtmxScope

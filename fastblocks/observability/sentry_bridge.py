@@ -68,7 +68,7 @@ from .errors import SentryImportError
 from .loggers import get_logger
 
 try:
-    import sentry_sdk as _sentry_sdk  # type: ignore[import-not-found]
+    import sentry_sdk as _sentry_sdk
 
     _SENTRY_SDK_AVAILABLE = True
     _SENTRY_SDK_IMPORT_ERROR: Exception | None = None
