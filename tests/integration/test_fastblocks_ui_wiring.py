@@ -6,34 +6,59 @@ Per Phase 1.5 spec Task 8 Integration Contract:
   ui_field, ui_alert, ui_container
 - Demonstrable by: this test asserting the keys are present after init
 - Rollback signal: page-render failure in examples/landing/ (deferred to Phase 2)
-- Observability added: structured log line at the wiring call site
+- Observability present: structured log line at style_registry.py:64-81
 
-Exercise the exact production wiring path at
-``fastblocks/adapters/templates/jinja2.py:974-978``: import
-``register_style_functions`` (the dispatcher) and invoke it with
-``style_name="fastblocks_ui"`` (the value ``config.app.style`` would
-resolve to in a default fastblocks deployment). Asserts all 5
-fastblocks-ui globals land in ``env.globals`` per the corrected
-code-architect S1 review (which widened the assertion set from the
-original 2-key version).
+Exercises the full production wiring path through ``Templates().init()``
+(rather than calling ``register_style_functions`` directly) so that
+the production ``suppress(Exception)`` wrapper at
+``jinja2.py:974-978`` plus the ``config.app.style`` resolution are
+both exercised end-to-end. Asserts all 5 fastblocks-ui globals land
+in ``env.globals`` per the corrected code-architect S1 review (which
+widened the assertion set from the original 2-key version).
 """
 from __future__ import annotations
 
-import jinja2
+from unittest.mock import MagicMock
+
 import pytest
 
-from fastblocks.core.style_registry import register_style_functions
+from fastblocks.adapters.templates.jinja2 import Templates
 
 
 REQUIRED_UI_GLOBALS = ("ui_button", "ui_card", "ui_field", "ui_alert", "ui_container")
 
 
-@pytest.mark.integration
-def test_all_ui_helpers_registered_on_env() -> None:
-    """All 5 fastblocks-ui globals are present after register_style_functions."""
-    env = jinja2.Environment()
-    register_style_functions(env, "fastblocks_ui")
+def _build_templates() -> Templates:
+    """Construct a Templates() ready for the production init() path.
 
+    Sets the minimum attributes init_envs reads (config.templates.*,
+    config.app.style) and stubs app_searchpaths so get_searchpaths is
+    not invoked. AsyncJinja2Templates and register_style_functions are
+    the real production objects — only the discovery/mocking surface
+    is faked.
+    """
+    templates = Templates()
+    config = MagicMock()
+    config.app = MagicMock()
+    config.app.style = "fastblocks_ui"
+    config.templates = MagicMock()
+    config.templates.extensions = []
+    config.templates.context_processors = []
+    config.templates.loader = None
+    config.templates.delimiters = {}
+    templates.config = config
+    templates.logger = MagicMock()
+    templates.app_searchpaths = []
+    return templates
+
+
+@pytest.mark.integration
+async def test_all_ui_helpers_registered_on_env() -> None:
+    """All 5 fastblocks-ui globals are present after Templates().init()."""
+    templates = _build_templates()
+    await templates.init()
+
+    env = templates.app.env
     missing = [k for k in REQUIRED_UI_GLOBALS if k not in env.globals]
     assert not missing, (
         f"Missing UI globals from env.globals: {missing} "
@@ -42,11 +67,12 @@ def test_all_ui_helpers_registered_on_env() -> None:
 
 
 @pytest.mark.integration
-def test_ui_helpers_are_callable() -> None:
+async def test_ui_helpers_are_callable() -> None:
     """The registered ui_* globals are callable (lambda wrappers around fastblocks_ui)."""
-    env = jinja2.Environment()
-    register_style_functions(env, "fastblocks_ui")
+    templates = _build_templates()
+    await templates.init()
 
+    env = templates.app.env
     for name in REQUIRED_UI_GLOBALS:
         fn = env.globals.get(name)
         assert callable(fn), f"{name} is not callable: {fn!r}"
