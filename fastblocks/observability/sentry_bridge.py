@@ -73,7 +73,7 @@ try:
     _SENTRY_SDK_AVAILABLE = True
     _SENTRY_SDK_IMPORT_ERROR: Exception | None = None
 except ImportError as _e:  # pragma: no cover - exercised only in slim envs
-    _sentry_sdk = None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+    _sentry_sdk = None  # type: ignore[assignment]
     _SENTRY_SDK_AVAILABLE = False
     _SENTRY_SDK_IMPORT_ERROR = _e
 
