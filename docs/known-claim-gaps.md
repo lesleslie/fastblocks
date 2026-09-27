@@ -11,5 +11,6 @@ no-claim-without-evidence lint do NOT show these numbers.
 | `enterprise-grade applications` / `enterprise capability checklists` / `enterprise capability checklists` | `README.md:24`, `:82` | Vague marketing claim, not a measurable surface. | Trim or qualify with a concrete capability list (multi-tenant? RBAC? audit log?); defer to Phase 2 docs pass. |
 | `frameworks designed to make async/await syntax for high performance` / `exceptional flexibility` | `README.md:40`, `:22` | Qualitative; no benchmark to anchor it. | Replace with measured throughput numbers once D7 expansion lands. |
 | `Style: UI framework to use (vanilla, webawesome, kelp, or custom)` (legacy wording) | `README.md:1140` | The valid styles today are `vanilla` and `fastblocks_ui`; `webawesome`, `kelp`, `custom` were removed in 0.30.0. | Fixed in this commit (replaced with current values); the legacy wording is no longer a claim gap. |
+| A11y axe-core tests (29) | `tests/a11y/test_components_a11y.py` | Requires Playwright browser binary (axe-playwright-python + playwright dev-deps installed; chromium binary not) | Phase 1.5+ environment work |
 
 <!-- add rows for any claim not yet gated -->
