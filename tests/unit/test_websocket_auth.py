@@ -111,6 +111,7 @@ class TestFastBlocksWebSocketAuthenticationIntegration:
     """Integration tests for FastBlocks WebSocket authentication."""
 
     @pytest.mark.asyncio
+    @pytest.mark.serial  # Wave C: FastblocksWebSocketServer on port 8685 races with sibling tests in other files
     async def test_server_start_without_auth(self):
         """Test that server starts without authentication."""
         server = FastblocksWebSocketServer(

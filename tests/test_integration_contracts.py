@@ -17,6 +17,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.serial  # Wave C: validation service singleton interacts with cross-file sanitizer state
 def test_sanitizer_failure_rejects_input(monkeypatch: pytest.MonkeyPatch) -> None:
     """A broken sanitizer must NOT return the original untrusted value.
 
@@ -49,6 +50,7 @@ def test_sanitizer_failure_rejects_input(monkeypatch: pytest.MonkeyPatch) -> Non
 
 
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: event-bus subscriber state shared across xdist workers
 async def test_publish_reports_failed_subscriber() -> None:
     """A failing subscriber must mark the publish result False."""
     from fastblocks._events_integration import (
@@ -72,6 +74,7 @@ async def test_publish_reports_failed_subscriber() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: event-bus subscriber state shared across xdist workers
 async def test_subscribe_returns_false_on_failure() -> None:
     """A failed subscription must NOT return True."""
     from fastblocks._events_integration import EventPublisher, EventSubscription
@@ -164,6 +167,7 @@ async def test_unsupported_workflow_step_is_recorded_as_failed() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: workflow state singleton shared across xdist workers
 async def test_workflow_step_exception_is_recorded_in_state() -> None:
     """A handler that raises must set the step state to failed with error."""
     from fastblocks._workflows_integration import (
@@ -210,6 +214,7 @@ async def test_workflow_step_exception_is_recorded_in_state() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: health summary state singleton shared across xdist workers
 async def test_health_summary_preserves_successful_component_status() -> None:
     """A failing one component must not erase healthy sibling status."""
     from fastblocks._health_integration import (

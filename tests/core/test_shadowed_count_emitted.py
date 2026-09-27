@@ -13,6 +13,7 @@ import pytest
 
 
 @pytest.mark.unit
+@pytest.mark.serial  # Wave C: emit_startup_log interacts with cross-worker resolver shadowed-candidate state
 def test_emit_startup_log_reports_shadowed_count(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

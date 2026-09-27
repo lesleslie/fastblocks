@@ -147,6 +147,7 @@ def _build_server_with_all_gates_true() -> FastMCP:
 
 
 @pytest.mark.unit
+@pytest.mark.serial  # Wave C: profile-driven registration interacts with cross-file MCP registration state
 async def test_consumer_pattern_registers_template_capability(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -193,6 +194,7 @@ async def test_consumer_pattern_registers_template_capability(
 
 
 @pytest.mark.unit
+@pytest.mark.serial  # Wave C: profile-driven registration interacts with cross-file MCP registration state
 async def test_consumer_pattern_full_profile_registers_all(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -237,6 +239,7 @@ async def test_consumer_pattern_full_profile_registers_all(
 
 
 @pytest.mark.unit
+@pytest.mark.serial  # Wave C: profile-driven registration interacts with cross-file MCP registration state
 async def test_consumer_pattern_minimal_profile_registers_zero(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

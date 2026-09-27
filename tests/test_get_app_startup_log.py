@@ -193,6 +193,7 @@ async def test_get_app_startup_log_passed_correct_facade_type(
 
 @pytest.mark.unit
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: get_app() singleton interacts with cross-file main._resolver state
 async def test_get_app_emits_log_with_expected_format(
     reset_main_globals: Any,
     capsys: pytest.CaptureFixture[str],

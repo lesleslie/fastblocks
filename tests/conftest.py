@@ -143,6 +143,89 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     When run without xdist (e.g. ``pytest -p no:xdist`` in a debugger)
     the marker is intentionally a no-op — serial tests just run, which
     is the whole point of the marker.
+
+    Phase 1.5+ Wave C serial-marks (added 2026-09-27): 25 cross-file
+    pollution guards (17 from initial baseline delta + 7 surfaced
+    after first verification iteration + 1 surfaced after second
+    verification iteration; each marks a singleton or cross-worker
+    state interaction). Each marked test was observed failing in
+    some xdist runs while passing serial 5/5; in serial isolation
+    each test also passes. Root cause is nondeterministic pollution
+    from other tests in the suite (singleton state, cross-worker
+    env var propagation, monkeypatch leak across modules); a
+    per-test fixture would not contain the cross-file pollution
+    source. Brief default order "root-cause-fix > serial-mark >
+    punt" yields serial-mark here because root-causing all 25 in one
+    cycle is impractical, and the delta set grows when the
+    parallel-execution topology shifts (so serial-marking reveals
+    previously-hidden flakes in dependent tests).
+
+    Initial delta (17 tests):
+    - tests/adapters/templates/test_enhanced_cache_warming_loop.py::
+      TestEnhancedCacheMaintenanceLoop.test_maintenance_loop_does_not_die_on_transient_failure
+      — shared asyncio task state across xdist workers
+    - tests/adapters/templates/test_enhanced_cache_warming_loop.py::
+      TestEnhancedCacheMaintenanceLoop.test_metrics_counter_does_not_crash_during_tick
+      — shared asyncio task state across xdist workers
+    - tests/mcp/test_consumer_pattern_wiring.py::test_consumer_pattern_registers_template_capability
+      — cross-file MCP registration state pollution
+    - tests/mcp/test_consumer_pattern_wiring.py::test_consumer_pattern_full_profile_registers_all
+      — cross-file MCP registration state pollution
+    - tests/mcp/test_consumer_pattern_wiring.py::test_consumer_pattern_minimal_profile_registers_zero
+      — cross-file MCP registration state pollution
+    - tests/mcp/test_initialization_completeness.py::
+      TestInitializationCompleteness.test_initialize_marks_initialized_false_on_registration_failure
+      — FastBlocksMCPServer singleton across xdist workers
+    - tests/mcp/test_fastmcp_v2_imports.py::test_server_module_can_construct_fastmcp_instance_v2
+      — FastBlocksMCPServer singleton across xdist workers
+    - tests/performance/test_template_performance.py::
+      TestTemplateRenderingPerformance.test_fragment_rendering_performance
+      — HTMX fragment rendering nondeterministic timing under xdist
+    - tests/test_get_app_startup_log.py::test_get_app_emits_log_with_expected_format
+      — get_app() singleton interacts with cross-file main._resolver state
+    - tests/unit/test_tool_profile.py::test_full_profile_registers_eight_tools
+      — profile env var interacts with cross-worker monkeypatch + import state
+    - tests/unit/test_tool_profile.py::test_standard_profile_registers_eight_tools
+      — profile env var interacts with cross-worker monkeypatch + import state
+    - tests/unit/test_tool_profile.py::test_minimal_profile_registers_only_discover_tools
+      — profile env var interacts with cross-worker monkeypatch + import state
+    - tests/unit/test_tool_profile.py::test_mandatory_tools_subset_holds_at_all_profiles
+      — profile env var interacts with cross-worker monkeypatch + import state
+    - tests/unit/test_tool_profile.py::test_unset_env_var_falls_back_to_full
+      — profile env var interacts with cross-worker monkeypatch + import state
+    - tests/core/test_register_candidate_strict.py::test_lenient_method_still_returns_false_on_invalid
+      — register_candidate interacts with cross-worker resolver singleton state
+    - tests/core/test_register_candidate_strict.py::test_helper_register_candidate_returns_false_on_invalid_domain
+      — register_candidate interacts with cross-worker resolver singleton state
+    - tests/core/test_register_candidate_strict.py::test_lenient_path_still_uses_documented_swallow_set
+      — register_candidate interacts with cross-worker resolver singleton state
+
+    Topology-shift surfaced (7 tests, added during verification):
+    - tests/core/test_shadowed_count_emitted.py::test_emit_startup_log_reports_shadowed_count
+      — emit_startup_log interacts with cross-worker resolver shadowed-candidate state
+    - tests/test_integration_contracts.py::test_sanitizer_failure_rejects_input
+      — validation service singleton interacts with cross-file sanitizer state
+    - tests/test_integration_contracts.py::test_publish_reports_failed_subscriber
+      — event-bus subscriber state shared across xdist workers
+    - tests/test_integration_contracts.py::test_subscribe_returns_false_on_failure
+      — event-bus subscriber state shared across xdist workers
+    - tests/test_integration_contracts.py::test_workflow_step_exception_is_recorded_in_state
+      — workflow state singleton shared across xdist workers
+    - tests/test_integration_contracts.py::test_health_summary_preserves_successful_component_status
+      — health summary state singleton shared across xdist workers
+    - tests/test_actions_sync.py::TestSyncCache::test_sync_cache_error_handling
+      — cache singleton resolves via cross-worker patched path
+
+    Topology-shift surfaced (1 test, added during 2nd verification):
+    - tests/unit/test_websocket_auth.py::
+      TestFastBlocksWebSocketAuthenticationIntegration.test_server_start_without_auth
+      — FastblocksWebSocketServer on port 8685 races with sibling tests in other files
+
+    Punted to Wave E (not xdist pollution — fails in BOTH modes 5/5):
+    - tests/test_htmx_property.py::TestIsHtmx::test_is_htmx_with_scope
+      — Hypothesis counterexample (pre-existing nondeterministic test-design bug;
+        passes with profile=debug but fails with profile=ci due to example-count
+        threshold; requires deeper Hypothesis profile tuning in Wave E).
     """
     if not config.pluginmanager.hasplugin("xdist"):
         return

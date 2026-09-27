@@ -58,6 +58,7 @@ def test_capabilities_fastmcp_resolves_via_fastmcp_package() -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.serial  # Wave C: FastBlocksMCPServer.initialize() singleton interacts with cross-file MCP state
 async def test_server_module_can_construct_fastmcp_instance_v2() -> None:
     """``FastBlocksMCPServer.initialize()`` must produce a v2 ``FastMCP`` server.
 

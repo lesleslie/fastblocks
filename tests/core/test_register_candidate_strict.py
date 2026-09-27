@@ -99,6 +99,7 @@ def test_strict_method_returns_none_on_success() -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.serial  # Wave C: register_candidate interacts with cross-worker resolver singleton state
 def test_lenient_method_still_returns_false_on_invalid() -> None:
     """The original ``register_candidate`` MUST keep its bool contract.
 
@@ -164,6 +165,7 @@ def test_helper_register_candidate_strict_raises_on_invalid_domain() -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.serial  # Wave C: register_candidate interacts with cross-worker resolver singleton state
 def test_helper_register_candidate_returns_false_on_invalid_domain() -> None:
     """The legacy ``oneiric_helper.register_candidate`` (lenient) still returns False."""
     registry = FastblocksRegistry(get_resolver())
@@ -218,6 +220,7 @@ def test_strict_method_does_not_swallow_runtime_errors() -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.serial  # Wave C: register_candidate interacts with cross-worker resolver singleton state
 def test_lenient_path_still_uses_documented_swallow_set() -> None:
     """Pin: ValidationError, ValueError, TypeError all return False.
 

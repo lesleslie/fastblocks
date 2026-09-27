@@ -82,6 +82,7 @@ class TestInitializationCompleteness:
         assert server._initialized is False
 
     @pytest.mark.asyncio
+    @pytest.mark.serial  # Wave C: FastBlocksMCPServer singleton interacts with cross-file MCP state under xdist
     async def test_initialize_marks_initialized_false_on_registration_failure(
         self,
         monkeypatch: pytest.MonkeyPatch,

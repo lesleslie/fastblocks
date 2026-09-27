@@ -118,6 +118,7 @@ class TestSyncCache:
     # Removed tests with non-existent parameters
 
     @pytest.mark.asyncio
+    @pytest.mark.serial  # Wave C: cache singleton resolves via cross-worker patched path
     async def test_sync_cache_error_handling(self) -> None:
         """Test cache sync error handling."""
         with patch("fastblocks.actions.sync.cache.resolve_instance") as mock_get:

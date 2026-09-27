@@ -86,6 +86,7 @@ class TestTemplateRenderingPerformance:
         assert result.cache_hit is True
 
     @pytest.mark.benchmark(group="template-rendering")
+    @pytest.mark.serial  # Wave C: HTMX fragment rendering has nondeterministic timing under xdist parallelism
     async def test_fragment_rendering_performance(self, benchmark, renderer):
         """Benchmark HTMX fragment rendering performance."""
         from starlette.requests import Request

@@ -155,6 +155,7 @@ EXPECTED_FULL_TOOLS: set[str] = {
 
 
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: profile env var interacts with cross-worker monkeypatch + import state
 async def test_full_profile_registers_eight_tools(monkeypatch: pytest.MonkeyPatch) -> None:
     """FULL profile must register all 7 fastblocks tools + the discover_tools meta-tool."""
     from fastmcp import FastMCP
@@ -188,6 +189,7 @@ async def test_full_profile_registers_eight_tools(monkeypatch: pytest.MonkeyPatc
 
 
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: profile env var interacts with cross-worker monkeypatch + import state
 async def test_standard_profile_registers_eight_tools(monkeypatch: pytest.MonkeyPatch) -> None:
     """STANDARD profile must register the same 8 tools as FULL (Tier-A trivial mapping)."""
     from fastmcp import FastMCP
@@ -220,6 +222,7 @@ async def test_standard_profile_registers_eight_tools(monkeypatch: pytest.Monkey
 
 
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: profile env var interacts with cross-worker monkeypatch + import state
 async def test_minimal_profile_registers_only_discover_tools(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -261,6 +264,7 @@ async def test_minimal_profile_registers_only_discover_tools(
 
 
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: profile env var interacts with cross-worker monkeypatch + import state
 async def test_mandatory_tools_subset_holds_at_all_profiles(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -299,6 +303,7 @@ async def test_mandatory_tools_subset_holds_at_all_profiles(
 
 
 @pytest.mark.asyncio
+@pytest.mark.serial  # Wave C: profile env var interacts with cross-worker monkeypatch + import state
 async def test_unset_env_var_falls_back_to_full(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

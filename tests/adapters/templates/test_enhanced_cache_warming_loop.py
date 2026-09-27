@@ -134,6 +134,7 @@ class TestEnhancedCacheMaintenanceLoop:
     """Step 6 -- the maintenance loop must keep running across
     transient failures instead of silently dying."""
 
+    @pytest.mark.serial  # Wave C: maintenance loop interacts with shared task state across xdist workers
     async def test_maintenance_loop_does_not_die_on_transient_failure(
         self,
     ) -> None:
@@ -156,6 +157,7 @@ class TestEnhancedCacheMaintenanceLoop:
             with suppress(asyncio.CancelledError, Exception):
                 await runner
 
+    @pytest.mark.serial  # Wave C: maintenance loop interacts with shared task state across xdist workers
     async def test_metrics_counter_does_not_crash_during_tick(
         self,
         caplog: pytest.LogCaptureFixture,
