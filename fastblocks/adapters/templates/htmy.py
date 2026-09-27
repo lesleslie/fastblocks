@@ -27,7 +27,7 @@ Created: 2025-01-13
 
 from __future__ import annotations
 
-import asyncio
+import inspect
 import typing as t
 from contextlib import suppress
 from enum import Enum
@@ -587,7 +587,7 @@ class HTMYTemplates(TemplatesBase):
                 "_request": request,
             }
 
-            if asyncio.iscoroutinefunction(component_instance.htmy):
+            if inspect.iscoroutinefunction(component_instance.htmy):
                 rendered_content = await component_instance.htmy(htmy_context)
             else:
                 rendered_content = component_instance.htmy(htmy_context)
@@ -624,7 +624,7 @@ class HTMYTemplates(TemplatesBase):
             if self.jinja_templates and hasattr(self.jinja_templates, "app"):
                 try:
                     template = self.jinja_templates.app.get_template(template_name)
-                    if asyncio.iscoroutinefunction(template.render):
+                    if inspect.iscoroutinefunction(template.render):
                         rendered = await template.render(template_context)
                     else:
                         rendered = template.render(template_context)
@@ -745,7 +745,7 @@ class HTMYTemplates(TemplatesBase):
                 and hasattr(self.jinja_templates.app, "render_block")
             ):
                 try:
-                    if asyncio.iscoroutinefunction(
+                    if inspect.iscoroutinefunction(
                         self.jinja_templates.app.render_block
                     ):
                         rendered = await self.jinja_templates.app.render_block(

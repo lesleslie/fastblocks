@@ -425,7 +425,7 @@ class ComponentBase(ABC):
 
     async def async_htmy(self, context: dict[str, Any]) -> str:
         """Async version of htmy method."""
-        if asyncio.iscoroutinefunction(self.htmy):
+        if inspect.iscoroutinefunction(self.htmy):
             return t.cast(str, await self.htmy(context))
         return self.htmy(context)
 
@@ -802,7 +802,7 @@ class ComponentLifecycleManager:
         """Execute lifecycle hooks for an event."""
         for hook in self._lifecycle_hooks.get(event, []):
             try:
-                if asyncio.iscoroutinefunction(hook):
+                if inspect.iscoroutinefunction(hook):
                     await hook(**kwargs)
                 else:
                     hook(**kwargs)
@@ -1069,9 +1069,9 @@ class AdvancedHTMYComponentRegistry:
             # Render component
             if hasattr(
                 component_instance, "async_htmy"
-            ) and asyncio.iscoroutinefunction(component_instance.async_htmy):
+            ) and inspect.iscoroutinefunction(component_instance.async_htmy):
                 rendered_content = await component_instance.async_htmy(enhanced_context)
-            elif asyncio.iscoroutinefunction(component_instance.htmy):
+            elif inspect.iscoroutinefunction(component_instance.htmy):
                 rendered_content = await component_instance.htmy(enhanced_context)
             else:
                 rendered_content = component_instance.htmy(enhanced_context)
