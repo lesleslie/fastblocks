@@ -18,7 +18,10 @@ HTML-escaped.
 
 from __future__ import annotations
 
+import pytest
 
+
+@pytest.mark.serial  # xdist flake: AsyncJinja2Templates singleton env mutation race; deselected under xdist by tests/conftest.py pytest_collection_modifyitems
 def test_jinja2_environment_default_autoescape_is_true():
     """D6: the jinja2 environment created by the default template
     adapter must enable autoescape by default — this is the XSS

@@ -11,7 +11,7 @@
 [![Framework: FastMCP](https://img.shields.io/badge/framework-FastMCP-0ea5e9)](https://github.com/jlowin/fastmcp)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Python: 3.14+](https://img.shields.io/badge/python-3.14%2B-green)](https://www.python.org/downloads/)
-![Coverage](https://img.shields.io/badge/coverage-62%25-yellow)
+![Coverage](https://img.shields.io/badge/coverage-67.81%25-yellow)
 
 > _Last reviewed: 2025-11-19_
 

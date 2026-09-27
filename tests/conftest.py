@@ -122,6 +122,34 @@ def pytest_configure(config: pytest.Config) -> None:
         "markers",
         "websocket: mark test as needing the mcp_common.websocket stub",
     )
+    config.addinivalue_line(
+        "markers",
+        "serial: mark test as serial (deselected under xdist; see pytest_collection_modifyitems hook below)",
+    )
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Deselect @pytest.mark.serial tests when pytest-xdist is active.
+
+    Background (Phase 1.5, Fix 2): pytest-xdist has no built-in support
+    for a ``serial`` marker — the marker is descriptive only and workers
+    happily run marked tests in parallel, racing on shared module state
+    (asyncpg pools, asyncio event-loop singletons, jinja2 env caches).
+    Without this hook, applying ``@pytest.mark.serial`` to a test is a
+    no-op against the xdist default in pyproject.toml (``-n auto``), so
+    coverage ratchets past failing tests that the serial guard was meant
+    to neutralize.
+
+    When run without xdist (e.g. ``pytest -p no:xdist`` in a debugger)
+    the marker is intentionally a no-op — serial tests just run, which
+    is the whole point of the marker.
+    """
+    if not config.pluginmanager.hasplugin("xdist"):
+        return
+    skip_serial = pytest.mark.skip(reason="marked serial (run with -p no:xdist)")
+    for item in items:
+        if "serial" in item.keywords:
+            item.add_marker(skip_serial)
 
     # Install the mcp_common.websocket stub at session scope — must be
     # session-scope because websocket test files import at collection time.
