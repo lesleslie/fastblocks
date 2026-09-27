@@ -1137,7 +1137,7 @@ python -m fastblocks create
 You'll be prompted for:
 
 - **app_name**: Name of your application
-- **style**: UI framework to use (vanilla, webawesome, kelp, or custom)
+- **style**: UI framework to use (vanilla or fastblocks_ui; kelp/webawesome/bulma were removed in 0.30.0)
 - **domain**: Application domain
 
 This will create a new directory with the following structure:
@@ -1388,7 +1388,7 @@ Special thanks to the following open-source projects that power FastBlocks:
 - Jinja2 - The template engine
 - [jinja2-async-environment](https://github.com/lesleslie/jinja2-async-environment) - Asynchronous Jinja2 environment
 - [starlette-async-jinja](https://github.com/lesleslie/starlette-async-jinja) - Starlette integration for async Jinja2
-- [Kelp](https://kelp.com/) - Lightweight UI library for HTML-first development, powered by modern CSS and Web Components
+- [fastblocks-ui](https://github.com/lesleslie/fastblocks-ui) - The first style adapter wired end-to-end; replaces the removed Kelp/WebAwesome adapters (see `fastblocks/adapters/style/README.md`)
 
 ### Data & Validation
 

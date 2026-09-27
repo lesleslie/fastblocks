@@ -149,3 +149,23 @@ jobs:
 
       - name: Run pip-audit with strict CVE filtering
         run: uv run pip-audit --strict
+
+  lychee:
+    # D9: docs-vs-code audit gate. Runs the lychee link checker
+    # against every Markdown file in the repo in offline mode
+    # (no external network calls). The job fails on any broken
+    # internal link; external links are excluded by the
+    # ``.lycheecache`` config (offline mode skips them by
+    # default, so a missing badge or shields.io URL won't trip
+    # the gate).
+    name: lychee (D9 link gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install lychee
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/lycheeverse/lychee/master/lychee-release-install.sh | sh
+
+      - name: Run lychee in offline mode against all Markdown files
+        run: ./lychee --offline --no-progress '**/*.md'

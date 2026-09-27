@@ -236,12 +236,12 @@ If using the hybrid manager's secure environment (line 334-336), ensure that sec
 
 ## Related Issues
 
-This issue was discovered while fixing the ACB templates adapter, which uses the same jinja2-async-environment library. The same pattern fix was applied to ACB and should be applied here.
+This issue was originally discovered while fixing the templates adapter that pre-dated the Oneiric migration (ACB → Oneiric, v0.20.0). The same jinja2-async-environment pattern fix applies here as it did then; the FastBlocks templates adapter (`fastblocks/adapters/templates/jinja2.py`) is the current implementation that consumes the library.
 
 **Related Documentation**:
 
 - jinja2-async-environment bug analysis: `https://github.com/lesleslie/jinja2-async-environment/blob/main/docs/TEMPLATE_INHERITANCE_BUG_ANALYSIS.md`
-- ACB templates adapter implementation: `https://github.com/lesleslie/acb/blob/main/acb/adapters/templates/jinja2.py`
+- Current FastBlocks templates adapter: `fastblocks/adapters/templates/jinja2.py`
 
 ## Conclusion
 
