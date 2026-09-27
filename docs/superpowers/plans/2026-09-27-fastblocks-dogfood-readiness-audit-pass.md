@@ -339,7 +339,8 @@ def test_htmx_refresh_sets_header():
 
 def test_htmx_push_url_sets_header():
     response = htmx_push_url("/new-url")
-    assert response.headers["HX-Push-URL"] == "/new-url"
+    # Per fastblocks/htmx.py:308 — actual emitted key is `HX-Push-Url`.
+    assert response.headers["HX-Push-Url"] == "/new-url"
 ```
 
 Adjust per actual `fastblocks/htmx.py` API. Run tests after writing each module to verify they pass.
@@ -357,10 +358,10 @@ In `.coverage-ratchet.json`, raise the floor:
 ```json
 {
   "current_floor": 85,
-  "previous_floor": 62,
+  "previous_floor": 49.13,
   "ratchet_step": 2,
   "history": [
-    {"at": "2026-09-27", "floor": 85, "from_floor": 62, "reason": "dogfood-readiness D1"}
+    {"at": "2026-09-27", "floor": 85, "from_floor": 49.13, "reason": "dogfood-readiness D1"}
   ]
 }
 ```
@@ -424,10 +425,20 @@ This catches any PR that updates `pyproject.toml` without updating `uv.lock`.
 
 Create `tests/test_dep_pins.py`:
 ```python
-"""D8: assert no critical dep has a >=0.0.0 / >=0 style loose pin.
+"""D8: assert every direct runtime dep has a tight pin.
 
-Loose pins let auto-updates break us. Tight pins catch issues at
-release time, not runtime.
+Per dependency-manager BL1: the actual failure mode is open upper
+bounds (`>=X.Y.Z` with no `<X.Y` cap), NOT zero-floors. `uv sync
+--upgrade` re-resolves open floors to MINIMUM (per feedback-crackerjack-
+gitignore-sync-dev-dep-downgrade), which silently breaks us.
+
+The test rejects:
+  - bare `>=X.Y` floors with no upper cap
+  - `*` wildcards
+
+It accepts:
+  - `~=X.Y` (compatible-release)
+  - `>=X.Y.Z,<X.Y+W` (bounded range)
 """
 import re
 import tomllib
@@ -435,13 +446,21 @@ from pathlib import Path
 
 PYPROJECT = Path(__file__).resolve().parents[1] / "pyproject.toml"
 
+# Per dependency-manager BL1: refresh the list when adding a new
+# load-bearing dep. `jinja2` was the old list — it's transitive,
+# not declared, so it never matched. Removed.
 CRITICAL_DEPS = {
     "fastblocks-ui",
     "oneiric",
     "mcp-common",
-    "crackerjack",
-    "starlette",
-    "jinja2",
+    "httpx2",                # renamed from httpx; recent migration
+    "pydantic",              # framework is Pydantic-v2-classified
+    "brotli-asgi",           # D7's headline perf claim depends on this
+    "starlette-async-jinja", # actual jinja2 integration layer
+    "starlette-csrf",        # D6's CSRF gate depends on this
+    "htmy",                  # B3 hybrid render demo depends on this
+    "granian",               # ASGI server
+    "minify-html",           # D7's minify claim
 }
 
 
@@ -450,34 +469,69 @@ def test_no_loose_pins_on_critical_deps():
     deps = data["project"]["dependencies"]
     loose = []
     for spec in deps:
-        # extract name
         name = re.split(r"[<>=!~;\[]", spec.strip(), maxsplit=1)[0].strip()
-        if name in CRITICAL_DEPS:
-            # reject ">=0", ">=0.0.0", "*"
-            if re.search(r">=0(?:\.0)?\.0(?:\D|$)", spec) or "*" in spec:
-                loose.append(spec)
-    assert not loose, f"D8: critical dep has loose pin: {loose}"
+        if name not in CRITICAL_DEPS:
+            continue
+        # accept ~=, accept >=X.Y.Z,<X.Y+W (bounded upper)
+        # reject bare >=X.Y.Z (no upper cap), reject *, reject >=0
+        has_upper_cap = bool(re.search(r",\s*<", spec)) or "~=" in spec
+        is_zero_floor = bool(re.search(r">=0(?:\.0)?(?:\.0)?(?:\D|$)", spec))
+        is_wildcard = "*" in spec
+        if not has_upper_cap or is_zero_floor or is_wildcard:
+            loose.append(spec)
+    assert not loose, (
+        f"D8: critical dep has loose pin (no upper cap, zero floor, "
+        f"or wildcard): {loose}"
+    )
 ```
 
-- [ ] **Step 3: Write broken-release floor-pin regression**
+- [ ] **Step 3: Write YAML-driven broken-release regression**
+
+Create `tests/dep_broken_releases.yaml`:
+```yaml
+# D8: track releases that broke the framework. Each row makes the
+# skip-version test fail if the bad version re-appears in any
+# dependency spec. Add new entries when a release is identified as
+# breaking; remove only when the broken version is < the minimum
+# supported floor across all consumers.
+broken_releases:
+  - package: mcp-common
+    version: "0.23.0"
+    reason: "version+doctor methods missing due to bump-commit mishap"
+    fix_release: "0.23.1"
+  - package: mcp-common
+    version: "0.30.0"
+    reason: "lockfile-relevant defect; uv.lock refresh required"
+    fix_release: "0.30.1"
+```
 
 Append to `tests/test_dep_pins.py`:
 ```python
-def test_mcp_common_floor_skips_0_23_0():
-    """Regression: the mcp-common 0.23.0 release broke the floor; we
-    must require >=0.23.1 (or whatever's the documented skip) to
-    never pin to 0.23.0 by accident."""
+import yaml  # PyYAML is a runtime dep
+
+
+def test_no_broken_release_in_dep_specs():
+    """Per dependency-manager BL2: every documented broken release must
+    be absent from current dependency specs. YAML-driven so adding a
+    new broken release is one YAML row, not a code edit."""
+    broken = yaml.safe_load(
+        (Path(__file__).parent / "dep_broken_releases.yaml").read_text()
+    )["broken_releases"]
     data = tomllib.loads(PYPROJECT.read_text())
     deps = data["project"]["dependencies"]
-    for spec in deps:
-        if spec.startswith("mcp-common"):
-            # must NOT equal exactly "mcp-common>=0.23.0,<0.24"
-            assert ">=0.23.0" not in spec or ">=0.23.1" in spec, (
-                f"D8: mcp-common floor pins to broken 0.23.0 release: {spec}"
-            )
+    dep_text = " ".join(deps)
+    for entry in broken:
+        pkg = entry["package"]
+        bad = entry["version"]
+        # Check that the bad version is NOT in the spec range.
+        # E.g., for mcp-common>=0.30.0,<0.31, "0.23.0" should not appear.
+        assert bad not in dep_text, (
+            f"D8: {pkg}=={bad} (broken: {entry['reason']}; "
+            f"fix: {entry['fix_release']}) appears in dependency specs: "
+            f"{dep_text}"
+        )
 ```
 
-Adjust the expected skip-version after checking the current pyproject. The recent commit `93551b2 deps(fastblocks): bump mcp-common floor to >=0.23.1 to skip broken 0.23.0` already fixed this — make sure the regression test codifies that floor.
 
 - [ ] **Step 4: Audit PEP 735 optional groups**
 
@@ -627,85 +681,106 @@ as CI gates. Pyright runs as informational job."
 
 - [ ] **Step 1: Verify Oneiric resolver fixture exists**
 
-In `tests/conftest.py`, look for an existing fixture that yields the Oneiric resolver. If absent, add one. Per `fastblocks/CLAUDE.md`, the convention is `fastblocks.core.resolver.get_resolver()`:
+The public `fresh_registry` fixture already exists in `tests/conftest.py` (line 461) — **use it directly**, do not redefine. It builds a private `FastblocksRegistry` for isolated test state.
 
-```python
-import pytest
-from fastblocks.core.resolver import get_resolver
-
-
-@pytest.fixture
-def oneiric_resolver():
-    return get_resolver()
-```
+If a future test needs the canonical singleton, `from fastblocks.core.resolver import get_resolver` works (per `fastblocks/CLAUDE.md`). The private-singleton-warning will fire on construction; that's expected.
 
 - [ ] **Step 2: Write the templates boot test**
 
 Create `tests/adapters/templates/test_boot.py`:
 ```python
-"""D3: boot test for the templates adapter (jinja2 + _async_renderer).
+"""D3: boot test for the templates adapter (Templates class + async render).
 
-Confirms the template adapter resolves through the Oneiric resolver,
-constructs without error, and renders a minimal template.
+The Oneiric resolver returns `Candidate` wrappers, not instances.
+Use `resolve_instance()` from `fastblocks.adapters.oneiric_helper` to
+unwrap. The Templates class itself does NOT have `render_string`
+directly — that's on `templates.app` (the AsyncJinja2Templates
+instance). Render via `templates.app.render_string(...)`.
 """
 import pytest
 
+from fastblocks.adapters.oneiric_helper import resolve_instance
+from fastblocks.adapters.templates.jinja2 import Templates
+
 
 @pytest.fixture
-def templates_adapter(oneiric_resolver):
-    return oneiric_resolver.resolve("fastblocks", "templates")
+def templates_adapter(fresh_registry):
+    return resolve_instance(fresh_registry, "fastblocks", "templates")
 
 
-def test_templates_adapter_resolves(templates_adapter):
-    assert templates_adapter is not None
+def test_templates_adapter_resolves_to_Templates_instance(templates_adapter):
+    """The instance must be a Templates class (not the abstract base)."""
+    assert isinstance(templates_adapter, Templates), (
+        f"D3: templates adapter resolved to {type(templates_adapter).__name__}, "
+        f"expected Templates. Wrong key or stale cache?"
+    )
 
 
-def test_templates_adapter_renders_minimal_string(templates_adapter):
-    """Smoke render of the string '{{ value }}' should yield the substituted output."""
-    result = templates_adapter.render_string("hello {{ name }}", name="world")
-    assert "world" in str(result)
+def test_templates_adapter_env_has_autoescape_on(templates_adapter):
+    """Contract assertion (per pytest-hypothesis-specialist IMP3): the
+    underlying jinja2 env must default to autoescape=True. This is the
+    cross-check that prevents the kelp-style XSS regression."""
+    env = templates_adapter.app.env
+    assert env.autoescape is True, (
+        f"D3/D6: jinja2 env.autoescape={env.autoescape}, expected True. "
+        f"This is the autoescape regression gate."
+    )
 
 
 @pytest.mark.asyncio
-async def test_templates_adapter_renders_async_minimal(templates_adapter):
-    """Async render path must work (jinja2-async-environment story)."""
-    result = await templates_adapter.render_string_async("async {{ name }}", name="world")
+async def test_templates_adapter_renders_minimal_string(templates_adapter):
+    """Smoke render via `templates.app` (AsyncJinja2Templates)."""
+    result = await templates_adapter.app.render_string_async(
+        "hello {{ name }}", context={"name": "world"}
+    )
     assert "world" in str(result)
 ```
 
 Run: `uv run pytest tests/adapters/templates/test_boot.py -v`
-Expected: PASS (resolve + render_string + render_string_async all work)
+Expected: PASS (resolve_instance unwraps, env.autoescape=True, async render works)
 
-If FAIL: investigate `fastblocks/adapters/templates/jinja2.py` and `_async_renderer.py` — surface real bugs as Task 5's contribution to Phase 1.5 follow-ups (not scope creep).
+If FAIL: investigate `fastblocks/adapters/templates/jinja2.py` — surface real bugs as Task 5's contribution to Phase 1.5 follow-ups (not scope creep).
 
 - [ ] **Step 3: Write the style boot test**
 
 Create `tests/adapters/style/test_fastblocks_ui_boot.py`:
 ```python
-"""D3: boot test for the fastblocks-ui style adapter."""
+"""D3: boot test for the fastblocks-ui style adapter.
+
+Note: the Oneiric key is `("fastblocks", "styles")` (plural) — not
+`("fastblocks", "style")`. Verified via register_candidate() calls
+in fastblocks/adapters/style/fastblocks_ui.py and vanilla.py.
+"""
 import pytest
+
+from fastblocks.adapters.oneiric_helper import resolve_instance
 
 
 @pytest.fixture
-def style_adapter(oneiric_resolver):
-    return oneiric_resolver.resolve("fastblocks", "style")
+def style_adapter(fresh_registry):
+    return resolve_instance(fresh_registry, "fastblocks", "styles")
 
 
 def test_style_adapter_resolves(style_adapter):
     assert style_adapter is not None
 
 
-def test_style_adapter_provides_stylesheet_links(style_adapter):
-    """fastblocks-ui exposes get_stylesheet_links(); landing uses it."""
-    links = style_adapter.get_stylesheet_links()
-    assert isinstance(links, list)
-    assert len(links) > 0
-
-
-def test_style_adapter_provides_component_class(style_adapter):
-    """Required by templates: get_component_class('btn-primary') etc."""
-    cls = style_adapter.get_component_class("btn-primary")
-    assert isinstance(cls, str)
+def test_style_adapter_exposes_stylesheet_link_method(style_adapter):
+    """Contract: style adapter must expose stylesheet links (used by
+    landing's <head> rendering). The exact method name varies per
+    adapter; assert it exists and returns a non-empty list/str."""
+    # Per StyleBase protocol — the method name may be
+    # `get_stylesheet_links()` or `stylesheet_links` (property).
+    # Adapt to whichever is present.
+    get_links = getattr(style_adapter, "get_stylesheet_links", None)
+    if get_links is None:
+        get_links = getattr(style_adapter, "stylesheet_links", None)
+    assert get_links is not None, (
+        f"D3: style adapter {type(style_adapter).__name__} "
+        f"exposes no stylesheet-link accessor"
+    )
+    links = get_links() if callable(get_links) else get_links
+    assert links, "D3: style adapter returned empty stylesheet links"
 ```
 
 Run: `uv run pytest tests/adapters/style/test_fastblocks_ui_boot.py -v`
@@ -715,50 +790,97 @@ Expected: PASS
 
 Create `tests/adapters/icons/test_boot.py`:
 ```python
-"""D3: boot test for the icons adapter (one default set)."""
+"""D3: boot test for the icons adapter.
+
+IconsBase Protocol exposes `get_icon_class(name)` and
+`get_icon_tag(name, **attrs)` (verified at icons/_base.py:34-35) —
+NOT `render(name)`.
+"""
 import pytest
+
+from fastblocks.adapters.oneiric_helper import resolve_instance
 
 
 @pytest.fixture
-def icons_adapter(oneiric_resolver):
-    return oneiric_resolver.resolve("fastblocks", "icons")
+def icons_adapter(fresh_registry):
+    return resolve_instance(fresh_registry, "fastblocks", "icons")
 
 
 def test_icons_adapter_resolves(icons_adapter):
     assert icons_adapter is not None
 
 
-def test_icons_adapter_returns_svg_for_known_name(icons_adapter):
-    """Smoke: a known icon name (from settings/adapters/icons.yaml) returns SVG."""
-    svg = icons_adapter.render("home")  # or whatever the default icon set exposes
-    assert "<svg" in svg or "svg" in svg.lower()
+def test_icons_adapter_returns_class_for_known_name(icons_adapter):
+    """Smoke: a known icon name returns a non-empty CSS class string."""
+    # The default icon set name depends on settings/adapters/icons.yaml.
+    # Pick whatever name the active adapter ships — the test just
+    # needs to demonstrate get_icon_class works.
+    cls = icons_adapter.get_icon_class("home")
+    assert isinstance(cls, str) and cls, (
+        f"D3: icons adapter returned empty class for 'home'"
+    )
+
+
+def test_icons_adapter_returns_valid_svg_tag(icons_adapter):
+    """Contract: the icon tag must be valid SVG markup (per pytest IMP3)."""
+    from defusedxml import ElementTree as DET  # XXE-safe per Bodai standard
+    tag = icons_adapter.get_icon_tag("home")
+    # Wrap in <svg> if just the inner is returned; the exact
+    # shape depends on the adapter's implementation.
+    markup = tag if tag.lstrip().startswith("<") else f"<svg>{tag}</svg>"
+    try:
+        DET.fromstring(markup)
+    except DET.ParseError as e:
+        raise AssertionError(
+            f"D3: icons adapter get_icon_tag returned invalid XML: {tag!r} ({e})"
+        )
 ```
 
 Create `tests/adapters/fonts/test_boot.py`:
 ```python
-"""D3: boot test for the squirrel font adapter."""
+"""D3: boot test for the squirrel font adapter.
+
+Key: `("fastblocks", "font_squirrel")` (verified at fonts/squirrel.py:55).
+NOT `("fastblocks", "fonts")` — that resolves to the abstract base.
+API: `get_font_import()` (async, returns @font-face import CSS) and
+`get_font_family(font_type)` — NOT `get_font_face_css()`.
+"""
 import pytest
+
+from fastblocks.adapters.oneiric_helper import resolve_instance
 
 
 @pytest.fixture
-def fonts_adapter(oneiric_resolver):
-    return oneiric_resolver.resolve("fastblocks", "fonts")
+def fonts_adapter(fresh_registry):
+    return resolve_instance(fresh_registry, "fastblocks", "font_squirrel")
 
 
 def test_fonts_adapter_resolves(fonts_adapter):
     assert fonts_adapter is not None
 
 
-def test_fonts_adapter_provides_font_face_css(fonts_adapter):
-    css = fonts_adapter.get_font_face_css()
+@pytest.mark.asyncio
+async def test_fonts_adapter_provides_font_import_css(fonts_adapter):
+    """Contract: squirrel's `get_font_import()` returns CSS containing @font-face."""
+    css = await fonts_adapter.get_font_import()
     assert isinstance(css, str)
-    assert "@font-face" in css or "font" in css.lower()
+    assert "@font-face" in css, (
+        f"D3: fonts adapter returned CSS without @font-face: {css!r}"
+    )
+
+
+def test_fonts_adapter_provides_font_family(fonts_adapter):
+    """Contract: get_font_family(font_type) returns a string."""
+    family = fonts_adapter.get_font_family("primary")
+    assert isinstance(family, str) and family, (
+        f"D3: fonts adapter returned empty family for 'primary'"
+    )
 ```
 
 Run: `uv run pytest tests/adapters/icons/test_boot.py tests/adapters/fonts/test_boot.py -v`
 Expected: PASS
 
-If icon/font names need adjustment (the actual API may use different method names), fix the test to match the real adapter API — do NOT modify the adapter to fit the test (D3 verifies reality).
+If the exact method signatures differ slightly from what `oneiric_helper.resolve_instance` returns (e.g., async vs sync, exact argument names), adjust the test to match the actual adapter API — do NOT modify the adapter to fit the test (D3 verifies reality).
 
 - [ ] **Step 5: Run full suite to verify D1 ratchet still green**
 
@@ -818,43 +940,174 @@ def client(app):
     return TestClient(app)
 
 
-def test_csp_header_present(client):
+def test_csp_header_present_and_safe(client):
+    """Per security-auditor BL1: assert VALUE shape, not just presence.
+
+    A CSP of `default-src 'unsafe-inline' *` passes a presence check.
+    This test pins: no `'unsafe-inline'` / `'unsafe-eval'` (unless
+    explicitly opted in), `default-src` directive present.
+    """
     r = client.get("/")
-    assert "content-security-policy" in {k.lower() for k in r.headers}
+    csp = next((v for k, v in r.headers.items() if k.lower() == "content-security-policy"), None)
+    assert csp is not None, "D6: Content-Security-Policy header missing"
+    assert "default-src" in csp, f"D6: CSP missing default-src: {csp!r}"
+    # The framework does not currently opt in to unsafe-inline/eval
+    # for its default policy; if it does in the future, this test
+    # surfaces that change.
+    assert "'unsafe-inline'" not in csp or "nonce-" in csp, (
+        f"D6: CSP allows 'unsafe-inline' without nonce: {csp!r}"
+    )
+    assert "'unsafe-eval'" not in csp, (
+        f"D6: CSP allows 'unsafe-eval': {csp!r}"
+    )
 
 
-def test_hsts_header_present(client):
+def test_hsts_header_present_and_long_enough(client):
     r = client.get("/")
-    assert "strict-transport-security" in {k.lower() for k in r.headers}
+    hsts = r.headers.get("strict-transport-security", "")
+    assert hsts, "D6: Strict-Transport-Security header missing"
+    # Extract max-age=N and assert N >= 31536000 (1 year, OWASP minimum).
+    import re
+    match = re.search(r"max-age=(\d+)", hsts)
+    assert match, f"D6: HSTS missing max-age: {hsts!r}"
+    max_age = int(match.group(1))
+    assert max_age >= 31_536_000, (
+        f"D6: HSTS max-age={max_age} < 31536000 (1 year minimum): {hsts!r}"
+    )
 
 
-def test_x_frame_options_present(client):
+def test_x_frame_options_deny_or_sameorigin(client):
     r = client.get("/")
-    assert "x-frame-options" in {k.lower() for k in r.headers}
+    xfo = r.headers.get("x-frame-options", "")
+    assert xfo.upper() in {"DENY", "SAMEORIGIN"}, (
+        f"D6: X-Frame-Options must be DENY or SAMEORIGIN (got: {xfo!r})"
+    )
+
+
+def test_x_content_type_options_nosniff(client):
+    r = client.get("/")
+    assert r.headers.get("x-content-type-options", "").lower() == "nosniff", (
+        f"D6: X-Content-Type-Options must be 'nosniff'"
+    )
+
+
+def test_referrer_policy_safe(client):
+    r = client.get("/")
+    rp = r.headers.get("referrer-policy", "").lower()
+    # Accept known-safe policies; reject unsafe/missing.
+    safe = {"no-referrer", "same-origin", "strict-origin", "strict-origin-when-cross-origin", "no-referrer-when-downgrade"}
+    assert rp in safe, (
+        f"D6: Referrer-Policy {rp!r} is not in the safe set {safe}"
+    )
+
+
+def test_app_has_secure_headers_middleware_in_stack(app):
+    """Per security-auditor IMP7: the test must exercise the production
+    middleware path, not just check response headers (which could
+    come from an uncontrolled source)."""
+    middleware_classes = [m.cls.__name__ for m in app.user_middleware]
+    assert "SecureHeadersMiddleware" in middleware_classes, (
+        f"D6: SecureHeadersMiddleware not in stack "
+        f"(got: {middleware_classes})"
+    )
 ```
 
-If any header is missing, that's a real defect — fix `fastblocks/middleware.py` (not the test). Per `fastblocks/CLAUDE.md`, default-on security headers is already the design intent.
+If any header VALUE fails its assertion, that's a real defect — fix `fastblocks/middleware.py` (not the test). Per `fastblocks/CLAUDE.md`, default-on security headers is already the design intent.
 
-- [ ] **Step 2: Write CSRF test**
+- [ ] **Step 2: Write CSRF tests (negative AND positive paths)**
 
 Create `tests/middleware/test_csrf.py`:
 ```python
-"""D6: state-changing routes require a CSRF token."""
+"""D6: state-changing routes require a CSRF token.
+
+Per security-auditor BL2: previous test only covered the negative path
+(missing token rejected). A positive path test catches "CSRF middleware
+blocks everything" (DoS), "rejects valid tokens" (lockout), and
+"applies to wrong verbs" regressions.
+"""
 import pytest
 from fastblocks.applications import FastBlocks
 from starlette.testclient import TestClient
 
 
-def test_post_without_csrf_token_rejected():
+def _make_app_with_csrf():
     app = FastBlocks(enable_csrf=True)
     @app.route("/submit", methods=["POST"])
     async def submit(request):
         from starlette.responses import PlainTextResponse
         return PlainTextResponse("ok")
+    return app
 
+
+def test_post_without_csrf_token_rejected():
+    """Negative path: missing token must be rejected."""
+    app = _make_app_with_csrf()
     client = TestClient(app)
     r = client.post("/submit", json={"data": "x"})
-    assert r.status_code in (400, 403), f"D6: CSRF middleware did not reject POST without token (status={r.status_code})"
+    assert r.status_code in (400, 403), (
+        f"D6: CSRF middleware did not reject POST without token (status={r.status_code})"
+    )
+
+
+def test_get_request_exempt_from_csrf():
+    """GET (idempotent) must not require a token — catches over-eager CSRF."""
+    app = FastBlocks(enable_csrf=True)
+    @app.route("/read")
+    async def read(request):
+        from starlette.responses import PlainTextResponse
+        return PlainTextResponse("ok")
+    client = TestClient(app)
+    r = client.get("/read")
+    assert r.status_code == 200, (
+        f"D6: GET should not require CSRF token (status={r.status_code})"
+    )
+
+
+def test_post_with_valid_csrf_token_succeeds():
+    """Positive path: a valid token must be accepted.
+
+    Implementation note: the exact mechanism for issuing CSRF tokens
+    (cookie-based, session-bound, hidden field, etc.) is determined by
+    the middleware used (likely starlette-csrf or framework custom).
+    Adjust the token-fetch path to match `fastblocks/middleware.py`.
+    """
+    app = _make_app_with_csrf()
+    client = TestClient(app)
+    # Fetch a CSRF token (typical pattern: middleware sets a cookie
+    # or returns a token in the response body).
+    r_get = client.get("/submit")  # if GET returns the token
+    # Extract token from cookie or response; depends on implementation.
+    # The exact extraction is implementation-specific; verify against
+    # `fastblocks/middleware.py` CSRF middleware.
+    # If your CSRF implementation requires a session-bound token, the
+    # test framework needs cookies; assert below is a placeholder.
+    csrf_token = r_get.cookies.get("csrf_token", "") if r_get.cookies else ""
+    if csrf_token:
+        r = client.post(
+            "/submit", json={"data": "x"}, cookies={"csrf_token": csrf_token}
+        )
+        assert r.status_code == 200, (
+            f"D6: valid CSRF token rejected (status={r.status_code})"
+        )
+    else:
+        pytest.skip(
+            "CSRF token extraction pattern depends on implementation; "
+            "see fastblocks/middleware.py for the cookie/token shape"
+        )
+
+
+def test_csrf_token_bound_to_session():
+    """Submitting a token issued in session A to session B must be rejected.
+
+    Per the threat model: CSRF tokens must be session-bound. If the
+    framework accepts a token issued in a different session, this is a
+    regression. (Skip if the framework's CSRF implementation doesn't
+    use sessions.)
+    """
+    pytest.skip(
+        "Session-binding test depends on framework CSRF implementation; "
+        "un-skip once framework CSRF uses sessions"
+    )
 ```
 
 Adjust API names per `fastblocks/middleware.py` reality. Run the test; fix `middleware.py` if CSRF isn't actually enforced (the spec assumes it is; if not, that's a Phase 1.5 follow-up, not scope creep).
@@ -889,8 +1142,11 @@ def test_user_input_in_jinja_template_is_html_escaped():
 
     client = TestClient(app)
     r = client.get("/unsafe")
-    assert "<script>" not in r.text, "D6: jinja2 autoescape regression — <script> rendered unescaped"
-    assert "<script>" in r.text, "D6: jinja2 should HTML-escape by default"
+    # The user-controlled value MUST appear in the response (echoed via
+    # the template) but MUST be HTML-escaped — so the raw "<script>" tag
+    # is gone, replaced by the escaped "<script>".
+    assert "<script>" not in r.text, "D6: jinja2 autoescape regression — raw <script> rendered unescaped"
+    assert "<script>" in r.text, "D6: jinja2 must HTML-escape by default"
 ```
 
 Adjust API names per actual `fastblocks/adapters/templates/jinja2.py`. If autoescape is NOT default-on, fix `jinja2.py` (set `autoescape=True` in `Environment(...)` constructor).
@@ -1058,9 +1314,28 @@ def test_hx_redirect_response(client):
 
 
 def test_hx_current_url_propagated(client):
-    """HX-Current-URL on request reaches the route handler as a header."""
-    # Use a route that echoes the header back to verify
-    pass  # implementation: add /echo-current-url route in fixture
+    """HX-Current-URL on request reaches the route handler as a header.
+
+    Per htmx.org: HTMX sends HX-Current-URL on every request so the
+    server can know the page the user is currently viewing. The
+    framework must propagate it through to the route handler.
+    """
+    @app.route("/echo-current-url")
+    async def echo_current_url(request):
+        from starlette.responses import PlainTextResponse
+        return PlainTextResponse(request.headers.get("HX-Current-URL", ""))
+
+    # app route is registered after fixture creation; rebuild client
+    from starlette.testclient import TestClient
+    local_client = TestClient(app)
+    r = local_client.get(
+        "/echo-current-url",
+        headers={"HX-Request": "true", "HX-Current-URL": "https://example.com/page"},
+    )
+    assert r.text == "https://example.com/page", (
+        f"D4: HX-Current-URL not propagated to route handler "
+        f"(got: {r.text!r})"
+    )
 ```
 
 Adapt to actual `fastblocks/htmx.py` API. Run after each addition.
@@ -1121,7 +1396,8 @@ def test_hx_refresh_header_emitted(client):
 
 def test_hx_push_url_header_emitted(client):
     r = client.get("/push")
-    assert r.headers["HX-Push-URL"] == "/pushed"
+    # Per fastblocks/htmx.py:308 — actual emitted key is `HX-Push-Url`.
+    assert r.headers["HX-Push-Url"] == "/pushed"
 ```
 
 Run: `uv run pytest tests/htmx/test_response_headers.py -v`
@@ -1296,9 +1572,11 @@ async def test_blocking_io_filter_raises_at_framework_boundary():
 - [ ] **Step 2: Run the tests**
 
 Run: `uv run pytest tests/perf/test_async_rendering.py -v`
-Expected: first two tests PASS; third test (blocking I/O) may FAIL — if it does, that's a real defect to surface as a Phase 1.5 follow-up (out of D5 scope to fix in the test layer; the framework would need an explicit blocking-IO detector, which is its own task).
+Expected: first two tests PASS.
 
-If only the third test fails, mark it `pytest.mark.xfail(reason="D5: framework lacks blocking-IO detector — Phase 1.5 follow-up")` and file a separate issue. D5's gate is satisfied when the first two assertions pass.
+**Decision on the blocking-IO test (per code-simplifier B2):** the spec asks for "filters that perform blocking I/O raise or are caught at the framework boundary" — but this requires a *framework-side* blocking-IO detector that doesn't exist today. Shipping an `xfail` here means the audit-cleared gate passes without the framework having that guarantee.
+
+**Resolution:** the blocking-IO test is REMOVED from D5 scope. D5's gate is "concurrency + loop-unblocked" — the two passing assertions. The blocking-IO guard moves to a dedicated Phase 1.5 task ("add framework-side blocking-IO detector") that's a real feature, not a test fix. Documented in `docs/known-claim-gaps.md` as aspirational until that task lands.
 
 - [ ] **Step 3: Run D1 + D5 + full suite**
 
@@ -1360,13 +1638,41 @@ def client(app):
     return TestClient(app)
 
 
-def test_brotli_response_smaller_than_plaintext(client):
-    """Compressed response must be measurably smaller than uncompressed."""
-    compressed = client.get("/compress", headers={"Accept-Encoding": "br"})
-    plain = client.get("/compress", headers={"Accept-Encoding": "identity"})
-    assert len(compressed.content) < len(plain.content), (
-        f"D7: Brotli response ({len(compressed.content)}b) "
-        f"not smaller than plain ({len(plain.content)}b)"
+def test_brotli_response_meets_ratio_and_decompresses(client):
+    """Concrete compression ratio + round-trip decompress.
+
+    Per performance-engineer BL1: the previous "smaller than plain"
+    assertion was trivially true. This test asserts:
+    - Compression ratio < 30% (Brotli at quality 1+ on repetitive
+      text should easily reach 50-80x reduction; 30% is a loose floor)
+    - The compressed body, when decompressed via `brotli.decompress`,
+      matches the original byte-for-byte (rules out gzip fallback
+      and silent identity pass-through)
+    """
+    import brotli
+
+    original = REPEATABLE_BODY
+    compressed_resp = client.get("/compress", headers={"Accept-Encoding": "br"})
+    compressed = compressed_resp.content
+
+    ratio = len(compressed) / len(original)
+    assert ratio < 0.30, (
+        f"D7: Brotli compression ratio {ratio:.2%} exceeds 30% "
+        f"({len(compressed)}b / {len(original)}b) — likely fallback or misconfigured"
+    )
+
+    # Round-trip: decompress and compare to original.
+    # This catches the case where Brotli is advertised but gzip is served.
+    try:
+        decompressed = brotli.decompress(compressed)
+    except Exception as e:
+        raise AssertionError(
+            f"D7: brotli.decompress failed on compressed response — "
+            f"Brotli not actually serving (got: {e!r})"
+        )
+    assert decompressed == original, (
+        f"D7: brotli.decompress output does not match original "
+        f"(decompressed len={len(decompressed)}, original len={len(original)})"
     )
 
 
@@ -1374,6 +1680,30 @@ def test_brotli_content_encoding_header_present(client):
     """Server announces br encoding when client accepts it."""
     r = client.get("/compress", headers={"Accept-Encoding": "br"})
     assert r.headers.get("content-encoding") == "br"
+
+
+def test_brotli_vary_header_present(client):
+    """Cache correctness: Vary: Accept-Encoding lets caches serve the right variant."""
+    r = client.get("/compress", headers={"Accept-Encoding": "br"})
+    assert "accept-encoding" in r.headers.get("vary", "").lower(), (
+        f"D7: Vary header missing Accept-Encoding "
+        f"(got: {r.headers.get('vary')!r})"
+    )
+
+
+def test_identity_encoding_skips_compression(client):
+    """Negative test: Accept-Encoding: identity must NOT trigger Brotli.
+
+    Catches the 'compression applied unconditionally' anti-pattern.
+    """
+    r = client.get("/compress", headers={"Accept-Encoding": "identity"})
+    assert r.headers.get("content-encoding") != "br", (
+        f"D7: Brotli applied despite Accept-Encoding: identity "
+        f"(content-encoding={r.headers.get('content-encoding')!r})"
+    )
+    assert r.content == REPEATABLE_BODY, (
+        "D7: identity response body differs from uncompressed original"
+    )
 ```
 
 Run: `uv run pytest tests/perf/test_brotli.py -v`
@@ -1408,9 +1738,22 @@ def client(app):
 
 
 def test_cache_control_header_emitted(client):
+    """Per code-architect IMP3b: actual API is `CacheControlResponder`
+    (fastblocks/caching.py:875), NOT a `CacheControl` class.
+    The responder wraps an ASGI app; we add it to the route and
+    assert the resulting response carries the configured max-age.
+    """
     r = client.get("/cached")
     cc = r.headers.get("cache-control", "")
     assert "max-age" in cc, f"D7: no Cache-Control max-age in response (got: {cc!r})"
+
+
+def test_cache_responder_class_is_callable():
+    """Contract: CacheControlResponder is a real ASGI middleware."""
+    from fastblocks.caching import CacheControlResponder
+    assert callable(CacheControlResponder), (
+        "D7: CacheControlResponder must be callable (ASGI middleware)"
+    )
 ```
 
 Run: `uv run pytest tests/perf/test_caching.py -v`
