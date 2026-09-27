@@ -101,7 +101,7 @@ class HtmxDetails:
 
     def _get_header(self, name: bytes) -> str | None:
         value = _get_header(self._scope, name)
-        if value and debug:
+        if value:
             debug(f"HtmxDetails: {name.decode()}: {value}")
         return value
 

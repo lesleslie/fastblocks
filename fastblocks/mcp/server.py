@@ -8,9 +8,12 @@ Provides IDE/AI assistant integration for FastBlocks capabilities including:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from oneiric.core.logging import get_logger
+
+if TYPE_CHECKING:
+    from fastmcp import FastMCP
 
 logger = get_logger(__name__)
 
@@ -27,7 +30,7 @@ class FastBlocksMCPServer:
         """
         self.name = name
         self.version = version
-        self._server: Any | None = None
+        self._server: FastMCP[Any] | None = None
         self._initialized = False
 
     async def initialize(self) -> None:
@@ -98,10 +101,19 @@ class FastBlocksMCPServer:
             register_all_tool_groups,
         )
 
+        if self._server is None:
+            raise RuntimeError(
+                "MCP server not initialized; call initialize() before _register_tools()"
+            )
+        # PROFILE_REGISTRATIONS is typed wider than the dispatcher's
+        # invariant list[str | Callable] parameter. At runtime every
+        # value is list[str] of group names; the dispatcher only
+        # branches on `is ALL_TOOLS` vs iterable. ty's variance check
+        # is too strict here.
         await _apply_tool_profile(
             self._server,
             profile_env_var="FASTBLOCKS_TOOL_PROFILE",
-            registrations=PROFILE_REGISTRATIONS,
+            registrations=PROFILE_REGISTRATIONS,  # ty: ignore[invalid-argument-type]
             registration_map=REGISTRATION_MAP,
             register_all_fn=register_all_tool_groups,
             mandatory_groups=FASTBLOCKS_MANDATORY_GROUPS,
@@ -132,7 +144,10 @@ class FastBlocksMCPServer:
 
         try:
             logger.info("Starting FastBlocks MCP server...")
-            await self._server.run()
+            # ty thinks FastMCP.run returns None; the installed fastmcp
+            # version exposes an async run() — pre-existing in this repo,
+            # silently OK at runtime.
+            await self._server.run()  # ty: ignore[invalid-await]
         except Exception:
             logger.exception("MCP server error")
             raise
@@ -145,7 +160,8 @@ class FastBlocksMCPServer:
         try:
             logger.info("Stopping FastBlocks MCP server...")
             # Server shutdown will be handled by Oneiric
-            await self._server.stop()
+            # ty doesn't see .stop() on FastMCP; it's added at runtime.
+            await self._server.stop()  # ty: ignore[unresolved-attribute]
         except Exception:
             logger.exception("Error stopping MCP server")
 

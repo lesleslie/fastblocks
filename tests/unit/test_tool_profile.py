@@ -55,10 +55,15 @@ def test_profiles_py_defines_registration_map() -> None:
 
 
 def test_profiles_py_defines_register_all_tool_groups() -> None:
-    """profiles.py must export ``register_all_tool_groups`` (FULL profile dispatcher)."""
+    """profiles.py must export ``register_all_tool_groups`` (FULL profile dispatcher).
+
+    Async because it awaits ``register_fastblocks_tools``; the dispatcher
+    callback type (``Callable[[FastMCP], Awaitable[None] | None]``)
+    accepts both sync and async callables.
+    """
     tree = ast.parse(PROFILES_PATH.read_text())
     found = any(
-        isinstance(node, ast.FunctionDef)
+        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
         and node.name == "register_all_tool_groups"
         for node in ast.walk(tree)
     )

@@ -963,9 +963,9 @@ class Templates(TemplatesBase):
             register_style_functions(templates.env, style_name)
         if admin:
             try:
-                from sqladmin.helpers import (
+                from sqladmin.helpers import (  # ty: ignore[unresolved-import]
                     get_object_identifier,
-                )  # ty: ignore[unresolved-import]
+                )
             except ImportError:
 
                 def get_object_identifier(obj: t.Any) -> t.Any:

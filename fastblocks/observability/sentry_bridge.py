@@ -200,7 +200,11 @@ def init_sentry(
     # one.
     _runtime_sentry_sdk = sentry_sdk  # public alias; tests may swap this
     try:
-        _runtime_sentry_sdk.init(dsn=dsn, **kwargs)
+        # The early-return guard at line 189 ensures _sentry_sdk is not
+        # None here; ty doesn't propagate the narrowing through the
+        # module-dict lookup. The try/except catches AttributeError if
+        # a test stub omits .init().
+        _runtime_sentry_sdk.init(dsn=dsn, **kwargs)  # ty: ignore[unresolved-attribute]
     except Exception as _init_exc:
         # Per Δ39-ζ: re-raise as SentryImportError with
         # reason="init_runtime_error". The original exception is

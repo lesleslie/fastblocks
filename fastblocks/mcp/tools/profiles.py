@@ -35,9 +35,9 @@ Configuration (precedence order):
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
-from mcp_common.tools import ToolProfile
+from mcp_common.tools import ALL_TOOLS, ToolProfile
 
 from ..tools import register_fastblocks_tools
 
@@ -68,7 +68,9 @@ STANDARD_REGISTRATIONS: list[str] = ["register_fastblocks_tools"]
 FULL_REGISTRATIONS: list[str] = ["register_fastblocks_tools"]
 
 
-PROFILE_REGISTRATIONS: dict[ToolProfile, list[str]] = {
+PROFILE_REGISTRATIONS: dict[
+    ToolProfile, list[str] | list[str | Callable] | type[ALL_TOOLS]
+] = {
     ToolProfile.MINIMAL: MINIMAL_REGISTRATIONS,
     ToolProfile.STANDARD: STANDARD_REGISTRATIONS,
     ToolProfile.FULL: FULL_REGISTRATIONS,
@@ -90,9 +92,9 @@ PROFILE_REGISTRATIONS: dict[ToolProfile, list[str]] = {
 # ---------------------------------------------------------------------------
 
 
-def register_all_tool_groups(server: FastMCP) -> None:
+async def register_all_tool_groups(server: FastMCP) -> None:
     """Register every FastBlocks tool group (used by STANDARD/FULL)."""
-    register_fastblocks_tools(server)
+    await register_fastblocks_tools(server)
 
 
 REGISTRATION_MAP: dict[str, Callable[[FastMCP], Awaitable[None] | None]] = {
