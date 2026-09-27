@@ -8,6 +8,8 @@
 # D2: Type-system CI gates. ``mypy`` + ``ty`` are blocking; ``pyright``
 # is informational and tracked via docs/known-type-issues.md (any new
 # rule fails the gate).
+# D7: perf benchmarks establish the baseline on first green run.
+# Subsequent runs fail if any benchmark regresses by >10% (TODO: implement).
 name: quality
 
 on:
