@@ -51,6 +51,7 @@ def test_templates_adapter_resolves_to_Templates_instance(templates_adapter):
     )
 
 
+@pytest.mark.serial  # xdist flake: env mutation race; see Phase 1.5 spec Fix 2
 def test_templates_adapter_env_has_autoescape_on():
     """Contract assertion (per pytest IMP3): the underlying jinja2 env
     must default to autoescape=True. This is the cross-check that

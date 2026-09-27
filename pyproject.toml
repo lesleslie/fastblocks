@@ -231,6 +231,7 @@ markers = [
     "a11y: axe-core integration tests (requires Playwright browser)",
     "property: Hypothesis property-based tests",
     "slow: tests skipped in fast CI (full Hypothesis max_examples=100 + full axe-core on 32 components)",
+    "serial: mark test as serial (run without xdist parallelization; for tests with shared mutable state)",
 ]
 timeout = "300"
 timeout_method = "thread"
