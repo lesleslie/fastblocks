@@ -127,3 +127,23 @@ jobs:
 
       - name: Validate pyright output against docs/known-type-issues.md
         run: uv run python scripts/check_pyright_known_issues.py
+
+  pip-audit:
+    # D6: dependency CVE gate. ``pip-audit --strict`` fails the build
+    # if any installed dep (incl. transitive) has a HIGH/CRITICAL CVE
+    # in the advisory database. New CVEs flip this gate from green to
+    # red on the next PR; resolve by upgrading / pinning the affected
+    # dep (Phase 1.5 follow-up if the resolution is complex).
+    name: pip-audit (D6 CVE gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install project + dev deps (full env needed so transitive CVEs surface)
+        run: uv sync --frozen --group dev
+
+      - name: Run pip-audit with strict CVE filtering
+        run: uv run pip-audit --strict
