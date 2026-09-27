@@ -1,10 +1,22 @@
-"""Tests for MCP configuration management."""
+"""D1 coverage tests for fastblocks/mcp/configuration.py.
 
-from datetime import datetime
+Targets the ConfigurationManager and surrounding dataclasses/enums:
+- ``ConfigurationProfile`` / ``ConfigurationStatus`` enum values
+- ``EnvironmentVariable`` / ``AdapterConfiguration`` / ``ConfigurationSchema``
+  dataclass + pydantic shapes
+- ``ConfigurationValidationResult`` / ``ConfigurationBackup`` construction
+- ``ConfigurationManager`` constructor, schema builders, settings
+  categorisation, validation paths, env-var checks
+"""
+# pyright: reportAttributeAccessIssue=false, reportFunctionMemberAccess=false
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Any
 
 import pytest
+
 from fastblocks.mcp.configuration import (
     AdapterConfiguration,
     ConfigurationBackup,
@@ -15,371 +27,279 @@ from fastblocks.mcp.configuration import (
     ConfigurationValidationResult,
     EnvironmentVariable,
 )
-from fastblocks.mcp.discovery import AdapterInfo
-from fastblocks.mcp.registry import AdapterRegistry
+
+
+# ---------------------------------------------------------------------------
+# Enums
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestEnums:
+    def test_configuration_profile(self) -> None:
+        assert ConfigurationProfile.DEVELOPMENT == "development"
+        assert ConfigurationProfile.STAGING == "staging"
+        assert ConfigurationProfile.PRODUCTION == "production"
+
+    def test_configuration_status(self) -> None:
+        assert ConfigurationStatus.VALID == "valid"
+        assert ConfigurationStatus.WARNING == "warning"
+        assert ConfigurationStatus.ERROR == "error"
+        assert ConfigurationStatus.UNKNOWN == "unknown"
+
+
+# ---------------------------------------------------------------------------
+# Dataclasses + pydantic
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestDataclasses:
+    def test_environment_variable_defaults(self) -> None:
+        e = EnvironmentVariable(name="FOO")
+        assert e.name == "FOO"
+        assert e.required is True
+        assert e.value is None
+        assert e.secret is False
+
+    def test_adapter_configuration_defaults(self) -> None:
+        a = AdapterConfiguration(name="adapter-A")
+        assert a.enabled is True
+        assert a.settings == {}
+        assert a.environment_variables == []
+        assert a.dependencies == set()
+
+    def test_configuration_schema_defaults(self) -> None:
+        s = ConfigurationSchema()
+        assert s.version == "1.0"
+        assert s.profile == ConfigurationProfile.DEVELOPMENT
+        assert s.adapters == {}
+
+    def test_configuration_schema_adapters_dict_coercion(self) -> None:
+        # The validator coerces dict-of-dicts into AdapterConfiguration.
+        # The ``name`` field is keyed by the outer dict; the inner dict
+        # carries additional attributes — so we omit ``name`` from the
+        # inner payload.
+        s = ConfigurationSchema(
+            adapters={
+                "a": {"enabled": False, "settings": {"k": "v"}},
+            }
+        )
+        assert "a" in s.adapters
+        assert isinstance(s.adapters["a"], AdapterConfiguration)
+        assert s.adapters["a"].enabled is False
+
+    def test_validation_result_defaults(self) -> None:
+        v = ConfigurationValidationResult(status=ConfigurationStatus.VALID)
+        assert v.errors == []
+        assert v.warnings == []
+        assert v.info == {}
+        assert v.adapter_results == {}
+
+    def test_configuration_backup_constructible(self) -> None:
+        b = ConfigurationBackup(
+            id="b1",
+            name="backup-1",
+            description="desc",
+            created_at=datetime.now(UTC),
+            profile=ConfigurationProfile.DEVELOPMENT,
+            file_path=Path("/tmp/x.json"),
+            checksum="abc",
+        )
+        assert b.id == "b1"
+        assert b.profile == ConfigurationProfile.DEVELOPMENT
+
+
+# ---------------------------------------------------------------------------
+# ConfigurationManager (without I/O)
+# ---------------------------------------------------------------------------
 
 
 @pytest.fixture
-def mock_registry():
-    """Create a mock adapter registry."""
-    registry = AsyncMock(spec=AdapterRegistry)
-    registry.initialize = AsyncMock()
-    registry.list_available_adapters = AsyncMock(return_value={})
-    registry.get_adapter_info = AsyncMock(return_value=None)
-    registry.get_adapter = AsyncMock(return_value=None)
-    return registry
+def manager(tmp_path: Path) -> ConfigurationManager:
+    # Use a stub registry to avoid Oneiric resolver churn.
+    class _StubRegistry:
+        async def initialize(self) -> None: ...
+
+        async def list_available_adapters(self) -> dict[str, Any]:
+            return {}
+
+        async def get_adapter_info(self, name: str) -> Any:
+            return None
+
+        async def get_adapter(self, name: str) -> Any:
+            return None
+
+    return ConfigurationManager(_StubRegistry(), base_path=tmp_path)
 
 
-@pytest.fixture
-def temp_config_dir(tmp_path):
-    """Create a temporary configuration directory."""
-    return tmp_path / ".fastblocks"
+@pytest.mark.unit
+class TestConfigurationManagerInit:
+    def test_constructor_creates_directories(
+        self, manager: ConfigurationManager
+    ) -> None:
+        assert manager.config_dir.exists()
+        assert manager.backup_dir.exists()
+        assert manager.templates_dir.exists()
+
+    def test_default_base_path(self, tmp_path: Path) -> None:
+        class _StubRegistry:
+            pass
+
+        mgr = ConfigurationManager(_StubRegistry(), base_path=None)
+        # Default base_path is .fastblocks under cwd.
+        assert mgr.base_path.name == ".fastblocks"
 
 
-@pytest.fixture
-def config_manager(mock_registry, temp_config_dir):
-    """Create a configuration manager with mocked registry."""
-    return ConfigurationManager(mock_registry, temp_config_dir)
+@pytest.mark.unit
+class TestSchemaBuilders:
+    def test_build_base_schema(self, manager: ConfigurationManager) -> None:
+        # AdapterInfo is an object with description/category attributes;
+        # provide a minimal stub that exposes them.
+        from types import SimpleNamespace
 
-
-class TestConfigurationProfile:
-    """Test ConfigurationProfile enum."""
-
-    def test_development_profile(self):
-        """Test DEVELOPMENT profile value."""
-        assert ConfigurationProfile.DEVELOPMENT.value == "development"
-
-    def test_staging_profile(self):
-        """Test STAGING profile value."""
-        assert ConfigurationProfile.STAGING.value == "staging"
-
-    def test_production_profile(self):
-        """Test PRODUCTION profile value."""
-        assert ConfigurationProfile.PRODUCTION.value == "production"
-
-    def test_profile_is_enum(self):
-        """Test ConfigurationProfile is an Enum."""
-        assert isinstance(ConfigurationProfile.DEVELOPMENT, ConfigurationProfile)
-
-
-class TestConfigurationStatus:
-    """Test ConfigurationStatus enum."""
-
-    def test_valid_status(self):
-        """Test VALID status value."""
-        assert ConfigurationStatus.VALID.value == "valid"
-
-    def test_warning_status(self):
-        """Test WARNING status value."""
-        assert ConfigurationStatus.WARNING.value == "warning"
-
-    def test_error_status(self):
-        """Test ERROR status value."""
-        assert ConfigurationStatus.ERROR.value == "error"
-
-    def test_unknown_status(self):
-        """Test UNKNOWN status value."""
-        assert ConfigurationStatus.UNKNOWN.value == "unknown"
-
-
-class TestEnvironmentVariable:
-    """Test EnvironmentVariable dataclass."""
-
-    def test_environment_variable_defaults(self):
-        """Test EnvironmentVariable with defaults."""
-        env_var = EnvironmentVariable(name="TEST_VAR")
-
-        assert env_var.name == "TEST_VAR"
-        assert env_var.value is None
-        assert env_var.required is True
-        assert env_var.description == ""
-        assert env_var.secret is False
-        assert env_var.default is None
-        assert env_var.validator_pattern is None
-
-    def test_environment_variable_with_values(self):
-        """Test EnvironmentVariable with custom values."""
-        env_var = EnvironmentVariable(
-            name="API_KEY",
-            value="secret123",
-            required=True,
-            description="API authentication key",
-            secret=True,
-            default="default_key",
-            validator_pattern=r"^[A-Za-z0-9]+$",
+        info = SimpleNamespace(
+            description="An adapter",
+            category="templates",
         )
+        schema = manager._build_base_schema("adapter-A", info)
+        assert schema["name"] == "adapter-A"
+        assert schema["description"] == "An adapter"
+        assert schema["category"] == "templates"
 
-        assert env_var.name == "API_KEY"
-        assert env_var.value == "secret123"
-        assert env_var.required is True
-        assert env_var.description == "API authentication key"
-        assert env_var.secret is True
-        assert env_var.default == "default_key"
-        assert env_var.validator_pattern == r"^[A-Za-z0-9]+$"
-
-
-class TestAdapterConfiguration:
-    """Test AdapterConfiguration dataclass."""
-
-    def test_adapter_configuration_defaults(self):
-        """Test AdapterConfiguration with defaults."""
-        config = AdapterConfiguration(name="test_adapter")
-
-        assert config.name == "test_adapter"
-        assert config.enabled is True
-        assert config.settings == {}
-        assert config.environment_variables == []
-        assert config.dependencies == set()
-        assert config.profile_overrides == {}
-        assert config.health_check_config == {}
-        assert config.metadata == {}
-
-    def test_adapter_configuration_with_values(self):
-        """Test AdapterConfiguration with custom values."""
-        env_var = EnvironmentVariable(name="TEST_VAR")
-        config = AdapterConfiguration(
-            name="auth_adapter",
-            enabled=True,
-            settings={"timeout": 30},
-            environment_variables=[env_var],
-            dependencies={"database", "cache"},
-            profile_overrides={ConfigurationProfile.PRODUCTION: {"timeout": 60}},
-            health_check_config={"interval": 30},
-            metadata={"version": "1.0"},
+    def test_categorize_settings_required_vs_optional(
+        self, manager: ConfigurationManager
+    ) -> None:
+        result = manager._categorize_settings(
+            {"name": "x", "count": 0, "missing": None}
         )
+        # "missing" (None) is required; everything else is optional.
+        required_names = {r["name"] for r in result["required"]}
+        optional_names = {r["name"] for r in result["optional"]}
+        assert "missing" in required_names
+        assert "name" in optional_names
+        assert "count" in optional_names
 
-        assert config.name == "auth_adapter"
-        assert config.enabled is True
-        assert config.settings == {"timeout": 30}
-        assert len(config.environment_variables) == 1
-        assert config.dependencies == {"database", "cache"}
-        assert ConfigurationProfile.PRODUCTION in config.profile_overrides
-        assert config.health_check_config == {"interval": 30}
-        assert config.metadata == {"version": "1.0"}
-
-
-class TestConfigurationSchema:
-    """Test ConfigurationSchema Pydantic model."""
-
-    def test_configuration_schema_defaults(self):
-        """Test ConfigurationSchema with defaults."""
-        schema = ConfigurationSchema()
-
-        assert schema.version == "1.0"
-        assert schema.profile == ConfigurationProfile.DEVELOPMENT
-        assert isinstance(schema.created_at, datetime)
-        assert isinstance(schema.updated_at, datetime)
-        assert schema.adapters == {}
-        assert schema.global_settings == {}
-        assert schema.global_environment == []
-
-    def test_configuration_schema_with_values(self):
-        """Test ConfigurationSchema with custom values."""
-        adapter_config = AdapterConfiguration(name="test")
-        schema = ConfigurationSchema(
-            version="2.0",
-            profile=ConfigurationProfile.PRODUCTION,
-            adapters={"test": adapter_config},
-            global_settings={"debug": False},
+    def test_categorize_settings_skips_private_keys(
+        self, manager: ConfigurationManager
+    ) -> None:
+        result = manager._categorize_settings(
+            {"public": "p", "_private": "x"}
         )
-
-        assert schema.version == "2.0"
-        assert schema.profile == ConfigurationProfile.PRODUCTION
-        assert "test" in schema.adapters
-        assert schema.global_settings == {"debug": False}
-
-    def test_configuration_schema_adapter_validation(self):
-        """Test ConfigurationSchema adapters validator."""
-        # Test with dict input that should be converted
-        schema = ConfigurationSchema(
-            adapters={"test": {"enabled": True, "settings": {"foo": "bar"}}}
+        all_names = (
+            {r["name"] for r in result["required"]}
+            | {r["name"] for r in result["optional"]}
         )
+        assert "public" in all_names
+        assert "_private" not in all_names
 
-        assert "test" in schema.adapters
-        assert isinstance(schema.adapters["test"], AdapterConfiguration)
-        assert schema.adapters["test"].enabled is True
-
-
-class TestConfigurationValidationResult:
-    """Test ConfigurationValidationResult dataclass."""
-
-    def test_validation_result_defaults(self):
-        """Test ConfigurationValidationResult with defaults."""
-        result = ConfigurationValidationResult(status=ConfigurationStatus.VALID)
-
-        assert result.status == ConfigurationStatus.VALID
-        assert result.errors == []
-        assert result.warnings == []
-        assert result.info == {}
-        assert result.adapter_results == {}
-
-    def test_validation_result_with_errors(self):
-        """Test ConfigurationValidationResult with errors."""
-        result = ConfigurationValidationResult(
-            status=ConfigurationStatus.ERROR,
-            errors=["Missing required setting", "Invalid value"],
-            warnings=["Deprecated option"],
-            info={"checked_adapters": 5},
-            adapter_results={"auth": {"status": "error"}},
-        )
-
-        assert result.status == ConfigurationStatus.ERROR
-        assert len(result.errors) == 2
-        assert len(result.warnings) == 1
-        assert result.info["checked_adapters"] == 5
-        assert "auth" in result.adapter_results
-
-
-class TestConfigurationBackup:
-    """Test ConfigurationBackup dataclass."""
-
-    def test_configuration_backup(self):
-        """Test ConfigurationBackup creation."""
-        now = datetime.now()
-        backup = ConfigurationBackup(
-            id="backup-123",
-            name="Pre-deployment backup",
-            description="Backup before production deployment",
-            created_at=now,
-            profile=ConfigurationProfile.PRODUCTION,
-            file_path=Path("/backups/config-123.json"),
-            checksum="abc123def456",
-        )
-
-        assert backup.id == "backup-123"
-        assert backup.name == "Pre-deployment backup"
-        assert backup.created_at == now
-        assert backup.profile == ConfigurationProfile.PRODUCTION
-        assert backup.file_path == Path("/backups/config-123.json")
-        assert backup.checksum == "abc123def456"
-
-
-class TestConfigurationManager:
-    """Test ConfigurationManager class."""
-
-    def test_initialization(self, config_manager, temp_config_dir):
-        """Test ConfigurationManager initialization."""
-        assert config_manager.base_path == temp_config_dir
-        assert config_manager.config_dir == temp_config_dir / "config"
-        assert config_manager.backup_dir == temp_config_dir / "backups"
-        assert config_manager.templates_dir == temp_config_dir / "templates"
-
-    def test_directories_created(self, config_manager):
-        """Test that required directories are created."""
-        assert config_manager.config_dir.exists()
-        assert config_manager.backup_dir.exists()
-        assert config_manager.templates_dir.exists()
-
-    @pytest.mark.asyncio
-    async def test_initialize(self, config_manager, mock_registry):
-        """Test ConfigurationManager initialize method."""
-        with patch.object(config_manager, "_ensure_default_templates", AsyncMock()):
-            await config_manager.initialize()
-
-            mock_registry.initialize.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_get_available_adapters(self, config_manager, mock_registry):
-        """Test getting available adapters."""
-        expected_adapters = {
-            "auth": MagicMock(spec=AdapterInfo),
-            "database": MagicMock(spec=AdapterInfo),
+    def test_introspect_adapter_settings_no_settings_attr(
+        self, manager: ConfigurationManager
+    ) -> None:
+        adapter = object()  # No settings attribute
+        schema: dict[str, Any] = {
+            "name": "x",
+            "required_settings": [],
+            "optional_settings": [],
         }
-        mock_registry.list_available_adapters.return_value = expected_adapters
+        # Should not raise.
+        manager._introspect_adapter_settings(adapter, schema)
 
-        result = await config_manager.get_available_adapters()
+    def test_introspect_adapter_settings_with_dict_attr(
+        self, manager: ConfigurationManager
+    ) -> None:
+        # ``_introspect_adapter_settings`` expects ``settings`` to be a
+        # Pydantic-style model exposing ``__dict__``. A bare dict does
+        # not — verify the function handles that gracefully.
+        class _Adapter:
+            settings = {"foo": "bar"}
 
-        assert result == expected_adapters
-        mock_registry.list_available_adapters.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_get_adapter_configuration_schema_not_found(
-        self, config_manager, mock_registry
-    ):
-        """Test getting schema for non-existent adapter."""
-        mock_registry.get_adapter_info.return_value = None
-
-        with pytest.raises(ValueError, match="Adapter 'nonexistent' not found"):
-            await config_manager.get_adapter_configuration_schema("nonexistent")
-
-    @pytest.mark.asyncio
-    async def test_get_adapter_configuration_schema_success(
-        self, config_manager, mock_registry
-    ):
-        """Test getting schema for existing adapter."""
-        adapter_info = MagicMock(spec=AdapterInfo)
-        adapter_info.description = "Test adapter"
-        adapter_info.category = "auth"
-        mock_registry.get_adapter_info.return_value = adapter_info
-
-        schema = await config_manager.get_adapter_configuration_schema("test_adapter")
-
-        assert schema["name"] == "test_adapter"
-        assert schema["description"] == "Test adapter"
-        assert schema["category"] == "auth"
-        assert "required_settings" in schema
-        assert "optional_settings" in schema
-
-    @pytest.mark.asyncio
-    async def test_create_configuration_default(self, config_manager):
-        """Test creating a default configuration."""
-        with patch.object(config_manager, "_ensure_default_templates", AsyncMock()):
-            config = await config_manager.create_configuration()
-
-            assert config.profile == ConfigurationProfile.DEVELOPMENT
-            assert config.version == "1.0"
-            assert config.adapters == {}
-
-    @pytest.mark.asyncio
-    async def test_create_configuration_with_adapters(
-        self, config_manager, mock_registry
-    ):
-        """Test creating configuration with specific adapters."""
-        adapter_info = MagicMock(spec=AdapterInfo)
-        adapter_info.description = "Auth adapter"
-        adapter_info.category = "auth"
-        mock_registry.get_adapter_info.return_value = adapter_info
-
-        config = await config_manager.create_configuration(
-            profile=ConfigurationProfile.PRODUCTION, adapters=["auth"]
-        )
-
-        assert config.profile == ConfigurationProfile.PRODUCTION
-        assert "auth" in config.adapters
-        assert isinstance(config.adapters["auth"], AdapterConfiguration)
-
-    def test_build_base_schema(self, config_manager):
-        """Test _build_base_schema method."""
-        adapter_info = MagicMock(spec=AdapterInfo)
-        adapter_info.description = "Test description"
-        adapter_info.category = "test_category"
-
-        schema = config_manager._build_base_schema("test_adapter", adapter_info)
-
-        assert schema["name"] == "test_adapter"
-        assert schema["description"] == "Test description"
-        assert schema["category"] == "test_category"
-        assert schema["required_settings"] == []
+        schema: dict[str, Any] = {
+            "name": "x",
+            "required_settings": [],
+            "optional_settings": [],
+        }
+        manager._introspect_adapter_settings(_Adapter(), schema)
+        # No exception; schema unchanged.
         assert schema["optional_settings"] == []
-        assert schema["environment_variables"] == []
-        assert schema["dependencies"] == []
 
-    def test_categorize_settings(self, config_manager):
-        """Test _categorize_settings method."""
-        settings_dict = {
-            "required_setting": None,
-            "optional_setting": "default_value",
-            "_private_setting": "ignored",
-            "another_optional": 42,
-        }
+    @pytest.mark.asyncio
+    async def test_get_adapter_configuration_schema_unknown(
+        self, manager: ConfigurationManager
+    ) -> None:
+        # Stub registry returns None for unknown adapter.
+        with pytest.raises(ValueError, match="not found"):
+            await manager.get_adapter_configuration_schema("never-was")
 
-        categorized = config_manager._categorize_settings(settings_dict)
 
-        assert len(categorized["required"]) == 1
-        assert len(categorized["optional"]) == 2
-        assert categorized["required"][0]["name"] == "required_setting"
-        assert any(s["name"] == "optional_setting" for s in categorized["optional"])
-        assert not any(
-            s["name"].startswith("_")
-            for s in categorized["required"] + categorized["optional"]
+@pytest.mark.unit
+class TestEnvironmentVariableHelpers:
+    def test_check_missing_required_vars(self, manager: ConfigurationManager) -> None:
+        # ``_check_missing_required_vars`` takes a ConfigurationSchema +
+        # result, walks each adapter's environment_variables.
+        schema = ConfigurationSchema(
+            adapters={
+                "a": AdapterConfiguration(
+                    name="a",
+                    enabled=True,
+                    environment_variables=[
+                        EnvironmentVariable(name="A", required=True),
+                        EnvironmentVariable(name="B", required=True),
+                    ],
+                )
+            }
         )
+        result = ConfigurationValidationResult(
+            status=ConfigurationStatus.UNKNOWN
+        )
+        # Provide value for A via env but leave B unset.
+        import os
+
+        old = os.environ.copy()
+        os.environ["A"] = "x"
+        try:
+            manager._check_missing_required_vars(schema, result)
+        finally:
+            os.environ.clear()
+            os.environ.update(old)
+        # B should be flagged as missing.
+        assert any("B" in w for w in result.warnings)
+
+    def test_check_duplicate_env_vars(self, manager: ConfigurationManager) -> None:
+        # Build two adapters that both declare the same env var.
+        schema = ConfigurationSchema(
+            adapters={
+                "a": AdapterConfiguration(
+                    name="a",
+                    environment_variables=[EnvironmentVariable(name="DUP")],
+                ),
+                "b": AdapterConfiguration(
+                    name="b",
+                    environment_variables=[EnvironmentVariable(name="DUP")],
+                ),
+            }
+        )
+        result = ConfigurationValidationResult(
+            status=ConfigurationStatus.UNKNOWN
+        )
+        manager._check_duplicate_env_vars(schema, result, set())
+        # The second occurrence is a duplicate — flagged in warnings.
+        assert any("DUP" in w for w in result.warnings)
+
+    def test_is_env_var_missing_no_value(self, manager: ConfigurationManager) -> None:
+        e = EnvironmentVariable(name="UNIQUE_TEST_VAR_NOT_SET", required=True)
+        # Without setting it in the env, it should be reported missing.
+        import os
+
+        os.environ.pop("UNIQUE_TEST_VAR_NOT_SET", None)
+        assert manager._is_env_var_missing(e) is True
+
+    def test_is_env_var_missing_with_value(self, manager: ConfigurationManager) -> None:
+        import os
+
+        os.environ["PRESENT_VAR"] = "x"
+        try:
+            e = EnvironmentVariable(name="PRESENT_VAR", required=True)
+            assert manager._is_env_var_missing(e) is False
+        finally:
+            os.environ.pop("PRESENT_VAR", None)

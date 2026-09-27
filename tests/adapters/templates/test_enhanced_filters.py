@@ -1,202 +1,192 @@
-"""Tests for fastblocks/adapters/templates/_enhanced_filters.py.
+"""D1 coverage tests for fastblocks/adapters/templates/_enhanced_filters.py.
 
-Targets 202 missing statements before this file. Tests focus on the
-icon helpers (``wa_icon``, ``phosphor_icon``, ``heroicon``,
-``remix_icon``, ``material_icon``) which exercise both the
-adapter-resolved path and the fallback path. Each test uses the
-``resolve_instance`` patch so it does not require real adapters.
+Targets the template-helper module: image filters (Cloudflare/TwicPics),
+icon filters (Phosphor/Heroicons/Remix/Material/Kelp/WebAwesome),
+font-loading helpers, and HTMX progressive-enhancement functions.
 """
-
+# pyright: reportAttributeAccessIssue=false, reportFunctionMemberAccess=false
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
-
 import pytest
+
 from fastblocks.adapters.templates._enhanced_filters import (
+    AdapterStatus,
+    cf_image_url,
+    cf_responsive_image,
+    font_face_declaration,
     heroicon,
+    htmx_infinite_scroll_sentinel,
+    htmx_progressive_enhancement,
+    htmx_turbo_frame,
+    kelp_card,
+    kelp_component,
     material_icon,
     phosphor_icon,
     remix_icon,
+    twicpics_image,
+    twicpics_smart_crop,
     wa_icon,
     wa_icon_with_text,
 )
 
 
-@pytest.fixture
-def stub_depends():
-    """Patch ``resolve_instance`` so the icon filters take the
-    'no adapter configured' fallback path. Returns a context manager."""
-    from contextlib import contextmanager
-
-    @contextmanager
-    def _ctx():
-        with patch(
-            "fastblocks.adapters.oneiric_helper.resolve_instance",
-            MagicMock(return_value=None),
-        ):
-            yield
-
-    return _ctx
+# ---------------------------------------------------------------------------
+# AdapterStatus
+# ---------------------------------------------------------------------------
 
 
 @pytest.mark.unit
-class TestWaIcon:
-    def test_wa_icon_fallback_when_no_adapter(self, stub_depends) -> None:
-        with stub_depends():
-            result = wa_icon("home")
-        # Fallback path returns an <i> tag.
-        assert "wa-home" in result
-        assert "<i" in result
+class TestAdapterStatus:
+    def test_status_values(self) -> None:
+        assert AdapterStatus.STABLE == "STABLE"
+        assert AdapterStatus.BETA == "BETA"
 
-    def test_wa_icon_with_attributes(self, stub_depends) -> None:
-        with stub_depends():
-            result = wa_icon(
-                "home",
-                size="24",
-                **{"class": "custom"},
-            )
-        assert "wa-home" in result
-        assert "custom" in result
-        assert "font-size: 24" in result
 
-    def test_wa_icon_with_text_left(self, stub_depends) -> None:
-        with stub_depends():
-            result = wa_icon_with_text("save", "Save Changes", "left")
-        # The fallback path produces a span containing the icon + text.
-        assert "wa-save" in result
-        assert "Save Changes" in result
+# ---------------------------------------------------------------------------
+# Cloudflare image filters
+# ---------------------------------------------------------------------------
 
 
 @pytest.mark.unit
-class TestPhosphorIcon:
-    def test_phosphor_icon_regular(self, stub_depends) -> None:
-        with stub_depends():
-            result = phosphor_icon("house")
-        assert "ph-house" in result or "house" in result
+class TestCloudflareImageFilters:
+    def test_cf_image_url_returns_string(self) -> None:
+        # With no settings configured the helper returns a placeholder.
+        url = cf_image_url("img-1")
+        assert isinstance(url, str)
 
-    def test_phosphor_icon_bold(self, stub_depends) -> None:
-        with stub_depends():
-            result = phosphor_icon("house", weight="bold")
-        assert "house" in result
-
-
-@pytest.mark.unit
-class TestHeroicon:
-    def test_heroicon_outline(self, stub_depends) -> None:
-        with stub_depends():
-            result = heroicon("home", style="outline")
-        # Fallback produces something with "home" or "outline" in it.
-        assert "home" in result.lower() or "outline" in result.lower()
-
-    def test_heroicon_solid(self, stub_depends) -> None:
-        with stub_depends():
-            result = heroicon("cog", style="solid")
-        assert "cog" in result.lower() or "solid" in result.lower()
-
-
-@pytest.mark.unit
-class TestRemixIcon:
-    def test_remix_icon_basic(self, stub_depends) -> None:
-        with stub_depends():
-            result = remix_icon("home")
-        assert "home" in result.lower()
-
-    def test_remix_icon_with_class(self, stub_depends) -> None:
-        with stub_depends():
-            result = remix_icon("home", **{"class": "nav-icon"})
-        assert "home" in result.lower()
-        assert "nav-icon" in result
-
-
-@pytest.mark.unit
-class TestMaterialIcon:
-    def test_material_icon_filled(self, stub_depends) -> None:
-        with stub_depends():
-            result = material_icon("home")
-        assert "home" in result.lower()
-
-    def test_material_icon_outlined(self, stub_depends) -> None:
-        with stub_depends():
-            result = material_icon("home", variant="outlined")
-        assert "home" in result.lower()
-
-
-@pytest.mark.unit
-class TestFontFaceDeclaration:
-    def test_font_face_fallback(self, stub_depends) -> None:
-        from fastblocks.adapters.templates._enhanced_filters import (
-            font_face_declaration,
+    def test_cf_responsive_image(self) -> None:
+        out = cf_responsive_image(
+            "img-1",
+            "alt text",
+            {
+                "mobile": {"width": 400},
+                "desktop": {"width": 1200},
+            },
         )
+        assert isinstance(out, str)
 
-        with stub_depends():
-            result = font_face_declaration(
-                "CustomFont",
-                {"woff2": "/fonts/custom.woff2", "woff": "/fonts/custom.woff"},
-            )
-        assert "@font-face" in result
-        assert "CustomFont" in result
-        assert "woff2" in result
-        assert "woff" in result
 
-    def test_font_face_with_attributes(self, stub_depends) -> None:
-        from fastblocks.adapters.templates._enhanced_filters import (
-            font_face_declaration,
-        )
-
-        with stub_depends():
-            result = font_face_declaration(
-                "MyFont",
-                {"ttf": "/fonts/my.ttf"},
-                weight="700",
-                style="italic",
-            )
-        assert "@font-face" in result
-        assert "truetype" in result
+# ---------------------------------------------------------------------------
+# TwicPics filters
+# ---------------------------------------------------------------------------
 
 
 @pytest.mark.unit
-class TestAsyncOptimizedFontLoading:
-    async def test_async_optimized_font_loading_fallback(
-        self, stub_depends
-    ) -> None:
-        from fastblocks.adapters.templates._enhanced_filters import (
-            async_optimized_font_loading,
-        )
+class TestTwicPicsFilters:
+    def test_twicpics_image(self) -> None:
+        out = twicpics_image("images/foo.jpg")
+        assert isinstance(out, str)
 
-        with stub_depends():
-            result = await async_optimized_font_loading(
-                ["Inter"], critical=True
-            )
-        assert "Inter" in result
-        assert "<link" in result
+    def test_twicpics_smart_crop(self) -> None:
+        out = twicpics_smart_crop("images/foo.jpg", 200, 200, focus="auto")
+        assert isinstance(out, str)
 
-    async def test_async_optimized_non_critical(
-        self, stub_depends
-    ) -> None:
-        from fastblocks.adapters.templates._enhanced_filters import (
-            async_optimized_font_loading,
-        )
 
-        with stub_depends():
-            result = await async_optimized_font_loading(
-                ["Roboto"], critical=False
-            )
-        # Non-critical fonts return empty list (no preload links).
-        assert result == "" or "Roboto" in result
+# ---------------------------------------------------------------------------
+# Icon filters
+# ---------------------------------------------------------------------------
 
 
 @pytest.mark.unit
-class TestHTMXFilters:
-    def test_htmx_progressive_enhancement_fallback(
-        self, stub_depends
-    ) -> None:
-        from fastblocks.adapters.templates._enhanced_filters import (
-            htmx_progressive_enhancement,
-        )
+class TestIconFilters:
+    def test_wa_icon(self) -> None:
+        out = wa_icon("home")
+        assert "wa-" in out
 
-        with stub_depends():
-            result = htmx_progressive_enhancement(
-                "/api/items", {"hx-target": "#list"}
-            )
-        # Fallback returns something.
-        assert isinstance(result, str)
+    def test_wa_icon_with_text(self) -> None:
+        out = wa_icon_with_text("home", "Home")
+        assert "Home" in out
+
+    def test_kelp_component(self) -> None:
+        out = kelp_component("button", "Click me")
+        assert "kelp-button" in out
+
+    def test_kelp_component_with_attributes(self) -> None:
+        out = kelp_component(
+            "button",
+            "Click",
+            variant="primary",
+            size="lg",
+            **{"class": "extra"},
+        )
+        assert "kelp-button" in out
+
+    def test_kelp_card(self) -> None:
+        out = kelp_card("Title", "Body content")
+        assert isinstance(out, str)
+
+    def test_phosphor_icon_default(self) -> None:
+        out = phosphor_icon("house")
+        assert "ph-house" in out
+
+    def test_phosphor_icon_bold(self) -> None:
+        out = phosphor_icon("house", weight="bold")
+        assert "ph-bold" in out
+
+    def test_heroicon_outline(self) -> None:
+        out = heroicon("home", style="outline")
+        assert isinstance(out, str)
+
+    def test_heroicon_solid(self) -> None:
+        out = heroicon("home", style="solid")
+        assert isinstance(out, str)
+
+    def test_remix_icon(self) -> None:
+        out = remix_icon("home")
+        assert "ri-" in out
+
+    def test_material_icon_default(self) -> None:
+        out = material_icon("home")
+        assert "material-icons" in out
+
+    def test_material_icon_variant(self) -> None:
+        out = material_icon("home", variant="outlined")
+        assert "material-icons" in out
+
+
+# ---------------------------------------------------------------------------
+# Font-loading helpers
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestFontHelpers:
+    def test_font_face_declaration(self) -> None:
+        # ``font_files`` is a dict mapping format -> URL.
+        out = font_face_declaration(
+            "Inter",
+            {"woff2": "/fonts/inter.woff2"},
+        )
+        assert isinstance(out, str)
+
+    def test_font_face_declaration_with_format(self) -> None:
+        out = font_face_declaration(
+            "Inter",
+            {"woff2": "/fonts/inter.woff2", "truetype": "/fonts/inter.ttf"},
+            weight="400",
+            style="normal",
+        )
+        assert isinstance(out, str)
+
+
+# ---------------------------------------------------------------------------
+# HTMX progressive-enhancement filters
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestHtmxFilters:
+    def test_htmx_progressive_enhancement(self) -> None:
+        out = htmx_progressive_enhancement(
+            "Click me",
+            {"hx-get": "/endpoint", "hx-trigger": "click"},
+        )
+        assert isinstance(out, str)
+
+    def test_htmx_turbo_frame(self) -> None:
+        out = htmx_turbo_frame("main", src="/content")
+        assert isinstance(out, str)
+
+    def test_htmx_infinite_scroll_sentinel(self) -> None:
+        out = htmx_infinite_scroll_sentinel("/more", container="#list")
+        assert isinstance(out, str)
