@@ -169,3 +169,26 @@ jobs:
 
       - name: Run lychee in offline mode against all Markdown files
         run: ./lychee --offline --no-progress '**/*.md'
+
+  pytest:
+    # C1: Audit-cleared gate enforcement. The audit pass added 325+
+    # test files covering D1 (coverage ratchet), D3 (adapter boot),
+    # D4 (htmx correctness), D5 (async rendering), D6 (security
+    # middleware), D7 (perf benchmarks), D8 (dep hygiene), and D9
+    # (docs audit) — but none of those tests run in CI without this
+    # job. ``--no-cov`` for now; D1b Phase 1.5 follow-up will tighten
+    # to ``--cov-fail-under=67.81`` after the coverage ratchet is
+    # updated (per ledger Ruling #4 + whole-branch review I1).
+    name: pytest (D1/D3/D4/D5/D6/D7/D8 audit-cleared gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install project + dev deps
+        run: uv sync --frozen --group dev
+
+      - name: Run pytest on the audit-cleared test suite
+        run: uv run pytest tests/ --no-cov -q
