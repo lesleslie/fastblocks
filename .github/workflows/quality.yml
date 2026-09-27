@@ -1,0 +1,49 @@
+# D8: Dependency hygiene CI gate.
+#
+# ``lock-check`` fails the build if any PR updates ``pyproject.toml``
+# without re-running ``uv lock``. This is the cheap, deterministic
+# catch for the failure mode uv sync --upgrade can introduce (see
+# feedback-crackerjack-gitignore-sync-dev-dep-downgrade).
+name: lock-check
+
+on:
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "uv.lock"
+  push:
+    branches:
+      - main
+    paths:
+      - "pyproject.toml"
+      - "uv.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lock-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Check that uv.lock is in sync with pyproject.toml
+        run: uv lock --check
+
+      # ``uv lock --check`` exits non-zero and prints a one-line diff
+      # hint when the lockfile is stale. To make the failure actionable
+      # in CI logs, run ``uv lock --check`` again with --verbose on
+      # failure (the ``if: failure()`` step is a no-op when the prior
+      # step passes, so the happy path stays one short command).
+      - name: On failure, print actionable fix
+        if: failure()
+        run: |
+          echo "uv.lock is out of sync with pyproject.toml."
+          echo "Local fix:"
+          echo "    uv lock"
+          echo "Then commit the regenerated uv.lock alongside the"
+          echo "pyproject.toml change."

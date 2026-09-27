@@ -1,0 +1,18 @@
+# D8 broken-release tracking.
+#
+# Each row makes the broken-release regression test fail if the bad
+# version re-appears in any dep spec. Add new entries when a release is
+# identified as breaking; remove only when the broken version is below
+# the minimum supported floor across ALL consumers.
+#
+# Source of truth: tests/test_dep_pins.py::test_no_broken_release_in_dep_specs
+# Schema is enforced by test_dep_pins.py::test_broken_releases_yaml_well_formed.
+broken_releases:
+  - package: mcp-common
+    version: "0.23.0"
+    reason: "version+doctor methods missing due to bump-commit mishap"
+    fix_release: "0.23.1"
+  - package: mcp-common
+    version: "0.30.0"
+    reason: "lockfile-relevant defect; uv.lock refresh required"
+    fix_release: "0.30.1"
