@@ -11,42 +11,6 @@ import pytest
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-# Mock AsyncJinja2Templates before importing
-import types
-
-# Set up the mock modules
-sys.modules["starlette_async_jinja"] = types.ModuleType("starlette_async_jinja")
-# fastblocks/adapters/templates/jinja2.py imports `AsyncJinja2Templates` at
-# module load time. The real class (`MockAsyncJinja2Templates`) is defined
-# further down in this module, but the production import runs before we get
-# there. Seed the mock module with a MagicMock placeholder so the import
-# resolves; the placeholder is overwritten with the real class below.
-sys.modules["starlette_async_jinja"].AsyncJinja2Templates = MagicMock
-# MockAsyncJinja2Templates will be defined below
-
-# Mock AsyncRedisBytecodeCache
-_jinja_pkg = types.ModuleType("jinja2_async_environment")
-# Mark as a package so submodule imports (`from jinja2_async_environment.loaders
-# import ...`) resolve without Python raising "'jinja2_async_environment' is
-# not a package".
-_jinja_pkg.__path__ = []  # type: ignore[attr-defined]
-sys.modules["jinja2_async_environment"] = _jinja_pkg
-_jinja_bccache = types.ModuleType("jinja2_async_environment.bccache")
-_jinja_bccache.AsyncRedisBytecodeCache = MagicMock
-_jinja_pkg.bccache = _jinja_bccache
-sys.modules["jinja2_async_environment.bccache"] = _jinja_bccache
-# fastblocks/adapters/templates/jinja2.py imports AsyncRedisBytecodeCache from
-# the top-level `jinja2_async_environment` package, not from `.bccache`. The
-# partial mock above only registered the symbol on the submodule, so pytest
-# collection failed with "cannot import name 'AsyncRedisBytecodeCache' from
-# 'jinja2_async_environment' (unknown location)". Surface the same MagicMock
-# on the top-level module so the production import resolves.
-_jinja_pkg.AsyncRedisBytecodeCache = MagicMock
-_jinja_loaders = types.ModuleType("jinja2_async_environment.loaders")
-_jinja_loaders.AsyncBaseLoader = MagicMock
-_jinja_loaders.SourceType = tuple
-_jinja_pkg.loaders = _jinja_loaders
-sys.modules["jinja2_async_environment.loaders"] = _jinja_loaders
 class Config:
     """Sentinel type used as a type hint for pytest fixtures (acb replaced by oneiric)."""
     pass

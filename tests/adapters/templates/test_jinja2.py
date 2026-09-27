@@ -11,51 +11,6 @@ import pytest
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-# Mock AsyncJinja2Templates before importing
-import types
-
-
-# Create a mock AsyncJinja2Templates class
-class MockAsyncJinja2Templates:
-    def __init__(self, *args, **kwargs) -> None:
-        self.env = MagicMock()
-        self.TemplateResponse = MagicMock()
-        self.render_block = MagicMock()
-
-
-# Set up the mock modules
-sys.modules["starlette_async_jinja"] = types.ModuleType("starlette_async_jinja")
-sys.modules["starlette_async_jinja"].AsyncJinja2Templates = MockAsyncJinja2Templates
-
-# Mock AsyncRedisBytecodeCache
-mock_jinja2_async_env = types.ModuleType("jinja2_async_environment")
-sys.modules["jinja2_async_environment"] = mock_jinja2_async_env
-
-# Create proper mock loaders module
-mock_loaders = types.ModuleType("jinja2_async_environment.loaders")
-mock_jinja2_async_env.loaders = mock_loaders
-sys.modules["jinja2_async_environment.loaders"] = mock_loaders
-
-# Create a proper AsyncBaseLoader mock class
-class MockAsyncBaseLoader:
-    def __init__(self, *args, **kwargs):
-        self.searchpath = args[0] if args else []
-
-    async def get_source(self, environment, template):
-        return None, None, None
-
-mock_loaders.AsyncBaseLoader = MockAsyncBaseLoader
-mock_loaders.SourceType = tuple
-
-# Create proper mock bccache module
-mock_bccache = types.ModuleType("jinja2_async_environment.bccache")
-mock_jinja2_async_env.bccache = mock_bccache
-sys.modules["jinja2_async_environment.bccache"] = mock_bccache
-mock_bccache.AsyncRedisBytecodeCache = MagicMock
-
-# Also add AsyncRedisBytecodeCache directly to the main module level
-mock_jinja2_async_env.AsyncRedisBytecodeCache = MagicMock
-
 class Config:
     """Sentinel type used as a type hint for pytest fixtures (acb replaced by oneiric)."""
     pass
