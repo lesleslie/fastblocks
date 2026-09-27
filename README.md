@@ -7,6 +7,9 @@
 # FastBlocks
 
 [![Code style: crackerjack](https://img.shields.io/badge/code%20style-crackerjack-000042)](https://github.com/lesleslie/crackerjack)
+[![Runtime: oneiric](https://img.shields.io/badge/runtime-oneiric-6e5494)](https://github.com/lesleslie/oneiric)
+[![Framework: FastMCP](https://img.shields.io/badge/framework-FastMCP-0ea5e9)](https://github.com/jlowin/fastmcp)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Python: 3.14+](https://img.shields.io/badge/python-3.14%2B-green)](https://www.python.org/downloads/)
 ![Coverage](https://img.shields.io/badge/coverage-62%25-yellow)
 
@@ -15,8 +18,6 @@
 ## What is FastBlocks?
 
 FastBlocks is an asynchronous web application framework, inspired by FastAPI and built on Starlette, specifically designed for the rapid delivery of server-side rendered HTMX/Jinja template blocks. It combines modern Python async capabilities with server-side rendering to create dynamic, interactive web applications with minimal JavaScript.
-
-FastBlocks is built on **[Oneiric](https://github.com/lesleslie/oneiric)** for dependency injection, configuration management, and pluggable adapters. Oneiric replaced the legacy ACB dependency in Phase 3.1 of the 0.8.0 release; the `acb` extra was removed from `pyproject.toml` entirely. For the current dependency-injection surface, see `CLAUDE.md` ("Big Architectural Picture") and `docs/migrations/0.7-to-0.8.md` for the Oneiric migration.
 
 Unlike monolithic frameworks or micro-frameworks that require extensive configuration, FastBlocks offers a modular, component-based architecture that provides batteries-included functionality while maintaining exceptional flexibility. Built on Oneiric's powerful adapter pattern, FastBlocks enables seamless component swapping, cloud provider migrations, and tailored customizations without extensive code changes.
 
@@ -126,7 +127,7 @@ uv add fastblocks
 
 ### Requirements
 
-- Python 3.13 or higher
+- Python 3.14 or higher
 
 ### Optional Dependencies
 
