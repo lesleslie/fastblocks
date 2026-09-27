@@ -176,9 +176,8 @@ jobs:
     # D4 (htmx correctness), D5 (async rendering), D6 (security
     # middleware), D7 (perf benchmarks), D8 (dep hygiene), and D9
     # (docs audit) — but none of those tests run in CI without this
-    # job. ``--no-cov`` for now; D1b Phase 1.5 follow-up will tighten
-    # to ``--cov-fail-under=67.81`` after the coverage ratchet is
-    # updated (per ledger Ruling #4 + whole-branch review I1).
+    # job. ``--cov-fail-under=67.81`` per D1b Phase 1.5 fix; local
+    # pytest matches CI.
     name: pytest (D1/D3/D4/D5/D6/D7/D8 audit-cleared gate)
     runs-on: ubuntu-latest
     steps:
@@ -191,4 +190,4 @@ jobs:
         run: uv sync --frozen --group dev
 
       - name: Run pytest on the audit-cleared test suite
-        run: uv run pytest tests/ --no-cov -q
+        run: uv run pytest tests/ -q
