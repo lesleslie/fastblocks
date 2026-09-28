@@ -45,7 +45,7 @@ version: 1
 | D3  | **FAIL** | `.verify-evidence/d3-adapter-matrix.html`, `.verify-evidence/d3-status-code.txt` | F1.5-D3-T1 (adapter matrix surface), F1.5-D3-T2 (boot-test file inventory) |
 | D4  | PASS | `.verify-evidence/d4-demo-page.html`, `.verify-evidence/d4-demo-swap.html`, `.verify-evidence/d4-framework-htmx.txt` | HX-Trigger header noted (see D4 evidence) |
 | D5  | PASS | `.verify-evidence/d5-framework-async.txt`, `.verify-evidence/d5-htmy-snapshot.txt` | none |
-| D6  | **FAIL** | `.verify-evidence/d6-middleware.txt`, `.verify-evidence/d6-pip-audit.txt`, `.verify-evidence/d6-landing-security.txt` | F1.5-D6-T1 (CSP `unsafe-inline`), F1.5-D6-T2 (urllib3 CVEs), F1.5-D6-T3 (msgpack CVE) |
+| D6  | **PASS** | `.verify-evidence/d6-middleware.txt`, `.verify-evidence/d6-pip-audit.txt`, `.verify-evidence/d6-landing-security.txt`, `.verify-recheck/d6-csp-tests.txt` | F1.5-D6-T1 [ADDRESSED] via `0128432` (CSP nonce). F1.5-D6-T2..T5 were RESCOLLAPSED in Phase 1.5 recheck (original CVEs were in pip-audit's own tool venv, not fastblocks). |
 | D7  | PASS | `.verify-evidence/d7-performance.html`, `.verify-evidence/d7-perf.txt` | none |
 | D8  | **FAIL** | `.verify-evidence/d8-uv-lock-check.txt`, `.verify-evidence/d8-loose-pins.txt` | F1.5-D8-T1 (uv lock drift), F1.5-D8-T2 (typer/uvicorn/structlog upper caps) |
 | D9  | PASS | `.verify-evidence/d9-lychee.txt`, `.verify-evidence/d9-no-claim.txt`, `.verify-evidence/d9-residue.txt`, `.verify-evidence/d9-claim-gaps.txt` | kelp/webawesome residue is in archived plan files (historical context, legitimate) |
@@ -132,26 +132,19 @@ All four coverages ≥ 67.81% floor. Framework ratchet at 67.98% is above the 67
 
 ### D6 — Security
 
-**Status: FAIL**
+**Status: PASS**
 
-- Middleware tests: `11 passed, 2 skipped, 1 failed`. Failed test: `tests/middleware/test_security_headers.py::test_csp_header_present_and_safe` — CSP `style-src 'self' https: 'unsafe-inline'` allows `unsafe-inline` without a nonce. CSP is emitted as: `default-src 'self'; ... style-src 'self' https: 'unsafe-inline'; ...`
+- Middleware tests: `71 passed, 1 skipped` (full `tests/middleware/` + `tests/test_middleware*.py` after F1.5-D6-T1 landed). The originally-failing `tests/middleware/test_security_headers.py::test_csp_header_present_and_safe` now PASSES — CSP no longer allows `'unsafe-inline'` without a nonce. New file `tests/security/test_csp_no_unsafe_inline.py` adds 9 dedicated tests pinning the value shape (style-src strips `'unsafe-inline'`, nonce present in CSP, nonce varies per request, `inline_css(nonce)` emits the attribute, `build_nonce_csp` strips `'unsafe-inline'`, template-globals inline resolvers are callables). Evidence: `.verify-recheck/d6-csp-tests.txt`.
 - CSRF tests: passed
 - Autoescape regression: passed
 - `docs/security/auth-adapter-threat-model.md`: **EXISTS** ✓
-- **pip-audit:** 18 vulnerabilities in 4 packages. OSV.dev severity lookup:
-  - **HIGH**: `urllib3` (CVE-2026-44431, CVE-2026-44432) — fix to 2.7.0
-  - **HIGH**: `msgpack` (CVE-2026-57585) — fix to 1.2.1
-  - **MODERATE**: `idna` (CVE-2026-45409) — fix to 3.15
-  - **pip** self-vulnerabilities: 11 entries (CVE-2026-1703, CVE-2026-3219, CVE-2026-6357, CVE-2026-8643, CVE-2026-13346) — fix to 26.x
+- **pip-audit recheck (Phase 1.5):** ran `pip-audit --disable-pip --no-deps --requirement .verify-recheck/d6-fastblocks-frozen-requirements.txt` (uv-managed venv has no pip, so used `--disable-pip --no-deps --requirement` against a `uv pip freeze` snapshot of fastblocks `.venv`'s 309 packages). Returned `No known vulnerabilities found` (exit 0). All 18 original CVEs were in pip-audit's own tool environment (`/Users/les/.local/share/uv/tools/pip-audit/bin/python`), NOT fastblocks. Evidence: `.verify-recheck/d6-pip-audit-recheck.txt`, `.verify-recheck/d6-fastblocks-frozen-requirements.txt`.
 
-**Classification:** Per the brief: "FAIL if any CVEs are high-severity OR any test errors." Both triggers fire.
+**Classification:** Per the brief: "FAIL if any CVEs are high-severity OR any test errors." Both triggers are now absent in fastblocks `.venv`. PASS.
 
 **Phase 1.5 followups opened:**
-- **F1.5-D6-T1** — Fix CSP `style-src` to either drop `'unsafe-inline'` or use nonces/hashes
-- **F1.5-D6-T2** — Bump `urllib3` to ≥2.7.0 (closes 2 HIGH CVEs)
-- **F1.5-D6-T3** — Bump `msgpack` to ≥1.2.1 (closes 1 HIGH CVE)
-- **F1.5-D6-T4** (optional) — Bump `idna` to ≥3.15 (MODERATE)
-- **F1.5-D6-T5** (optional) — Refresh pip in venv (closes 11 self-vulns)
+- **F1.5-D6-T1** — [ADDRESSED] via `0128432` (CSP nonce-based). `SecureHeadersMiddleware` generates a per-request `secrets.token_urlsafe(16)` nonce, stores it on `scope["state"]["csp_nonce"]`, and overrides the `secure` library CSP to drop `'unsafe-inline'` from `style-src` while adding `'nonce-{value}'` to both `style-src` and `script-src`. `inline_css(nonce)` / `inline_js(nonce)` emit `<style nonce="...">` / `<script type="module" nonce="...">`. `template_globals()` returns callables (`_resolve_inline_css` / `_resolve_inline_js`) that look up the nonce from `get_request()` at render time. Note: the brief targeted `fastblocks/middleware/security.py` — that file does not exist; the actual CSP construction lives in `SecureHeadersMiddleware` inside `fastblocks/middleware.py`.
+- F1.5-D6-T2..T5 — RESCOLLAPSED (Phase 1.5 recheck found the 18 CVEs were in pip-audit's own tool venv, not fastblocks — see D6 evidence above).
 
 ### D7 — Performance
 
@@ -211,7 +204,7 @@ All 12 routes returned 200:
 | F1.5-D3-T1 | D3 | Fix adapter-matrix route to enumerate spec §D3 in-scope adapters |
 | F1.5-D3-T2 | D3 | Add `tests/adapters/<domain>/<key>/test_boot.py` for matrix adapters |
 | F1.5-D4-T1 | D4 | Investigate `HX-Trigger` header emission in `/demo` HTMX swap (absent in `d4-demo-swap.html`; brief required HX-Trigger presence as part of the swap evidence chain; implementer classified as feature gap not correctness bug — adjudicated as Phase 1.5 followup) |
-| F1.5-D6-T1 | D6 | Fix CSP `style-src` to drop `'unsafe-inline'` or use nonces |
+| F1.5-D6-T1 | D6 | [ADDRESSED] via `0128432` (CSP nonce-based: `SecureHeadersMiddleware` now generates a per-request `secrets.token_urlsafe(16)` nonce, stores it on `scope["state"]["csp_nonce"]`, and overrides the `secure` library CSP to drop `'unsafe-inline'` from `style-src` while adding `'nonce-{value}'` to both `style-src` and `script-src`. `inline_css(nonce)` / `inline_js(nonce)` now emit `<style nonce="...">` / `<script type="module" nonce="...">`. `template_globals()` now returns callables (`_resolve_inline_css` / `_resolve_inline_js`) that look up the nonce from `get_request()` at render time so the `<style>` / `<script>` tag matches the per-request CSP. 9 new tests in `tests/security/test_csp_no_unsafe_inline.py` pin the value shape: `'unsafe-inline'` absent from `style-src`, nonce present, nonce varies per request, `inline_css(nonce)` emits the attribute, `build_nonce_csp` strips `'unsafe-inline'`. Existing `tests/middleware/test_security_headers.py::test_csp_header_present_and_safe` now passes (was the original failing test); all 71 middleware tests pass with no regression.) |
 | F1.5-D6-T2 | D6 | [RESCOLLAPSED] Recheck via `pip-audit --disable-pip --no-deps --requirement .verify-recheck/d6-fastblocks-frozen-requirements.txt` (note: brief's `PIPAPI_PYTHON_LOCATION` requires pip inside the target venv; fastblocks `.venv` is uv-managed with no pip, so used `--disable-pip --no-deps --requirement` with a `uv pip freeze --python .venv/bin/python` snapshot of 309 packages) returned `No known vulnerabilities found` (exit 0). All 18 prior CVEs were in pip-audit's own tool environment (`/Users/les/.local/share/uv/tools/pip-audit/bin/python`), NOT fastblocks. The original d6-pip-audit.txt even contains a pip-audit warning: *"will run pip against /Users/les/.local/share/uv/tools/pip-audit/bin/python, but you have a virtual environment loaded at /Users/les/Projects/mahavishnu/.venv"*. Evidence: `.verify-recheck/d6-pip-audit-recheck.txt`, `.verify-recheck/d6-fastblocks-frozen-requirements.txt`. |
 | F1.5-D6-T3 | D6 | [RESCOLLAPSED] msgpack 1.1.2 is NOT in fastblocks `.venv`. Recheck (`uv pip freeze --python .venv/bin/python`) shows fastblocks venv has zero msgpack install. Original CVE-2026-57585 was in pip-audit's own tool environment, not fastblocks. See F1.5-D6-T2 evidence. |
 | F1.5-D6-T4 | D6 | [RESCOLLAPSED] idna 3.11 is NOT in fastblocks `.venv`. Recheck (`uv pip freeze --python .venv/bin/python`) shows fastblocks venv has zero idna install. Original CVE-2026-45409 was in pip-audit's own tool environment, not fastblocks. See F1.5-D6-T2 evidence. |
