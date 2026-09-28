@@ -5,14 +5,20 @@ serves a full page on a normal GET and an HTMX fragment when the
 ``HX-Request`` header is present, demonstrating the dual-response pattern
 that fastblocks-ui apps use to keep server logic simple.
 
+On the HTMX swap branch, the route also emits an ``HX-Trigger`` response
+header carrying a JSON payload keyed by ``demo-search-completed`` so
+client-side listeners can observe the swap with the original query
+(F1.5-D4-T1).
+
 # req: REQ-P2-B2-001
 """
 from __future__ import annotations
 
+import json
+
 from fastblocks_ui import field, text_input
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-
 from templates import render_template
 
 _PARTIAL_TEMPLATE = "partials/results.html"
@@ -28,9 +34,13 @@ async def demo_route(request: Request) -> HTMLResponse:
         "results": results,
     }
     if request.headers.get("HX-Request"):
-        return HTMLResponse(
+        response = HTMLResponse(
             await render_template(request, _PARTIAL_TEMPLATE, context)
         )
+        response.headers["HX-Trigger"] = json.dumps(
+            {"demo-search-completed": {"query": q}}
+        )
+        return response
     return HTMLResponse(await render_template(request, _PAGE_TEMPLATE, context))
 
 
