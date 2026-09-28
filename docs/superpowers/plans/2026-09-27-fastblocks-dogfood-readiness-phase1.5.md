@@ -946,7 +946,7 @@ b58f1b1    docs(fastblocks): Phase 3 verify report — fix round 2            �
 
 ## Self-review checklist (run before handoff)
 
-- [ ] Spec coverage: every Phase 1.5 followup from the verify report maps to a task (15 → 11 substantive (Tasks 1–10 + 12) + 1 doc-rot + 3 coverage sub-tasks (T11a/b/c) = 15 tasks total, with Tier 1 collapsing some)
+- [ ] Spec coverage: every Phase 1.5 followup from the verify report maps to a task (15 → 10 substantive (Tasks 1–10) + 1 doc-rot (T12) + 3 coverage sub-tasks (T11a/b/c, replacing T11) = 14 tasks total, with Tier 1 collapsing some)
 - [ ] Placeholder scan: no "TBD" / "TODO" / "implement later"
 - [ ] Type consistency: dependency annotations match verify report's Dependency annotations sub-section
 - [ ] Tier sequencing matches verify report's Effort sizing + Dependency annotations
