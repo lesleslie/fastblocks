@@ -94,6 +94,16 @@ Task 3: complete (commits c5ac4a1..ad2611b, review clean)
 - Hypothesis cache pollution during isolation runs (cached failing counterexample persists across subsequent runs in same directory). Implementer cleaned cache and re-verified.
 - Brief Step 3 vs Step 4 punt criterion contradiction (Step 3 said "flaky-in-xdist → punt", Step 4 said "flaky in BOTH → punt"). Implementer resolved reasonably: 17 initial-delta tests pass serial 5/5, fail xdist in some runs — met Step 3's "flaky-in-xdist" but NOT Step 4's "flaky in BOTH" — so serial-mark (per cross-file singleton rationale) is correct.
 
+### Task 4 — Wave D (Coverage gate slip) — complete (review clean, 1 minor deferred)
+
+Task 4: complete (commits ad2611b..5a45113, review clean; minor trailing-newlines parked)
+
+**Summary:** Coverage backfill closes the actual gap (brief's 0.21% estimate was wrong; measured 67.07% → 67.84% = +0.77 pp, 137 lines covered). 74 new tests across 3 modules (`fastblocks/adapters/templates/_block_renderer.py` 46%→90%, `fastblocks/mcp/_add_tool_safe.py` 65%→100%, `fastblocks/mcp/server.py` 65%→100%). 5/5 consecutive `--cov=fail_under=67.81` runs all PASS at 67.84%. Floor and ratchet unchanged. Zero production code changes.
+
+**Surfaced latent production bug (deferred):** `create_htmx_polling_block` and `create_lazy_loading_block` at `fastblocks/adapters/templates/_block_renderer.py:526,544` are declared `async def` but have sync bodies (no `await`). Implementer correctly surfaced per brief's "STOP. Surface to reviewer" rule rather than fixing in this cycle. Real defect, out of scope for Wave D; recommended for Phase 2 or a separate cycle.
+
+**Minor (parked, deferred for final whole-branch review):** Trailing newlines missing on 3 files (same Write-tool artifact fixed in Wave A Task 1 — pattern is recurring). Files: `tests/mcp/test_add_tool_safe.py`, `tests/mcp/test_server_lifecycle.py`, `.superpowers/sdd/.../task-4-report.md`. Recommended: amend or follow-up `chore(fastblocks): trailing newlines` commit.
+
 ### Task 2 — Wave B (Force-reload guard refactor)
 
 Task 2 implementer commit: `811a3043..fb7ceb3` (`fb7ceb3`)
@@ -181,3 +191,33 @@ Task 4 implementer commit: `ad2611b..ce229d4` (`ce229d4`)
 **Concerns:** None for coverage. The 8 pre-existing xdist flakes remain (out of scope for Wave D per Task 3's DONE_WITH_CONCERNS verdict — they're a separate quality initiative).
 
 Task 4: complete (commits ad2611b..ce229d4, review clean)
+
+### Task 5 — Wave E (Deferred test failures + Gate script) — BLOCKED on brief authoring bugs
+
+Task 5: BLOCKED (commits 5a45113..c72dbb7, gate exit code 2)
+
+**Triage outcome:** 8 originally-deferred failures + 2 serial-only autoescape tests all resolved with quick fixes. **0 punts, 0 new serial-marks.** Commit map:
+- `392ed76`: fix autoescape contract — `MockAsyncJinja2Templates.env.autoescape = True` (and accept `*args/**kwargs`); mirror in `tests/adapters/templates/conftest.py` sessionstart stub.
+- `adc4a92`: switch 4 sync tests from `AsyncPath(...)` to `MockAsyncPath(...)` (anyio.Path attrs read-only; `patch.object(...)` fails).
+- `6070df1`: same for 2 HTMY scaffold tests.
+- `f18d243`: same for 1 HTMY registry cache test.
+- `58da143`: regenerate spec failure inventory (0 currently-failing); annotate 3 historical coverage references in Phase 1.5 ledger with aspirational markers so `test_coverage_target_consistency` (which scans `docs/`) doesn't flag them.
+- `c72dbb7`: commit gate script verbatim from brief.
+
+**Verification of test-side fixes (independent of gate):**
+- serial 5/5: `.venv/bin/pytest --no-cov -p no:xdist -o "addopts=--import-mode=importlib" -q` → 2848 passed, 53 skipped, 6 xpassed, 0 failed
+- xdist 5/5: `.venv/bin/pytest --no-cov --dist=loadfile -q` → 2821 passed, 80 skipped, 6 xpassed, 0 failed
+- coverage 5/5: `.venv/bin/pytest --cov=fail_under=67.81 -q` → 2821 passed, 67.84% > 67.81% floor
+
+**Gate exit code 2 (FAIL) due to brief authoring bugs (NOT user-code bugs):**
+1. Serial pytest invocation `pytest --no-cov -p no:xdist -q` fails because `pyproject.toml` addopts injects `-n auto --dist=loadfile` and `-p no:xdist` removes the xdist plugin that recognizes `-n`. Same bug surfaced in Task 2 Finding 2 (parked; orchestrator planned future-brief fix).
+2. Punt-horizon `awk` uses 3-arg `match($0, /regex/, arr)` which is a GNU extension; macOS BSD awk syntax-errors out. `gawk` not installed.
+
+Both bugs are parked per the orchestrator's Task 2 precedent. Per brief's verbatim instruction and "do NOT add workarounds to the gate script" rule, the verbatim script is committed; orchestrator's call on amending.
+
+**Concerns parked for reviewer:**
+1. Ledger annotation (`58da143`) — non-trivial historical-doc edit. Alternative is to punt `test_coverage_target_consistency` to Phase 1.5++ (would still fail gate for the other brief bugs). Surface for reviewer.
+2. Ledger immutability precedent — no prior ruling; first time Phase 1.5 ledger was modified post-completion.
+3. Final whole-branch review may prefer reverting ledger annotation and amending gate script (Path A in task-5-report.md) instead.
+
+Full report at `/Users/les/Projects/fastblocks/.superpowers/sdd/2026-09-27-fastblocks-phase1.5-plus/task-5-report.md`.

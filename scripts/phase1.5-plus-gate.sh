@@ -52,11 +52,13 @@ if [ -f docs/known-claim-gaps.md ]; then
     TODAY=$(date +%Y-%m-%d)
     SIX_MONTHS_OUT=$(date -v+6m +%Y-%m-%d 2>/dev/null || date -d "+6 months" +%Y-%m-%d)
     # Extract Target: YYYY-MM-DD rows; check each is in range
-    BAD_PUNT=$(awk -F'|' '/Target: [0-9]{4}-[0-9]{2}-[0-9]{2}/ {
-        match($0, /Target: ([0-9]{4}-[0-9]{2}-[0-9]{2})/, arr)
-        target = arr[1]
+    BAD_PUNT=$(awk -F'|' '
+/Target: [0-9]{4}-[0-9]{2}-[0-9]{2}/ {
+    if (match($0, /Target: [0-9]{4}-[0-9]{2}-[0-9]{2}/)) {
+        target = substr($0, RSTART + 8, 10)
         if (target < "'"$TODAY"'" || target > "'"$SIX_MONTHS_OUT"'") print NR": "$0
-    }' docs/known-claim-gaps.md)
+    }
+}' docs/known-claim-gaps.md)
     if [ -n "$BAD_PUNT" ]; then
         echo "FAIL: punt target date outside 6-month window (today=$TODAY, horizon=$SIX_MONTHS_OUT):"
         echo "$BAD_PUNT"
@@ -68,7 +70,7 @@ fi
 # 5 consecutive serial runs
 echo "Running 5 consecutive serial pytest runs..."
 for i in 1 2 3 4 5; do
-    .venv/bin/pytest --no-cov -p no:xdist -q \
+    .venv/bin/pytest --no-cov -p no:xdist -o "addopts=--import-mode=importlib" -q \
         || { echo "FAIL: serial run $i"; exit 1; }
 done
 echo "OK: 5/5 serial runs passed"
@@ -81,7 +83,7 @@ echo "OK: 5/5 serial runs passed"
 echo "Running 5 consecutive xdist pytest runs..."
 for i in 1 2 3 4 5; do
     .venv/bin/pytest --no-cov --dist=loadfile -q \
-        || { echo "FAIL: xdist run $i (non-serial tests); exit 1; }
+        || { echo "FAIL: xdist run $i (non-serial tests)"; exit 1; }
 done
 echo "OK: 5/5 xdist runs passed (non-serial tests; serial-marked tests skipped per hook)"
 
