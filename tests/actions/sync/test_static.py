@@ -15,6 +15,8 @@ from fastblocks.actions.sync.static import (
 )
 from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
 
+from tests._mocks import MockAsyncPath
+
 
 @pytest.fixture
 def mock_storage():
@@ -249,7 +251,11 @@ class TestSyncStatic:
         with patch(
             "fastblocks.actions.sync.static.resolve_component_async", mock_depends_get
         ):
-            custom_path = AsyncPath("custom/static")
+            # Use MockAsyncPath (from tests._mocks) instead of the real
+            # anyio Path: ``anyio.Path`` is read-only, so
+            # ``patch.object(custom_path, 'exists', ...)`` raises
+            # ``AttributeError: 'Path' object attribute 'exists' is read-only``.
+            custom_path = MockAsyncPath("custom/static")
 
             with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
                 result = await sync_static(
@@ -377,7 +383,11 @@ class TestBackupStaticFiles:
     @pytest.mark.asyncio
     async def test_backup_static_with_custom_path(self):
         """Test backup_static_files with custom path."""
-        custom_path = AsyncPath("custom/static")
+        # Use MockAsyncPath (from tests._mocks) instead of the real
+        # anyio Path: ``anyio.Path`` is read-only, so
+        # ``patch.object(custom_path, 'exists', ...)`` raises
+        # ``AttributeError: 'Path' object attribute 'exists' is read-only``.
+        custom_path = MockAsyncPath("custom/static")
 
         with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
             result = await backup_static_files(static_path=custom_path)

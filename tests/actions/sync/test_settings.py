@@ -13,6 +13,8 @@ from fastblocks.actions.sync.settings import (
 )
 from fastblocks.actions.sync.strategies import SyncDirection, SyncStrategy
 
+from tests._mocks import MockAsyncPath
+
 
 @pytest.fixture
 def mock_storage():
@@ -194,7 +196,11 @@ class TestSyncSettings:
         with patch(
             "fastblocks.actions.sync.settings.resolve_component_async", mock_depends_get
         ):
-            custom_path = AsyncPath("custom/settings")
+            # Use MockAsyncPath (from tests._mocks) instead of the real
+            # anyio Path: ``anyio.Path`` is read-only, so
+            # ``patch.object(custom_path, 'exists', ...)`` raises
+            # ``AttributeError: 'Path' object attribute 'exists' is read-only``.
+            custom_path = MockAsyncPath("custom/settings")
 
             with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
                 result = await sync_settings(
@@ -246,7 +252,11 @@ class TestBackupSettings:
     @pytest.mark.asyncio
     async def test_backup_settings_with_custom_path(self):
         """Test backup_settings with custom path."""
-        custom_path = AsyncPath("custom/settings")
+        # Use MockAsyncPath (from tests._mocks) instead of the real
+        # anyio Path: ``anyio.Path`` is read-only, so
+        # ``patch.object(custom_path, 'exists', ...)`` raises
+        # ``AttributeError: 'Path' object attribute 'exists' is read-only``.
+        custom_path = MockAsyncPath("custom/settings")
 
         with patch.object(custom_path, "exists", AsyncMock(return_value=False)):
             result = await backup_settings(settings_path=custom_path)
