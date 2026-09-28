@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% import "greeting/_macros.html" as m %}
+{% block content %}
+  <!--render:jinja-->
+  {{ m.greeting_card(name="Ada Lovelace", avatar="/static/ada.png", bio="First programmer.") }}
+{% endblock %}

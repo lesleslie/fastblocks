@@ -1,0 +1,9 @@
+# Templates adapter — declares hybrid as the default renderer.
+# req: REQ-P2-B3-001
+adapters:
+  templates:
+    default: "hybrid"
+    available:
+      - "hybrid"
+      - "htmy"
+      - "jinja2"

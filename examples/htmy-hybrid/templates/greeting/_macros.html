@@ -1,0 +1,8 @@
+{% macro greeting_card(name, avatar, bio) %}
+<div class="greeting-card">
+  <img src="{{ avatar }}" alt="{{ name }}'s avatar">
+  <h2>{{ name }}</h2>
+  <p>{{ bio }}</p>
+  <button type="button">Follow</button>
+</div>
+{% endmacro %}
