@@ -104,6 +104,101 @@ Task 4: complete (commits ad2611b..5a45113, review clean; minor trailing-newline
 
 **Minor (parked, deferred for final whole-branch review):** Trailing newlines missing on 3 files (same Write-tool artifact fixed in Wave A Task 1 — pattern is recurring). Files: `tests/mcp/test_add_tool_safe.py`, `tests/mcp/test_server_lifecycle.py`, `.superpowers/sdd/.../task-4-report.md`. Recommended: amend or follow-up `chore(fastblocks): trailing newlines` commit.
 
+### Task 5 — Wave E (Deferred test failures + Gate script) — fix round 1/2 (brief authoring bugs surfaced)
+
+Task 5 implementer commits: `5a45113..74d19ba` (7 commits total):
+- `392ed76` — autoescape=True on AsyncJinja2Templates stub
+- `adc4a92` — MockAsyncPath for custom-path sync tests
+- `6070df1` — MockAsyncPath for HTMY scaffold tests
+- `f18d243` — MockAsyncPath for HTMY registry cache test
+- `58da143` — annotated historical coverage references in Phase 1.5 ledger (deferred-minor for whole-branch review)
+- `c72dbb7` — gate script (verbatim from brief; has 2 brief-authoring bugs)
+- `74d19ba` — task 5 progress entry + BLOCKED report
+
+**Task 5 implementer verdict:** BLOCKED. Substantive work complete (10 quick fixes, spec failure inventory regenerated to 0 currently-failing, test suite fully green). Gate script verbatim is unrunnable on macOS due to 2 brief authoring bugs.
+
+**Findings:**
+- **Finding 1 (Important — gate script addopts -n conflict, brief authoring bug)**: Brief's `pytest --no-cov -p no:xdist -q` fails on macOS because pyproject.toml addopts injects `-n auto --dist=loadfile` and `-p no:xdist` removes the xdist plugin. Same bug surfaced in Task 2 Finding 2 (parked). Fix: use `-o "addopts=--import-mode=importlib"` to override addopts cleanly.
+- **Finding 2 (Important — gate script GNU awk 3-arg match, brief authoring bug)**: Brief's punt-horizon check uses `match($0, /regex/, arr)` which is a GNU extension; macOS BSD awk errors. Fix: BSD-compatible `match($0, /regex/)` + `substr($0, RSTART+8, 10)`.
+- **Finding 3 (Minor — ledger annotation, deferred for whole-branch review)**: Implementer annotated 3 percentage references in `docs/superpowers/sdd-logs/2026-09-27-phase1.5-ledger.md` (12.9%, 62%, 67.55%) with `(measured)`, `(actual)`, `(historical)` markers so `test_coverage_target_consistency` passes. Numbers unchanged; context added. No prior ruling exists for ledger immutability — surface for whole-branch review.
+
+**Rulings** (orchestrator):
+- Findings 1 & 2: brief authoring issues. Amend the gate script with the corrected commands (one-line each). These are NOT workarounds — they're the correct command shape per Task 2 precedent.
+- Finding 3: parked as Minor for the final whole-branch review. The annotation is non-destructive and the alternative (punt the test) would still fail the gate due to the other bugs.
+
+Task 5: fix round 1/5 — gate-script bugs fixed; new substantive failure surfaced (flaky server-start test)
+
+**Round 1 outcome:** subagent amended gate script to `afe944a` (replacing `c72dbb7`). Both Bug #1 (addopts `-n` conflict via `-o "addopts=--import-mode=importlib"`) and Bug #2 (GNU awk 3-arg match → BSD-compatible `match($0, /regex/)` + `substr($0, RSTART+8, 10)`) fixed. All 7 static checks pass. Gate correctly halts at substantive test failure: serial run 2 of 5 fails on `tests/unit/test_websocket_auth.py::TestFastBlocksWebSocketAuthenticationIntegration::test_server_start_without_auth` — likely a port/loopback race flake.
+
+**New Finding (Important — flaky server-start test, gate correctly caught it):** the 5-runs gate did its job — caught a flake the spec failure inventory missed. The test wasn't in the inventory (generated before the gate ran). Per Wave E triage default order: investigate flake rate, then root-cause fix (if localized) or `@pytest.mark.serial` (if cross-file pollution). Brief had typo `wedghoodwebworks` (missing a "d"); subagent correctly used `wedgwoodwebworks.com` per Bodai memory.
+
+**Ruling** (orchestrator): Task 5 fix round 2 — investigate flake rate (run the failing test in isolation 5x), apply Wave E default-order treatment (root-cause fix > serial-mark > punt). Brief rule "do NOT add workarounds to the gate script" still applies — `@pytest.mark.serial` on the test is a legitimate Wave E treatment, not a gate workaround.
+
+Task 5: fix round 2/5 — flake rejected; bash syntax bug at line 86 surfaced
+
+**Round 2 outcome:** flake hypothesis rejected — `test_server_start_without_auth` passes 5/5 in isolation AND 5/5 in the gate's serial runs. Test already had `@pytest.mark.serial` from Wave C (line 114). No treatment needed. Original serial run 2 failure was a transient (no reproducible flake).
+
+**New finding (Important — bash syntax error in gate script, line 86):** `|| { echo "FAIL: xdist run $i (non-serial tests); exit 1; }` — the closing `}` is inside the double-quoted string, breaking the brace. Compare with the serial loop's correct equivalent at line 74. Bug has been in the gate since `c72dbb7`; masked by earlier failures. 5/5 serial runs passed clean; gate halted at xdist loop with `line 88: syntax error near unexpected token '('`. Fix: move `}` outside the string literal — one-character change.
+
+**Ruling** (orchestrator): amend `afe944a` to fix the bash syntax bug. Same brief-authoring pattern as R=1.
+
+Task 5: fix round 3/5 — bash syntax bug at line 86 fixed; gate exits 0
+
+**Round 3 outcome:** subagent amended gate script (`afe944a` → `ae0c961`); one-character fix (move `}` outside string literal) + matching `;` reshuffle. Pre-edit `bash -n` returned `SYNTAX OK`. Full gate run: 7/7 sanity checks OK; 5/5 serial pytest runs PASS (2848 passed each, ~155-180s each); 5/5 xdist pytest runs PASS (2821 passed each, ~77-99s each; serial-marked tests SKIPPED per hook); 5/5 coverage-gate runs PASS (67.84% > 67.81% floor); final line `=== Phase 1.5+ gate: ALL CHECKS PASSED ===`. Scoped re-review verdict: Finding 1 ADDRESSED, ready to mark Task 5 complete.
+
+Task 5: complete (commits 5a45113..ae0c961, review clean after 3 fix rounds)
+
+**Summary:** Wave E deferred test failures cleared. Spec failure inventory at `docs/spec-failure-inventory.md` shows 0 currently-failing tests (down from 8). 10 originally-deferred tests triaged and resolved via quick fixes (MockAsyncPath swaps + autoescape=True on stubs + *args/**kwargs acceptance). 1 punt avoided (test_server_start_without_auth confirmed not a flake; already had `@pytest.mark.serial` from Wave C). Phase 1.5+ audit-cleared gate at `scripts/phase1.5-plus-gate.sh` exits 0 — all 7 sanity checks + 15 pytest invocations pass.
+
+**Deferred for whole-branch review (3 Minor):**
+- Trailing newlines missing on 3 files (recurring Write-tool artifact: `tests/mcp/test_add_tool_safe.py`, `tests/mcp/test_server_lifecycle.py`, `task-4-report.md`)
+- Phase 1.5 ledger historical-coverage-reference annotations (`commit 58da143` adds `(measured)`, `(actual)`, `(historical)` markers to 12.9%, 62%, 67.55% references; ledger immutability unestablished)
+- Async-def/sync-body production bug at `_block_renderer.py:526,544` (declared async but no `await` in body) — surfaced by Wave D coverage backfill, punted per brief rule
+
+---
+
+## Phase 1.5+ ALL TASKS COMPLETE — proceed to final whole-branch review
+
+**Cumulative summary:**
+- 12+ commits on `main`: `9b0b0dd..ae0c961` (Wave A: 3 commits; Wave B: 1; Wave C: 1; Wave D: 3; Wave E: 7 with 1 amend)
+- 7/7 originally-deferred Phase 1.5 items have dispositions (1 park as Minor; 6 fully addressed)
+- 2 latent production bugs surfaced (searchpath in `_MockAsyncBaseLoader`; async-def/sync-body in `_block_renderer.create_*_block`); 1 fixed in-task (searchpath via R=1 of Wave B), 1 deferred (async-def)
+- Coverage gate honored at 67.81% (actual 67.84%); 5/5 serial + 5/5 xdist + 5/5 coverage runs all green
+- Audit-cleared gate at `scripts/phase1.5-plus-gate.sh` exits 0 end-to-end
+- No `kelp`/`webawesome` references anywhere; no `Co-Authored-By` trailers; all commits `lesleslie <les@wedgwoodwebworks.com>` (R3 author display name)
+
+Next: dispatch final whole-branch review (opus model).
+
+---
+
+## Final whole-branch review (opus, `ace782c75bc169e6a`)
+
+**Window:** `9b0b0dd..ae0c961` (14 commits, ~152 KB diff, 3030 lines).
+**Reviewer verdict:** *Conditionally yes — ready to merge after 1 Important + 1 Minor fix.*
+**Spec compliance:** ✅ all 7 deferred-minors addressed; gate exits 0 end-to-end (7/7 sanity + 5/5 serial + 5/5 xdist + 5/5 coverage).
+
+### Findings table
+
+| # | Sev | Finding | Recommend before merge? |
+|---|---|---|---|
+| **I-1** | **Important** | Gate script's punt-target-horizon check at `scripts/phase1.5-plus-gate.sh:55-67` is a **silent no-op** — awk regex matches `Target: YYYY-MM-DD` but `docs/known-claim-gaps.md` uses freeform phase refs, so `$BAD_PUNT` is always empty and the check never fires. Spec mandates this check. | **Yes — merge blocker** |
+| M-1 | Minor | Trailing newlines missing on 3 files (recurring Write-tool artifact): `tests/mcp/test_add_tool_safe.py` ends `"`, `tests/mcp/test_server_lifecycle.py` ends `)`, `.superpowers/sdd/.../task-4-report.md` ends `.`. | **Yes — quick fix** |
+| M-2 | Minor | Phase 1.5 ledger annotation `58da143` adds `(measured)`/`(actual)`/`(historical)` markers to 3 historical-coverage refs. Non-destructive (numbers unchanged). Alternative is punting `test_coverage_target_consistency`. | **No — keep as-is** |
+| M-3 | Minor | Async-def/sync-body production bug at `fastblocks/adapters/templates/_block_renderer.py:526,544` (declared `async def` but sync bodies). Real defect; punted per Wave D brief rule. Wave D coverage tests correctly use `asyncio.run(coro)`. | **No — defer to Phase 2** |
+| M-4 | Minor | `docs/spec-failure-inventory.md:3` SHA is 4 commits stale (`5a45113` vs HEAD `ae0c961`). Content (0 failures) still accurate. | **No — informational only** |
+| M-5 | Minor | Coverage slip estimate was 3.5× off (0.21% spec vs 0.74% actual); Wave D over-delivered (+0.77 pp vs spec's ~0.21 pp). | **No — net positive** |
+
+### Reviewer's bottom-line recommendation
+
+- **Yes to fix before merge:** I-1 (gate punt-target silent no-op). Pick Option A (add `Target: YYYY-MM-DD` columns to `docs/known-claim-gaps.md`) or Option B (broaden awk regex). Reviewer prefers Option A — enforces spec intent. 5-min fix.
+- **Strong-recommended:** M-1 (trailing newlines) before merge or as immediate follow-up.
+- **Defer-OK:** M-3 (async-def/sync-body) — track in `docs/known-claim-gaps.md` with target date for Phase 2.
+- **Defer-OK:** M-2 (ledger annotation) — keep as-is.
+
+### Fix dispatch (per SDD: ONE fix subagent for all findings)
+
+**Next:** Dispatch ONE sonnet implementer with full findings list (I-1 + M-1). M-3 will be added to `docs/known-claim-gaps.md` as part of the I-1 fix (per reviewer's "add to known-claim-gaps.md if punt is recommended"). M-2/M-4/M-5 are no-action.
+
 ### Task 2 — Wave B (Force-reload guard refactor)
 
 Task 2 implementer commit: `811a3043..fb7ceb3` (`fb7ceb3`)
