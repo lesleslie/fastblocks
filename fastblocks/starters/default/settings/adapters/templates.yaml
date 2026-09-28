@@ -1,4 +1,5 @@
-# Templates adapter — defaults to Jinja2 (the framework's only renderer).
+# Templates use the Jinja2 renderer at scaffold time. Production apps register
+# HybridTemplatesManager via the framework.
 # req: REQ-P2-B1-001
 adapters:
   templates:
