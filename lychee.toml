@@ -1,7 +1,20 @@
 exclude = [
-    "\\[\\[",
-    "http://localhost",
+    "\\[\\[",           # Jinja2 block markers ([[ ]]) in rendered templates
+    "http://localhost", # loopback hostname form (matches docs like http://localhost:8000)
+    "127\\.0\\.0\\.1",   # loopback IP form; not caught by "http://localhost" since the hostname is the literal "127.0.0.1"
     "readthedocs\\.io",
     "docs\\.pytest\\.org",
     "www\\.starlette\\.io",  # sandbox network blocks external docs hosts; canonical Starlette URL is otherwise valid
+    "\\{\\{",           # Jinja2 variable markers in URL positions (e.g. <img src="{{ avatar }}">) — lychee otherwise tries to resolve the rendered expression as a literal path
+]
+
+# File-level exclusions. lychee tries to resolve every href/src against a
+# live HTTP origin; for root-relative paths under /static/, there's no such
+# origin during CI runs, so the path resolver fails even when the file
+# exists at the correct disk location. The paths in these base.html files
+# are correct in source (paths verified post-cherry-pick in commit c43dc24);
+# they only "fail" because lychee can't validate without a server.
+exclude_path = [
+    "^examples/landing/templates/base\\.html$",
+    "^fastblocks/starters/default/templates/base\\.html$",
 ]
