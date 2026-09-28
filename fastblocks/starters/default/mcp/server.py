@@ -12,7 +12,6 @@ from __future__ import annotations
 import json
 
 from fastmcp import FastMCP
-
 from fastblocks.starters.default.templates import render_template
 
 mcp = FastMCP(name="{app_name}-mcp")
@@ -28,7 +27,9 @@ async def list_routes() -> str:
 
 
 @mcp.tool()
-async def render_template_tool(name: str, context: dict | None = None) -> str:
+async def render_template_tool(
+    name: str, context: dict[str, object] | None = None
+) -> str:
     """Render a Jinja2 template to a string. ``context`` is optional."""
     from starlette.requests import Request
 

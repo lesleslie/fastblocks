@@ -10,6 +10,7 @@ production apps.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -23,7 +24,7 @@ _ENVIRONMENT = Environment(
 
 
 async def render_template(
-    request: Request, name: str, context: dict[str, object] | None = None
+    request: Request, name: str, context: Mapping[str, object] | None = None
 ) -> str:
     """Render a Jinja2 template to a string.
 

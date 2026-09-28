@@ -50,6 +50,12 @@ from ._enhanced_filters import ENHANCED_ASYNC_FILTERS, ENHANCED_FILTERS
 from ._filters import FASTBLOCKS_FILTERS
 from .jinja2 import Templates
 
+__all__ = [
+    "HybridTemplates",
+    "HybridTemplatesManager",
+    "HybridTemplatesSettings",
+]
+
 
 class HybridTemplates:
     """Unified interface for Hybrid template management features."""
