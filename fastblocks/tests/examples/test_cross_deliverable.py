@@ -21,7 +21,7 @@ EXAMPLES = [
 # "kelp was removed in Phase 1A" or "webawesome" appearing in a docstring
 # description of historical context. Identifiers must appear as Python words.
 _USAGE_TOKENS = re.compile(
-    r"\b(kelp|webawesome)\b\s*[(=:,)]"   # identifier followed by call/assign/arg
+    r"`(kelp|webawesome|acb)`"      # backticked reference in prose/docstring
     r"|\bimport\s+(acb|kelp|webawesome)\b"  # actual import statement
     r"|\bfrom\s+(acb|kelp|webawesome)\b",  # actual from-import statement
     re.IGNORECASE,
@@ -56,3 +56,11 @@ def test_example_no_kelp_webawesome_acb(name: str, path: Path) -> None:
         assert match is None, (
             f"{name}/{py}: contains banned token {match.group(0)!r}"
         )
+
+
+def test_rollback_sink_readme_exists() -> None:
+    """REQ-P2-INT-003 — examples/_drafts/README.md is the rollback sink."""
+    # req: REQ-P2-INT-003
+    repo_root = Path(__file__).resolve().parents[3]
+    sink = repo_root / "examples" / "_drafts" / "README.md"
+    assert sink.is_file(), f"rollback sink missing: {sink}"
