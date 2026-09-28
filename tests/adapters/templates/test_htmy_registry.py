@@ -18,6 +18,7 @@ from fastblocks.adapters.templates.htmy import (
     HTMYTemplates,
     HTMYTemplatesSettings,
 )
+from tests._mocks import MockAsyncPath
 
 
 class TestHTMYComponentRegistry:
@@ -498,8 +499,11 @@ class TestComponent:
             if file.name == "__init__.py":
                 continue
             component_name = file.stem
-            # Convert Path to string and then to AsyncPath to ensure proper async path creation
-            sync_components[component_name] = AsyncPath(str(file))
+            # Convert Path to MockAsyncPath (from tests._mocks): the test
+            # then assigns ``component_path.read_text = mock_read_text`` and
+            # anyio.Path attributes are read-only, raising
+            # ``AttributeError: 'Path' object attribute 'read_text' is read-only``.
+            sync_components[component_name] = MockAsyncPath(str(file))
 
         mock_cache = AsyncMock()
         mock_cache.get = AsyncMock(return_value=None)
