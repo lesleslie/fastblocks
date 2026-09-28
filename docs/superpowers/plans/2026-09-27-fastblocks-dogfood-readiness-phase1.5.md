@@ -138,8 +138,9 @@ Re-running the verify matrix (Plan 3 of 5) against the new HEAD should flip the 
 
 ```bash
 cd /Users/les/Projects/fastblocks
-PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python \
-  .venv/bin/ty check fastblocks 2>&1 | tee .verify-recheck/d2-ty-recheck.txt
+# Note: ty uses its native --python flag (NOT PIPAPI_PYTHON_LOCATION — that's pip-audit-only).
+# uv-managed venvs (no pip installed) need this explicit flag.
+.venv/bin/ty check --python /Users/les/Projects/fastblocks/.venv/bin/python fastblocks 2>&1 | tee .verify-recheck/d2-ty-recheck.txt
 ```
 
 Expected: ty searches `/Users/les/Projects/fastblocks/.venv/lib/...` instead of `/Users/les/Projects/mahavishnu/.venv/bin`. Compare counts:
@@ -150,11 +151,14 @@ Expected: ty searches `/Users/les/Projects/fastblocks/.venv/lib/...` instead of 
 
 ```bash
 cd /Users/les/Projects/fastblocks
-PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python \
-  .venv/bin/pip-audit 2>&1 | tee .verify-recheck/d6-pip-audit-recheck.txt
+# Note: pip-audit's standard path requires `pip` in the target venv. fastblocks `.venv` is uv-managed
+# (no pip). Workaround: snapshot the venv with uv pip freeze, then audit the snapshot via pip-audit
+# --disable-pip --no-deps --requirement. (PIPAPI_PYTHON_LOCATION alone won't work without pip installed.)
+.venv/bin/uv pip freeze --python /Users/les/Projects/fastblocks/.venv/bin/python > .verify-recheck/d6-fastblocks-frozen-requirements.txt
+.venv/bin/pip-audit --disable-pip --no-deps --requirement .verify-recheck/d6-fastblocks-frozen-requirements.txt 2>&1 | tee .verify-recheck/d6-pip-audit-recheck.txt
 ```
 
-Expected: pip-audit audits the fastblocks venv, not its own. Compare CVE counts:
+Expected: pip-audit audits the fastblocks venv's frozen snapshot, not its own tool venv. Compare CVE counts:
 - Original: 18 CVEs (urllib3 + msgpack + idna + pip self-vulns)
 - Recheck: ?
 
@@ -163,8 +167,8 @@ Expected: pip-audit audits the fastblocks venv, not its own. Compare CVE counts:
 Open the verify report's "Phase 1.5 followups surfaced" table. For each row whose evidence was a measurement artifact:
 
 ```markdown
-| F1.5-D2-T2 | D2 | Resolved as measurement artifact. Recheck via `PIPAPI_PYTHON_LOCATION=.venv/bin/python ty check fastblocks` returned N diagnostics, all against fastblocks venv. [RESCOLLAPSED] |
-| F1.5-D6-T2 | D6 | Resolved as measurement artifact. Recheck via `PIPAPI_PYTHON_LOCATION=.venv/bin/python pip-audit` returned 0 high-severity CVEs in fastblocks venv. [RESCOLLAPSED] |
+| F1.5-D2-T2 | D2 | Resolved as measurement artifact. Recheck via `ty check --python .venv/bin/python fastblocks` returned N diagnostics, all against fastblocks venv. [RESCOLLAPSED] |
+| F1.5-D6-T2 | D6 | Resolved as measurement artifact. Recheck via `uv pip freeze + pip-audit --disable-pip --no-deps --requirement` returned 0 high-severity CVEs in fastblocks venv. [RESCOLLAPSED] |
 | F1.5-D6-T3 | D6 | [same] |
 | F1.5-D6-T4 | D6 | [same] |
 | F1.5-D6-T5 | D6 | [same] |
