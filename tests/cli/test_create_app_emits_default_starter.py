@@ -108,7 +108,11 @@ def test_create_app_substitutes_app_name_placeholder(
 def test_create_app_default_style_is_fastblocks_ui(
     cli_app, runner: CliRunner, tmp_path: Path
 ) -> None:
-    """REQ-P2-B1-001: app.yaml must default to fastblocks_ui, NOT vanilla."""
+    """REQ-P2-B1-001: app.yaml must default to fastblocks_ui, NOT vanilla.
+
+    Omit ``--style`` and ``--domain`` so this test exercises the CLI's actual
+    defaults — passing either explicitly would defeat the assertion.
+    """
     target = tmp_path / "style-app"
     result = runner.invoke(
         cli_app,
@@ -117,10 +121,6 @@ def test_create_app_default_style_is_fastblocks_ui(
             "app",
             "--app-name",
             "style-app",
-            "--style",
-            "fastblocks_ui",
-            "--domain",
-            "example.com",
         ],
     )
     assert result.exit_code == 0, result.stdout + result.stderr
