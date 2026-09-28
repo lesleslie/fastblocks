@@ -937,13 +937,12 @@ def create_app(
     style: Annotated[
         StyleName,
         typer.Option(
-            prompt=True,
             help="The style you want to use [vanilla,fastblocks_ui]",
         ),
     ] = "fastblocks_ui",
     domain: Annotated[
         str,
-        typer.Option(prompt=True, help="Application domain"),
+        typer.Option(help="Application domain"),
     ] = "example.com",
 ) -> None:
     """Scaffold a new FastBlocks application from ``fastblocks/starters/default/``.
@@ -952,7 +951,7 @@ def create_app(
     placeholders are substituted everywhere (filenames + text file contents).
     """
     app_path = apps_path / app_name
-    _scaffold_from_starter(app_path, app_name, style, domain)
+    _scaffold_from_starter(app_path, app_name, domain)
     console.print(
         f"\n[bold][white]Project '[green]{app_name}[/]' is initialized at "
         f"[blue]{app_path}[/]. Run [magenta]`uv run fastblocks run`[/] from "
@@ -996,17 +995,16 @@ def create_ide_config(
 
 
 def _scaffold_from_starter(
-    app_path: Path, app_name: str, style: StyleName, domain: str
+    app_path: Path, app_name: str, domain: str
 ) -> None:
     """Copy ``fastblocks/starters/default/`` to ``app_path`` and substitute
     placeholders.
 
     Substitutes ``{app_name}`` in filenames and in any text file under the
-    starter tree. The ``style`` and ``domain`` parameters are accepted for
-    backwards compatibility with the prior CLI signature; the starter's
-    default style (``fastblocks_ui``) is the contract value per REQ-P2-B1-001
-    and is NOT overridden by the user-supplied ``style`` argument here (the
-    scaffold's app.yaml is intentionally pinned to fastblocks_ui).
+    starter tree. The ``domain`` parameter is accepted for backwards
+    compatibility with the prior CLI signature; the starter's default style
+    (``fastblocks_ui``) is the contract value per REQ-P2-B1-001 and is pinned
+    in the scaffold's app.yaml (the scaffolder does NOT take a style argument).
     """
     if not _STARTER_DIR.is_dir():
         msg = (
@@ -1071,8 +1069,13 @@ def _substitute(name: str, replacements: dict[str, str]) -> str:
 
 
 def _scaffold_app_tree(app_path: Path, app_name: str, style: StyleName) -> None:
-    """Deprecated — superseded by ``_scaffold_from_starter``."""
-    _scaffold_from_starter(app_path, app_name, style, "example.com")
+    """Deprecated — superseded by ``_scaffold_from_starter``.
+
+    ``style`` is accepted for backwards compatibility with the prior signature
+    but is no longer threaded into the scaffolder (the starter's default style
+    is pinned). Callers may safely drop the ``style`` argument.
+    """
+    _scaffold_from_starter(app_path, app_name, "example.com")
 
 
 def _render_app_templates(app_name: str) -> None:  # pragma: no cover - shim
