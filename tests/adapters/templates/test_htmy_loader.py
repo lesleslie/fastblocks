@@ -23,6 +23,7 @@ from fastblocks.adapters.templates._htmy_components import (
     ComponentValidator,
     load_component_from_source,
 )
+from tests._mocks import MockAsyncPath
 
 
 # ---------------------------------------------------------------------------
@@ -111,7 +112,11 @@ class TestOverwriteParameter:
         )
 
         # Patch the exists() check on the AsyncPath used as target_path.
-        target_async = AsyncPath(str(target))
+        # Use MockAsyncPath (from tests._mocks) instead of the real
+        # anyio Path: anyio.Path attributes are read-only, so
+        # ``target_async.exists = exists_true`` raises
+        # ``AttributeError: 'Path' object attribute 'exists' is read-only``.
+        target_async = MockAsyncPath(str(target))
 
         async def exists_true() -> bool:
             return True
@@ -138,8 +143,10 @@ class TestOverwriteParameter:
         )
 
         # Patch exists() and write_text() on the AsyncPath so the test
-        # runs in the conftest's MockAsyncPath environment.
-        target_async = AsyncPath(str(target))
+        # runs in the conftest's MockAsyncPath environment. Use
+        # MockAsyncPath (from tests._mocks) instead of the real
+        # anyio Path: anyio.Path attributes are read-only.
+        target_async = MockAsyncPath(str(target))
         written: list[str] = []
 
         async def exists_true() -> bool:
