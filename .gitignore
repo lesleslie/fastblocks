@@ -247,6 +247,8 @@ settings/registry_metadata.local.yaml
 .benchmarks/
 # Phase 3 verify evidence capture (gitignored per canonical runtime-artifact pattern)
 .verify-evidence/
+# Phase 1.5 verify-measurement recheck capture (sibling of .verify-evidence/)
+.verify-recheck/
 # Vitest config timestamp cache
 vitest.config.js.timestamp-*.mjs
 # Playwright output cruft

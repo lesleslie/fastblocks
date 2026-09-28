@@ -207,15 +207,15 @@ All 12 routes returned 200:
 |---|---|---|
 | F1.5-D1-T1 | D1 | **Heaviest followup** — bump `.coverage-ratchet.json` floor to 85% per spec §D1 line 319 (current floor 67.81% is a 17-percentage-point gap). Multi-week effort, likely requires additional test authoring across framework + starters + examples. Schedule last in Phase 1.5 sequence. |
 | F1.5-D2-T1 | D2 | Fix 7 mypy errors (5 framework/starter files) |
-| F1.5-D2-T2 | D2 | RESCOPE: re-run ty against fastblocks venv first (`uv run ty check fastblocks`); 82 of 95 current diagnostics are unresolved-import against wrong search paths (ty searched `/Users/les/Projects/mahavishnu/.venv/bin`, not fastblocks `.venv`). Reclassify remaining warnings after re-run. |
+| F1.5-D2-T2 | D2 | [RESCOLLAPSED] Recheck via `ty check --python /Users/les/Projects/fastblocks/.venv/bin/python fastblocks` (note: brief's `PIPAPI_PYTHON_LOCATION` env var is pip-audit-only; ty's native `--python` flag is the correct venv selector) returned `All checks passed!` (0 errors, 0 warnings) against fastblocks `.venv/lib/python3.14/site-packages`. Verbose log confirms ty resolved site-packages to `/Users/les/Projects/fastblocks/.venv/lib/python3.14/site-packages` (not mahavishnu). All 95 prior diagnostics were measurement artifacts. Evidence: `.verify-recheck/d2-ty-recheck.txt`. |
 | F1.5-D3-T1 | D3 | Fix adapter-matrix route to enumerate spec §D3 in-scope adapters |
 | F1.5-D3-T2 | D3 | Add `tests/adapters/<domain>/<key>/test_boot.py` for matrix adapters |
 | F1.5-D4-T1 | D4 | Investigate `HX-Trigger` header emission in `/demo` HTMX swap (absent in `d4-demo-swap.html`; brief required HX-Trigger presence as part of the swap evidence chain; implementer classified as feature gap not correctness bug — adjudicated as Phase 1.5 followup) |
 | F1.5-D6-T1 | D6 | Fix CSP `style-src` to drop `'unsafe-inline'` or use nonces |
-| F1.5-D6-T2 | D6 | (REVERIFY: run `PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python pip-audit` first; current pip-audit scanned its own venv, not fastblocks') Bump `urllib3` to ≥2.7.0 (2 HIGH CVEs) |
-| F1.5-D6-T3 | D6 | (REVERIFY: run `PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python pip-audit` first; current pip-audit scanned its own venv, not fastblocks') Bump `msgpack` to ≥1.2.1 (1 HIGH CVE) |
-| F1.5-D6-T4 | D6 | (REVERIFY: run `PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python pip-audit` first; current pip-audit scanned its own venv, not fastblocks') Bump `idna` to ≥3.15 (1 MODERATE CVE) |
-| F1.5-D6-T5 | D6 | (REVERIFY: run `PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python pip-audit` first; current pip-audit scanned its own venv, not fastblocks') Refresh pip in venv (11 self-vulns) |
+| F1.5-D6-T2 | D6 | [RESCOLLAPSED] Recheck via `pip-audit --disable-pip --no-deps --requirement .verify-recheck/d6-fastblocks-frozen-requirements.txt` (note: brief's `PIPAPI_PYTHON_LOCATION` requires pip inside the target venv; fastblocks `.venv` is uv-managed with no pip, so used `--disable-pip --no-deps --requirement` with a `uv pip freeze --python .venv/bin/python` snapshot of 309 packages) returned `No known vulnerabilities found` (exit 0). All 18 prior CVEs were in pip-audit's own tool environment (`/Users/les/.local/share/uv/tools/pip-audit/bin/python`), NOT fastblocks. The original d6-pip-audit.txt even contains a pip-audit warning: *"will run pip against /Users/les/.local/share/uv/tools/pip-audit/bin/python, but you have a virtual environment loaded at /Users/les/Projects/mahavishnu/.venv"*. Evidence: `.verify-recheck/d6-pip-audit-recheck.txt`, `.verify-recheck/d6-fastblocks-frozen-requirements.txt`. |
+| F1.5-D6-T3 | D6 | [RESCOLLAPSED] msgpack 1.1.2 is NOT in fastblocks `.venv`. Recheck (`uv pip freeze --python .venv/bin/python`) shows fastblocks venv has zero msgpack install. Original CVE-2026-57585 was in pip-audit's own tool environment, not fastblocks. See F1.5-D6-T2 evidence. |
+| F1.5-D6-T4 | D6 | [RESCOLLAPSED] idna 3.11 is NOT in fastblocks `.venv`. Recheck (`uv pip freeze --python .venv/bin/python`) shows fastblocks venv has zero idna install. Original CVE-2026-45409 was in pip-audit's own tool environment, not fastblocks. See F1.5-D6-T2 evidence. |
+| F1.5-D6-T5 | D6 | [RESCOLLAPSED] pip self-vulns (PYSEC-2026-1796/2875/2876/196/3721) were against pip-audit's bundled pip 25.3 in `/Users/les/.local/share/uv/tools/pip-audit/bin/python`. fastblocks `.venv` is uv-managed and does not install pip at all (verified: `.venv/bin/python -m pip --version` → `No module named pip`). The 11 self-vulns cannot apply to a venv that has no pip. See F1.5-D6-T2 evidence. |
 | F1.5-D8-T1 | D8 | Resolve uv lock drift (user-controlled) |
 | F1.5-D8-T2 | D8 | Add upper caps to `typer`, `uvicorn`, `structlog` |
 | F1.5-DELIV-T1 | DELIV | B1 starter's `fastblocks run` CLI subcommand does not exist (per `examples/landing/main.py:14` docstring, actual entry is `uv run fastblocks run` or `uvicorn main:app`). The "one-command install + run" claim (per spec §B1) is broken. Either implement the `run` subcommand in `fastblocks/cli.py` OR update starter README + starter `pyproject.toml` scripts section to use `uvicorn main:app` consistently. |
@@ -224,21 +224,30 @@ All 12 routes returned 200:
 **Dependency annotations**:
 - F1.5-D3-T2 depends on F1.5-D3-T1 (need to know what's in-scope before writing boot tests)
 - F1.5-D8-T2 (upper caps) must precede F1.5-D8-T1 (uv lock — user-controlled per `feedback-bodai-push-is-user-controlled.md`) so the lockfile reflects the new caps
-- F1.5-D2-T1 + F1.5-D2-T2 land together (both type-system fixes, both touch framework source)
-- F1.5-D6-T1 (CSP) is independent of F1.5-D6-T2..T5 (dep bumps); can ship before dep work
+- F1.5-D2-T1 stands alone (F1.5-D2-T2 was RESCOLLAPSED — ty was pointed at wrong venv; only mypy fixes remain in D2)
+- F1.5-D6-T1 (CSP) stands alone (F1.5-D6-T2..T5 were RESCOLLAPSED — original pip-audit scanned its own tool venv, not fastblocks)
 
 **Doc rot note**: Spec §Phase 1→2 gate and this plan both reference `docs/superpowers/reports/framework-api-drift.md`; actual file is `docs/framework-drift-tracker.md` (created at `d4c972d`). To be folded into next spec revision.
 
 **Effort sizing**:
-- F1.5-D2-T1/T2: ~hours (small fix surface; 7 mypy + 13 ty warnings after reclassify)
+- F1.5-D2-T1: ~hours (small fix surface; 7 mypy errors; F1.5-D2-T2 RESCOLLAPSED via Phase 1.5 recheck — ty was pointed at wrong venv, fastblocks `.venv` passes clean)
 - F1.5-D3-T1/T2: ~days (enumeration + 6 boot tests across templates/jinja2, _async_renderer, fastblocks_ui, icons, fonts/squirrel, middleware)
 - F1.5-D4-T1: ~hours (single HX-Trigger emission path)
 - F1.5-D6-T1: ~hours (CSP nonce or `style-src` fix)
-- F1.5-D6-T2..T5: ~hours (4 dep bumps, reverified scope)
+- F1.5-D6-T2..T5: [RESCOLLAPSED] ~0 (Phase 1.5 recheck via `pip-audit --disable-pip --no-deps --requirement .verify-recheck/d6-fastblocks-frozen-requirements.txt` returned "No known vulnerabilities found" against fastblocks `.venv`; original 18 CVEs were all in pip-audit's own tool venv)
 - F1.5-D8-T1/T2: ~hours (3 upper caps + uv lock refresh; T1 user-controlled)
 - F1.5-D1-T1: **multi-week** (heaviest)
 - F1.5-DELIV-T1: ~hours (CLI subcommand OR docs update)
 - F1.5-F-FW-1: ~days (framework API add OR demo re-scoping)
+
+**Phase 1.5 recheck evidence (Tier 1 collapse run)**:
+- `.verify-recheck/d2-ty-recheck.txt` — verbose ty log; final line `All checks passed!`; site-packages resolved to `/Users/les/Projects/fastblocks/.venv/lib/python3.14/site-packages`
+- `.verify-recheck/d6-pip-audit-recheck.txt` — clean summary; `No known vulnerabilities found`; exit 0
+- `.verify-recheck/d6-fastblocks-frozen-requirements.txt` — 309-package `uv pip freeze --python .venv/bin/python` snapshot used as the audit input
+
+**Phase 1.5 recheck methodology** (note for future operators):
+- ty venv selection uses the `--python <PATH>` CLI flag (per `ty check --help`). The brief's `PIPAPI_PYTHON_LOCATION` env var is pip-audit-only and is NOT honored by ty.
+- pip-audit's `PIPAPI_PYTHON_LOCATION=<venv>/bin/python` requires pip to be installed inside the target venv. fastblocks `.venv` is uv-managed and has no pip; the alternative path is `uv pip freeze --python .venv/bin/python > requirements.txt && pip-audit --disable-pip --no-deps --requirement requirements.txt`. The `--no-deps` flag is mandatory because `--disable-pip` requires either `--no-deps` or a hashed requirements file.
 
 ## Framework followups (extension of `docs/framework-drift-tracker.md`)
 
