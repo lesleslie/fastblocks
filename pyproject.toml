@@ -199,7 +199,10 @@ max-complexity = 15
 convention = "google"
 
 [tool.codespell]
-skip = "*/data/*,tests/*,test_*.py,*_test.py"
+# Vendored minified JS/CSS (htmx.min.js, future vendor bundles) trip
+# codespell on minifier-mangled identifier fragments that aren't real
+# English words. Skip them by glob.
+skip = "*/data/*,tests/*,test_*.py,*_test.py,*.min.js,*.min.css"
 quiet-level = 3
 ignore-words-list = "crate,uptodate,nd"
 

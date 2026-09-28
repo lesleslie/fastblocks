@@ -61,10 +61,11 @@ class Diagnostic:
 
     @property
     def prefix(self) -> str:
-        """Directory-prefix used as the table-key. The fastblocks
-        repo uses ``fastblocks/`` twice in the path (repo name +
-        package name), so we look for the *second* ``fastblocks/`` and
-        take everything up to the next slash.
+        """Directory-prefix used as the table-key.
+
+        The fastblocks repo uses ``fastblocks/`` twice in the path
+        (repo name + package name), so we look for the *second*
+        ``fastblocks/`` and take everything up to the next slash.
 
         Examples::
 
@@ -174,7 +175,9 @@ def main() -> int:
         print("WARNING: pyright emitted rules not in known table")
         print("  (add a row to docs/known-type-issues.md OR fix the code):")
         for rule, items in unknown_rules:
-            print(f"    {rule:38s}  ({len(items)} diagnostics across {len(set(d.path for d in items))} files)")
+            print(
+                f"    {rule:38s}  ({len(items)} diagnostics across {len({d.path for d in items})} files)"
+            )
             for sample in items[:3]:
                 print(f"        {sample.path}:{sample.line}  {sample.message[:90]}")
         return 1

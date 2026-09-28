@@ -152,7 +152,7 @@ async def safe_depends_get(
                 else default
             )
             cache_dict[key] = instance
-        except (Exception,):
+        except Exception:  # noqa: BLE001 - intentional contract-level catch: safe_depends_get returns default on any resolver failure
             # ``safe_depends_get`` is contractually safe: any resolver failure
             # (missing Oneiric, bad candidate, factory raising, etc.) falls
             # back to ``default`` rather than propagating.

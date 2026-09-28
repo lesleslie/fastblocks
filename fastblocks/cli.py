@@ -994,11 +994,8 @@ def create_ide_config(
     generate_ide_config(output_dir=output_dir, ide=ide)
 
 
-def _scaffold_from_starter(
-    app_path: Path, app_name: str, domain: str
-) -> None:
-    """Copy ``fastblocks/starters/default/`` to ``app_path`` and substitute
-    placeholders.
+def _scaffold_from_starter(app_path: Path, app_name: str, domain: str) -> None:
+    """Copy the starter tree to ``app_path`` and substitute placeholders.
 
     Substitutes ``{app_name}`` in filenames and in any text file under the
     starter tree. The ``domain`` parameter is accepted for backwards
@@ -1080,7 +1077,7 @@ def _scaffold_app_tree(app_path: Path, app_name: str, style: StyleName) -> None:
 
 def _render_app_templates(app_name: str) -> None:  # pragma: no cover - shim
     """Deprecated — the starter no longer uses *.tmpl substitution."""
-    return None
+    return
 
 
 def _update_app_configs(app_path: Path, domain: str) -> None:  # pragma: no cover - shim
