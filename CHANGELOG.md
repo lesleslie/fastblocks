@@ -5,6 +5,110 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.0] - 2026-09-28
+
+### Added
+
+- B1 default starter template via fastblocks create-app
+- fastblocks: B2 landing page at examples/landing/
+- fastblocks: B3 HTMY ↔ Jinja2 hybrid demo at examples/htmy-hybrid/
+
+### Changed
+
+- fastblocks: Collapse safe_depends_get exception tuple
+- fastblocks: Migrate asyncio.iscoroutinefunction to inspect.iscoroutinefunction
+- fastblocks: Phase 1.5 design — test gate tightening + C3 framework fix
+- fastblocks: Phase 1.5 implementation plan
+- fastblocks: Phase 1.5 v2 — 2-agent final pass review fixes
+- fastblocks: Phase 1.5 v2 — 4-agent review fixes
+- fastblocks: Wave B sessionstart sys.modules stub
+
+### Fixed
+
+- C3 register_fastblocks_ui_functions wiring verified
+- fastblocks: Add URL-encoded Jinja patterns + drop regex anchors in exclude_path
+- fastblocks: B1 starter kwargs — card(header=), navbar(brand=)
+- fastblocks: D8a tighten dep pins (httpx2 2.x, mcp-common <0.31, oneiric 0.25.x)
+- fastblocks: Drop backticks from historical kelp/webawesome references — F4.2 followup
+- fastblocks: Extend lychee.toml with missing exclusions + drop dead [tool.lychee]
+- fastblocks: Gate punt-horizon check actually validates
+- fastblocks: Phase 1.5 final fix wave — README badge + serial marker hook + autoescape test 11
+- fastblocks: Resolve codespell + ruff fast-hook failures
+- fastblocks: Resolve remaining ty errors
+- fastblocks: Resolve test collection errors (tests 42, 43)
+- fastblocks: Resolve ty type errors in core + adapters (sitemap, resolver)
+- fastblocks: Skip loopback+private URLs in lychee link check
+- fastblocks: Starter routes type + refurb mix
+- fastblocks: Templates + link-path hygiene
+- fastblocks: TestSafeDependsGet catches bare Exception
+- fastblocks: Wave C xdist-order-pollution hybrid
+- htmy-hybrid: Append trailing newline to every file in example
+- htmy-hybrid: Drop redundant registration, route via base.html, tighten types
+- spec+plan(fastblocks): Phase 1.5+ (deferred-minors) v1
+- spec+plan(fastblocks): Phase 1.5+ v2 — 2-agent review fixes
+
+### Documentation
+
+- fastblocks: Add audit-pass implementation plan (Plan 1 of 2)
+- fastblocks: Add dogfood-readiness design spec + README D9 cleanup
+- fastblocks: Archive Phase 1.5+ SDD ledger per finishing-a-development-branch
+- fastblocks: Commit Wave E Task 5 report that was left uncommitted
+- fastblocks: D9 docs-vs-code audit — links, adapter docs, claim gaps
+- fastblocks: Framework API drift tracker
+- fastblocks: Phase 1.5 SDD ledger preserved as project history
+- fastblocks: Phase 1.5+ regen spec failure inventory
+- fastblocks: Phase 2 build wave plan (Plan 2 of 2)
+- fastblocks: Phase 2 build wave plan v2 — post-wave accuracy revision
+- fastblocks: Plan 1 v2 — apply 6-agent review findings (blockers fixed)
+- fastblocks: Record final whole-branch review findings in SDD ledger
+- fastblocks: Task-1 build wave report (B1 starter template)
+- fastblocks: Wave D task 4 implementation report
+- fastblocks: Wave D task 4 progress entry
+- fastblocks: Wave E annotate historical coverage references in ledger
+
+### Testing
+
+- fastblocks: A11y conftest skips on missing Playwright browser
+- fastblocks: C3 smoke test now exercises Templates().init() production path
+- fastblocks: D1 add cardinality-guard coverage tests
+- fastblocks: D1 raise coverage ratchet toward 85%
+- fastblocks: D3 adapter matrix boot tests for in-scope adapters
+- fastblocks: D3 fix xdist flake on templates adapter autoescape
+- fastblocks: D4 HTMX correctness — attributes, response headers, OOB round-trip
+- fastblocks: D5 async-rendering proof
+- fastblocks: D6 baseline security — headers, CSRF, autoescape, threat model
+- fastblocks: D7 headline perf benchmarks
+- fastblocks: Wave D close coverage gap to 67.81%
+- fastblocks: Wave E lock autoescape=True on AsyncJinja2Templates stub
+- fastblocks: Wave E use MockAsyncPath for custom-path sync tests
+- fastblocks: Wave E use MockAsyncPath for HTMY registry cache test
+- fastblocks: Wave E use MockAsyncPath for HTMY scaffold tests
+
+### CI/CD
+
+- fastblocks: D1b coverage gate enforcement (4 sites)
+- fastblocks: D9 add pytest CI job (CRITICAL C1 whole-branch review fix)
+- fastblocks: Wave E Phase 1.5+ audit-cleared gate
+- fastblocks: Wave E Phase 1.5+ audit-cleared gate
+
+### Internal
+
+- fastblocks: Add security upper caps to constraint refresh
+- fastblocks: Add ty:ignore[unresolved-import] for optional deps
+- fastblocks: Constraint refresh 2026-09-28
+- fastblocks: Cross-deliverable test followups — F4.1/F4.2/F4.4
+- fastblocks: D0 purge backup files + document archive
+- fastblocks: D2 mypy + ty green; pyright documented (audit-pass task 4)
+- fastblocks: D8 dep-hygiene CI gate (loose pin + broken release)
+- fastblocks: Drop unused ty:ignore directives
+- fastblocks: Examples/landing/ post-wave followups — F2.1-F2.5
+- fastblocks: F1.1 — test exercises CLI default for style and domain
+- fastblocks: F1.2 — drop unused style param from _scaffold_from_starter
+- fastblocks: F1.3 — correct templates.yaml scaffold comment
+- fastblocks: Phase 2 build wave integration verification + rollback sink
+- fastblocks: Refresh uv.lock
+- fastblocks: Trailing newlines on Wave D/E files
+
 ## [0.24.4] - 2026-09-26
 
 ### Added
