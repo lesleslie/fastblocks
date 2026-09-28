@@ -43,6 +43,10 @@ from jinja2.sandbox import SandboxedEnvironment
 from oneiric.core.logging import get_logger
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
 
+# HTMY is the companion component renderer; only needed for render_hybrid().
+from htmy import Component as HtmyComponent
+from htmy import Renderer as HtmyRenderer
+
 from ..oneiric_helper import register_candidate, resolve_instance
 from .jinja2 import Templates, TemplatesSettings
 
@@ -958,6 +962,89 @@ class HybridTemplatesManager:
                 type(e).__name__,
             )
             raise TemplateError(f"Error rendering fragment '{fragment_name}': {e}")
+
+    async def render_hybrid(
+        self,
+        jinja_template: str,
+        htmy_component: t.Callable[..., t.Any],
+        context: dict[str, t.Any] | None = None,
+        component_html_key: str = "component_html",
+    ) -> str:
+        """Render a Jinja2 layout with an HTMY component embedded as a string.
+
+        The framework calls ``htmy_component(**context)`` to produce the
+        component tree, renders that tree via ``htmy.Renderer().render(...)``
+        to HTML, then injects that HTML into the Jinja2 context under
+        ``component_html_key`` before rendering ``jinja_template``. The
+        Jinja2 template is expected to embed the rendered component via
+        ``{{ component_html | safe }}`` (or the override key).
+
+        This is the framework-level entry point used by routes that want
+        to compose Jinja2 layout + HTMY component without manually
+        stitching the two renderers together in handler code.
+
+        Args:
+            jinja_template: Path to the Jinja2 template resolved via the
+                manager's environment. The template must extend the shared
+                base layout and embed the component via
+                ``{{ component_html | safe }}``.
+            htmy_component: HTMY component factory (typically wrapped with
+                ``@component``). Invoked once with ``**context`` to produce
+                the component tree.
+            context: Variables passed to both ``htmy_component(**ctx)`` and
+                the Jinja2 render. Use this to supply the component's props
+                (for example, ``{"props": GreetingCardProps(...)}``).
+            component_html_key: Context key under which the rendered HTMY
+                HTML is injected. Defaults to ``"component_html"`` which
+                matches the convention used by the B3 demo's hybrid
+                template.
+
+        Returns:
+            The Jinja2-rendered string with the HTMY component embedded.
+        """
+        merged_context: dict[str, t.Any] = dict(context or {})
+
+        try:
+            component_tree = htmy_component(**merged_context)
+        except Exception as exc:
+            # The HTMY component factory itself raised (e.g. missing
+            # ``props`` in context). Distinguish from a Renderer failure
+            # by surfacing the factory class+name in the log.
+            _log.exception(
+                "HybridTemplatesManager.render_hybrid(%s): component factory raised %s",
+                jinja_template,
+                type(exc).__name__,
+            )
+            raise TemplateError(
+                f"HTMY component factory failed for '{jinja_template}': {exc}"
+            ) from exc
+
+        try:
+            component_html: str = str(await HtmyRenderer().render(component_tree))
+        except Exception as exc:
+            # Renderer failures propagate as TemplateError so callers can
+            # distinguish hybrid-render failures from plain Jinja2
+            # TemplateNotFound.
+            _log.exception(
+                "HybridTemplatesManager.render_hybrid(%s): HTMY renderer raised %s",
+                jinja_template,
+                type(exc).__name__,
+            )
+            raise TemplateError(
+                f"HTMY renderer failed for '{jinja_template}': {exc}"
+            ) from exc
+
+        merged_context[component_html_key] = component_html
+
+        env = self._get_template_environment()
+        try:
+            template = env.get_template(jinja_template)
+        except TemplateNotFound as exc:
+            # Re-raise unchanged; callers expect jinja2.TemplateNotFound
+            # for missing templates.
+            raise
+
+        return str(template.render(merged_context))
 
     async def _find_fragment(
         self, fragment_name: str, template_name: str | None = None
