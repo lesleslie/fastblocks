@@ -8,9 +8,8 @@ the pure-HTMY mode and the hybrid (HTMY-in-Jinja2) mode render.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
-from htmy import Context, component, html
+from htmy import Component, Context, component, html
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,7 +22,7 @@ class GreetingCardProps:
 
 
 @component
-def greeting_card(props: GreetingCardProps, context: Context) -> Any:
+def greeting_card(props: GreetingCardProps, context: Context) -> Component:
     """Render the canonical greeting-card DOM subtree.
 
     Uses the HTMY ``@component`` decorator pattern — HTMY's ``Component``

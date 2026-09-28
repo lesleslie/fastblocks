@@ -15,16 +15,24 @@ def test_templates_adapter_module_imports() -> None:
 
 
 def test_hybrid_adapter_resolves_through_oneiric() -> None:
-    """``Resolver.resolve(domain="fastblocks", key="hybrid")`` returns the HybridTemplatesManager class."""
+    """``Resolver.resolve(domain="fastblocks", key="hybrid_template_manager")`` returns the HybridTemplatesManager class.
+
+    The framework registers ``HybridTemplatesManager`` itself under the
+    ``"hybrid_template_manager"`` key (see ``fastblocks/adapters/templates/
+    _advanced_manager.py``); the example does not re-register it.
+    """
     from fastblocks.adapters.templates.hybrid import HybridTemplatesManager
     from fastblocks.core.resolver import get_resolver
 
     resolver = get_resolver()
-    candidate = resolver.resolve("fastblocks", "hybrid")
-    assert candidate is not None, "hybrid templates adapter not registered"
+    candidate = resolver.resolve("fastblocks", "hybrid_template_manager")
+    assert candidate is not None, "hybrid_template_manager adapter not registered"
     factory = candidate.factory
-    assert callable(factory), "hybrid candidate factory must be callable"
-    instance = factory()
+    assert callable(factory), "hybrid_template_manager factory must be callable"
+    result = factory()
+    # Framework registers ``lambda: HybridTemplatesManager`` (the class),
+    # so the factory returns the class itself; instantiate it explicitly.
+    instance = result() if isinstance(result, type) else result
     assert isinstance(instance, HybridTemplatesManager)
 
 

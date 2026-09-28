@@ -26,6 +26,9 @@ _PROPS = GreetingCardProps(
 # the hybrid template embeds the HTMY-rendered card via {{ component_html | safe }}.
 _JINJA_TEMPLATE = "greeting/jinja.html"
 _HYBRID_TEMPLATE = "greeting/hybrid.html"
+_BASE_TEMPLATE = "base.html"
+
+_VALID_MODES = frozenset({"jinja", "htmy", "hybrid"})
 
 
 async def greeting_route(request: Request) -> HTMLResponse:
@@ -36,45 +39,54 @@ async def greeting_route(request: Request) -> HTMLResponse:
     - ``render=htmy`` — pure HTMY component
     - ``render=hybrid`` — HTMY component rendered to HTML, then embedded
       inside a Jinja2 layout (the spirit of HybridTemplatesManager)
+
+    Unknown render modes return a 400 with an explicit error message so
+    typos in ``?render=...`` are surfaced instead of silently falling
+    back to hybrid output.
     """
     mode = (request.query_params.get("render") or "hybrid").lower()
+    if mode not in _VALID_MODES:
+        return HTMLResponse(
+            f"Unknown render mode: {mode!r}. Expected one of: {sorted(_VALID_MODES)}.",
+            status_code=400,
+        )
+
     if mode == "htmy":
-        body = await _render_htmy()
+        component_html = await _render_component_html()
+        body = await _render_base(request, component_html, "htmy")
     elif mode == "jinja":
         body = await render_jinja(request, _JINJA_TEMPLATE, {})
-    elif mode == "hybrid":
-        body = await _render_hybrid(request)
-    else:
-        body = await _render_hybrid(request)
+    else:  # hybrid — passed the membership check above.
+        component_html = await _render_component_html()
+        body = await render_jinja(
+            request,
+            _HYBRID_TEMPLATE,
+            {"component_html": component_html},
+        )
 
     return HTMLResponse(body)
 
 
-async def _render_htmy() -> str:
-    """Render the GreetingCard via HTMY directly."""
-    body = await Renderer().render(greeting_card(_PROPS))
-    # Wrap in the same base.html shell so the response shape matches
-    # the other modes — the snapshot test asserts on the inner card,
-    # not the wrapper.
-    return (
-        "<!DOCTYPE html><html lang=\"en\">"
-        "<head><meta charset=\"utf-8\"><title>HTMY Hybrid Demo</title></head>"
-        "<body><!--render:htmy-->" + body + "</body></html>"
-    )
+async def _render_component_html() -> str:
+    """Render the GreetingCard HTMY component to an HTML string.
 
-
-async def _render_hybrid(request: Request) -> str:
-    """Render via the hybrid path: HTMY component embedded in a Jinja2 layout.
-
-    ``HybridTemplatesManager`` does not expose a ``render_hybrid(component,
-    layout=...)`` API in the version installed here (see the report's
-    ``HybridTemplatesManager_quirks`` section), so we compose the two
-    engines manually: render the HTMY component to a string, then pass
-    it as ``component_html`` into a Jinja2 layout template.
+    Shared by the pure-HTMY mode (``_render_base``) and the hybrid branch
+    above — both need the same component output.
     """
-    component_html = await Renderer().render(greeting_card(_PROPS))
+    return await Renderer().render(greeting_card(_PROPS))
+
+
+async def _render_base(request: Request, content: str, render_mode: str) -> str:
+    """Wrap ``content`` in the shared base.html shell with a per-mode marker.
+
+    ``base.html`` defaults its ``{% block content %}`` to ``{{ content | safe }}``,
+    so direct renders inject the supplied content while child templates
+    (``greeting/jinja.html``, ``greeting/hybrid.html``) can still override
+    the block. The ``<!--render:<mode>-->`` marker is placed inside the
+    body so the snapshot test can strip it before comparing.
+    """
     return await render_jinja(
         request,
-        _HYBRID_TEMPLATE,
-        {"component_html": component_html},
+        _BASE_TEMPLATE,
+        {"content": f"<!--render:{render_mode}-->{content}"},
     )
