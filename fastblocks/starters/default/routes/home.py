@@ -12,7 +12,7 @@ from starlette.responses import HTMLResponse
 
 from fastblocks_ui import button, card, hero, navbar, shell
 
-from templates import render_template
+from fastblocks.starters.default.templates import render_template
 
 
 async def home_route(request: Request) -> HTMLResponse:

@@ -1077,7 +1077,6 @@ def _scaffold_app_tree(app_path: Path, app_name: str, style: StyleName) -> None:
 
 def _render_app_templates(app_name: str) -> None:  # pragma: no cover - shim
     """Deprecated — the starter no longer uses *.tmpl substitution."""
-    return
 
 
 def _update_app_configs(app_path: Path, domain: str) -> None:  # pragma: no cover - shim

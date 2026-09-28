@@ -13,7 +13,7 @@ import json
 
 from fastmcp import FastMCP
 
-from templates import render_template
+from fastblocks.starters.default.templates import render_template
 
 mcp = FastMCP(name="{app_name}-mcp")
 
@@ -23,9 +23,7 @@ async def list_routes() -> str:
     """Return the registered app routes as a JSON list."""
     from main import app
 
-    routes = []
-    for route in app.routes:
-        routes.append({"path": getattr(route, "path", str(route))})
+    routes = [{"path": getattr(route, "path", str(route))} for route in app.routes]
     return json.dumps(routes)
 
 

@@ -13,7 +13,7 @@ from starlette.responses import HTMLResponse
 
 from fastblocks_ui import field, text_input
 
-from templates import render_template
+from fastblocks.starters.default.templates import render_template
 
 _PARTIAL_TEMPLATE = "partials/results.html"
 _PAGE_TEMPLATE = "demo.html"
