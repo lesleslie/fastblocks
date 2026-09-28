@@ -41,7 +41,7 @@ version: 1
 |-----|--------|----------|-----------|
 | D0  | PASS | `.verify-evidence/d0-backup-files.txt`, `.verify-evidence/d0-sites-fastest.txt` | none |
 | D1  | PASS | `.verify-evidence/d1-*.json` (4 coverage reports) | none (gap: spec 85% target vs current 67.81% floor) |
-| D2  | **FAIL** | `.verify-evidence/d2-mypy.txt` (7 errors), `.verify-evidence/d2-ty.txt` (95 diagnostics) | F1.5-D2-T1 (mypy), F1.5-D2-T2 (ty) |
+| D2  | **PASS** | `.verify-evidence/d2-mypy.txt` (mypy 0 errors after Task 2; ty 0 errors after Task 1 collapse) | none (F1.5-D2-T1 [ADDRESSED] via `affe261`; F1.5-D2-T2 [RESCOLLAPSED] via Phase 1.5 recheck) |
 | D3  | **FAIL** | `.verify-evidence/d3-adapter-matrix.html`, `.verify-evidence/d3-status-code.txt` | F1.5-D3-T1 (adapter matrix surface), F1.5-D3-T2 (boot-test file inventory) |
 | D4  | PASS | `.verify-evidence/d4-demo-page.html`, `.verify-evidence/d4-demo-swap.html`, `.verify-evidence/d4-framework-htmx.txt` | HX-Trigger header noted (see D4 evidence) |
 | D5  | PASS | `.verify-evidence/d5-framework-async.txt`, `.verify-evidence/d5-htmy-snapshot.txt` | none |
@@ -206,7 +206,7 @@ All 12 routes returned 200:
 | ID | Dim | Description |
 |---|---|---|
 | F1.5-D1-T1 | D1 | **Heaviest followup** — bump `.coverage-ratchet.json` floor to 85% per spec §D1 line 319 (current floor 67.81% is a 17-percentage-point gap). Multi-week effort, likely requires additional test authoring across framework + starters + examples. Schedule last in Phase 1.5 sequence. |
-| F1.5-D2-T1 | D2 | Fix 7 mypy errors (5 framework/starter files) |
+| F1.5-D2-T1 | D2 | [ADDRESSED] Fixed 7 mypy errors across 5 framework files (templates/__init__.py, resolver.py, sitemap/core.py, hybrid.py, starters/default/mcp/server.py). Receiver-side `Mapping[str, object] \| None` change collapsed variance notes in home.py/demo.py at the call sites. mypy 0 errors after commit `affe261`. |
 | F1.5-D2-T2 | D2 | [RESCOLLAPSED] Recheck via `ty check --python /Users/les/Projects/fastblocks/.venv/bin/python fastblocks` (note: brief's `PIPAPI_PYTHON_LOCATION` env var is pip-audit-only; ty's native `--python` flag is the correct venv selector) returned `All checks passed!` (0 errors, 0 warnings) against fastblocks `.venv/lib/python3.14/site-packages`. Verbose log confirms ty resolved site-packages to `/Users/les/Projects/fastblocks/.venv/lib/python3.14/site-packages` (not mahavishnu). All 95 prior diagnostics were measurement artifacts. Evidence: `.verify-recheck/d2-ty-recheck.txt`. |
 | F1.5-D3-T1 | D3 | Fix adapter-matrix route to enumerate spec §D3 in-scope adapters |
 | F1.5-D3-T2 | D3 | Add `tests/adapters/<domain>/<key>/test_boot.py` for matrix adapters |
