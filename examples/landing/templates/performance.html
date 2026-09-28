@@ -1,0 +1,39 @@
+{# performance.html — D7 live proof surface.
+   Tabular content; no decoration. #}
+{% extends "base.html" %}
+{% block content %}
+  <main class="ui-shell">
+    <section class="ui-section" data-reveal>
+      <h1>Performance</h1>
+      <p>Latest benchmarks from <code>.benchmarks/</code>. Total rows: <strong>{{ count }}</strong>.</p>
+      {% if count == 0 %}
+      <p><em>No benchmark data yet — run the perf test suite to populate
+        <code>.benchmarks/</code>.</em></p>
+      {% endif %}
+    </section>
+    {% if count > 0 %}
+    <table class="ui-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Mean (s)</th>
+          <th>Stdev</th>
+          <th>Min</th>
+          <th>Max</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in benchmarks %}
+        <tr>
+          <td>{{ b.get("name", "?") }}</td>
+          <td>{{ b.get("mean", "?") }}</td>
+          <td>{{ b.get("stdev", "?") }}</td>
+          <td>{{ b.get("min", "?") }}</td>
+          <td>{{ b.get("max", "?") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </main>
+{% endblock %}

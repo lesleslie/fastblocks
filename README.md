@@ -1321,6 +1321,8 @@ The CLI now includes:
 
 ## Examples
 
+- [Landing page dogfood demo](examples/landing/) — live audit surface
+
 ### Creating a Dynamic Counter with HTMX
 
 ```python

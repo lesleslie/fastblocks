@@ -1,0 +1,18 @@
+# UI theme — token surface is the only supported customization point
+# (per fastblocks-ui/docs/theming-recipes.md line 109). The `Brand Accent`
+# recipe maps here: --ui-color-primary, --ui-color-primary-hover,
+# --ui-color-primary-active, --ui-radius-md. Brand colors live here,
+# nowhere else.
+#
+# Dark variant uses [data-theme="dark"] (documented closed decision in
+# theming-recipes.md:59-69). NOT light-dark(). The landing ships dark via
+# this hook from day one; no light/dark toggle is needed for dogfood.
+# req: REQ-P2-B2-002
+ui_theme:
+  tokens:
+    --ui-color-primary: "#7c3aed"
+    --ui-color-primary-hover: "#6d28d9"
+    --ui-color-primary-active: "#5b21b6"
+    --ui-radius-md: "0.5rem"
+  dark:
+    selector: '[data-theme="dark"]'

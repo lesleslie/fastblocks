@@ -1,0 +1,14 @@
+{# install.html — one-command install + hello-world. #}
+{% extends "base.html" %}
+{% block content %}
+  <main class="ui-shell">
+    <section class="ui-section" data-reveal>
+      <h1>Install</h1>
+      <pre><code>uv add fastblocks fastblocks-ui oneiric</code></pre>
+      <pre><code>from fastblocks.applications import FastBlocks
+app = FastBlocks()
+app.add_route("/", lambda r: HTMLResponse("&lt;h1&gt;Hello&lt;/h1&gt;"))</code></pre>
+      {{ cta|safe }}
+    </section>
+  </main>
+{% endblock %}

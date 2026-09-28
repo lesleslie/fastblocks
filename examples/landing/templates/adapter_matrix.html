@@ -1,0 +1,41 @@
+{# adapter_matrix.html — D3 live proof surface.
+   Auto-generated from the FastBlocks-owned Oneiric resolver.
+   `boot_tested` is True only when tests/adapters/<domain>/<key>/test_boot.py exists. #}
+{% extends "base.html" %}
+{% block content %}
+  <main class="ui-shell">
+    <section class="ui-section" data-reveal>
+      <h1>Adapter matrix</h1>
+      <p>Every adapter currently registered with the FastBlocks-owned
+        Oneiric resolver. <code>✓</code> means a passing boot test
+        exists at <code>tests/adapters/&lt;domain&gt;/&lt;key&gt;/test_boot.py</code>;
+        <code>?</code> means none has been written yet. Total: <strong>{{ total }}</strong>.</p>
+    </section>
+    <table class="ui-table">
+      <thead>
+        <tr>
+          <th>Domain</th>
+          <th>Key</th>
+          <th>Provider</th>
+          <th>Priority</th>
+          <th>Stack</th>
+          <th>Boot-tested</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.domain }}</td>
+          <td>{{ row.key }}</td>
+          <td>{{ row.provider }}</td>
+          <td>{{ row.priority }}</td>
+          <td>{{ row.stack_level }}</td>
+          <td>{% if row.boot_tested %}<span class="ui-tag is-success">✓</span>{% else %}<span class="ui-tag is-warning">?</span>{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6">No candidates registered.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+{% endblock %}

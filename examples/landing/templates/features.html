@@ -1,0 +1,11 @@
+{# features.html — per-feature section + cards. #}
+{% extends "base.html" %}
+{% block content %}
+  <main class="ui-shell">
+    <section class="ui-section" data-reveal>
+      <h1>Features</h1>
+      <p>What FastBlocks gives you out of the box.</p>
+    </section>
+    {{ sections_markup|safe }}
+  </main>
+{% endblock %}

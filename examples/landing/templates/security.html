@@ -1,0 +1,18 @@
+{# security.html — threat model + CVE status + security headers visible.
+   No decoration; informational only. #}
+{% extends "base.html" %}
+{% block content %}
+  <main class="ui-shell">
+    <section class="ui-section" data-reveal>
+      <h1>Security</h1>
+      <p>Threat model and CVE status. Honest by construction: alerts
+        reflect what the framework actually does, not what we'd like it
+        to do.</p>
+    </section>
+    {{ alerts_markup|safe }}
+    <section class="ui-section">
+      <h2>Threat model</h2>
+    </section>
+    {{ cards_markup|safe }}
+  </main>
+{% endblock %}

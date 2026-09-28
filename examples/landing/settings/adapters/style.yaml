@@ -1,0 +1,9 @@
+# Style adapter — the only legal values are vanilla and fastblocks_ui.
+# NOTE: kelp and webawesome were removed in Phase 1A; DO NOT re-add here.
+# req: REQ-P2-B2-001, REQ-P2-B2-002
+adapters:
+  style:
+    default: "fastblocks_ui"
+    available:
+      - "fastblocks_ui"
+      - "vanilla"

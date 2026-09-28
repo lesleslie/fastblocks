@@ -1,0 +1,14 @@
+{# Base layout — extends fastblocks-ui by inlining the shell markup from the route. #}
+{# req: REQ-P2-B2-001 #}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <title>FastBlocks — dogfood landing</title>
+  <link rel="stylesheet" href="/static/css/landing.css">
+</head>
+<body>
+  {% block content %}{% endblock %}
+  <script src="/static/js/htmx.min.js"></script>
+</body>
+</html>
