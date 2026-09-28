@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-_BENCH_DIR = Path("/Users/les/Projects/fastblocks/.benchmarks")
+_BENCH_DIR = Path(__file__).resolve().parents[3] / ".benchmarks"
 _MAX_AGE_SECONDS = 7 * 24 * 60 * 60
 
 

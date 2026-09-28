@@ -32,7 +32,7 @@ def test_no_unbacked_marketing_claims() -> None:
     dogfood surface, not the canonical docs. The main ``README.md`` at
     the repo root is a separate surface with its own review cadence.
     """
-    landing_root = Path("/Users/les/Projects/fastblocks/examples/landing")
+    landing_root = Path(__file__).resolve().parents[1]
     files: list[Path] = list(landing_root.rglob("*.html"))
     files.append(landing_root / "README.md")
     files = [p for p in files if p.exists()]

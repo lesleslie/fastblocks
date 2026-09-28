@@ -24,7 +24,7 @@ from starlette.responses import HTMLResponse
 
 from templates import render_template
 
-_REPO_ROOT = Path("/Users/les/Projects/fastblocks")
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _gather_candidates() -> list[dict[str, object]]:

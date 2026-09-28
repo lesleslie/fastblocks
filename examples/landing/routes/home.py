@@ -25,7 +25,7 @@ async def home_route(request: Request) -> HTMLResponse:
             card(header="Honest", body="No claim without a passing test."),
         ]
     )
-    navbar_markup = navbar(is_sticky=True)
+    navbar_markup = navbar(brand="FastBlocks", is_sticky=True)
     hero_markup = hero(
         title="FastBlocks",
         subtitle="Async web framework on Starlette + HTMX",

@@ -17,7 +17,7 @@ from starlette.responses import HTMLResponse
 
 from templates import render_template
 
-_BENCH_DIR = Path("/Users/les/Projects/fastblocks/.benchmarks")
+_BENCH_DIR = Path(__file__).resolve().parents[3] / ".benchmarks"
 
 
 def _load_latest_benchmarks() -> list[dict[str, object]]:

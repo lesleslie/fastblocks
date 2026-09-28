@@ -1,0 +1,29 @@
+/* FastBlocks landing — minimal dark-theme token surface.
+ *
+ * Tokens used here MUST be `--ui-*` (see README "Theme discipline"). The
+ * base shell markup comes from `fastblocks_ui.shell`; this stylesheet is
+ * intentionally tiny — it exists to demonstrate the dark `[data-theme]`
+ * variant documented in `fastblocks-ui/docs/theming-recipes.md`.
+ *
+ * # req: REQ-P2-B2-001
+ */
+:root[data-theme="dark"] {
+  --ui-bg: #0b1220;
+  --ui-fg: #e6edf3;
+  --ui-muted: #8b949e;
+  --ui-primary: #3b82f6;
+  --ui-surface: #111827;
+  --ui-border: #1f2937;
+  --ui-radius: 6px;
+}
+
+body {
+  background: var(--ui-bg, #0b1220);
+  color: var(--ui-fg, #e6edf3);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  margin: 0;
+}
+
+a {
+  color: var(--ui-primary, #3b82f6);
+}

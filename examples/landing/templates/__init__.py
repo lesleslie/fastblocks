@@ -29,9 +29,10 @@ async def render_template(
     """Render a Jinja2 template to a string.
 
     ``context`` is merged on top of ``{"request": request}`` so templates
-    can use ``{{ request.url }}`` etc. ``app_name`` is sourced from the
-    Oneiric setting ``app.name`` if available, otherwise the directory
-    name.
+    can use ``{{ request.url }}`` etc. ``app_name`` is intentionally not
+    surfaced here — the scaffold deliberately avoids pulling oneiric
+    settings at template-render time; routes that need ``app.name``
+    should resolve it via oneiric explicitly and pass it in ``context``.
     """
     merged: dict[str, object] = {"request": request}
     if context:
