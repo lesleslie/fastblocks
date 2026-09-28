@@ -393,5 +393,5 @@ async def resolve_component_async(
     """
     value = _candidate_value(resolver, domain, key)
     if inspect.isawaitable(value):
-        return await cast(Awaitable[object | None], value)
+        return await value
     return value
