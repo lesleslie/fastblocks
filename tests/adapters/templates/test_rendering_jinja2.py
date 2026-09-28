@@ -25,8 +25,20 @@ from fastblocks.adapters.templates.jinja2 import Templates  # noqa: E402
 class MockAsyncJinja2Templates:
     """Mock for AsyncJinja2Templates."""
 
-    def __init__(self) -> None:
+    def __init__(self, *args: t.Any, **kwargs: t.Any) -> None:
+        # Accept any args/kwargs the real ``AsyncJinja2Templates`` accepts
+        # (e.g. ``directory=...``) so downstream tests that construct
+        # ``AsyncJinja2Templates(...)`` directly don't crash on unexpected
+        # keyword arguments. Without this, ``AsyncJinja2Templates(directory=...)``
+        # raises ``TypeError: ... unexpected keyword argument 'directory'``.
         self.environment = MagicMock()
+        # Lock autoescape=True on the mock to honor the production contract:
+        # the real AsyncJinja2Templates() enables autoescape by default (see
+        # tests/security/test_autoescape_regression.py and
+        # tests/adapters/templates/test_boot.py). Without this, downstream
+        # tests that construct ``AsyncJinja2Templates(...)`` directly see the
+        # mock and assert against ``MagicMock(name='mock.autoescape')``.
+        self.environment.autoescape = True
         self.env = self.environment
 
     async def TemplateResponse(

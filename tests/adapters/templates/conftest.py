@@ -60,7 +60,13 @@ def pytest_sessionstart(session):
 
     class _MockAsyncJinja2Templates:
         def __init__(self, *args, **kwargs) -> None:
+            # Mirror MockAsyncJinja2Templates in test_rendering_jinja2.py:
+            # lock autoescape=True on the env so contract assertions
+            # (e.g. tests/security/test_autoescape_regression.py and
+            # tests/adapters/templates/test_boot.py) see a real boolean
+            # rather than ``MagicMock(name='mock.autoescape')``.
             self.env = MagicMock()
+            self.env.autoescape = True
             self.TemplateResponse = MagicMock()
             self.render_block = MagicMock()
 
