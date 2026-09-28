@@ -1,0 +1,16 @@
+{# demo.html — search-as-you-type demo with HTMX wiring. #}
+{% extends "base.html" %}
+{% block content %}
+  <main class="ui-section">
+    {{ field|safe }}
+    <div id="results"
+         hx-get="/demo"
+         hx-trigger="input changed delay:200ms from:input"
+         hx-target="#results"
+         hx-swap="innerHTML">
+      {% if results %}
+        <ul>{% for r in results %}<li>{{ r }}</li>{% endfor %}</ul>
+      {% endif %}
+    </div>
+  </main>
+{% endblock %}

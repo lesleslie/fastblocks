@@ -1,0 +1,7 @@
+# Routes adapter — registers the user-facing routes from routes/.
+# req: REQ-P2-B1-001, REQ-P2-B1-005
+adapters:
+  routes:
+    default: "default"
+    available:
+      - "default"

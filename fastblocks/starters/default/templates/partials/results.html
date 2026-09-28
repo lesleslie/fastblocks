@@ -1,0 +1,6 @@
+{# HTMX fragment — swapped into #results on every search keystroke. #}
+{% if results %}
+  <ul>{% for r in results %}<li>{{ r }}</li>{% endfor %}</ul>
+{% else %}
+  <p>No matches.</p>
+{% endif %}

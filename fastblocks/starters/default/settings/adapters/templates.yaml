@@ -1,0 +1,7 @@
+# Templates adapter — defaults to Jinja2 (the framework's only renderer).
+# req: REQ-P2-B1-001
+adapters:
+  templates:
+    default: "jinja2"
+    available:
+      - "jinja2"

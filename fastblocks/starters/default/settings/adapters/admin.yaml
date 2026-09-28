@@ -1,0 +1,9 @@
+# Admin adapter — skeleton only; consumers wire their own admin surface.
+# This file MUST NOT enable route binding; see adapters/admin.py.
+# req: REQ-P2-B1-004
+adapters:
+  admin:
+    default: "basic"
+    bind_routes: false
+    available:
+      - "basic"

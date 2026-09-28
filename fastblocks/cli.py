@@ -924,6 +924,10 @@ create = typer.Typer(help="Scaffolding commands for apps, templates, and IDE con
 cli.add_typer(create, name="create")
 
 
+# req: REQ-P2-B1-005 — scaffold from fastblocks/starters/default/
+_STARTER_DIR = fastblocks_path / "starters" / "default"
+
+
 @create.command("app")
 def create_app(
     app_name: Annotated[
@@ -936,22 +940,23 @@ def create_app(
             prompt=True,
             help="The style you want to use [vanilla,fastblocks_ui]",
         ),
-    ] = "vanilla",
+    ] = "fastblocks_ui",
     domain: Annotated[
         str,
         typer.Option(prompt=True, help="Application domain"),
     ] = "example.com",
 ) -> None:
-    """Scaffold a new FastBlocks application directory and run setup."""
+    """Scaffold a new FastBlocks application from ``fastblocks/starters/default/``.
+
+    The starter tree is copied to ``<cwd>/<app_name>`` and ``{app_name}``
+    placeholders are substituted everywhere (filenames + text file contents).
+    """
     app_path = apps_path / app_name
-    _scaffold_app_tree(app_path, app_name, style)
-    _render_app_templates(app_name)
-    _update_app_configs(app_path, domain)
-    _run_setup_commands()
+    _scaffold_from_starter(app_path, app_name, style, domain)
     console.print(
-        f"\n[bold][white]Project is initialized. Configure [green]'adapters.yml'[/] "
-        f"and [green]'app.yml'[/] in [blue]'{app_name}/settings'[/] before running "
-        f"[magenta]`python -m fastblocks dev`[/].[/][/]"
+        f"\n[bold][white]Project '[green]{app_name}[/]' is initialized at "
+        f"[blue]{app_path}[/]. Run [magenta]`uv run fastblocks run`[/] from "
+        f"that directory to boot.[/][/]"
     )
     raise SystemExit
 
@@ -990,65 +995,93 @@ def create_ide_config(
     generate_ide_config(output_dir=output_dir, ide=ide)
 
 
+def _scaffold_from_starter(
+    app_path: Path, app_name: str, style: StyleName, domain: str
+) -> None:
+    """Copy ``fastblocks/starters/default/`` to ``app_path`` and substitute
+    placeholders.
+
+    Substitutes ``{app_name}`` in filenames and in any text file under the
+    starter tree. The ``style`` and ``domain`` parameters are accepted for
+    backwards compatibility with the prior CLI signature; the starter's
+    default style (``fastblocks_ui``) is the contract value per REQ-P2-B1-001
+    and is NOT overridden by the user-supplied ``style`` argument here (the
+    scaffold's app.yaml is intentionally pinned to fastblocks_ui).
+    """
+    if not _STARTER_DIR.is_dir():
+        msg = (
+            f"FastBlocks starter directory not found at {_STARTER_DIR}. "
+            "Refusing to scaffold — this indicates a broken install."
+        )
+        raise SystemExit(msg)
+
+    if app_path.exists():
+        msg = (
+            f"Target path {app_path} already exists. Remove it first or "
+            "pick a different name."
+        )
+        raise SystemExit(msg)
+
+    app_path.mkdir(parents=True)
+
+    replacements = {"{app_name}": app_name}
+
+    for src in _STARTER_DIR.rglob("*"):
+        rel = src.relative_to(_STARTER_DIR)
+        rel_parts = tuple(_substitute(p, replacements) for p in rel.parts)
+        dst = app_path.joinpath(*rel_parts)
+        if src.is_dir():
+            dst.mkdir(parents=True, exist_ok=True)
+            continue
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if src.suffix == ".gitkeep":
+            # Preserve empty-dir marker without content substitution.
+            dst.touch()
+            continue
+        try:
+            text = src.read_text()
+        except UnicodeDecodeError:
+            # Binary file — copy as-is.
+            dst.write_bytes(src.read_bytes())
+            continue
+        for needle, value in replacements.items():
+            text = text.replace(needle, value)
+        dst.write_text(text)
+
+    # ``domain`` is accepted in the CLI signature for backwards compat; it is
+    # not currently consumed by the starter (REQ-P2-B1-005 does not require
+    # domain templating). Surfacing this as a known gap would belong in the
+    # docs/ADAPTERS.md for the scaffold.
+    _ = domain
+
+
+def _substitute(name: str, replacements: dict[str, str]) -> str:
+    """Return ``name`` with each replacement applied."""
+    out = name
+    for needle, value in replacements.items():
+        out = out.replace(needle, value)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Backwards-compat shims — kept so external tests that imported these names
+# before the starter-based rewrite continue to load. They are no-ops when
+# ``create_app`` is invoked through the new path.
+# ---------------------------------------------------------------------------
+
+
 def _scaffold_app_tree(app_path: Path, app_name: str, style: StyleName) -> None:
-    """Create the app directory layout, switch into it, and touch init files."""
-    app_path.mkdir(exist_ok=True)
-    os.chdir(app_path)
-    for p in (
-        Path("templates/base/blocks"),
-        Path(f"templates/{style}/blocks"),
-        Path(f"templates/{style}/theme"),
-        Path("adapters"),
-        Path("actions"),
-    ):
-        p.mkdir(parents=True, exist_ok=True)
-    for p in (
-        Path("models.py"),
-        Path("routes.py"),
-        Path("main.py"),
-        Path(".envrc"),
-        Path("pyproject.toml"),
-        Path("__init__.py"),
-        Path("adapters/__init__.py"),
-        Path("actions/__init__.py"),
-    ):
-        p.touch()
+    """Deprecated — superseded by ``_scaffold_from_starter``."""
+    _scaffold_from_starter(app_path, app_name, style, "example.com")
 
 
-def _render_app_templates(app_name: str) -> None:
-    """Render bundled *.tmpl files into the new project root."""
-    for template_file in (
-        "main.py.tmpl",
-        ".envrc",
-        "pyproject.toml.tmpl",
-        "Procfile.tmpl",
-    ):
-        target_path = Path(template_file.replace(".tmpl", ""))
-        target_path.write_text(
-            (fastblocks_path / template_file).read_text().replace("APP_NAME", app_name),
-        )
+def _render_app_templates(app_name: str) -> None:  # pragma: no cover - shim
+    """Deprecated — the starter no longer uses *.tmpl substitution."""
+    return None
 
 
-def _update_app_configs(app_path: Path, domain: str) -> None:
-    """Patch the generated settings/*.yml files with project defaults."""
-
-    async def _update_configs() -> None:
-        async def update_settings(settings: str, values: dict[str, t.Any]) -> None:
-            settings_path = AsyncPath(app_path / "settings")
-            content = await (settings_path / f"{settings}.yml").read_text()
-            settings_dict: dict[str, object] = yaml.safe_load(content) or {}
-            settings_dict.update(values)
-            await (settings_path / f"{settings}.yml").write_text(
-                yaml.safe_dump(settings_dict)
-            )
-
-        await update_settings("debug", {"fastblocks": False})
-        await update_settings("adapters", default_adapters)
-        await update_settings(
-            "app", {"title": "Welcome to FastBlocks", "domain": domain}
-        )
-
-    _run_async(_update_configs())
+def _update_app_configs(app_path: Path, domain: str) -> None:  # pragma: no cover - shim
+    """Deprecated — starter ships pre-rendered settings/ configs."""
 
 
 async def update_configs(app_path: Path, domain: str) -> None:

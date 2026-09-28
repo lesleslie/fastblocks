@@ -1,0 +1,6 @@
+# Top-level app settings (Oneiric loads this first).
+# req: REQ-P2-B1-001
+app:
+  name: "{app_name}"
+  style: "fastblocks_ui"
+  debug: true

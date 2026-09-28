@@ -1,0 +1,9 @@
+# Auth adapter — skeleton only; consumers wire their own provider.
+# This file MUST NOT enable route binding; see adapters/auth.py.
+# req: REQ-P2-B1-004
+adapters:
+  auth:
+    default: "basic"
+    bind_routes: false
+    available:
+      - "basic"
