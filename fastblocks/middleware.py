@@ -1,3 +1,4 @@
+import secrets
 import sys
 import typing as t
 from collections.abc import Callable, Mapping, Sequence
@@ -191,7 +192,56 @@ class CurrentRequestMiddleware:
         _request_ctx_var.reset(local_scope)
 
 
+def build_nonce_csp(nonce: str, library_csp: str) -> str:
+    """Rebuild the CSP string with nonce-bearing style-src and script-src.
+
+    The ``secure.with_default_headers()`` profile emits something like:
+        ``default-src 'self'; ... style-src 'self' https: 'unsafe-inline'; script-src 'self'; ...``
+
+    We split on ``;`` and rebuild the two affected directives so every
+    other directive (``default-src``, ``base-uri``, ``font-src``,
+    ``img-src``, ``frame-ancestors``, ``object-src``, ...) is preserved
+    verbatim. ``'unsafe-inline'`` is stripped from ``style-src``;
+    ``style-src`` and ``script-src`` both gain a nonce source expression.
+
+    See F1.5-D6-T1 in
+    ``docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-phase1.5.md``
+    for the rationale.
+    """
+    if not nonce:
+        return library_csp
+    parts = [p.strip() for p in library_csp.split(";") if p.strip()]
+    rebuilt: list[str] = []
+    for directive in parts:
+        name, _, value = directive.partition(" ")
+        if name == "style-src":
+            tokens = [t for t in value.split() if t != "'unsafe-inline'"]
+            rebuilt.append(f"style-src {' '.join(tokens)} 'nonce-{nonce}'")
+        elif name == "script-src":
+            rebuilt.append(f"script-src {value} 'nonce-{nonce}'")
+        else:
+            rebuilt.append(directive)
+    return "; ".join(rebuilt)
+
+
 class SecureHeadersMiddleware:
+    """Emit security headers on every HTTP response.
+
+    The default ``secure.with_default_headers()`` profile sets
+    ``style-src 'self' https: 'unsafe-inline'`` -- the inline fallback is
+    what OWASP calls "permissive". We override the CSP to use a per-
+    request nonce instead: ``style-src 'self' 'nonce-{value}'`` and
+    ``script-src 'self' 'nonce-{value}'``. The nonce is stored on the
+    ASGI ``scope["state"]`` dict under ``csp_nonce`` so template helpers
+    (e.g. ``fastblocks.adapters.templates.htmy_components.inline_css``)
+    can pick it up and emit ``<style nonce="...">`` / ``<script nonce="...">``
+    tags that match the policy.
+
+    All other headers (HSTS, XFO, XCTO, Referrer-Policy, Permissions-
+    Policy, COOP/CORP) come straight from the ``secure`` library profile
+    -- they are already strict and do not depend on per-request state.
+    """
+
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
         try:
@@ -203,11 +253,29 @@ class SecureHeadersMiddleware:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
 
+        # Per-request nonce. 16 random bytes -> 22-char urlsafe token.
+        nonce = secrets.token_urlsafe(16)
+        # Starlette scopes use a plain dict under `state`. Lazy-create so
+        # we don't mutate shared state across requests.
+        state = scope.setdefault("state", {})
+        if isinstance(state, dict):
+            state["csp_nonce"] = nonce
+
         async def send_with_secure_headers(message: Message) -> None:
             if message["type"] == "http.response.start":
                 headers = MutableHeaders(scope=message)
                 for header_name, header_value in secure_headers.headers.items():
-                    headers.append(header_name, header_value)
+                    if header_name.lower() == "content-security-policy":
+                        # Override the library default -- drop
+                        # 'unsafe-inline' from style-src and inject the
+                        # nonce. Keep every other directive from the
+                        # library profile.
+                        headers.append(
+                            header_name,
+                            build_nonce_csp(nonce, header_value),
+                        )
+                    else:
+                        headers.append(header_name, header_value)
             await send(message)
 
         await self.app(scope, receive, send_with_secure_headers)

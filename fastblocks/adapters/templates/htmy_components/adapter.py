@@ -15,13 +15,16 @@ This adapter exposes:
   mount them as a static route (resolved via ``importlib.resources``, no copy);
 - cache-busted asset URLs keyed to the installed ``fastblocks-ui`` version, for apps
   that want the CSS served as a separate, browser-cacheable ``<link>``;
-- ``inline_css()`` / ``inline_js()`` (and the ``fastblocks_ui_css_inline`` /
+- ``inline_css(nonce)`` / ``inline_js(nonce)`` (and the ``fastblocks_ui_css_inline`` /
   ``fastblocks_ui_js_inline`` template globals), which embed the actual CSS/JS in
   ``<style>``/``<script type="module">`` tags instead -- the recommended default for
   htmx apps, since it avoids an extra request without needing a static mount at all.
-  Both require the app's CSP (if any) to allow inline ``style-src``/``script-src``
-  (a nonce or hash, or ``'unsafe-inline'``) -- if that's not an option, use the
-  link/script-src URL globals below instead. ``enhance.js``'s own setup code is
+  Both accept an optional ``nonce`` so the tag matches a per-request CSP nonce --
+  ``SecureHeadersMiddleware`` emits ``style-src 'self' 'nonce-...'`` /
+  ``script-src 'self' 'nonce-...'`` (F1.5-D6-T1 in
+  ``docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-phase1.5.md``),
+  and the template globals pick the nonce up from the ASGI scope at render time.
+  ``enhance.js``'s own setup code is
   idempotent (custom-element registration checks ``customElements.get()`` first;
   auto-boot checks ``window.fastBlocksUI`` first), so re-inlining it more than once
   on the same page is a safe no-op, not a crash -- but it should still only need to
@@ -59,11 +62,11 @@ Then in a FastBlocks template's base layout (recommended -- inline, no extra req
 no static mount needed)::
 
     <head>
-    [[ fastblocks_ui_css_inline ]]
+    [[ fastblocks_ui_css_inline() ]]
     </head>
     [[ ui_button("Save", variant="primary") ]]
     [[ render_component("button", {"text": "Save", "variant": "primary"}) ]]
-    [[ fastblocks_ui_js_inline ]]
+    [[ fastblocks_ui_js_inline() ]]
 """
 
 from __future__ import annotations
@@ -191,7 +194,7 @@ def asset_urls(
     }
 
 
-def inline_css() -> SafeHTML:
+def inline_css(nonce: str | None = None) -> SafeHTML:
     """Return the shipped fastblocks-ui CSS bundle wrapped in a ``<style>`` tag.
 
     Reads fresh from disk on every call (no caching here -- the app's own
@@ -203,12 +206,20 @@ def inline_css() -> SafeHTML:
     on every call (instead of embedding a string literal at import time) means
     this can never drift from the installed fastblocks-ui version, the same
     property ``asset_paths()``/``asset_urls()`` already have.
+
+    Pass ``nonce`` to emit ``<style nonce="...">``; required when the app's
+    CSP forbids inline styles (``style-src 'self' 'nonce-...'; ...`` --
+    see F1.5-D6-T1 in
+    ``docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-phase1.5.md``).
+    Without ``nonce`` the tag is emitted bare -- fine for legacy CSPs that
+    still allow ``'unsafe-inline'``.
     """
     css = Path(fastblocks_ui.get_css_path()).read_text(encoding="utf-8")
-    return SafeHTML(f"<style>\n{css}\n</style>")
+    nonce_attr = f' nonce="{nonce}"' if nonce else ""
+    return SafeHTML(f"<style{nonce_attr}>\n{css}\n</style>")
 
 
-def inline_js() -> SafeHTML:
+def inline_js(nonce: str | None = None) -> SafeHTML:
     """Return the shipped fastblocks-ui enhancement JS wrapped in a ``<script type="module">`` tag.
 
     Reads fresh from disk on every call -- same rationale as ``inline_css()``.
@@ -228,10 +239,49 @@ def inline_js() -> SafeHTML:
     before running init), so if this ever ends up on the page more than once,
     re-running it is a harmless no-op rather than a thrown
     ``NotSupportedError`` or duplicate event listeners.
+
+    Pass ``nonce`` to emit ``<script type="module" nonce="...">``; required
+    when the app's CSP forbids inline scripts.
     """
     static_root = Path(fastblocks_ui.get_static_path())
     js = (static_root / "js" / "enhance.js").read_text(encoding="utf-8")
-    return SafeHTML(f'<script type="module">\n{js}\n</script>')
+    nonce_attr = f' nonce="{nonce}"' if nonce else ""
+    return SafeHTML(f'<script type="module"{nonce_attr}>\n{js}\n</script>')
+
+
+def _resolve_inline_css() -> SafeHTML:
+    """Template-global callable: returns ``inline_css`` for the current request's CSP nonce.
+
+    Looks up the per-request nonce from the active ASGI scope (set by
+    ``SecureHeadersMiddleware``) so the emitted ``<style>`` tag matches
+    the nonce-bearing CSP. Falls back to a bare ``<style>`` when no
+    nonce is present (e.g. during template rendering outside an HTTP
+    request, or for callers who haven't enabled strict CSP).
+    """
+    from fastblocks.middleware import get_request
+
+    request_scope = get_request()
+    if isinstance(request_scope, dict):
+        state = request_scope.get("state")
+        if isinstance(state, dict):
+            nonce = state.get("csp_nonce")
+            if isinstance(nonce, str) and nonce:
+                return inline_css(nonce)
+    return inline_css()
+
+
+def _resolve_inline_js() -> SafeHTML:
+    """Template-global callable: returns ``inline_js`` for the current request's CSP nonce."""
+    from fastblocks.middleware import get_request
+
+    request_scope = get_request()
+    if isinstance(request_scope, dict):
+        state = request_scope.get("state")
+        if isinstance(state, dict):
+            nonce = state.get("csp_nonce")
+            if isinstance(nonce, str) and nonce:
+                return inline_js(nonce)
+    return inline_js()
 
 
 def template_globals() -> dict[str, object]:
@@ -239,6 +289,13 @@ def template_globals() -> dict[str, object]:
 
     Exposes both the typed htmy component classes and the zero-dependency string
     helpers (handy for quick fragments), plus ready-made asset URLs.
+
+    The two inline globals ``fastblocks_ui_css_inline`` and
+    ``fastblocks_ui_js_inline`` are CALLABLES, not values -- the
+    framework picks up the per-request CSP nonce from the ASGI scope so
+    the emitted ``<style>`` / ``<script>`` tag carries the matching
+    nonce. Invoke them in templates as ``[[ fastblocks_ui_css_inline() ]]``
+    (parens required -- Jinja does not auto-call global callables).
     """
     urls = asset_urls()
     return {
@@ -284,7 +341,9 @@ def template_globals() -> dict[str, object]:
         # inline_js() for the recommended alternative)
         "fastblocks_ui_css": urls["css"],
         "fastblocks_ui_js": urls["js"],
-        # Inline CSS/JS (recommended default -- see module docstring)
-        "fastblocks_ui_css_inline": inline_css(),
-        "fastblocks_ui_js_inline": inline_js(),
+        # Inline CSS/JS (recommended default -- see module docstring).
+        # These are callables; templates must invoke them with ``()``
+        # so the per-request CSP nonce can be picked up at render time.
+        "fastblocks_ui_css_inline": _resolve_inline_css,
+        "fastblocks_ui_js_inline": _resolve_inline_js,
     }
