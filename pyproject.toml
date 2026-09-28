@@ -61,8 +61,8 @@ dependencies = [
     "starlette>=1.7.0,<2",  # upper cap: prevent major jumps
     "starlette-async-jinja>=1.15.0",
     "starlette-csrf>=3.0.0,<4",  # upper cap: prevent major jumps
-    "typer>=0.27.2",
-    "uvicorn>=0.54.0",
+    "typer>=0.27.2,<1",  # upper cap: prevent major jumps
+    "uvicorn>=0.54.0,<1",  # upper cap: prevent major jumps
 ]
 
 [project.license]
@@ -104,7 +104,7 @@ observability = [
     "opentelemetry-exporter-otlp-proto-http>=1.44.0",
     "sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8",  # Δ55 alpha-locked
     "mcp-common>=0.30.2,<0.31",  # Δ47 — <0.4 cap removed (prevents resolution against 0.24.x ecosystem as of 2026-08-31)
-    "structlog>=26.1.0",  # Δ40 — log_correlation mapping; matches oneiric>=0.13.4 strict dep (was ~=24.4)
+    "structlog>=26.1.0,<27",  # Δ40 — log_correlation mapping; matches oneiric>=0.13.4 strict dep (was ~=24.4); upper cap: prevent breaking changes
 ]
 images = [
     "cloudinary>=1.46.2",
