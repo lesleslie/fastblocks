@@ -1,8 +1,8 @@
 """Style adapter — registers fastblocks_ui as the active design system.
 
 The framework recognises exactly two legal style values today: ``vanilla`` and
-``fastblocks_ui``. Any other value (including the previously-removed ``kelp``
-and ``webawesome``) fails loudly via the ``ResolverMismatchError`` contract
+``fastblocks_ui``. Any other value (including the previously-removed kelp
+and webawesome styles) fails loudly via the ``ResolverMismatchError`` contract
 in ``fastblocks.core.validators``.
 
 # req: REQ-P2-B2-001, REQ-P2-B2-002
