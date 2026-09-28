@@ -19,12 +19,12 @@ async def home_route(request: Request) -> HTMLResponse:
     """Landing hero + 3-bullet 'why FastBlocks' + CTA."""
     cards_markup = "".join(
         [
-            card(title="Async", body="Concurrent template rendering."),
-            card(title="Typed", body="Pydantic models + Oneiric config."),
-            card(title="Honest", body="No claim without a passing test."),
+            card(header="Async", body="Concurrent template rendering."),
+            card(header="Typed", body="Pydantic models + Oneiric config."),
+            card(header="Honest", body="No claim without a passing test."),
         ]
     )
-    navbar_markup = navbar(is_sticky=True)
+    navbar_markup = navbar(brand="FastBlocks", is_sticky=True)
     hero_markup = hero(
         title="FastBlocks",
         subtitle="Async web framework on Starlette + HTMX",
