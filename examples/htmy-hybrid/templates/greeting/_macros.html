@@ -1,6 +1,8 @@
 {% macro greeting_card(name, avatar, bio) %}
 <div class="greeting-card">
-  <img src="{{ avatar }}" alt="{{ name }}'s avatar">
+  {# `avatar` is a URL passed in by the caller (e.g. routes/greeting.py:21 hard-codes "/static/ada.png"). lychee flagged the rendered URL because the referenced static asset doesn't exist in this worktree (`examples/htmy-hybrid/static/ada.png` is absent — out of scope for this fix). To make the macro self-contained and not depend on a missing static file, fall back to an inline SVG data URI when the caller passes an empty / falsy `avatar`. This keeps the macro valid even if the static asset stays untracked. #}
+  {% set placeholder_avatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%231f2937'/><circle cx='32' cy='24' r='12' fill='%238b949e'/><rect x='14' y='40' width='36' height='20' rx='10' fill='%238b949e'/></svg>" %}
+  <img src="{{ avatar or placeholder_avatar }}" alt="{{ name }}'s avatar">
   <h2>{{ name }}</h2>
   <p>{{ bio }}</p>
   <button type="button">Follow</button>

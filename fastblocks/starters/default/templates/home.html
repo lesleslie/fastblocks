@@ -1,5 +1,7 @@
 {# home.html — full page rendering of the home route. #}
 {% extends "base.html" %}
 {% block content %}
+  {# `main` is the SafeHTML return value of `fastblocks_ui.shell()` wrapping navbar/hero/cards button helpers -- all server-rendered, NOT raw user input. `|safe` is the documented convention in this codebase (see routes/home.py:4 "which return SafeHTML strings — Jinja2 renders them via |safe"). KEEP `|safe`. #}
+  {# nosemgrep: template-unescaped-with-safe -- fastblocks_ui helpers return SafeHTML; not user-controlled input #}
   {{ main|safe }}
 {% endblock %}

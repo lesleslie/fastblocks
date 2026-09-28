@@ -2,6 +2,8 @@
 {% extends "base.html" %}
 {% block content %}
   <main class="ui-section">
+    {# `field` is the SafeHTML return value of `fastblocks_ui.field()` (a server-rendered helper from the fastblocks-ui library, NOT raw user input). `|safe` is the documented convention for rendering SafeHTML in this codebase (see fastblocks/starters/default/routes/demo.py:14 and routes/home.py:4) -- removing it would double-escape the helper output. KEEP `|safe`. #}
+    {# nosemgrep: template-unescaped-with-safe -- fastblocks_ui helpers return SafeHTML; not user-controlled input #}
     {{ field|safe }}
     <div id="results"
          hx-get="/demo"
