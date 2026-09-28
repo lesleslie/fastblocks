@@ -11,7 +11,7 @@ version: 1
 
 # FastBlocks Phase 3 Verify Report (v1)
 
-> **Verdict:** **DO NOT SHIP** — D2, D3, D6, D8 each have at least one FAIL with concrete evidence.
+> **Verdict:** **DO NOT SHIP to dogfood** (Phase 1.5 followups opened; Phase 2 is frozen per spec integration contract) — D2, D3, D6, D8 each have at least one FAIL with concrete evidence.
 
 ## Preamble
 
@@ -205,19 +205,40 @@ All 12 routes returned 200:
 
 | ID | Dim | Description |
 |---|---|---|
-| F1.5-D1-T1 | D1 | Bump `.coverage-ratchet.json` floor to 85% per spec §D1 line 319 (current floor 67.81% is a 17-percentage-point gap; Phase 1.5 scope) |
+| F1.5-D1-T1 | D1 | **Heaviest followup** — bump `.coverage-ratchet.json` floor to 85% per spec §D1 line 319 (current floor 67.81% is a 17-percentage-point gap). Multi-week effort, likely requires additional test authoring across framework + starters + examples. Schedule last in Phase 1.5 sequence. |
 | F1.5-D2-T1 | D2 | Fix 7 mypy errors (5 framework/starter files) |
-| F1.5-D2-T2 | D2 | Resolve ty 95-diagnostic gap or pin ty version |
+| F1.5-D2-T2 | D2 | RESCOPE: re-run ty against fastblocks venv first (`uv run ty check fastblocks`); 82 of 95 current diagnostics are unresolved-import against wrong search paths (ty searched `/Users/les/Projects/mahavishnu/.venv/bin`, not fastblocks `.venv`). Reclassify remaining warnings after re-run. |
 | F1.5-D3-T1 | D3 | Fix adapter-matrix route to enumerate spec §D3 in-scope adapters |
 | F1.5-D3-T2 | D3 | Add `tests/adapters/<domain>/<key>/test_boot.py` for matrix adapters |
 | F1.5-D4-T1 | D4 | Investigate `HX-Trigger` header emission in `/demo` HTMX swap (absent in `d4-demo-swap.html`; brief required HX-Trigger presence as part of the swap evidence chain; implementer classified as feature gap not correctness bug — adjudicated as Phase 1.5 followup) |
 | F1.5-D6-T1 | D6 | Fix CSP `style-src` to drop `'unsafe-inline'` or use nonces |
-| F1.5-D6-T2 | D6 | Bump `urllib3` to ≥2.7.0 (2 HIGH CVEs) |
-| F1.5-D6-T3 | D6 | Bump `msgpack` to ≥1.2.1 (1 HIGH CVE) |
-| F1.5-D6-T4 | D6 | Bump `idna` to ≥3.15 (1 MODERATE CVE) |
-| F1.5-D6-T5 | D6 | Refresh pip in venv (11 self-vulns) |
+| F1.5-D6-T2 | D6 | (REVERIFY: run `PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python pip-audit` first; current pip-audit scanned its own venv, not fastblocks') Bump `urllib3` to ≥2.7.0 (2 HIGH CVEs) |
+| F1.5-D6-T3 | D6 | (REVERIFY: run `PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python pip-audit` first; current pip-audit scanned its own venv, not fastblocks') Bump `msgpack` to ≥1.2.1 (1 HIGH CVE) |
+| F1.5-D6-T4 | D6 | (REVERIFY: run `PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python pip-audit` first; current pip-audit scanned its own venv, not fastblocks') Bump `idna` to ≥3.15 (1 MODERATE CVE) |
+| F1.5-D6-T5 | D6 | (REVERIFY: run `PIPAPI_PYTHON_LOCATION=/Users/les/Projects/fastblocks/.venv/bin/python pip-audit` first; current pip-audit scanned its own venv, not fastblocks') Refresh pip in venv (11 self-vulns) |
 | F1.5-D8-T1 | D8 | Resolve uv lock drift (user-controlled) |
 | F1.5-D8-T2 | D8 | Add upper caps to `typer`, `uvicorn`, `structlog` |
+| F1.5-DELIV-T1 | DELIV | B1 starter's `fastblocks run` CLI subcommand does not exist (per `examples/landing/main.py:14` docstring, actual entry is `uv run fastblocks run` or `uvicorn main:app`). The "one-command install + run" claim (per spec §B1) is broken. Either implement the `run` subcommand in `fastblocks/cli.py` OR update starter README + starter `pyproject.toml` scripts section to use `uvicorn main:app` consistently. |
+| F1.5-F-FW-1 | FW | `fastblocks.adapters.templates.hybrid.HybridTemplatesManager.render_hybrid()` does not exist (per D13 evidence). B3 htmy-hybrid demo currently fakes hybrid rendering. Add the API OR document the limitation and remove the B3 demo's claim of true parity. |
+
+**Dependency annotations**:
+- F1.5-D3-T2 depends on F1.5-D3-T1 (need to know what's in-scope before writing boot tests)
+- F1.5-D8-T2 (upper caps) must precede F1.5-D8-T1 (uv lock — user-controlled per `feedback-bodai-push-is-user-controlled.md`) so the lockfile reflects the new caps
+- F1.5-D2-T1 + F1.5-D2-T2 land together (both type-system fixes, both touch framework source)
+- F1.5-D6-T1 (CSP) is independent of F1.5-D6-T2..T5 (dep bumps); can ship before dep work
+
+**Doc rot note**: Spec §Phase 1→2 gate and this plan both reference `docs/superpowers/reports/framework-api-drift.md`; actual file is `docs/framework-drift-tracker.md` (created at `d4c972d`). To be folded into next spec revision.
+
+**Effort sizing**:
+- F1.5-D2-T1/T2: ~hours (small fix surface; 7 mypy + 13 ty warnings after reclassify)
+- F1.5-D3-T1/T2: ~days (enumeration + 6 boot tests across templates/jinja2, _async_renderer, fastblocks_ui, icons, fonts/squirrel, middleware)
+- F1.5-D4-T1: ~hours (single HX-Trigger emission path)
+- F1.5-D6-T1: ~hours (CSP nonce or `style-src` fix)
+- F1.5-D6-T2..T5: ~hours (4 dep bumps, reverified scope)
+- F1.5-D8-T1/T2: ~hours (3 upper caps + uv lock refresh; T1 user-controlled)
+- F1.5-D1-T1: **multi-week** (heaviest)
+- F1.5-DELIV-T1: ~hours (CLI subcommand OR docs update)
+- F1.5-F-FW-1: ~days (framework API add OR demo re-scoping)
 
 ## Framework followups (extension of `docs/framework-drift-tracker.md`)
 
