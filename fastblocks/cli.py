@@ -158,7 +158,23 @@ def _run_async(coro: t.Coroutine[t.Any, t.Any, t.Any]) -> t.Any:
 
 
 @cli.command()
-def run(docker: bool = False, granian: bool = False, host: str = "127.0.0.1") -> None:
+def run(
+    host: Annotated[str, typer.Option(help="Bind host")] = "127.0.0.1",
+    port: Annotated[int, typer.Option(help="Bind port")] = 8000,
+    app_module: Annotated[
+        str, typer.Option(help="ASGI app import string (e.g. main:app)")
+    ] = "main:app",
+    reload: Annotated[bool, typer.Option(help="Enable auto-reload")] = False,
+    docker: bool = False,
+    granian: bool = False,
+) -> None:
+    """Run the FastBlocks app via uvicorn or granian.
+
+    Starts the ASGI server bound to ``host:port`` (defaults 127.0.0.1:8000)
+    and imports ``app_module`` (defaults ``main:app``) via uvicorn's
+    import-string machinery. Pass ``--granian`` to use Granian instead of
+    uvicorn, or ``--docker`` to launch a one-shot container.
+    """
     if docker:
         # Fire-and-forget: the interactive ``docker run`` handles its
         # own exit; we deliberately do not raise on non-zero so a
@@ -167,14 +183,27 @@ def run(docker: bool = False, granian: bool = False, host: str = "127.0.0.1") ->
             f"docker run -it -ePORT=8080 -p8080:8080 {Path.cwd().stem}".split(),
             check=False,
         )
-    else:
-        setup_signal_handlers()
-        if granian:
-            from granian.constants import Interfaces
+        return
+    setup_signal_handlers()
+    if granian:
+        from granian.constants import Interfaces
 
-            Granian("main:app", address=host, interface=Interfaces.ASGI).serve()
-        else:
-            uvicorn.run(app=run_args["app"], host=host, lifespan="on", log_config=None)
+        Granian(
+            app_module,
+            address=host,
+            port=port,
+            reload=reload,
+            interface=Interfaces.ASGI,
+        ).serve()
+    else:
+        uvicorn.run(
+            app=app_module,
+            host=host,
+            port=port,
+            reload=reload,
+            lifespan="on",
+            log_config=None,
+        )
 
 
 @cli.command()
