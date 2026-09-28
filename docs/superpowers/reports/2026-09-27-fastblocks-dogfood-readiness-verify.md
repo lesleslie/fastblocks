@@ -1,5 +1,6 @@
 ---
-status: shipped
+status: draft
+phase2-verdict: do-not-ship
 role: verification
 kind: report
 date: 2026-09-27
@@ -204,10 +205,12 @@ All 12 routes returned 200:
 
 | ID | Dim | Description |
 |---|---|---|
+| F1.5-D1-T1 | D1 | Bump `.coverage-ratchet.json` floor to 85% per spec §D1 line 319 (current floor 67.81% is a 17-percentage-point gap; Phase 1.5 scope) |
 | F1.5-D2-T1 | D2 | Fix 7 mypy errors (5 framework/starter files) |
 | F1.5-D2-T2 | D2 | Resolve ty 95-diagnostic gap or pin ty version |
 | F1.5-D3-T1 | D3 | Fix adapter-matrix route to enumerate spec §D3 in-scope adapters |
 | F1.5-D3-T2 | D3 | Add `tests/adapters/<domain>/<key>/test_boot.py` for matrix adapters |
+| F1.5-D4-T1 | D4 | Investigate `HX-Trigger` header emission in `/demo` HTMX swap (absent in `d4-demo-swap.html`; brief required HX-Trigger presence as part of the swap evidence chain; implementer classified as feature gap not correctness bug — adjudicated as Phase 1.5 followup) |
 | F1.5-D6-T1 | D6 | Fix CSP `style-src` to drop `'unsafe-inline'` or use nonces |
 | F1.5-D6-T2 | D6 | Bump `urllib3` to ≥2.7.0 (2 HIGH CVEs) |
 | F1.5-D6-T3 | D6 | Bump `msgpack` to ≥1.2.1 (1 HIGH CVE) |
