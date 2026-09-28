@@ -245,6 +245,8 @@ settings/registry_metadata.local.yaml
 [{]XDG_DATA_HOME:-$HOME[}]
 # pytest-benchmark autosave cache (sibling of the tracked `benchmarks/` test suite)
 .benchmarks/
+# Phase 3 verify evidence capture (gitignored per canonical runtime-artifact pattern)
+.verify-evidence/
 # Vitest config timestamp cache
 vitest.config.js.timestamp-*.mjs
 # Playwright output cruft
