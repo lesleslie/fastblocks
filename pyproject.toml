@@ -206,6 +206,14 @@ skip = "*/data/*,tests/*,test_*.py,*_test.py,*.min.js,*.min.css"
 quiet-level = 3
 ignore-words-list = "crate,uptodate,nd"
 
+[tool.lychee]
+# Demo URLs in READMEs reference `127.0.0.1:8000|8001|8002` — those servers
+# are not part of CI runs, so lychee reports them as "Connection refused".
+# Tells lychee to skip loopback and private-network URLs entirely. To
+# re-validate the demos, run `lychee --exclude-link-local=false ...`
+# against a live deployment.
+exclude-link-local = true
+
 [tool.pyproject-fmt]
 column_width = 120
 indent = 4
