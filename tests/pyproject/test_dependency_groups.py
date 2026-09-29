@@ -6,7 +6,7 @@ def test_observability_group_present_with_correct_pins():
     pyproject = tomllib.loads(Path("pyproject.toml").read_text())
     group = pyproject["dependency-groups"]["observability"]
     members = {
-        entry.split("[")[0].split("~")[0].split("=")[0].strip()
+        entry.split("[")[0].split("~")[0].split("=")[0].rstrip(">").strip()
         for entry in group
     }
     assert "prometheus-client" in members
