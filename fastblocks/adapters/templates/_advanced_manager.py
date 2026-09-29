@@ -1018,7 +1018,7 @@ class HybridTemplatesManager:
             ) from exc
 
         try:
-            component_html: str = str(await HtmyRenderer().render(component_tree))
+            component_html: str = await HtmyRenderer().render(component_tree)
         except Exception as exc:
             # Renderer failures propagate as TemplateError so callers can
             # distinguish hybrid-render failures from plain Jinja2
@@ -1039,7 +1039,7 @@ class HybridTemplatesManager:
         # expect this exception for missing-template handling.
         template = env.get_template(jinja_template)
 
-        return str(template.render(merged_context))
+        return template.render(merged_context)
 
     async def _find_fragment(
         self, fragment_name: str, template_name: str | None = None
