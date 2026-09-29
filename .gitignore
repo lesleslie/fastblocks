@@ -257,3 +257,4 @@ playwright-report/
 playwright-results.json
 test-results/
 # <<< bodai-shared-gitignore <<<
+.verify-evidence-rerun/
