@@ -20,6 +20,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from fastblocks.adapters.templates import _advanced_manager
 from fastblocks.adapters.templates._advanced_manager import HybridTemplatesManager
 
 
@@ -225,8 +226,13 @@ class TestRenderHybridCombinedOutput:
         def failing_factory(**_kwargs: object) -> MagicMock:
             raise RuntimeError("bad props")
 
-        with patch(
-            "fastblocks.adapters.templates._advanced_manager.HtmyRenderer"
+        # Suppress the module logger so test is independent of the active
+        # structlog wrapper class. ``_log.exception`` uses positional args
+        # and the generic ``structlog.BoundLogger`` (configured by sibling
+        # observability tests) raises TypeError on positional overflow,
+        # which would mask the TemplateError this test asserts.
+        with patch.object(_advanced_manager, "_log"), patch.object(
+            _advanced_manager, "HtmyRenderer"
         ) as MockRenderer:
             MockRenderer.return_value = _stub_htmy_renderer("<x/>")
 
@@ -255,8 +261,9 @@ class TestRenderHybridCombinedOutput:
         def component_factory(**_kwargs: object) -> MagicMock:
             return MagicMock()
 
-        with patch(
-            "fastblocks.adapters.templates._advanced_manager.HtmyRenderer"
+        # See sibling test above for the rationale on suppressing ``_log``.
+        with patch.object(_advanced_manager, "_log"), patch.object(
+            _advanced_manager, "HtmyRenderer"
         ) as MockRenderer:
             MockRenderer.return_value = failing_renderer
 

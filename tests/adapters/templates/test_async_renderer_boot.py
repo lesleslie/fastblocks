@@ -13,12 +13,15 @@ without ``initialize()`` to assert the no-arg boot path documented at
 """
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 
 from fastblocks.adapters.oneiric_helper import (
     register_candidate_strict,
     resolve_instance,
 )
+from fastblocks.adapters.templates import _async_renderer
 
 
 def test_async_renderer_resolves_via_oneiric(fresh_registry) -> None:
@@ -64,12 +67,20 @@ async def test_async_renderer_renders_trivial_context() -> None:
         RenderContext,
     )
 
-    instance = AsyncTemplateRenderer()
-    ctx = RenderContext(
-        template_name="trivial.html",
-        context={"name": "world"},
-    )
-    result = await instance.render(ctx)
+    # Suppress the module logger so the fail-safe ``render`` path is
+    # independent of the active structlog wrapper class. Sibling
+    # observability tests reconfigure structlog to the generic
+    # ``BoundLogger`` whose ``__getattr__``-wrapped
+    # ``_proxy_to_logger`` raises TypeError on the printf-style
+    # ``_log.exception("...: %s", type(e).__name__)`` call the
+    # renderer's boundary handler emits.
+    with patch.object(_async_renderer, "_log"):
+        instance = AsyncTemplateRenderer()
+        ctx = RenderContext(
+            template_name="trivial.html",
+            context={"name": "world"},
+        )
+        result = await instance.render(ctx)
     assert result is not None, "D3: AsyncTemplateRenderer.render returned None"
     assert isinstance(result.content, (str, type(result.content))), (
         "D3: RenderResult.content is not a string-or-async-iterator"
