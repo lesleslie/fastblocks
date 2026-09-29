@@ -18,12 +18,37 @@ import logging
 
 import prometheus_client
 import pytest
+import structlog
 from fastblocks.observability.counters import (
     CardinalityAction,
     CardinalityGuard,
     Counter,
     MetricCardinalityViolation,
 )
+
+
+@pytest.fixture
+def reset_structlog_config() -> None:
+    """Snapshot structlog.configure() state before each test, restore after.
+
+    ``test_warn_mode_logs_and_drops`` reconfigures structlog to the generic
+    ``BoundLogger`` (``wrapper_class=structlog.BoundLogger``) so pytest's
+    ``caplog`` can intercept the warning emitted by ``get_logger(...).warning(...)``.
+    The generic ``BoundLogger`` uses ``__getattr__`` to wrap ``_proxy_to_logger``
+    with a ``partial(method_name)`` that does not consume positional substitution
+    args, so any subsequent ``_log.exception("...%s...", x, y)`` call in the same
+    xdist worker overflows ``_proxy_to_logger``'s signature and raises
+    ``TypeError``. This fixture prevents cross-test pollution of the structlog
+    global state.
+
+    The 3 production sites at risk:
+        - ``fastblocks/adapters/templates/_advanced_manager.py:1013``
+        - ``fastblocks/adapters/templates/_advanced_manager.py:1028``
+        - ``fastblocks/adapters/templates/_async_renderer.py:196``
+    """
+    saved = structlog.get_config()
+    yield
+    structlog.configure(**saved)
 
 # ---------------------------------------------------------------------------
 # 1. enforce mode raises ValueError-derived exception
@@ -124,6 +149,7 @@ def test_violation_counter_name_tracked_in_observability_registry() -> None:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.usefixtures("reset_structlog_config")
 def test_warn_mode_logs_and_drops(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
