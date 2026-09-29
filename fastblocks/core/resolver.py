@@ -393,7 +393,7 @@ async def resolve_component_async(
     """
     value = _candidate_value(resolver, domain, key)
     if inspect.isawaitable(value):
-        # inspect.isawaitable is a runtime check; mypy cannot narrow
-        # object | Awaitable[object] | None from it, so cast for typed await.
-        return await cast(Awaitable[object], value)
+        # inspect.isawaitable is a runtime check; ty can narrow the type
+        # from the predicate so no cast is needed for typed await.
+        return await value
     return value
