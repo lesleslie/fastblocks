@@ -12,6 +12,7 @@ client-side listeners can observe the swap with the original query
 
 # req: REQ-P2-B2-001
 """
+
 from __future__ import annotations
 
 import json

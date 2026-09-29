@@ -4,11 +4,11 @@ ASGI-compatible; run with `uv run fastblocks run` (or `uvicorn main:app`).
 
 # req: REQ-P2-B1-001, REQ-P2-B1-005
 """
+
 from __future__ import annotations
 
-from fastblocks.applications import FastBlocks
-
 from routes import register_routes
+from fastblocks.applications import FastBlocks
 
 
 def create_app() -> FastBlocks:

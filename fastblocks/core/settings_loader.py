@@ -14,7 +14,7 @@ behavior.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from fastblocks.adapters.app.default import AppSettings
 

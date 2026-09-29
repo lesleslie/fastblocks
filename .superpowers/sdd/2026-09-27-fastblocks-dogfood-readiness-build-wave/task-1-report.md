@@ -16,6 +16,7 @@
 ## What was delivered
 
 1. **`fastblocks/starters/default/`** — 35-file scaffold tree:
+
    - Project meta: `pyproject.toml`, `.gitignore`, `.envrc`, `README.md`
    - Entry: `main.py` (FastBlocks ASGI factory + uvicorn CLI)
    - Routes: `routes/__init__.py`, `routes/home.py`, `routes/demo.py` (HTMX search-as-you-type demo)
@@ -27,13 +28,15 @@
    - Tests: `conftest.py`, `test_routes.py`, `test_templates.py`, `test_htmx.py`, `test_adapter_boot.py` (18 tests total)
    - Docs: `docs/ADAPTERS.md`
 
-2. **`fastblocks/cli.py`** — `create_app` rewritten to scaffold from the starter directory:
+1. **`fastblocks/cli.py`** — `create_app` rewritten to scaffold from the starter directory:
+
    - Replaced the embedded `*.tmpl` path with `_scaffold_from_starter()` that copies `fastblocks/starters/default/` to `<cwd>/<app_name>` and substitutes `{app_name}` in both filenames and text contents.
    - Default `--style` changed from `"vanilla"` to `"fastblocks_ui"` per REQ-P2-B1-001.
    - Refuses to overwrite an existing target.
    - Backwards-compat shims preserved for `_scaffold_app_tree`, `_render_app_templates`, `_update_app_configs`, `update_configs` (re-exported as aliases/deprecation shims).
 
-3. **`tests/cli/test_create_app_emits_default_starter.py`** — 6 tests covering all 5 REQs:
+1. **`tests/cli/test_create_app_emits_default_starter.py`** — 6 tests covering all 5 REQs:
+
    - `test_create_app_emits_new_starter` (REQ-P2-B1-005)
    - `test_create_app_substitutes_app_name_placeholder` (REQ-P2-B1-005)
    - `test_create_app_default_style_is_fastblocks_ui` (REQ-P2-B1-001)
@@ -78,18 +81,18 @@ Per the brief's explicit instruction ("DO NOT silently invent alternative primit
 
 1. **Brief referenced `fastblocks/tests/cli/test_create_app_emits_default_starter.py` but tests actually live at `/Users/les/Projects/fastblocks/tests/cli/`** (top-level, not under `fastblocks/`). I used the actual test directory; the brief's path was an approximation. No file was written inside `fastblocks/tests/` because that directory does not exist.
 
-2. **`create_app` default `--style` changed from `"vanilla"` to `"fastblocks_ui"`** to satisfy REQ-P2-B1-001. This is a user-visible behaviour change: existing CLI consumers that relied on the implicit `vanilla` default will now get `fastblocks_ui`. The brief's contract point 1 mandates this change, so flagging here for awareness only.
+1. **`create_app` default `--style` changed from `"vanilla"` to `"fastblocks_ui"`** to satisfy REQ-P2-B1-001. This is a user-visible behaviour change: existing CLI consumers that relied on the implicit `vanilla` default will now get `fastblocks_ui`. The brief's contract point 1 mandates this change, so flagging here for awareness only.
 
-3. **`fastblocks/cli.py` freezes `apps_path = Path.cwd()` at module load**, which makes the CLI fragile under `pytest-xdist`. Each worker imports `fastblocks.cli` once at startup in the repo CWD; subsequent `chdir` calls don't update `apps_path`. The new test works around this by monkey-patching `fastblocks.cli.apps_path = tmp_path`. A proper fix would compute `apps_path` lazily inside `_scaffold_from_starter` (e.g. `Path.cwd()` at call time) — out of scope for this task but worth a follow-up.
+1. **`fastblocks/cli.py` freezes `apps_path = Path.cwd()` at module load**, which makes the CLI fragile under `pytest-xdist`. Each worker imports `fastblocks.cli` once at startup in the repo CWD; subsequent `chdir` calls don't update `apps_path`. The new test works around this by monkey-patching `fastblocks.cli.apps_path = tmp_path`. A proper fix would compute `apps_path` lazily inside `_scaffold_from_starter` (e.g. `Path.cwd()` at call time) — out of scope for this task but worth a follow-up.
 
-4. **`create_app`'s `_run_setup_commands` (direnv/pdm/uvicorn) is no longer called** from the new path. Previously the CLI would auto-run `direnv allow` + `pdm install` + a smoke run; now it only emits the success message. This is intentional (the new starter uses `uv`, not `pdm`) but consumers who relied on auto-install will need to run `uv sync` themselves.
+1. **`create_app`'s `_run_setup_commands` (direnv/pdm/uvicorn) is no longer called** from the new path. Previously the CLI would auto-run `direnv allow` + `pdm install` + a smoke run; now it only emits the success message. This is intentional (the new starter uses `uv`, not `pdm`) but consumers who relied on auto-install will need to run `uv sync` themselves.
 
-5. **`domain` CLI argument is accepted but not used** by the new scaffold (no `{domain}` placeholder in the starter). Kept for signature backwards compat; could be added to `settings/app.yaml` as `app.domain` in a follow-up.
+1. **`domain` CLI argument is accepted but not used** by the new scaffold (no `{domain}` placeholder in the starter). Kept for signature backwards compat; could be added to `settings/app.yaml` as `app.domain` in a follow-up.
 
-6. **`tests/cli/test_create_app_emits_default_starter.py` does not invoke `create-app` via subprocess `uv run`** — it uses typer's `CliRunner` directly. The brief's example showed `subprocess.run(["uv", "run", ...])`, but the existing `tests/cli/test_base.py` uses the same `CliRunner` pattern, and a subprocess invocation would require `uv` on PATH inside the test env (fragile in CI). The test exercises the actual code path the brief's contract demands.
+1. **`tests/cli/test_create_app_emits_default_starter.py` does not invoke `create-app` via subprocess `uv run`** — it uses typer's `CliRunner` directly. The brief's example showed `subprocess.run(["uv", "run", ...])`, but the existing `tests/cli/test_base.py` uses the same `CliRunner` pattern, and a subprocess invocation would require `uv` on PATH inside the test env (fragile in CI). The test exercises the actual code path the brief's contract demands.
 
-7. **The starter's `templates/__init__.py` is a thin Jinja2 wrapper**, not the Oneiric-resolved template adapter. The starter is runnable standalone (verified via smoke test) but a production app should swap this for a `register_default_adapters(app)` call that resolves templates via Oneiric. This is documented in the scaffold's `docs/ADAPTERS.md`.
+1. **The starter's `templates/__init__.py` is a thin Jinja2 wrapper**, not the Oneiric-resolved template adapter. The starter is runnable standalone (verified via smoke test) but a production app should swap this for a `register_default_adapters(app)` call that resolves templates via Oneiric. This is documented in the scaffold's `docs/ADAPTERS.md`.
 
-8. **`mcp/server.py` import line `from templates import render_template`** assumes the starter is run as a module. If a consumer runs the MCP server in isolation they may need to set `PYTHONPATH`. Acceptable for a scaffold; flagging for awareness.
+1. **`mcp/server.py` import line `from templates import render_template`** assumes the starter is run as a module. If a consumer runs the MCP server in isolation they may need to set `PYTHONPATH`. Acceptable for a scaffold; flagging for awareness.
 
-9. **`settings/adapters/templates.yaml` lists only `jinja2`** but the actual default in `cli.py` is the `hybrid` template manager. The starter ships a thin `templates/__init__.py` Jinja2 wrapper for scaffold-time runnability; in production consumers should swap this for the Oneiric-resolved hybrid manager. Listed as "jinja2" in the YAML to match what `templates/__init__.py` actually uses.
+1. **`settings/adapters/templates.yaml` lists only `jinja2`** but the actual default in `cli.py` is the `hybrid` template manager. The starter ships a thin `templates/__init__.py` Jinja2 wrapper for scaffold-time runnability; in production consumers should swap this for the Oneiric-resolved hybrid manager. Listed as "jinja2" in the YAML to match what `templates/__init__.py` actually uses.

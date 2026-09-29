@@ -49,8 +49,7 @@ class ImageKitImages(ImagesBase):
     async def upload_image(self, file_data: bytes, filename: str) -> dict[str, Any]:
         """Upload image to ImageKit and return result dict."""
         try:
-            import imagekit# ty: ignore[unresolved-import]
-
+            import imagekit  # ty: ignore[unresolved-import]
 
             # Upload using imagekit library
             result = imagekit.upload_file(

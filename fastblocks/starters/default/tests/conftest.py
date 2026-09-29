@@ -2,6 +2,7 @@
 
 # req: REQ-P2-B1-001, REQ-P2-B1-005
 """
+
 from __future__ import annotations
 
 import pytest

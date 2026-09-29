@@ -45,16 +45,16 @@ fix narrows the enumeration to the spec's in-scope set and replaces the
 
 # req: REQ-P2-B2-001, REQ-P2-B2-003
 """
+
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Final
 
-from fastblocks.core.resolver import get_resolver
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-
 from templates import render_template
+from fastblocks.core.resolver import get_resolver
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -130,9 +130,7 @@ def _gather_rows() -> list[dict[str, object]]:
     resolver = get_resolver()
     rows: list[dict[str, object]] = []
     for spec_label, resolver_key, boot_test_relpath in _IN_SCOPE_ADAPTERS:
-        candidate = (
-            resolver.resolve(_DOMAIN, resolver_key) if resolver_key else None
-        )
+        candidate = resolver.resolve(_DOMAIN, resolver_key) if resolver_key else None
         is_resolved = candidate is not None
         boot_tested = (_REPO_ROOT / boot_test_relpath).exists()
         if resolver_key is None:

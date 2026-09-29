@@ -5,7 +5,7 @@
 **Owner:** TBD (this initiative)
 **Repos affected:** `/Users/les/Projects/fastblocks`
 
----
+______________________________________________________________________
 
 ## Summary
 
@@ -24,7 +24,7 @@ initiative finishes that work.
 B3 HTMY demo); raising the coverage gate above 67.81%; new test
 infrastructure beyond what's already in `tests/conftest.py`.
 
----
+______________________________________________________________________
 
 ## Context / motivation
 
@@ -36,26 +36,26 @@ in scope or deliberately punted:
 1. **Spec failure inventory regeneration** — recommended before
    Phase 2 so the next plan starts from real data, not stale
    inventory
-2. **Coverage gate slip** — measured 67.6% vs 67.81% floor (0.21%
+1. **Coverage gate slip** — measured 67.6% vs 67.81% floor (0.21%
    gap)
-3. **xdist-order-pollution flakes** — 7-21 failing tests per run
+1. **xdist-order-pollution flakes** — 7-21 failing tests per run
    (varying across runs; measured range per Phase 1.5 ledger); affects
    `test_htmy_*`, `test_actions/sync/*`, `test_register_candidate_strict`,
    `test_consumer_pattern_wiring`, `test_integration_contracts`
-4. **Exception tuple redundancy** — `fastblocks/exceptions.py:155`
+1. **Exception tuple redundancy** — `fastblocks/exceptions.py:155`
    has 5 redundant subclasses alongside `Exception`
-5. **Force-reload guard brittleness** — `not hasattr(...)` check
+1. **Force-reload guard brittleness** — `not hasattr(...)` check
    in template tests; refactor to `scope="module"` fixture
-6. **Missing trailing newline** — `tests/a11y/conftest.py` Write-tool
+1. **Missing trailing newline** — `tests/a11y/conftest.py` Write-tool
    artifact
-7. **3 deferred test failures from original spec failure inventory**
+1. **3 deferred test failures from original spec failure inventory**
    that Phase 1.5 didn't address
 
 The user explicitly chose "Address deferred-minors first, then Phase 2"
 when Phase 2 was unblocked. The deferred-minors must be cleared before
 Phase 2's build wave can ship on a clean foundation.
 
----
+______________________________________________________________________
 
 ## Scope
 
@@ -84,7 +84,7 @@ Phase 2's build wave can ship on a clean foundation.
   widening stays; this cycle just collapses the redundant subclass
   entries, not re-decides the policy)
 
----
+______________________________________________________________________
 
 ## Architecture
 
@@ -129,6 +129,7 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
 #### Wave A — Spec regen + Cleanup
 
 **#1 — Spec failure inventory regeneration**
+
 - **Files:** create/overwrite `docs/spec-failure-inventory.md`
 - **Approach:** Run `pytest --no-cov -v --tb=line 2>&1 | tee /tmp/current-failures.txt`.
   Categorize each failure: (a) currently failing on main,
@@ -144,9 +145,9 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
   future plan's spec authoring.
 
 **#4 — Exception tuple redundancy**
+
 - **Files:** `fastblocks/exceptions.py:155`
-- **Approach:** collapse `(ImportError, AttributeError, RuntimeError,
-  TypeError, ValueError, Exception)` to `(Exception,)`. The 5
+- **Approach:** collapse `(ImportError, AttributeError, RuntimeError, TypeError, ValueError, Exception)` to `(Exception,)`. The 5
   subclasses are redundant with `Exception`. Verify
   `tests/test_exceptions.py::test_safe_depends_get_cached` and
   `tests/test_exceptions_comprehensive.py::TestSafeDependsGet`
@@ -156,6 +157,7 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
 - **Risk:** low — tests don't depend on specific exception types.
 
 **#6 — Missing trailing newline**
+
 - **Files:** `tests/a11y/conftest.py`
 - **Approach:** append `\n` if missing. Confirm via `tail -c 1 < file | xxd`.
 - **Done:** file ends with `\n`.
@@ -164,6 +166,7 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
 #### Wave B — Force-reload guard refactor
 
 **#5 — Force-reload guard refactor**
+
 - **Files:** `tests/adapters/templates/conftest.py` (rewrite — preserve
   existing `pytest_ignore_collect`; add `pytest_sessionstart` +
   `pytest_sessionfinish` hooks for the stub); `tests/adapters/templates/test_jinja2.py`
@@ -215,16 +218,17 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
 #### Wave C — xdist-order-pollution hybrid
 
 **#3 — xdist-order-pollution hybrid (the load-bearing decision)**
+
 - **Files:** various test files; potentially `tests/conftest.py` for
   additional hooks; new `@pytest.mark.serial` markers on offending
   tests
 - **Approach:**
   1. Run `pytest -p no:xdist 5x` — record baseline (which tests
      consistently pass without xdist)
-  2. Run `pytest --dist=loadfile 5x` — record which tests fail
+  1. Run `pytest --dist=loadfile 5x` — record which tests fail
      consistently across runs
-  3. Diff the two lists → the **delta** is the xdist-pollution set
-  4. For each delta test:
+  1. Diff the two lists → the **delta** is the xdist-pollution set
+  1. For each delta test:
      - **Genuine pollution** (order-dependent): `@pytest.mark.serial`
        (existing Phase 1.5 hook at `tests/conftest.py:131-153` handles
        it)
@@ -232,8 +236,8 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
        root-cause fix in the test file itself
      - **Pre-existing bug** (flaky regardless of xdist): punt to
        Wave E
-  5. Commit 1: serial-marks (1 file per test, max)
-  6. Commit 2 (if needed): root-cause fix(es)
+  1. Commit 1: serial-marks (1 file per test, max)
+  1. Commit 2 (if needed): root-cause fix(es)
 - **Done:** 5 consecutive `pytest --dist=loadfile` runs all green;
   zero failures varying per run; serial-marks documented in
   `tests/conftest.py` rationale comment (test name + brief rationale
@@ -245,16 +249,16 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
 #### Wave D — Coverage gate slip
 
 **#2 — Coverage gate slip (0.21%)**
+
 - **Files:** targeted test additions; possibly carve-outs in
   `docs/known-test-gaps.md`
 - **Approach:**
-  1. After Wave C settles test counts: `pytest --cov=fastblocks
-     --cov-report=term-missing`
-  2. Identify uncovered lines (focus on `fastblocks/*.py`, not tests)
-  3. For each uncovered block, write a test that exercises it (TDD:
+  1. After Wave C settles test counts: `pytest --cov=fastblocks --cov-report=term-missing`
+  1. Identify uncovered lines (focus on `fastblocks/*.py`, not tests)
+  1. For each uncovered block, write a test that exercises it (TDD:
      failing first)
-  4. Re-measure; iterate until `--cov-fail-under=67.81` passes
-  5. If uncovered code is genuinely untestable (e.g.,
+  1. Re-measure; iterate until `--cov-fail-under=67.81` passes
+  1. If uncovered code is genuinely untestable (e.g.,
      platform-specific), document carve-out in `docs/known-test-gaps.md`
      with `{file:line, reason, removal_plan}`
 - **Done:** 5 consecutive `--cov=fail_under=67.81` runs all pass.
@@ -265,26 +269,27 @@ Wave E (~Day 5-6, 1 day)                 DEPENDS ON Wave A
 #### Wave E — Deferred test failures
 
 **#7 — Deferred test failures from original spec failure inventory**
+
 - **Files:** depends on Wave A's `docs/spec-failure-inventory.md` output
 - **Approach:**
   1. Read the fresh spec failure inventory
-  2. For each test still failing that's NOT covered by Wave C (xdist)
+  1. For each test still failing that's NOT covered by Wave C (xdist)
      or Wave D (coverage):
      - **Quick fix** (≤30 min): apply, commit
      - **Mark serial** (genuine pollution that Wave C missed):
        `@pytest.mark.serial`
      - **Punt to Phase 1.5++** (genuine bug, too big for this cycle):
        document in `docs/known-claim-gaps.md` with target date
-  3. Commit 1: fixes (if any)
-  4. Commit 2: serial-marks (if any)
-  5. Commit 3: `docs/known-claim-gaps.md` updates (if any)
+  1. Commit 1: fixes (if any)
+  1. Commit 2: serial-marks (if any)
+  1. Commit 3: `docs/known-claim-gaps.md` updates (if any)
 - **Done:** every originally-deferred failure has a documented
   disposition (fix / serial-mark / punt-with-target-date). 5
   consecutive `pytest` runs all pass.
 - **Risk:** punted items pile up. Mitigation: each punted entry
   requires a target date (no "TBD").
 
----
+______________________________________________________________________
 
 ## Acceptance Criteria (audit-cleared gate)
 
@@ -297,6 +302,7 @@ bash scripts/phase1.5-plus-gate.sh
 ```
 
 The gate internally runs:
+
 - 5 consecutive `.venv/bin/pytest --no-cov -p no:xdist -q` (serial baseline)
 - 5 consecutive `.venv/bin/pytest --no-cov --dist=loadfile -q` (xdist baseline; non-serial-marked tests pass; serial-marked tests skipped per hook)
 - 5 consecutive `.venv/bin/pytest --cov=fail_under=67.81 -q` (coverage gate)
@@ -316,7 +322,7 @@ work. If any single run fails, Phase 1.5+ is not done.
 | D | 5 consecutive `pytest --cov=fail_under=67.81` runs all pass; carve-outs in `known-test-gaps.md` if any |
 | E | Every originally-deferred failure has a disposition; `docs/known-claim-gaps.md` lists punted items with target dates |
 
----
+______________________________________________________________________
 
 ## Integration Contract (per `wire-up-contract.md`)
 
@@ -328,7 +334,7 @@ work. If any single run fails, Phase 1.5+ is not done.
 | **Rollback signal** | Each wave is 1-2 commits; revert the wave's commits if a regression is discovered. Pre-wave state (`0b9d849`) is the ultimate fallback. |
 | **Observability added** | `docs/spec-failure-inventory.md` includes "Last regenerated" header; coverage report shows missing lines; `tests/conftest.py` serial-mark rationale comment is the public log of every quarantine; SDD ledger preserved per Phase 1.5 pattern (`docs/superpowers/sdd-logs/2026-09-27-phase1.5-plus-ledger.md`). |
 
----
+______________________________________________________________________
 
 ## Risks & Mitigations
 
@@ -341,7 +347,7 @@ work. If any single run fails, Phase 1.5+ is not done.
 | Punted items pile up (if Wave E has >3 punts, Phase 1.5++ becomes a real cycle) | Medium | Medium | Each punt requires target date; if >3 punts, evaluate whether to extend Phase 1.5+ scope |
 | Wave B's `monkeypatch` can't undo `sys.modules` (pytest's `monkeypatch.setattr` does not track dict insertions to `sys.modules`) | High | Low | Use `pytest_sessionstart` + `pytest_sessionfinish` hook pair (standard pytest contract) for stub install + teardown |
 
----
+______________________________________________________________________
 
 ## Cross-initiative touchpoints (flagged, not in scope)
 
@@ -352,7 +358,7 @@ work. If any single run fails, Phase 1.5+ is not done.
 - **SplashStand consumer SaaS** — uses the new starter once Phase 2
   ships; not affected by Phase 1.5+
 
----
+______________________________________________________________________
 
 ## Glossary
 

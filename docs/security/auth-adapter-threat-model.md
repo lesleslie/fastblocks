@@ -19,12 +19,12 @@ session storage, CSRF tokens tied to sessions, etc.).
 
 1. **Session storage** — the framework reads/writes session data;
    consumer providers MUST treat session IDs as opaque.
-2. **CSRF coupling** — auth state changes (login, logout, MFA) are
+1. **CSRF coupling** — auth state changes (login, logout, MFA) are
    state-changing routes; framework CSRF middleware (D6) MUST apply.
-3. **Token validation** — providers MUST validate tokens before the
+1. **Token validation** — providers MUST validate tokens before the
    framework trusts them; framework surfaces a hook but does not
    validate provider tokens itself.
-4. **Redirect URI** — auth callbacks MUST validate the redirect URI
+1. **Redirect URI** — auth callbacks MUST validate the redirect URI
    against an allowlist; framework does not enforce this (provider's
    responsibility).
 

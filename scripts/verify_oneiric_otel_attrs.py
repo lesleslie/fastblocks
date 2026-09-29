@@ -28,6 +28,7 @@ The script deliberately reads Oneiric's own
 emitted span at runtime; the static-method check is fast,
 deterministic, and does not require a configured TracerProvider.
 """
+
 from __future__ import annotations
 
 import sys

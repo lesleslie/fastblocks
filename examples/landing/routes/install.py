@@ -2,12 +2,12 @@
 
 # req: REQ-P2-B2-001
 """
+
 from __future__ import annotations
 
 from fastblocks_ui import button
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-
 from templates import render_template
 
 

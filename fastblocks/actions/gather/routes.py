@@ -24,8 +24,7 @@ def debug(msg: str) -> None:
 
 # Try to import Oneiric components first, fall back to ACB for compatibility
 try:
-    from oneiric.adapters.discovery import (# ty: ignore[unresolved-import]
-
+    from oneiric.adapters.discovery import (  # ty: ignore[unresolved-import]
         get_adapters,
     )
 

@@ -12,7 +12,7 @@
 
 **This is Plan 1 of 1.** Phase 2 (build wave) gets its own spec/plan/SDD cycle after Phase 1.5+ ships.
 
----
+______________________________________________________________________
 
 ## Global Constraints
 
@@ -28,7 +28,7 @@
 - **SDD workspace:** `.superpowers/sdd/2026-09-27-fastblocks-phase1.5-plus/` per Phase 1.5 pattern
 - **SDD ledger** preserved at `docs/superpowers/sdd-logs/2026-09-27-phase1.5-plus-ledger.md` after execution
 
----
+______________________________________________________________________
 
 ## File Structure
 
@@ -61,48 +61,52 @@ docs/known-claim-gaps.md                                     [Task 5, Wave E —
 ```
 
 **Each task's expected commit count:**
+
 - Task 1 (Wave A): 3 commits (#1 spec, #4 exception, #6 newline) — one SDD dispatch
 - Task 2 (Wave B): 1 commit — one SDD dispatch
 - Task 3 (Wave C): 1-2 commits (serial-marks, then optional root-cause fixes) — one SDD dispatch
 - Task 4 (Wave D): N commits (one per low-coverage module's test addition) — one SDD dispatch
 - Task 5 (Wave E): 1-3 commits (fixes, serial-marks, claim-gap updates) — one SDD dispatch
 
----
+______________________________________________________________________
 
 ## Task Order (dependencies)
 
 Tasks execute in this order. Each task is independently testable; later tasks depend on earlier ones only at the test-stability level (later tasks must keep earlier tests green).
 
 1. **Task 1: Wave A** — Spec regen + cleanup (3 small commits, no dependencies)
-2. **Task 2: Wave B** — Force-reload guard refactor (1 commit, no dependencies; runs before Wave C in case refactor incidentally resolves pollution)
-3. **Task 3: Wave C** — xdist hybrid (1-2 commits, depends on Wave B settling force-reload guard; stabilizes test counts for Wave D)
-4. **Task 4: Wave D** — Coverage gate slip (N commits, depends on Wave C for stable test counts)
-5. **Task 5: Wave E** — Deferred test failures (1-3 commits, depends on Wave A's spec inventory + Wave C's pollution treatment)
+1. **Task 2: Wave B** — Force-reload guard refactor (1 commit, no dependencies; runs before Wave C in case refactor incidentally resolves pollution)
+1. **Task 3: Wave C** — xdist hybrid (1-2 commits, depends on Wave B settling force-reload guard; stabilizes test counts for Wave D)
+1. **Task 4: Wave D** — Coverage gate slip (N commits, depends on Wave C for stable test counts)
+1. **Task 5: Wave E** — Deferred test failures (1-3 commits, depends on Wave A's spec inventory + Wave C's pollution treatment)
 
 After Task 5: **Phase 1.5+ gate** is enforced (per acceptance criteria in spec). Phase 2 plan authoring can begin.
 
----
+______________________________________________________________________
 
 ### Task 1: Wave A — Spec regen + Cleanup
 
 **Files:**
+
 - Create: `docs/spec-failure-inventory.md` (#1)
 - Modify: `fastblocks/exceptions.py:155` (#4)
 - Modify: `tests/a11y/conftest.py` (#6, trailing newline)
 
 **Interfaces:**
+
 - Consumes: `pytest --no-cov -v --tb=line` output; current state of `fastblocks/exceptions.py:155`; current state of `tests/a11y/conftest.py`
 - Produces: fresh `docs/spec-failure-inventory.md`; `(Exception,)` tuple at line 155; trailing newline at end of `tests/a11y/conftest.py`
 
 **One SDD dispatch** handles all three commits. Implementer applies them in order; reviewer validates all three.
 
----
+______________________________________________________________________
 
 #### Sub-step 1A: Spec failure inventory regeneration
 
 - [ ] **Step 1: Run pytest to capture current failures**
 
 Run from `/Users/les/Projects/fastblocks`:
+
 ```bash
 .venv/bin/pytest --no-cov -v --tb=line 2>&1 | tee /tmp/phase1.5-plus-failures.txt
 ```
@@ -112,6 +116,7 @@ Expected output: list of FAILED tests with file paths and short tracebacks.
 - [ ] **Step 2: Categorize each failure**
 
 For each FAILED test, assign one of these categories:
+
 - **(a) currently-failing** — fails every run regardless of mode
 - **(b) xdist-only-intermittent** — fails with `--dist=loadfile` but passes with `-p no:xdist`
 - **(c) dep-pin-related** — caused by the D8 dep-pin machinery (e.g., `tests/test_dep_pins.py` fixture rotation)
@@ -157,6 +162,7 @@ Replace `YYYY-MM-DD` with today's date and `<sha>` with `git rev-parse HEAD` out
 - [ ] **Step 4: Verify the inventory is accurate**
 
 Run:
+
 ```bash
 grep -c "^| " docs/spec-failure-inventory.md
 ```
@@ -174,13 +180,14 @@ against current main HEAD. Used by Wave E to triage the 3
 originally-deferred test failures from Phase 1.5."
 ```
 
----
+______________________________________________________________________
 
 #### Sub-step 1B: Exception tuple redundancy
 
 - [ ] **Step 1: Verify baseline — current tuple at `fastblocks/exceptions.py:155`**
 
 Run:
+
 ```bash
 grep -n "except (" fastblocks/exceptions.py | head -10
 ```
@@ -190,6 +197,7 @@ Expected: line 155 shows `(ImportError, AttributeError, RuntimeError, TypeError,
 - [ ] **Step 2: Verify tests still pass BEFORE the change**
 
 Run:
+
 ```bash
 .venv/bin/pytest tests/test_exceptions.py::test_safe_depends_get_cached tests/test_exceptions_comprehensive.py::TestSafeDependsGet -v --no-cov
 ```
@@ -201,11 +209,13 @@ Expected: PASS (the test that prompted Phase 1.5 Task 4's original widening). If
 In `fastblocks/exceptions.py:155`, replace:
 
 Find:
+
 ```python
         except (ImportError, AttributeError, RuntimeError, TypeError, ValueError, Exception):
 ```
 
 Replace:
+
 ```python
         except (Exception,):
 ```
@@ -213,6 +223,7 @@ Replace:
 - [ ] **Step 4: Verify tests still pass AFTER the change**
 
 Run:
+
 ```bash
 .venv/bin/pytest tests/test_exceptions.py::test_safe_depends_get_cached tests/test_exceptions_comprehensive.py::TestSafeDependsGet -v --no-cov
 ```
@@ -235,13 +246,14 @@ Exception (the kelp-style XSS regression). Tests still pass;
 no test depends on a specific exception type."
 ```
 
----
+______________________________________________________________________
 
 #### Sub-step 1C: Trailing newline on a11y conftest
 
 - [ ] **Step 1: Check current trailing-byte state**
 
 Run:
+
 ```bash
 tail -c 1 tests/a11y/conftest.py | xxd
 ```
@@ -254,6 +266,7 @@ If anything else: continue to Step 2.
 - [ ] **Step 2: Append newline**
 
 Run:
+
 ```bash
 printf '\n' >> tests/a11y/conftest.py
 ```
@@ -261,6 +274,7 @@ printf '\n' >> tests/a11y/conftest.py
 - [ ] **Step 3: Verify**
 
 Run:
+
 ```bash
 tail -c 1 tests/a11y/conftest.py | xxd
 ```
@@ -276,7 +290,7 @@ git commit -m "chore(fastblocks): trailing newline on tests/a11y/conftest.py
 Wave A, sub-step 1C. Write-tool artifact from Phase 1.5 Task 7."
 ```
 
----
+______________________________________________________________________
 
 #### Task 1 done criteria
 
@@ -288,16 +302,18 @@ Wave A, sub-step 1C. Write-tool artifact from Phase 1.5 Task 7."
 - `tests/test_exceptions.py::test_safe_depends_get_cached` and `tests/test_exceptions_comprehensive.py::TestSafeDependsGet` still pass
 - Reviewer verifies all three sub-steps independently
 
----
+______________________________________________________________________
 
 ### Task 2: Wave B — Force-reload guard refactor
 
 **Files:**
+
 - Modify: `tests/adapters/templates/conftest.py` (rewrite — preserve existing `pytest_ignore_collect`; add `pytest_sessionstart` + `pytest_sessionfinish` hooks for the stub)
 - Modify: `tests/adapters/templates/test_jinja2.py` (lines 14-48 area; remove module-level `sys.modules` stubs + `MockAsyncJinja2Templates` class + `MockAsyncBaseLoader` class)
 - Modify: `tests/adapters/templates/test_rendering_jinja2.py` (lines 14-49 area; same removals)
 
 **Interfaces:**
+
 - Consumes: existing module-level `sys.modules["jinja2_async_environment"] = types.ModuleType(...)` patterns at the top of both test files; existing `pytest_ignore_collect` in `tests/adapters/templates/conftest.py` (8 lines)
 - Produces: `pytest_sessionstart` hook in `tests/adapters/templates/conftest.py` that installs the complete stub (including top-level `jinja2_async_environment.AsyncRedisBytecodeCache` per `fastblocks/adapters/templates/jinja2.py:96`, plus `jinja2_async_environment.bccache.AsyncRedisBytecodeCache` alias, plus `jinja2_async_environment.loaders.AsyncBaseLoader` + `SourceType`); `pytest_sessionfinish` hook that restores the original `sys.modules` entries; module-level stubs removed from both test files
 
@@ -314,6 +330,7 @@ grep -rn "if not hasattr" tests/adapters/templates/ || echo "OK: no stub-guard h
 ```
 
 **Distinguish guards from assertions:**
+
 - `assert not hasattr(HTMYTemplates, "_load_from_cached_bytecode")` at `test_htmy_loader_safety.py:116,119` — XSS-defense regression assertions on REMOVED methods. LEGITIMATE, must NOT be removed.
 - `assert not hasattr(mock_env, "variable_start_string")` at `test_filters_comprehensive.py:538` — delimiter preservation assertion. LEGITIMATE, must NOT be removed.
 
@@ -440,15 +457,18 @@ def pytest_sessionfinish(session, exitstatus):
 - [ ] **Step 3: Remove module-level sys.modules stubs from test files**
 
 In `tests/adapters/templates/test_jinja2.py`:
+
 - Delete lines 14-48 (the module-level `sys.modules["starlette_async_jinja"] = ...`, `sys.modules["jinja2_async_environment"] = ...`, `sys.modules["jinja2_async_environment.loaders"] = ...` block; plus the `MockAsyncJinja2Templates` class at lines 19-23; plus `mock_jinja2_async_env` and `mock_loaders` at lines 31-37; plus `MockAsyncBaseLoader` class at lines 40-48)
 - Keep `import sys`, `import typing as t`, `import types` only if they're used elsewhere in the file
 
 In `tests/adapters/templates/test_rendering_jinja2.py`:
+
 - Same removals (line numbers vary — `grep -n "sys.modules\[" tests/adapters/templates/test_rendering_jinja2.py` to locate; inspect first)
 
 - [ ] **Step 4: Run tests in serial mode**
 
 Run:
+
 ```bash
 .venv/bin/pytest tests/adapters/templates/ -p no:xdist -v --no-cov
 ```
@@ -460,6 +480,7 @@ If FAIL: check that the conftest hook actually ran — `pytest --collect-only te
 - [ ] **Step 5: Run tests in xdist mode**
 
 Run:
+
 ```bash
 .venv/bin/pytest tests/adapters/templates/ --dist=loadfile -v --no-cov
 ```
@@ -471,6 +492,7 @@ If FAIL: investigate with `pytest tests/path/to/test.py --dist=loadfile -v`.
 - [ ] **Step 6: Verify test_components collection is still skipped**
 
 Run:
+
 ```bash
 .venv/bin/pytest tests/adapters/templates/ --collect-only -q 2>&1 | grep -c test_components || true
 ```
@@ -480,6 +502,7 @@ Expected: 0 (the `pytest_ignore_collect` for `test_components` still works; pres
 - [ ] **Step 7: Run 5 consecutive times in both modes**
 
 Serial:
+
 ```bash
 for i in 1 2 3 4 5; do
     .venv/bin/pytest tests/adapters/templates/ -p no:xdist -q --no-cov || { echo "FAIL: serial run $i"; exit 1; }
@@ -487,6 +510,7 @@ done
 ```
 
 Xdist:
+
 ```bash
 for i in 1 2 3 4 5; do
     .venv/bin/pytest tests/adapters/templates/ --dist=loadfile -q --no-cov || { echo "FAIL: xdist run $i"; exit 1; }
@@ -498,6 +522,7 @@ Expected: all 10 runs PASS.
 - [ ] **Step 8: Verify module-level sys.modules stubs are gone from test files**
 
 Run:
+
 ```bash
 grep -n "sys.modules\[.jinja2_async_environment.\]\s*=" tests/adapters/templates/test_jinja2.py tests/adapters/templates/test_rendering_jinja2.py 2>/dev/null || echo "OK: module-level stubs gone"
 ```
@@ -541,23 +566,27 @@ grep -rn 'if not hasattr' tests/adapters/templates/). Ledger entry
 was inaccurate or already resolved."
 ```
 
----
+______________________________________________________________________
 
 ### Task 3: Wave C — xdist-order-pollution hybrid
 
 **Files:**
+
 - Read: `tests/conftest.py:131-153` (existing serial hook from Phase 1.5 final fix wave)
 - Possibly Modify: `tests/conftest.py` (extend the serial-mark rationale comment block)
 - Multiple Modify: test files where xdist-polluting tests live (the delta set discovered in Step 3)
 - Possibly Create: per-test `@pytest.mark.serial` additions + `try/finally` sys.modules guards for genuinely nondeterministic tests
 
 **Interfaces:**
+
 - Consumes: 5-run baseline in serial mode (`-p no:xdist`) + 5-run baseline in xdist mode (`--dist=loadfile`)
+
 - Produces: a delta set of xdist-polluting tests; for each, one of: `@pytest.mark.serial` (genuine pollution), root-cause fix (test-design defect), or punt-to-Wave-E (pre-existing bug)
 
 - [ ] **Step 1: Establish serial-mode baseline**
 
 Run 5 times:
+
 ```bash
 for i in 1 2 3 4 5; do
     .venv/bin/pytest --no-cov -p no:xdist -q 2>&1 | tee /tmp/phase1.5-plus-serial-$i.txt
@@ -569,6 +598,7 @@ Expected: 5 runs, all green (same set of tests, possibly varying xpassed/xfailed
 - [ ] **Step 2: Establish xdist-mode baseline**
 
 Run 5 times:
+
 ```bash
 for i in 1 2 3 4 5; do
     .venv/bin/pytest --no-cov --dist=loadfile -q 2>&1 | tee /tmp/phase1.5-plus-xdist-$i.txt
@@ -580,6 +610,7 @@ Expected: 5 runs, may have failures (this is the pollution we're fixing).
 - [ ] **Step 3: Compute the delta set**
 
 For each test ID that appears as FAILED or ERROR in any of the 5 xdist runs:
+
 - If the test ID appears in ALL 5 xdist runs as failed → consistently-polluting-in-xdist
 - If the test ID appears in some xdist runs as failed but not others → flaky-in-xdist (likely nondeterministic; punt)
 - If the test ID does NOT appear in any of the 5 serial runs as failed → confirmed xdist-only pollution
@@ -597,9 +628,10 @@ For each test in the delta set, choose ONE treatment:
 | Punt to Wave E | The test is flaky in BOTH serial and xdist modes (genuine nondeterminism) AND requires >30 min to root-cause. Document with target date. |
 
 **Default order when unsure** (fix-first, serial-only-if-needed):
+
 1. Root-cause fix (if localized to one test file)
-2. `@pytest.mark.serial` (if the pollution source is across files)
-3. Punt (only if neither fix is tractable in this cycle)
+1. `@pytest.mark.serial` (if the pollution source is across files)
+1. Punt (only if neither fix is tractable in this cycle)
 
 If both "root-cause fix" and "serial-mark" fit, prefer the root-cause fix — over-marking serial undermines xdist's parallelism benefit (the 5-runs gate's "non-serial-marked tests pass" criterion makes the cost visible).
 
@@ -608,11 +640,13 @@ If both "root-cause fix" and "serial-mark" fit, prefer the root-cause fix — ov
 For each test designated "serial-mark":
 
 In the test file, find:
+
 ```python
 def test_name():
 ```
 
 Replace:
+
 ```python
 @pytest.mark.serial
 def test_name():
@@ -623,9 +657,13 @@ If the test file does not import `pytest`, add `import pytest` (or extend an exi
 - [ ] **Step 6: Apply root-cause fixes (if any)**
 
 For each test designated "root-cause fix":
+
 - Identify the shared state mutation
+
 - Add teardown via explicit `try/finally` OR extract to a `scope="function"` fixture with proper teardown
+
 - Run the test in isolation (`pytest tests/path/to/test.py::test_name -v`) to verify the fix
+
 - Run the test under `--dist=loadfile` 5 times to verify no regression
 
 - [ ] **Step 7: Extend the serial-mark rationale comment in `tests/conftest.py`**
@@ -679,23 +717,27 @@ Verified: 5 consecutive --dist=loadfile runs all green; 5
 consecutive -p no:xdist runs all green (regression check)."
 ```
 
----
+______________________________________________________________________
 
 ### Task 4: Wave D — Coverage gate slip (0.21%)
 
 **Files:**
+
 - Read: `.coverage-ratchet.json` (current floor is 67.81)
 - Read: `pyproject.toml` (`--cov-fail-under=67.81`)
 - Possibly Create: multiple new test files in `tests/` for uncovered modules
 - Possibly Create: `docs/known-test-gaps.md` (only if carve-outs needed)
 
 **Interfaces:**
+
 - Consumes: `pytest --cov=fastblocks --cov-report=term-missing` output
+
 - Produces: 5 consecutive `--cov=fail_under=67.81` passes; optionally, carve-out documentation
 
 - [ ] **Step 1: Re-measure coverage (post-Wave-C stable test counts)**
 
 Run:
+
 ```bash
 .venv/bin/pytest --cov=fastblocks --cov-report=term-missing -q 2>&1 | tail -100
 ```
@@ -719,6 +761,7 @@ If multiple modules tie, prefer the one with the simplest API surface (easiest t
 For the chosen module, identify 1-3 functions/methods with uncovered lines. Write a test that exercises each.
 
 Example (illustrative — actual target depends on Step 3's choice):
+
 ```python
 """Wave D coverage tests for fastblocks/<module>.py."""
 import pytest
@@ -741,6 +784,7 @@ def test_<thing>_<other_branch>():
 - [ ] **Step 5: Run the test to verify it passes (backfill: expect pass; no production code change)**
 
 Since this is closing a coverage gap, the test should pass if the existing production code is correct. Verify:
+
 ```bash
 .venv/bin/pytest tests/path/to/new_test.py -v --no-cov
 ```
@@ -752,6 +796,7 @@ If FAIL: the uncovered code path has a bug. STOP. Surface to the reviewer — th
 - [ ] **Step 6: Re-measure coverage**
 
 Run:
+
 ```bash
 .venv/bin/pytest --cov=fastblocks --cov-report=term-missing -q 2>&1 | tail -5
 ```
@@ -771,6 +816,7 @@ Expected: all 5 runs PASS.
 - [ ] **Step 8: If any code remains untestable, document in `docs/known-test-gaps.md`**
 
 Create `docs/known-test-gaps.md`:
+
 ```markdown
 # Known Test Gaps
 
@@ -788,6 +834,7 @@ Each entry requires a removal plan. No "TBD" entries.
 - [ ] **Step 9: Commit**
 
 If new test files were added:
+
 ```bash
 git add tests/
 git commit -m "test(fastblocks): Wave D close coverage gap to 67.81%
@@ -803,6 +850,7 @@ If carve-outs: see docs/known-test-gaps.md."
 ```
 
 If only known-test-gaps.md was created:
+
 ```bash
 git add docs/known-test-gaps.md
 git commit -m "docs(fastblocks): Wave D coverage carve-outs documented
@@ -813,23 +861,27 @@ untestable code paths. Each entry has a removal plan."
 
 (Or both, in separate commits.)
 
----
+______________________________________________________________________
 
 ### Task 5: Wave E — Deferred test failures + Gate script
 
 **Files:**
+
 - Read: `docs/spec-failure-inventory.md` (from Task 1 sub-step 1A)
 - Possibly Modify: multiple test files (Wave C punts + Wave E triages)
 - Possibly Modify: `docs/known-claim-gaps.md`
 - Create: `scripts/phase1.5-plus-gate.sh`
 
 **Interfaces:**
+
 - Consumes: `docs/spec-failure-inventory.md` from Task 1
+
 - Produces: 3 originally-deferred failures each with a disposition (fix/serial/punt-with-date); `scripts/phase1.5-plus-gate.sh` audit script
 
 - [ ] **Step 1: Verify the spec failure inventory is fresh; read it**
 
 Run:
+
 ```bash
 # Check inventory freshness (regenerated >24h ago is stale)
 last_regen=$(grep -oE "Last regenerated: [0-9-]+" docs/spec-failure-inventory.md | head -1)
@@ -843,6 +895,7 @@ cat docs/spec-failure-inventory.md
 **Reconciliation with Phase 1.5 ledger's "Deferred-minors" section:**
 
 Expected reconciliation:
+
 - Tests **serial-marked in Phase 1.5 final fix wave** (e.g., `test_jinja2_environment_default_autoescape_is_true`) will NOT appear in the inventory (the inventory only counts FAILED/ERROR, not skipped). Verify these tests are still skipped via the serial hook and the rationale still applies; if not, remove the serial mark and re-evaluate.
 - Tests addressed by Wave C (xdist-order-pollution) and Wave D (coverage gate slip) should be absent from the inventory.
 - Remaining deferred tests (per the Phase 1.5 ledger) need fresh disposition in Wave E Steps 2-5.
@@ -854,31 +907,40 @@ The 3 originally-deferred test failures (per the Phase 1.5 ledger: at minimum `t
 **Default triage order when unsure (fix-first, punt-last):**
 
 1. **Quick fix** — if the failure has an obvious cause and ≤30 min OR ≤20 lines of test change. Edit the test, run it locally, commit.
-2. **Mark serial** — if the test is xdist-polluting and Wave C missed it (verify by running `pytest -p no:xdist` and confirming the test passes). Add `@pytest.mark.serial`; update `tests/conftest.py` rationale comment.
-3. **Root-cause fix** — if the test has a real defect (e.g., the test asserts behavior that production code doesn't implement, OR the test is testing an aspirational claim that should be marked as such). Surface to reviewer; do not silently punt.
-4. **Punt to Phase 1.5++** — only if NONE of the above fit this cycle's scope. Add entry to `docs/known-claim-gaps.md` with a target date within 6 months (the gate enforces this horizon).
+1. **Mark serial** — if the test is xdist-polluting and Wave C missed it (verify by running `pytest -p no:xdist` and confirming the test passes). Add `@pytest.mark.serial`; update `tests/conftest.py` rationale comment.
+1. **Root-cause fix** — if the test has a real defect (e.g., the test asserts behavior that production code doesn't implement, OR the test is testing an aspirational claim that should be marked as such). Surface to reviewer; do not silently punt.
+1. **Punt to Phase 1.5++** — only if NONE of the above fit this cycle's scope. Add entry to `docs/known-claim-gaps.md` with a target date within 6 months (the gate enforces this horizon).
 
 **Punting is the LAST resort.** Phase 1.5's "punt items pile up" risk already manifested as the 7-item deferred-minors list this initiative exists to clear — defaulting to punt here reproduces the same anti-pattern.
 
 - [ ] **Step 3: Apply quick fixes (if any)**
 
 For each "quick fix":
+
 - Read the failing test
+
 - Identify the root cause (assertion failure? ImportError? AttributeError?)
+
 - Make the minimal change
+
 - Verify: `.venv/bin/pytest tests/path/to/test.py::test_name -v --no-cov` PASSES
+
 - Commit separately per fix
 
 - [ ] **Step 4: Apply serial-marks (if any)**
 
 For each "mark serial":
+
 - Add `@pytest.mark.serial` decorator above the test function
+
 - Update `tests/conftest.py` rationale comment block with the test name + rationale
+
 - Commit
 
 - [ ] **Step 5: Document punts in `docs/known-claim-gaps.md`**
 
 For each punt, add an entry:
+
 ```markdown
 | `<test path>::<test name>` | Punt to Phase 1.5++ | <one-line reason> | Target: YYYY-MM-DD |
 ```
@@ -888,6 +950,7 @@ Commit the `known-claim-gaps.md` update.
 - [ ] **Step 6: Write `scripts/phase1.5-plus-gate.sh`**
 
 Create `scripts/phase1.5-plus-gate.sh`:
+
 ```bash
 #!/usr/bin/env bash
 # Phase 1.5+ audit-cleared gate. Exits 0 iff all checks pass.
@@ -988,6 +1051,7 @@ echo "=== Phase 1.5+ gate: ALL CHECKS PASSED ==="
 ```
 
 Make executable:
+
 ```bash
 chmod +x scripts/phase1.5-plus-gate.sh
 ```
@@ -995,6 +1059,7 @@ chmod +x scripts/phase1.5-plus-gate.sh
 - [ ] **Step 7: Run the gate**
 
 Run:
+
 ```bash
 bash scripts/phase1.5-plus-gate.sh
 ```
@@ -1023,7 +1088,7 @@ Run: bash scripts/phase1.5-plus-gate.sh
 Exit 0 iff Phase 1.5+ is done; Phase 2 build wave is unblocked."
 ```
 
----
+______________________________________________________________________
 
 ## Post-Task 5: Phase 1.5+ Gate
 
@@ -1035,15 +1100,17 @@ bash scripts/phase1.5-plus-gate.sh
 ```
 
 When ALL checks pass:
+
 - Phase 1.5+ is complete
 - Phase 2 (build wave) plan authoring can begin
 - SDD ledger preservation follows Phase 1.5 pattern (`docs/superpowers/sdd-logs/2026-09-27-phase1.5-plus-ledger.md`)
 
----
+______________________________________________________________________
 
 ## Self-Review
 
 **1. Spec coverage:**
+
 - #1 Spec failure inventory regen — Task 1 sub-step 1A ✓
 - #2 Coverage gate slip — Task 4 ✓
 - #3 xdist-order-pollution hybrid — Task 3 ✓
@@ -1054,17 +1121,20 @@ When ALL checks pass:
 - All 7 deferred-minors covered; 5 waves sequenced by dependency; gate script enforces 5/5 runs in each mode
 
 **2. Placeholder scan:**
+
 - "≤30 min" / "≤20 lines" in Task 5 Step 2 — these are triage thresholds, not placeholders for code; reviewer flag is the right discipline
 - "TBD" / "TODO" / "implement later" — none
 - "Fill in details" — none
 
 **3. Type consistency:**
+
 - `try/finally` teardown pattern used consistently in Task 2 and Task 3 (root-cause fixes)
 - `@pytest.mark.serial` referenced consistently in Task 3 and Task 5 (carryover from Phase 1.5 hook)
 - `.venv/bin/pytest` used consistently across all tasks (per Bodai memory `bodai-pytest-binary-cwd.md`)
 - `--cov=fail_under=67.81` floor value used consistently in Task 4, Task 5 gate, and spec
 
 **4. Spec cross-references:**
+
 - Wave A → spec section "Wave A — Spec regen + Cleanup" — matched
 - Wave B → spec section "Wave B — Force-reload guard refactor" — matched (with explicit `try/finally` rationale from Bodai memory note)
 - Wave C → spec section "Wave C — xdist-order-pollution hybrid" — matched (5x serial + 5x xdist + delta computation + 3-category treatment)
@@ -1073,7 +1143,7 @@ When ALL checks pass:
 
 **Gaps:** None identified. The plan covers all 7 deferred-minors, the 5-wave sequencing, the gate criteria, and the cross-initiative touchpoints the spec flags.
 
----
+______________________________________________________________________
 
 ## Execution Handoff
 
@@ -1082,6 +1152,6 @@ Plan complete and saved to `docs/superpowers/plans/2026-09-27-fastblocks-phase1.
 **Two execution options:**
 
 1. **Subagent-Driven (recommended)** — dispatch a fresh subagent per task, review between tasks, fast iteration. Matches the Phase 1.5 SDD pattern.
-2. **Inline Execution** — execute tasks in this session using executing-plans, batch execution with checkpoints.
+1. **Inline Execution** — execute tasks in this session using executing-plans, batch execution with checkpoints.
 
 Which approach?

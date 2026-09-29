@@ -418,8 +418,7 @@ class FileSystemLoader(BaseTemplateLoader):
         if self.cache is not None:
             await self.cache.set(Templates.get_cache_key(storage_path), resp)
 
-    async def get_source_async(# ty: ignore[invalid-method-override]
-
+    async def get_source_async(  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -452,8 +451,7 @@ class FileSystemLoader(BaseTemplateLoader):
         async def uptodate() -> bool:
             return int((await path.stat()).st_mtime) == local_mtime
 
-        return (resp.decode(), str(storage_path), uptodate)# ty: ignore[invalid-return-type]
-
+        return (resp.decode(), str(storage_path), uptodate)  # ty: ignore[invalid-return-type]
 
     async def list_templates_async(self) -> list[str]:
         return await self._list_templates_for_extensions(
@@ -517,8 +515,7 @@ class StorageLoader(BaseTemplateLoader):
             stat = await self.storage.templates.stat(storage_path)
             return resp, round(stat.get("mtime").timestamp())
 
-    async def get_source_async(# ty: ignore[invalid-method-override]
-
+    async def get_source_async(  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -583,8 +580,7 @@ class StorageLoader(BaseTemplateLoader):
 
 
 class RedisLoader(BaseTemplateLoader):
-    async def get_source_async(# ty: ignore[invalid-method-override]
-
+    async def get_source_async(  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -673,8 +669,7 @@ class PackageLoader(BaseTemplateLoader):
             )
         self._template_root = AsyncPath(template_root)
 
-    async def get_source_async(# ty: ignore[invalid-method-override]
-
+    async def get_source_async(  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -723,8 +718,7 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
         super().__init__(searchpath or AsyncPath("templates"))
         self.loaders = loaders
 
-    async def get_source_async(# ty: ignore[invalid-method-override]
-
+    async def get_source_async(  # ty: ignore[invalid-method-override]
         self,
         environment_or_template: t.Any,
         template: str | AsyncPath | None = None,
@@ -742,9 +736,9 @@ class ChoiceLoader(AsyncBaseLoader):  # type: ignore[misc]
                 # ``mock('name', 'name')`` for downstream
                 # ``AsyncMock`` children whose contract is
                 # single-arg.
-                result = await loader.get_source_async(str(template))# ty: ignore[missing-argument,invalid-argument-type]
+                result = await loader.get_source_async(str(template))  # ty: ignore[missing-argument,invalid-argument-type]
 
-                return result# ty: ignore[invalid-return-type]
+                return result  # ty: ignore[invalid-return-type]
 
             except TemplateNotFound:
                 # The next loader may have it; only "missing template"
@@ -930,8 +924,7 @@ class Templates(TemplatesBase):
     ) -> AsyncJinja2Templates:
         _extensions: list[t.Any] = [loopcontrols, i18n, jinja_debug]
         _imported_extensions = [
-            import_module(e)
-            for e in self.config.templates.extensions
+            import_module(e) for e in self.config.templates.extensions
         ]
         for e in _imported_extensions:
             _extensions.extend(

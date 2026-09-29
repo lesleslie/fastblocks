@@ -6,6 +6,7 @@ materialicons, phosphor, remixicon). Pick one and replace the import below;
 
 # req: REQ-P2-B1-001
 """
+
 from __future__ import annotations
 
 import fastblocks.adapters.icons.lucide as _lucide

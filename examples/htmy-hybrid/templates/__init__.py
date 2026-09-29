@@ -8,6 +8,7 @@ runnable without going through the Oneiric resolver at scaffold time.
 
 # req: REQ-P2-B3-001
 """
+
 from __future__ import annotations
 
 from pathlib import Path

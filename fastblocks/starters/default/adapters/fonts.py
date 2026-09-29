@@ -6,6 +6,7 @@ if your app needs different font sourcing.
 
 # req: REQ-P2-B1-001
 """
+
 from __future__ import annotations
 
 import fastblocks.adapters.fonts.squirrel as _squirrel

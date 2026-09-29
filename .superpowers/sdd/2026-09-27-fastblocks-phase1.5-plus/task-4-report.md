@@ -2,6 +2,7 @@
 
 **Status:** DONE
 **Commits:**
+
 - `ce229d4` — `test(fastblocks): Wave D close coverage gap to 67.81%`
 - `df2fb2f` — `docs(fastblocks): Wave D task 4 progress entry`
 
@@ -19,9 +20,11 @@
 ## Modules covered
 
 ### 1. `fastblocks/adapters/templates/_block_renderer.py` (250 stmts)
+
 Was 136 missing (46% coverage); now 25 missing (90% coverage). 111 lines covered.
 
 Methods covered:
+
 - `BlockRenderer.__init__` (lines 183-186)
 - `register_htmx_block` (lines 480-524)
 - `get_htmx_attributes_for_block` (lines 560-576)
@@ -38,19 +41,23 @@ Methods covered:
 - `render_fragment_composition` (lines 382-431)
 
 ### 2. `fastblocks/mcp/_add_tool_safe.py` (20 stmts)
+
 Was 7 missing (65% coverage); now 0 missing (100% coverage). 7 lines covered.
 
 Functions covered:
+
 - `_is_tool_like` (both True/False branches)
 - `add_tool_safe` idempotency branch (lines 66-71)
 - `add_tool_safe` Tool-instance branch (lines 76-84)
 - `add_tool_safe` plain-callable fallback (line 93)
-- `add_tool_safe` AttributeError on missing _tool_manager (lines 78-82)
+- `add_tool_safe` AttributeError on missing \_tool_manager (lines 78-82)
 
 ### 3. `fastblocks/mcp/server.py` (55 stmts)
+
 Was 19 missing (65% coverage); now 0 missing (100% coverage). 19 lines covered.
 
 Methods covered:
+
 - `_register_tools` precondition RuntimeError branch (line 105)
 - `start` (lines 147-170) — including the `_server is None` early-return, the `run` happy path, the `not _initialized` bootstrap, and error propagation
 - `stop` (lines 172-187) — including the `_server is None` early-return, the `stop` happy path, and the swallow-and-log error path
@@ -97,9 +104,9 @@ Three test-bug fixes during Step 5 (test verify & iterate):
 
 1. **`create_htmx_polling_block` / `create_lazy_loading_block` are `async def` but sync-bodied.** First-pass tests called `renderer.create_htmx_polling_block(...)` directly without awaiting; the result was a coroutine, not the expected `BlockDefinition`. Fixed by wrapping with `asyncio.run(coro)`. Production surface stays as-is (it's a documented oddity, not the scope of this task per "STOP. Surface to the reviewer — this is a real defect" guidance; punted to a separate cycle).
 
-2. **`test_target_header_falls_back_to_block_selector` falsy branch.** `BlockDefinition(name="b", template_name="t")` defaults `css_selector=None`; `_build_htmx_headers` skipped the `HX-Target` assignment. Fixed by setting `css_selector="#b"` explicitly in the test fixture.
+1. **`test_target_header_falls_back_to_block_selector` falsy branch.** `BlockDefinition(name="b", template_name="t")` defaults `css_selector=None`; `_build_htmx_headers` skipped the `HX-Target` assignment. Fixed by setting `css_selector="#b"` explicitly in the test fixture.
 
-3. **`_FakeTool` wasn't callable.** The `_is_tool_like` predicate requires `callable(fn)`. First pass had `name` + `fn` attributes but no `__call__`. Fixed by adding a no-op `__call__`.
+1. **`_FakeTool` wasn't callable.** The `_is_tool_like` predicate requires `callable(fn)`. First pass had `name` + `fn` attributes but no `__call__`. Fixed by adding a no-op `__call__`.
 
 All three fixes are test-only; no production code touched in Wave D (per brief: "no production code change expected").
 

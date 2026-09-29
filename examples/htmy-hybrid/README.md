@@ -4,11 +4,11 @@ This is the **B3 deliverable** for the Phase 2 dogfood-readiness build
 wave. It exercises the FastBlocks template stack with **three render
 modes** for the same greeting-card markup:
 
-| Mode      | Engine                                  | What it proves                                                       |
+| Mode | Engine | What it proves |
 | --------- | --------------------------------------- | -------------------------------------------------------------------- |
-| `jinja`   | Pure Jinja2 template + macro            | The Jinja2-only baseline keeps working.                              |
-| `htmy`    | Pure HTMY `GreetingCard` component      | HTMY renders the same DOM structure.                                 |
-| `hybrid`  | HTMY component embedded in Jinja2 layout | The two engines compose without semantic drift.                       |
+| `jinja` | Pure Jinja2 template + macro | The Jinja2-only baseline keeps working. |
+| `htmy` | Pure HTMY `GreetingCard` component | HTMY renders the same DOM structure. |
+| `hybrid` | HTMY component embedded in Jinja2 layout | The two engines compose without semantic drift. |
 
 Visit `/?render=<mode>` to see each. The **snapshot test** in
 `tests/test_render_hybrid.py::test_all_three_modes_semantically_equivalent`

@@ -70,11 +70,13 @@ The verbatim gate fails BEFORE any pytest invocation due to **two brief authorin
 ### Brief authoring bug #1: addopts `-n` conflict with `-p no:xdist`
 
 Line 92 (and analogous lines 105 and 116):
+
 ```bash
 .venv/bin/pytest --no-cov -p no:xdist -q
 ```
 
 `pyproject.toml` addopts injects `-n auto --dist=loadfile --import-mode=importlib`. `-p no:xdist` removes the xdist plugin, so pytest doesn't recognize `-n auto` and exits with:
+
 ```
 ERROR: usage: pytest [options] [file_or_dir] [file_or_dir] [...]
 pytest: error: unrecognized arguments: -n --dist=loadfile
@@ -82,15 +84,18 @@ pytest: error: unrecognized arguments: -n --dist=loadfile
 ```
 
 Verified directly:
+
 ```
 $ .venv/bin/pytest --no-cov -p no:xdist -q
 ERROR: ... pytest: error: unrecognized arguments: -n --dist=loadfile
 ```
 
 This is the **same brief authoring bug surfaced in Task 2** (`progress.md` Task 2 Finding 2):
+
 > Brief's `.venv/bin/pytest tests/adapters/templates/ -p no:xdist -v --no-cov` fails because `pyproject.toml` addopts injects `-n auto --dist=loadfile`; the xdist plugin doesn't recognize `-n` after `-p no:xdist` is set.
 
 The orchestrator's Task 2 ruling was to **park** the bug:
+
 > Finding 2: parked. Will adjust future briefs to use `pytest -o "addopts="` instead of `-p no:xdist` to override xdist cleanly.
 
 The Wave E gate script's serial-mode command shape was authored against the SAME pyproject.toml addopts — same bug, unfixed.
@@ -98,15 +103,17 @@ The Wave E gate script's serial-mode command shape was authored against the SAME
 ### Brief authoring bug #2: GNU awk 3-arg match() in punt-horizon check
 
 Lines 73–80 (punt horizon `awk` script):
+
 ```awk
 match($0, /Target: ([0-9]{4}-[0-9]{2}-[0-9]{2})/, arr)
 ```
 
 3-arg `match()` (regex + array) is a **GNU awk extension**. macOS ships BSD awk (BWK awk on darwin) which doesn't support it. The script exits with:
+
 ```
 awk: syntax error at source line 2
  context is
-     match($0, /Target: >>>  ([0-9]{4}-[0-9]{2}-[0-9]{2})/, <<< 
+     match($0, /Target: >>>  ([0-9]{4}-[0-9]{2}-[0-9]{2})/, <<<
 awk: illegal statement at source line 2
 ```
 
@@ -129,7 +136,7 @@ OK: module-level sys.modules stubs gone from templates tests
 OK: Wave C serial-marks documented
 awk: syntax error at source line 2
  context is
-     match($0, /Target: >>>  ([0-9]{4}-[0-9]{2}-[0-9]{2})/, <<< 
+     match($0, /Target: >>>  ([0-9]{4}-[0-9]{2}-[0-9]{2})/, <<<
 awk: illegal statement at source line 2
 awk: illegal statement at source line 2
 $ echo $?
@@ -168,8 +175,9 @@ Three clean modes, each verified once (gate-script's "5 consecutive" check would
 The 8 originally-deferred tests are resolved and the test suite is green. Two paths to close this cycle:
 
 **Path A: amend the gate script (one-line fixes per bug)**
+
 1. Replace `pytest --no-cov -p no:xdist -q` with `pytest --no-cov -p no:xdist -o "addopts=--import-mode=importlib" -q` (or `pytest --no-cov -p no:xdist --override-ini="addopts=--import-mode=importlib" -q` — same intent, different syntax). Document the change in the commit message.
-2. Replace the awk `match($0, /regex/, arr)` 3-arg call with BSD-compatible `match($0, /regex/)` + `substr($0, RSTART+8, 10)`.
+1. Replace the awk `match($0, /regex/, arr)` 3-arg call with BSD-compatible `match($0, /regex/)` + `substr($0, RSTART+8, 10)`.
 
 **Path B: amend pyproject.toml (one-line fix for addopts only)**
 Remove `-n auto --dist=loadfile` from `pyproject.toml [tool.pytest].addopts`. The gate's serial mode would work as written. Xdist mode would NOT work because the explicit `--dist=loadfile` flag alone doesn't activate xdist workers. **This path is a regression** (Task 4's coverage report at `progress.md` shows 2813 passed via xdist); not recommended.
@@ -195,8 +203,8 @@ Total: 9 files, +166 -28 lines.
 ## Concerns for reviewer
 
 1. **Ledger annotation is non-trivial historical-doc edit.** The Phase 1.5 ledger's 3 percentage references were marked with aspirational markers to make `test_coverage_target_consistency` pass. Alternative was to punt the test (would still fail gate). Per `feedback-no-backwards-compat-pre-1.0.md` and prior orchestrator rulings on ledger immutability (none — Phase 1.5 ledger was first new ledger in this cycle), I have no precedent for whether this is acceptable. Surface for reviewer.
-2. **Gate script verbatim is unrunnable on macOS.** Two brief authoring bugs surface; both are tool/shape issues, not test logic. Per prior orchestrator ruling (Task 2), parked. The cleanest fix is the one-line amendments to the gate script (Path A in Recommendations).
-3. **Final whole-branch review may want to revert the ledger annotation in favor of a more invasive fix.** If reviewer prefers, the doc-accuracy test can be punted and the ledger stays untouched — but the gate will keep failing for the other brief bugs (awk + addopts), so the punt alone doesn't resolve the BLOCKED status.
+1. **Gate script verbatim is unrunnable on macOS.** Two brief authoring bugs surface; both are tool/shape issues, not test logic. Per prior orchestrator ruling (Task 2), parked. The cleanest fix is the one-line amendments to the gate script (Path A in Recommendations).
+1. **Final whole-branch review may want to revert the ledger annotation in favor of a more invasive fix.** If reviewer prefers, the doc-accuracy test can be punted and the ledger stays untouched — but the gate will keep failing for the other brief bugs (awk + addopts), so the punt alone doesn't resolve the BLOCKED status.
 
 ## Fix round 1/5
 
@@ -205,11 +213,13 @@ Total: 9 files, +166 -28 lines.
 ### Bugs fixed
 
 1. **Serial-mode addopts override** (line ~95 of the gate script):
+
    - Before: `.venv/bin/pytest --no-cov -p no:xdist -q`
    - After: `.venv/bin/pytest --no-cov -p no:xdist -o "addopts=--import-mode=importlib" -q`
    - The xdist command was NOT modified (it wants `-n auto --dist=loadfile` from addopts).
 
-2. **BSD-compatible awk** (line ~67 of the gate script):
+1. **BSD-compatible awk** (line ~67 of the gate script):
+
    - Before: GNU-extended `match($0, /regex/, arr)` with 3-arg form.
    - After: BSD-compatible `match($0, /regex/)` + `substr($0, RSTART + 8, 10)` extraction.
 
@@ -328,8 +338,8 @@ Per the brief: "Do NOT modify any other files." The bug is a one-character fix (
 ### Concerns for reviewer
 
 1. **New gate-script bug** at `scripts/phase1.5-plus-gate.sh:86` — bash brace mismatched in xdist loop's failure echo. Pre-existing since `c72dbb7`; masked by earlier failure modes. One-character fix recommended (Path A above).
-2. **Why `test_server_start_without_auth` failed only on serial run 2 of 5 in commit `afe944a`** — likely a transient resource exhaustion on the macOS test runner at the time of that gate invocation (no flake in isolation, no flake in any subsequent 5/5 isolated run or 5/5 gate serial run). Not reproducible, not worth further investigation.
-3. **Gate as currently committed (`afe944a`)** cannot reach exit 0 in this environment without the line-86 fix. Reviewer must decide whether to amend `afe944a` with the one-line bash fix or punt.
+1. **Why `test_server_start_without_auth` failed only on serial run 2 of 5 in commit `afe944a`** — likely a transient resource exhaustion on the macOS test runner at the time of that gate invocation (no flake in isolation, no flake in any subsequent 5/5 isolated run or 5/5 gate serial run). Not reproducible, not worth further investigation.
+1. **Gate as currently committed (`afe944a`)** cannot reach exit 0 in this environment without the line-86 fix. Reviewer must decide whether to amend `afe944a` with the one-line bash fix or punt.
 
 ## Fix round 3/5
 
@@ -356,7 +366,7 @@ Per the brief: "Do NOT modify any other files." The bug is a one-character fix (
 
 ### Verification — `bash -n`
 
-Before amending, ran `bash -n scripts/phase1.5-plus-gate.sh` → exit 0, `SYNTAX OK`. Pre-fix the same command would have errored with "syntax error near unexpected token `('".
+Before amending, ran `bash -n scripts/phase1.5-plus-gate.sh` → exit 0, `SYNTAX OK`. Pre-fix the same command would have errored with "syntax error near unexpected token \`('".
 
 ### Verification — full gate end-to-end
 

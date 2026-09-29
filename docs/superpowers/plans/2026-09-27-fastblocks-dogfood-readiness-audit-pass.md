@@ -12,7 +12,7 @@
 
 **This is Plan 1 of 2.** Plan 2 (build wave + verify) is written after Plan 1 ships.
 
----
+______________________________________________________________________
 
 ## Global Constraints
 
@@ -27,7 +27,7 @@
 - **Spec claims:** every README claim must be either gated by a test or listed in `docs/known-claim-gaps.md`
 - **No placeholders:** every step contains the actual code/test the engineer needs
 
----
+______________________________________________________________________
 
 ## File Structure
 
@@ -108,37 +108,40 @@ fastblocks/docs/.backups/                          # entire directory
 ├── README.md                                     # one-line redirect to new starter
 ```
 
----
+______________________________________________________________________
 
 ## Task Order (dependencies)
 
 Tasks execute in this order. Each task is independently testable; later tasks depend on earlier ones only at the CI-gate level (later tasks must keep earlier gates green).
 
 1. D0 — Housekeeping (precondition)
-2. D1 — Coverage ratchet
-3. D8 — Dependency hygiene
-4. D2 — Type system
-5. D3 — Adapter matrix boot tests
-6. D6 — Baseline security
-7. D4 — HTMX correctness
-8. D5 — Async-rendering proof
-9. D7 — Headline perf benchmarks
-10. D9 — Docs-vs-code audit
+1. D1 — Coverage ratchet
+1. D8 — Dependency hygiene
+1. D2 — Type system
+1. D3 — Adapter matrix boot tests
+1. D6 — Baseline security
+1. D4 — HTMX correctness
+1. D5 — Async-rendering proof
+1. D7 — Headline perf benchmarks
+1. D9 — Docs-vs-code audit
 
 After Task 10: **"audit cleared" gate** is enforced (Phase 1 → Phase 2 transition per spec gate criteria table).
 
----
+______________________________________________________________________
 
 ### Task 1: D0 — Housekeeping
 
 **Files:**
+
 - Delete: 20+ files listed in "Deleted files (D0)" section above
 - Create: `archive/README.md`, `docs/archive/README.md`
 - Modify: `.gitignore`, `sites/README.md`, `sites/fastest/` (move)
 - Test: `tests/test_no_backup_files.py` (new CI lint)
 
 **Interfaces:**
+
 - Consumes: existing `archive/` directory contents (root and `docs/archive/`)
+
 - Produces: empty backup-file result, archived `sites/fastest/`, documented archive contents
 
 - [ ] **Step 1: Write the failing backup-file lint test**
@@ -194,6 +197,7 @@ Expected: FAIL with list of backup files (confirms D0 scope is real)
 - [ ] **Step 3: Delete all backup files**
 
 Run from `fastblocks/`:
+
 ```bash
 find . -name "*.backup" -not -path "./.git/*" -not -path "./.crackerjack/*" -delete
 find . -name "*.backup.json" -not -path "./.git/*" -not -path "./.crackerjack/*" -delete
@@ -205,17 +209,20 @@ Verify: `find . -name "*.backup*" -not -path "./.git/*" -not -path "./.crackerja
 - [ ] **Step 4: Audit `archive/` and `docs/archive/` contents**
 
 Run:
+
 ```bash
 ls -la archive/ 2>/dev/null
 ls -la docs/archive/ 2>/dev/null
 ```
 
 For each item in either directory, decide:
+
 - DELETE — if it's stale migration notes, dead code, or unreferenced docs
 - KEEP — if anything in `fastblocks/` or the test suite still imports it
 - DOCUMENT — if it stays, note it in the corresponding `archive/README.md` (or `docs/archive/README.md`)
 
 Create `archive/README.md`:
+
 ```markdown
 # archive/
 
@@ -235,6 +242,7 @@ Create `docs/archive/README.md` with the same structure (for `docs/archive/`).
 - [ ] **Step 5: Update `.gitignore` to prevent backup-file recurrence**
 
 In `fastblocks/.gitignore`, ensure (add if missing):
+
 ```
 # Editor / migration backup files
 *.backup
@@ -258,6 +266,7 @@ git mv fastest old_projects/fastest-final
 ```
 
 In `sites/README.md`, replace the line referencing `fastest` with:
+
 ```markdown
 - ~~fastest/~~ — retired 2026-09-27; replaced by `fastblocks create-app` (the new starter ships inside FastBlocks).
 ```
@@ -275,29 +284,34 @@ archive contents, retires sites/fastest/."
 ```
 
 Then, in a separate sites-repo commit:
+
 ```bash
 cd /Users/les/Projects/sites
 git add README.md fastest old_projects/fastest-final
 git commit -m "chore(sites): retire fastest/ scaffold (replaced by fastblocks create-app)"
 ```
 
----
+______________________________________________________________________
 
 ### Task 2: D1 — Coverage ratchet 62% → 85%
 
 **Files:**
+
 - Modify: `pyproject.toml` (update `--cov-fail-under`)
 - Modify: `.coverage-ratchet.json` (raise floor)
 - Modify: `.github/workflows/quality.yml` (or equivalent CI config)
 - Create: targeted tests for the lowest-coverage modules
 
 **Interfaces:**
+
 - Consumes: `pytest --cov=fastblocks --cov-report=term-missing` output
+
 - Produces: ≥85% coverage enforced by CI
 
 - [ ] **Step 1: Find the lowest-coverage modules**
 
 Run:
+
 ```bash
 uv run pytest --cov=fastblocks --cov-report=term-missing 2>&1 | tee /tmp/coverage-baseline.txt
 ```
@@ -309,6 +323,7 @@ Inspect the bottom of the report. Likely candidates (from spec): templates adapt
 For each module, identify the public API and write tests that exercise it. Example for `fastblocks/htmx.py` (currently thin coverage):
 
 Create `tests/test_htmx_helpers.py`:
+
 ```python
 """D1: tests for fastblocks/htmx.py helper functions.
 
@@ -348,13 +363,15 @@ Adjust per actual `fastblocks/htmx.py` API. Run tests after writing each module 
 - [ ] **Step 3: Repeat for next 9 low-coverage modules**
 
 One file per module under `tests/<module_path>/`. Each file follows the TDD discipline:
+
 1. Write the test (compile-check first)
-2. Run it; if fails for the wrong reason, fix the import
-3. Commit if green; otherwise the test surfaces a real bug → fix the production code → re-run → commit
+1. Run it; if fails for the wrong reason, fix the import
+1. Commit if green; otherwise the test surfaces a real bug → fix the production code → re-run → commit
 
 - [ ] **Step 4: Update coverage ratchet**
 
 In `.coverage-ratchet.json`, raise the floor:
+
 ```json
 {
   "current_floor": 85,
@@ -369,6 +386,7 @@ In `.coverage-ratchet.json`, raise the floor:
 - [ ] **Step 5: Update `pyproject.toml` to fail below 85%**
 
 In `pyproject.toml` `[tool.pytest.ini_options]` (or wherever `--cov-fail-under` is configured):
+
 ```toml
 [tool.pytest.ini_options]
 addopts = "--cov=fail_under=85"
@@ -394,22 +412,26 @@ Adds tests for the 10 lowest-coverage modules, raises
 --cov-fail-under=85, ensures CI gate enforced."
 ```
 
----
+______________________________________________________________________
 
 ### Task 3: D8 — Dependency hygiene
 
 **Files:**
+
 - Modify: `.github/workflows/quality.yml` (add `uv lock --check` job)
 - Create: `tests/test_dep_pins.py` (loose-pin + broken-release regression)
 - Modify: `pyproject.toml` (tighten any loose pins found)
 
 **Interfaces:**
+
 - Consumes: `uv.lock`, current `pyproject.toml` dependency declarations
+
 - Produces: CI gate on lock drift; loose-pin check; broken-release floor-pin regression test
 
 - [ ] **Step 1: Add `uv lock --check` CI gate**
 
 In `.github/workflows/quality.yml`, add a job:
+
 ```yaml
   lock-check:
     runs-on: ubuntu-latest
@@ -424,6 +446,7 @@ This catches any PR that updates `pyproject.toml` without updating `uv.lock`.
 - [ ] **Step 2: Write loose-pin check test**
 
 Create `tests/test_dep_pins.py`:
+
 ```python
 """D8: assert every direct runtime dep has a tight pin.
 
@@ -488,6 +511,7 @@ def test_no_loose_pins_on_critical_deps():
 - [ ] **Step 3: Write YAML-driven broken-release regression**
 
 Create `tests/dep_broken_releases.yaml`:
+
 ```yaml
 # D8: track releases that broke the framework. Each row makes the
 # skip-version test fail if the bad version re-appears in any
@@ -506,6 +530,7 @@ broken_releases:
 ```
 
 Append to `tests/test_dep_pins.py`:
+
 ```python
 import yaml  # PyYAML is a runtime dep
 
@@ -532,13 +557,13 @@ def test_no_broken_release_in_dep_specs():
         )
 ```
 
-
 - [ ] **Step 4: Audit PEP 735 optional groups**
 
 Run: `uv pip install --group dev`
 Then: `uv run python -c "from fastblocks.adapters.auth.basic import *"` (and similar for each optional group)
 
 For any optional group that crashes on missing extras, either:
+
 - Add an explicit `try/except ImportError` in the consumer, OR
 - Add a `pyproject.toml` warning comment
 
@@ -563,22 +588,26 @@ broken-release floor-pin regression test, and PEP 735 optional
 group audit notes."
 ```
 
----
+______________________________________________________________________
 
 ### Task 4: D2 — Type system
 
 **Files:**
+
 - Create: `docs/known-type-issues.md`
 - Modify: `pyproject.toml` (mypy + ty config tightening)
 - Modify: `.github/workflows/quality.yml` (gates)
 
 **Interfaces:**
+
 - Consumes: `mypy fastblocks` output, `ty check fastblocks` output, `pyright fastblocks` output
+
 - Produces: green mypy + ty in CI; pyright warnings documented
 
 - [ ] **Step 1: Establish baseline**
 
 Run from `fastblocks/`:
+
 ```bash
 uv run mypy fastblocks 2>&1 | tee /tmp/mypy-baseline.txt
 uv run ty check fastblocks 2>&1 | tee /tmp/ty-baseline.txt
@@ -590,8 +619,11 @@ Count errors in each. mypy + ty should be small (recent commit history shows ty 
 - [ ] **Step 2: Fix any remaining mypy errors**
 
 If `mypy-baseline.txt` is non-empty, fix each error. For each:
+
 - Read the error message
+
 - Fix the production code (preferred) or add a typed annotation
+
 - Do NOT add `# type: ignore` comments as a shortcut — these count as suppressions and violate the spec's "no new suppressions" rule
 
 - [ ] **Step 3: Fix any remaining ty errors**
@@ -601,6 +633,7 @@ Same discipline as mypy. If ty errors are about external library stubs, add them
 - [ ] **Step 4: Document pyright warnings**
 
 For each pyright warning, add an entry to `docs/known-type-issues.md`:
+
 ```markdown
 # Known Type Issues
 
@@ -618,6 +651,7 @@ will fail D2 review.**
 - [ ] **Step 5: Configure CI gates**
 
 In `.github/workflows/quality.yml`, ensure mypy and ty jobs exist and are non-skippable:
+
 ```yaml
   mypy:
     runs-on: ubuntu-latest
@@ -634,6 +668,7 @@ In `.github/workflows/quality.yml`, ensure mypy and ty jobs exist and are non-sk
 ```
 
 Pyright runs as a separate informational job whose output is parsed and compared against `docs/known-type-issues.md`'s table:
+
 ```yaml
   pyright-info:
     runs-on: ubuntu-latest
@@ -663,11 +698,12 @@ pyright warnings (each entry has a removal plan), wires mypy + ty
 as CI gates. Pyright runs as informational job."
 ```
 
----
+______________________________________________________________________
 
 ### Task 5: D3 — Adapter matrix boot tests
 
 **Files:**
+
 - Create:
   - `tests/adapters/templates/test_boot.py`
   - `tests/adapters/style/test_fastblocks_ui_boot.py`
@@ -676,7 +712,9 @@ as CI gates. Pyright runs as informational job."
 - Modify: `tests/conftest.py` (Oneiric resolver fixture if not present)
 
 **Interfaces:**
+
 - Consumes: Oneiric resolver singleton (per `fastblocks/core/resolver.py`)
+
 - Produces: passing boot tests for jinja2, `_async_renderer`, fastblocks_ui, one icon set, squirrel font
 
 - [ ] **Step 1: Verify Oneiric resolver fixture exists**
@@ -688,6 +726,7 @@ If a future test needs the canonical singleton, `from fastblocks.core.resolver i
 - [ ] **Step 2: Write the templates boot test**
 
 Create `tests/adapters/templates/test_boot.py`:
+
 ```python
 """D3: boot test for the templates adapter (Templates class + async render).
 
@@ -744,6 +783,7 @@ If FAIL: investigate `fastblocks/adapters/templates/jinja2.py` — surface real 
 - [ ] **Step 3: Write the style boot test**
 
 Create `tests/adapters/style/test_fastblocks_ui_boot.py`:
+
 ```python
 """D3: boot test for the fastblocks-ui style adapter.
 
@@ -789,6 +829,7 @@ Expected: PASS
 - [ ] **Step 4: Write the icons + fonts boot tests**
 
 Create `tests/adapters/icons/test_boot.py`:
+
 ```python
 """D3: boot test for the icons adapter.
 
@@ -837,6 +878,7 @@ def test_icons_adapter_returns_valid_svg_tag(icons_adapter):
 ```
 
 Create `tests/adapters/fonts/test_boot.py`:
+
 ```python
 """D3: boot test for the squirrel font adapter.
 
@@ -899,11 +941,12 @@ dogfood-readiness spec D3. Landing's /adapter-matrix page will
 auto-report ✓ for each."
 ```
 
----
+______________________________________________________________________
 
 ### Task 6: D6 — Baseline security
 
 **Files:**
+
 - Create:
   - `tests/middleware/test_security_headers.py`
   - `tests/middleware/test_csrf.py`
@@ -912,12 +955,15 @@ auto-report ✓ for each."
 - Modify: `.github/workflows/quality.yml` (add pip-audit job)
 
 **Interfaces:**
+
 - Consumes: `fastblocks/middleware.py` (security headers, CSRF)
+
 - Produces: header assertions, CSRF coverage, autoescape regression, threat model doc
 
 - [ ] **Step 1: Write security headers test**
 
 Create `tests/middleware/test_security_headers.py`:
+
 ```python
 """D6: assert default security headers are set on every response."""
 import pytest
@@ -1017,6 +1063,7 @@ If any header VALUE fails its assertion, that's a real defect — fix `fastblock
 - [ ] **Step 2: Write CSRF tests (negative AND positive paths)**
 
 Create `tests/middleware/test_csrf.py`:
+
 ```python
 """D6: state-changing routes require a CSRF token.
 
@@ -1115,6 +1162,7 @@ Adjust API names per `fastblocks/middleware.py` reality. Run the test; fix `midd
 - [ ] **Step 3: Write autoescape regression test**
 
 Create `tests/security/test_autoescape_regression.py`:
+
 ```python
 """D6: regression test for the kelp-style XSS bug.
 
@@ -1154,6 +1202,7 @@ Adjust API names per actual `fastblocks/adapters/templates/jinja2.py`. If autoes
 - [ ] **Step 4: Write the auth-adapter threat model**
 
 Create `docs/security/auth-adapter-threat-model.md`:
+
 ```markdown
 # Auth Adapter Threat Model
 
@@ -1203,6 +1252,7 @@ session storage, CSRF tokens tied to sessions, etc.).
 - [ ] **Step 5: Add pip-audit CI gate**
 
 In `.github/workflows/quality.yml`:
+
 ```yaml
   pip-audit:
     runs-on: ubuntu-latest
@@ -1233,11 +1283,12 @@ regression (pins fastblocks-ui escape contract for the jinja2
 adapter), auth-adapter threat model doc, and pip-audit CI gate."
 ```
 
----
+______________________________________________________________________
 
 ### Task 7: D4 — HTMX correctness
 
 **Files:**
+
 - Create:
   - `tests/htmx/test_hx_attributes.py`
   - `tests/htmx/test_response_headers.py`
@@ -1246,7 +1297,9 @@ adapter), auth-adapter threat model doc, and pip-audit CI gate."
 - Modify: `fastblocks/htmx.py` (only if tests surface real bugs)
 
 **Interfaces:**
+
 - Consumes: `fastblocks/htmx.py` helpers (`htmx_trigger`, `htmx_redirect`, `htmx_refresh`, `htmx_push_url`, `HtmxResponse._set_htmx_headers`)
+
 - Produces: comprehensive HTMX attribute + response header + OOB round-trip coverage
 
 - [ ] **Step 1: Audit existing `tests/test_htmx.py`**
@@ -1258,6 +1311,7 @@ Note what's already covered. The new tests in `tests/htmx/` MUST NOT duplicate t
 - [ ] **Step 2: Write hx-attributes test**
 
 Create `tests/htmx/test_hx_attributes.py`:
+
 ```python
 """D4: tests for hx-* attribute handling at the framework level.
 
@@ -1343,6 +1397,7 @@ Adapt to actual `fastblocks/htmx.py` API. Run after each addition.
 - [ ] **Step 3: Write response-headers test**
 
 Create `tests/htmx/test_response_headers.py`:
+
 ```python
 """D4: pin the four HTMX response headers the framework claims to emit."""
 import pytest
@@ -1406,6 +1461,7 @@ Expected: PASS
 - [ ] **Step 4: Write OOB round-trip test**
 
 Create `tests/htmx/test_oob_swaps.py`:
+
 ```python
 """D4: OOB swaps — the framework preserves OOB markup unchanged through the response pipeline.
 
@@ -1458,20 +1514,24 @@ adds tests/htmx/ as siblings for new coverage:
 Per spec: SSE/WS hx-ext out of dogfood scope."
 ```
 
----
+______________________________________________________________________
 
 ### Task 8: D5 — Async-rendering proof
 
 **Files:**
+
 - Create: `tests/perf/test_async_rendering.py`
 
 **Interfaces:**
+
 - Consumes: `fastblocks/adapters/templates/jinja2.py` (slow-filter registration)
+
 - Produces: 200ms × 3 concurrent renders bounded by `max` not `sum`; parallel timer proves loop unblocked; blocking-I/O filter raises
 
 - [ ] **Step 1: Write the concurrency assertion**
 
 Create `tests/perf/test_async_rendering.py`:
+
 ```python
 """D5: async-rendering proof.
 
@@ -1595,11 +1655,12 @@ filters raise at the framework boundary (the third assertion may
 xfail until a Phase 1.5 detector lands)."
 ```
 
----
+______________________________________________________________________
 
 ### Task 9: D7 — Headline perf benchmarks
 
 **Files:**
+
 - Create:
   - `tests/perf/test_brotli.py`
   - `tests/perf/test_caching.py`
@@ -1607,12 +1668,15 @@ xfail until a Phase 1.5 detector lands)."
 - Modify: `.github/workflows/quality.yml` (perf gate, fail on >10% regression)
 
 **Interfaces:**
+
 - Consumes: `fastblocks/middleware.py` (Brotli), `fastblocks/caching.py`, minification actions
+
 - Produces: CI-gated benchmarks that prove README claims
 
 - [ ] **Step 1: Write Brotli benchmark**
 
 Create `tests/perf/test_brotli.py`:
+
 ```python
 """D7: prove Brotli compression is applied by default middleware."""
 import pytest
@@ -1712,6 +1776,7 @@ Expected: PASS
 - [ ] **Step 2: Write caching benchmark**
 
 Create `tests/perf/test_caching.py`:
+
 ```python
 """D7: prove the framework's caching system actually serves cached responses."""
 import pytest
@@ -1762,6 +1827,7 @@ Expected: PASS
 - [ ] **Step 3: Write minification benchmark**
 
 Create `tests/perf/test_minification.py`:
+
 ```python
 """D7: prove the framework's minification actions actually shrink HTML/CSS/JS."""
 import pytest
@@ -1789,6 +1855,7 @@ Adjust the import per `fastblocks/actions/` reality (per `fastblocks/CLAUDE.md`,
 In `.github/workflows/quality.yml`, the perf tests run as part of the main `pytest` job. The "fail on regression" gate needs a baseline. Since this is the first time D7 sets a baseline, the FIRST run establishes the floor; subsequent runs fail if any benchmark regresses by >10%.
 
 For now, just run them; add explicit regression-checking later when a second run exists. Add a comment to the workflow:
+
 ```yaml
 # D7: perf benchmarks establish the baseline on first green run.
 # Subsequent runs fail if any benchmark regresses by >10% (TODO: implement).
@@ -1817,22 +1884,26 @@ First green run establishes baseline; regression gate (fail on
 >10%) added when second run exists."
 ```
 
----
+______________________________________________________________________
 
 ### Task 10: D9 — Docs-vs-code audit
 
 **Files:**
+
 - Create: `docs/known-claim-gaps.md`
 - Modify: `tests/test_no_backup_files.py` (extend with lychee + claim-gap check)
 - Verify: `docs/adapters/<name>.md` exists for each adapter (create missing)
 
 **Interfaces:**
+
 - Consumes: `lychee` link checker (already configured per `.lycheecache`)
+
 - Produces: 0 broken internal links; every adapter module has matching docs; every README claim gated or documented as aspirational
 
 - [ ] **Step 1: Run lychee and triage broken links**
 
 Run from `fastblocks/`:
+
 ```bash
 uv run lychee --offline --no-progress '**/*.md' 2>&1 | tee /tmp/lychee-baseline.txt
 ```
@@ -1842,6 +1913,7 @@ For each broken internal link: fix the link target (rename or move the destinati
 - [ ] **Step 2: Make lychee a CI gate**
 
 In `.github/workflows/quality.yml`:
+
 ```yaml
   lychee:
     runs-on: ubuntu-latest
@@ -1857,6 +1929,7 @@ If `lychee` is already installed in this image, simplify the install step.
 - [ ] **Step 3: Audit adapter docs coverage**
 
 For each adapter module under `fastblocks/adapters/`, verify a matching `docs/adapters/<name>.md` exists. Missing adapters per current main (from earlier exploration):
+
 - `fastblocks/adapters/templates/` — `docs/adapters/templates.md` should exist
 - `fastblocks/adapters/style/` — `docs/adapters/style.md` exists
 - `fastblocks/adapters/icons/` — check
@@ -1864,6 +1937,7 @@ For each adapter module under `fastblocks/adapters/`, verify a matching `docs/ad
 - (other adapters are out-of-scope per D3)
 
 For each missing doc, create a minimal stub:
+
 ```markdown
 # `<name>` adapter
 
@@ -1899,6 +1973,7 @@ If any hits, evaluate whether they're historical reference (keep, e.g., `docs/mi
 - [ ] **Step 5: Document aspirational claims**
 
 Create `docs/known-claim-gaps.md`:
+
 ```markdown
 # Known Claim Gaps
 
@@ -1918,6 +1993,7 @@ Fill in any aspirational claims you find in README.md that aren't already gated 
 - [ ] **Step 6: Run the full audit-cleared gate**
 
 Run from `fastblocks/`:
+
 ```bash
 # D0
 find . -name "*.backup*" -not -path "./.git/*" -not -path "./.crackerjack/*"
@@ -1951,7 +2027,7 @@ git commit -m "docs(fastblocks): D9 docs-vs-code audit — links, adapter docs, 
 Audit cleared: all 9 dimensions green; Phase 2 (build wave) unblocked."
 ```
 
----
+______________________________________________________________________
 
 ## Post-Task 10: Audit-Cleared Gate
 
@@ -1976,6 +2052,7 @@ When ALL of these pass, the audit pass is complete and Plan 2 (build wave) is un
 ## Self-Review
 
 **1. Spec coverage:**
+
 - D0 housekeeping — Task 1 ✓
 - D1 coverage 85% — Task 2 ✓
 - D2 types green — Task 4 ✓
@@ -2001,6 +2078,6 @@ Plan complete and saved to `docs/superpowers/plans/2026-09-27-fastblocks-dogfood
 **Two execution options:**
 
 1. **Subagent-Driven (recommended)** — dispatch a fresh subagent per task, review between tasks, fast iteration
-2. **Inline Execution** — execute tasks in this session using executing-plans, batch execution with checkpoints
+1. **Inline Execution** — execute tasks in this session using executing-plans, batch execution with checkpoints
 
 Which approach?

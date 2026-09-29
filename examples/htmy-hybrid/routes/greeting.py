@@ -11,20 +11,20 @@ demo is an end-to-end test of the Jinja2+HTMY composition contract.
 
 # req: REQ-P2-B3-002
 """
+
 from __future__ import annotations
 
 from pathlib import Path
-
-from htmy import Renderer
-from jinja2 import Environment, FileSystemLoader
-from starlette.requests import Request
-from starlette.responses import HTMLResponse
 
 from components.greeting_card import (
     GreetingCardProps,
     greeting_card,
     greeting_card_from_context,
 )
+from htmy import Renderer
+from jinja2 import Environment, FileSystemLoader
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
 from templates import render_template as render_jinja
 
 _PROPS = GreetingCardProps(
@@ -45,10 +45,10 @@ _VALID_MODES = frozenset({"jinja", "htmy", "hybrid"})
 # The manager's Jinja2 environment is pointed at the demo's templates
 # directory so the framework and the demo's own Jinja2 wrapper resolve
 # the same template paths.
-_hybrid_manager: "HybridTemplatesManager | None" = None
+_hybrid_manager: HybridTemplatesManager | None = None
 
 
-def _get_hybrid_manager() -> "HybridTemplatesManager":
+def _get_hybrid_manager() -> HybridTemplatesManager:
     """Return the lazily-initialised ``HybridTemplatesManager`` for this demo."""
     global _hybrid_manager
     if _hybrid_manager is None:

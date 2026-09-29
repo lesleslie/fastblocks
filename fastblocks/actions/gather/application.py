@@ -474,7 +474,9 @@ async def create_application_manager(
         # is reachable. Removal plan: add a Protocol + runtime
         # import shim, or expose ``ApplicationManager`` from a
         # module mypy can statically resolve.
-        from fastblocks.applications import ApplicationManager  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]
+        from fastblocks.applications import (
+            ApplicationManager,  # type: ignore[attr-defined]  # ty: ignore[unresolved-import]
+        )
     except ImportError:
 
         class SimpleApplicationManager:

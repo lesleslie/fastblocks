@@ -5,11 +5,11 @@ Visit `/?render=<jinja|htmy|hybrid>` to compare all three render modes.
 
 # req: REQ-P2-B3-001
 """
+
 from __future__ import annotations
 
-from fastblocks.applications import FastBlocks
-
 from routes import register_routes
+from fastblocks.applications import FastBlocks
 
 
 def create_app() -> FastBlocks:

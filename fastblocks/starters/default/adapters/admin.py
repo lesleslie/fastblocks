@@ -5,6 +5,7 @@ routes (model CRUD, dashboard, audit log, etc.) on top of this adapter.
 
 # req: REQ-P2-B1-004
 """
+
 from __future__ import annotations
 
 import fastblocks.adapters.admin as _admin

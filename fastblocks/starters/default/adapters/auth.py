@@ -7,6 +7,7 @@ register routes on top of the registered adapter. Auto-mounting an empty
 
 # req: REQ-P2-B1-004
 """
+
 from __future__ import annotations
 
 import fastblocks.adapters.auth as _auth

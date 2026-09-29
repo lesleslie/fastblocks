@@ -22,7 +22,6 @@ from collections.abc import AsyncIterator
 from contextlib import suppress
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import cast
 from uuid import UUID
 
 from anyio import Path as AsyncPath
@@ -429,8 +428,7 @@ class AsyncTemplateRenderer:
             render_context.template_name
         )
         # render_block exists in Jinja2 runtime but not in type stubs
-        rendered = template.render_block(# ty: ignore[unresolved-attribute]
-
+        rendered = template.render_block(  # ty: ignore[unresolved-attribute]
             render_context.block_name, render_context.context
         )
         return t.cast(str, rendered)

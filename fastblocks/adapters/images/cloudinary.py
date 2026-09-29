@@ -53,9 +53,7 @@ class CloudinaryImages(ImagesBase):
         """Upload image to Cloudinary and return result dict."""
         try:
             import cloudinary.api
-
             import cloudinary.uploader
-
 
             # Configure cloudinary if credentials are set
             if (
@@ -64,7 +62,6 @@ class CloudinaryImages(ImagesBase):
                 and self.settings.api_secret
             ):
                 import cloudinary.config  # ty: ignore[unresolved-import]
-
 
                 cloudinary.config(
                     cloud_name=self.settings.cloud_name,

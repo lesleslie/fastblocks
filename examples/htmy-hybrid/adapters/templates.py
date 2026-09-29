@@ -10,6 +10,7 @@ the canonical ``"hybrid_template_manager"`` key).
 
 # req: REQ-P2-B3-001
 """
+
 from __future__ import annotations
 
 import fastblocks.adapters.templates.hybrid as _hybrid

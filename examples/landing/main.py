@@ -7,11 +7,11 @@ and the integration contract.
 
 # req: REQ-P2-B2-001
 """
+
 from __future__ import annotations
 
-from fastblocks.applications import FastBlocks
-
 from routes import register_routes
+from fastblocks.applications import FastBlocks
 
 
 def create_app() -> FastBlocks:

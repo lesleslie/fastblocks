@@ -5,13 +5,12 @@ Uses the fastblocks-ui helpers (``shell``, ``navbar``, ``hero``, ``card``,
 
 # req: REQ-P2-B1-001
 """
+
 from __future__ import annotations
 
+from fastblocks_ui import button, card, hero, navbar, shell
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-
-from fastblocks_ui import button, card, hero, navbar, shell
-
 from fastblocks.starters.default.templates import render_template
 
 

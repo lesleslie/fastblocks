@@ -8,6 +8,7 @@ production apps.
 
 # req: REQ-P2-B1-001
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping

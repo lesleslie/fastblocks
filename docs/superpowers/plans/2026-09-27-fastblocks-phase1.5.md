@@ -29,10 +29,12 @@ These apply to every task; copied verbatim from spec + review:
 ## File Structure
 
 **Created files (2):**
+
 - `tests/a11y/conftest.py` — Task 7's `pytest_ignore_collect` gate
 - `tests/integration/test_fastblocks_ui_wiring.py` — Task 8's smoke test
 
 **Modified files (per task):**
+
 - Task 1: `pyproject.toml` (lines 47, 51, 53, 106), `uv.lock`, `tests/test_dep_pins.py` (lines 141, 146), `tests/pyproject/test_dependency_groups.py` (line 33)
 - Task 2: `pyproject.toml` (markers section), `tests/adapters/templates/test_boot.py`, possibly `tests/security/test_autoescape_regression.py`
 - Task 3: `tests/unit/test_tool_profile.py` (and/or impl)
@@ -42,23 +44,27 @@ These apply to every task; copied verbatim from spec + review:
 - Task 7: `tests/a11y/conftest.py` (create), `docs/known-claim-gaps.md`
 - Task 8: `fastblocks/adapters/templates/jinja2.py` (narrow suppress), `tests/integration/test_fastblocks_ui_wiring.py`
 
----
+______________________________________________________________________
 
 ### Task 1: D8a — Tighten dep pins (httpx2, mcp-common, oneiric)
 
 **Files:**
+
 - Modify: `pyproject.toml` (lines 47, 51, 53, 106)
 - Modify: `uv.lock` (regenerate via `uv lock`)
 - Modify: `tests/test_dep_pins.py` (lines 141, 146)
 - Modify: `tests/pyproject/test_dependency_groups.py` (line 33)
 
 **Interfaces:**
+
 - Consumes: `uv` resolver
+
 - Produces: `pyproject.toml` with 4 pin edits; lockfile resolving to `httpx2==2.13.1`, `mcp-common==0.30.2`, `oneiric==0.25.0`
 
 - [ ] **Step 1: Read current `pyproject.toml` deps and `uv.lock` versions**
 
 Run:
+
 ```bash
 cd /Users/les/Projects/fastblocks
 grep -nE "httpx2|mcp-common|oneiric" pyproject.toml
@@ -70,36 +76,43 @@ Expected: `httpx2>=0.28.1` (resolved 2.13.1), `mcp-common>=0.30.0` (resolved 0.3
 - [ ] **Step 2: Edit `pyproject.toml` line 47 — httpx2 pin**
 
 - Find: `"httpx2>=0.28.1",`
+
 - Replace: `"httpx2>=2.13.1,<3",`
 
 - [ ] **Step 3: Edit `pyproject.toml` line 51 — mcp-common main pin**
 
 - Find: `"mcp-common>=0.30.0",`
+
 - Replace: `"mcp-common>=0.30.1,<0.31",`
 
 - [ ] **Step 4: Edit `pyproject.toml` line 106 — mcp-common observability group pin**
 
 - Find (in `[dependency-groups].observability`): `"mcp-common>=0.30.0",`
+
 - Replace: `"mcp-common>=0.30.1,<0.31",`
 
 - [ ] **Step 5: Edit `pyproject.toml` line 53 — oneiric pin**
 
 - Find: `"oneiric>=0.20",`
+
 - Replace: `"oneiric>=0.25,<0.26",`
 
 - [ ] **Step 6: Edit `tests/test_dep_pins.py` line 141 — httpx2 stale fixture**
 
 - Find: `("httpx2~=0.28", False),`
+
 - Replace: `("httpx2~=2.13", False),`
 
 - [ ] **Step 7: Edit `tests/test_dep_pins.py` line 146 — oneiric stale fixture**
 
 - Find: `("oneiric>=0.20,<0.21", False),`
+
 - Replace: `("oneiric>=0.25,<0.26", False),`
 
 - [ ] **Step 8: Edit `tests/pyproject/test_dependency_groups.py` line 33 — substring match**
 
 - Find: `"<0.4" in entry`
+
 - Replace: `"<0.31" in entry`
 
 - [ ] **Step 9: Regenerate lockfile**
@@ -152,16 +165,18 @@ httpx2-jsfetch); no security regressions documented in 2.x line.
 Resolves: tests 3, 4, 12 from spec failure inventory."
 ```
 
----
+______________________________________________________________________
 
 ### Task 2: D3 — Fix xdist flake on templates adapter autoescape test (with security escalation rule)
 
 **Files:**
+
 - Modify: `pyproject.toml` (`[tool.pytest.ini_options].markers` section, around line 226-234)
 - Modify: `tests/adapters/templates/test_boot.py` (around line 54)
 - Possibly Modify: `tests/security/test_autoescape_regression.py` (line 22)
 
 **Interfaces:**
+
 - Consumes: pytest-xdist parallel runner
 - Produces: `serial` marker registered + applied; tests pass under both serial and xdist
 
@@ -211,6 +226,7 @@ Expected: shows NO class-level mutable state. If ANY of these are found (especia
 - [ ] **Step 4: Decide based on Step 3 outcome**
 
 - **No shared mutable state** → race is test-only (xdist module-level fixture reset). Proceed to Step 5 (apply `@pytest.mark.serial`).
+
 - **Shared mutable state found (e.g., `default_autoescape`)** → race is production-reachable. STOP. Do NOT apply serial. Document findings in `docs/security/autoescape-race-investigation.md` with: (a) the exact mutable state, (b) how a concurrent render could set `autoescape=False`, (c) recommended compensating controls. Escalate to spec author.
 
 - [ ] **Step 5: Register `serial` marker in `pyproject.toml`**
@@ -252,19 +268,22 @@ test (#11) reproduced as test-only; same fix.
 Resolves: tests 10, 11 from spec failure inventory."
 ```
 
----
+______________________________________________________________________
 
 ### Task 3: Tool profile (5 tests) — INVESTIGATE FIRST
 
 **Files:**
+
 - Possibly Modify: `tests/unit/test_tool_profile.py`
 - Possibly Modify: impl in `fastblocks/...`
 
 **Interfaces:**
+
 - Consumes: `FASTBLOCKS_TOOL_PROFILE` env var; profile names: `full`, `standard`, `minimal`
 - Produces: 5 failing tests pass
 
 **Pre-state (NEW per review):** The 5 failing tests assert `EXPECTED_FULL_TOOLS - names == empty` against an 8-tool set:
+
 ```
 EXPECTED_FULL_TOOLS = {validate_template, list_templates, render_template,
                         list_components, validate_component, list_adapters,
@@ -323,15 +342,17 @@ convention, NOT MAHAVISHNU_TOOL_PROFILE).
 Resolves: tests 5-9 from spec failure inventory."
 ```
 
----
+______________________________________________________________________
 
 ### Task 4: Exceptions (TestSafeDependsGet, 2 tests) — INVESTIGATE FIRST (pre-confirmed diagnosis)
 
 **Files:**
+
 - Possibly Modify: `tests/test_exceptions_comprehensive.py` (lines 481-527)
 - Possibly Modify: impl in `fastblocks/exceptions.py` (line 155: `except (ImportError, AttributeError, RuntimeError, TypeError, ValueError):`)
 
 **Interfaces:**
+
 - Consumes: `safe_depends_get` function (tested by `TestSafeDependsGet`)
 - Produces: 2 failing tests pass
 
@@ -353,6 +374,7 @@ grep -rn "def safe_depends_get\|safe_depends_get(" fastblocks/ --include="*.py" 
 - [ ] **Step 3: Apply the fix (impl side)**
 
 Read `fastblocks/exceptions.py` line 155. The current tuple is `(ImportError, AttributeError, RuntimeError, TypeError, ValueError)`. Modify to either:
+
 - Add `Exception` explicitly: `except (ImportError, AttributeError, RuntimeError, TypeError, ValueError, Exception):` — least invasive
 - Or broaden to `except Exception:` — wider but catches more
 
@@ -384,16 +406,18 @@ expect.
 Resolves: tests 1, 2 from spec failure inventory."
 ```
 
----
+______________________________________________________________________
 
 ### Task 5: Collection errors — INVESTIGATE FIRST (module-scope fixture, no dep branch)
 
 **Files:**
+
 - Modify: `tests/adapters/routes/test_routes.py` (remove inline mocking)
 - Create: `tests/adapters/routes/conftest.py` (NEW — module-scoped fixture per security S3)
 - Possibly Modify: `tests/perf/test_async_rendering.py` (diagnose only)
 
 **Interfaces:**
+
 - Consumes: pytest collection system
 - Produces: both files collect successfully; `sys.modules` pollution scoped to module only (not session)
 
@@ -496,17 +520,19 @@ DO NOT add __init__.py to tests/adapters/routes/ or tests/perf/ —
 diverges from project pattern."
 ```
 
----
+______________________________________________________________________
 
 ### Task 6: Coverage gate enforcement (4 edit sites, corrected pattern)
 
 **Files:**
+
 - Modify: `pyproject.toml` line 240 (`addopts`)
 - Modify: `pyproject.toml` line 268 (`[tool.coverage.report].fail_under`)
 - Modify: `.coverage-ratchet.json` line 3 (`current_minimum`)
 - Modify: `.github/workflows/quality.yml` line 194 (remove `--no-cov`)
 
 **Interfaces:**
+
 - Consumes: `uv run pytest`, GitHub Actions CI runner
 - Produces: all 4 sites read `67.81` (or `67.81%` for ratchet); local pytest enforces; CI enforces; ratchet JSON is source of truth
 
@@ -517,16 +543,19 @@ diverges from project pattern."
 - [ ] **Step 1: Edit `pyproject.toml` line 240 — `addopts`**
 
 - Find: `"--cov-fail-under=62",`
+
 - Replace: `"--cov-fail-under=67.81",`
 
 - [ ] **Step 2: Edit `pyproject.toml` line 268 — coverage.report.fail_under**
 
 - Find: `fail_under = 62`
+
 - Replace: `fail_under = 67.81`
 
 - [ ] **Step 3: Edit `.coverage-ratchet.json` (CORRECTED pattern)**
 
 Read `.coverage-ratchet.json` carefully. The file structure is:
+
 ```json
 {
   "baseline": 49.1324200913242,                    ← identity; DO NOT touch
@@ -547,11 +576,14 @@ Read `.coverage-ratchet.json` carefully. The file structure is:
 - [ ] **Step 4: Edit `.github/workflows/quality.yml` line 194**
 
 - Find: `uv run pytest tests/ --no-cov -q`
+
 - Replace: `uv run pytest tests/ -q`
 
 Also update the comment block (lines 178-184):
-- Find: `\`\`--no-cov\`\` for now; D1b Phase 1.5 follow-up will tighten to \`\`--cov-fail-under=67.81\`\` after the coverage ratchet is updated (per ledger Ruling #4 + whole-branch review I1).`
-- Replace: `\`\`--cov-fail-under=67.81\`\` per D1b Phase 1.5 fix; local pytest matches CI.`
+
+- Find: `\`\`--no-cov\`\` for now; D1b Phase 1.5 follow-up will tighten to \`\`--cov-fail-under=67.81\`\` after the coverage ratchet is updated (per ledger Ruling #4 + whole-branch review I1).\`
+
+- Replace: `\`\`--cov-fail-under=67.81\`\` per D1b Phase 1.5 fix; local pytest matches CI.\`
 
 - [ ] **Step 5: Verify local pytest enforces 67.81 (with xdist fallback)**
 
@@ -564,6 +596,7 @@ uv run pytest tests/ --cov=fastblocks --cov-report=term 2>&1 | tail -10
 Expected: passes (assuming Tasks 1-5 made tests green); shows `TOTAL ... 67.81%` or higher.
 
 **xdist fallback (NEW per review):** if 67.81% is missed, run with `-p no:xdist` to isolate whether the miss is a real coverage gap or xdist aggregation artifact:
+
 ```bash
 rm -f .coverage
 uv run pytest tests/ --cov=fastblocks --cov-report=term -p no:xdist 2>&1 | tail -10
@@ -602,15 +635,17 @@ under xdist but passes serially, file a follow-up issue rather than
 silently lowering the threshold."
 ```
 
----
+______________________________________________________________________
 
 ### Task 7: A11y axe-core — `pytest_ignore_collect` (matches project pattern)
 
 **Files:**
+
 - Create: `tests/a11y/conftest.py`
 - Modify: `docs/known-claim-gaps.md`
 
 **Interfaces:**
+
 - Consumes: pytest collection system; Playwright browser binary presence
 - Produces: a11y tests skip collection when browser binary missing
 
@@ -638,6 +673,7 @@ Expected output: either browser binary path OR playwright error indicating missi
 - [ ] **Step 3: Create `tests/a11y/conftest.py` using `pytest_ignore_collect`**
 
 Create new file `tests/a11y/conftest.py`:
+
 ```python
 """A11y test collection gating.
 
@@ -696,6 +732,7 @@ Expected: 0 errors (either tests run if browser available, OR collection skipped
 - [ ] **Step 5: Update `docs/known-claim-gaps.md`**
 
 Read `docs/known-claim-gaps.md`. Add new row to the table:
+
 ```
 | A11y axe-core tests (29) | tests/a11y/test_components_a11y.py | Requires Playwright browser binary (axe-playwright-python + playwright dev-deps installed; chromium binary not) | Phase 1.5+ environment work |
 ```
@@ -727,15 +764,17 @@ binary available. Deferred to Phase 1.5+ for actual browser install.
 docs/known-claim-gaps.md updated with the row."
 ```
 
----
+______________________________________________________________________
 
 ### Task 8: C3 — Narrow suppress wrapper at `jinja2.py:974-978`
 
 **Files:**
+
 - Modify: `fastblocks/adapters/templates/jinja2.py` (lines 974-978)
 - Create: `tests/integration/test_fastblocks_ui_wiring.py`
 
 **Interfaces:**
+
 - Consumes: `Templates.init()` flow; `register_style_functions` dispatcher
 - Produces: production fix narrows suppress (preserves availability, exposes invariant violations); smoke test asserts all 5 UI globals in `env.globals`
 
@@ -773,11 +812,13 @@ Expected: `ui_* globals: ['ui_alert', 'ui_button', 'ui_card', 'ui_container', 'u
 - [ ] **Step 3: Decide based on Step 2**
 
 - **All 5 present** → wiring works. Skip production fix; go to Step 5 (smoke test only).
+
 - **Some missing** → production fix needed. Apply Step 4.
 
 - [ ] **Step 4: Apply production fix (ONLY if Step 3 = bug)**
 
 Read `fastblocks/adapters/templates/jinja2.py` lines 970-985. Replace:
+
 ```python
 with suppress(Exception):
     from fastblocks.core.style_registry import register_style_functions
@@ -786,6 +827,7 @@ with suppress(Exception):
 ```
 
 With:
+
 ```python
 # Import outside suppress: a broken style_registry module is a
 # deployment problem, not a per-render one — fail loudly.
@@ -820,6 +862,7 @@ print('C3 wiring verified: all 5 UI globals present')
 - [ ] **Step 6: Create smoke test `tests/integration/test_fastblocks_ui_wiring.py`**
 
 Create new file `tests/integration/test_fastblocks_ui_wiring.py`:
+
 ```python
 """C3 smoke test: fastblocks-ui functions are registered on the Jinja env.
 
@@ -905,7 +948,7 @@ all 5 globals per Integration Contract; previously only ui_button +
 ui_card. Phase 2 unblocked."
 ```
 
----
+______________________________________________________________________
 
 ## Self-Review
 
@@ -927,6 +970,7 @@ ui_card. Phase 2 unblocked."
 **2. Placeholder scan:** 0 placeholders. Each step has explicit `bash` commands with expected output, concrete find/replace edits, or specific verification commands.
 
 **3. Type consistency:**
+
 - `FASTBLOCKS_TOOL_PROFILE` consistent across Task 3
 - `@pytest.mark.serial` consistent across Task 2
 - `register_fastblocks_ui_functions` matches actual location (local `fastblocks/adapters/style/fastblocks_ui.py:140`, NOT fastblocks-ui package)
@@ -936,6 +980,7 @@ ui_card. Phase 2 unblocked."
 **No type consistency bugs found.**
 
 **4. Review-driven changes (v1 → v2):**
+
 - Task 7: `pytest.importorskip` → `pytest_ignore_collect` (browser binary, not Python package, is the failure mode)
 - Task 6: ratchet JSON find/replace pattern corrected (numeric value, not string)
 - Task 5: removed "missing transitive dep" branch; module-scope `acb_mocks` fixture (not session)
@@ -950,6 +995,6 @@ Plan complete and saved to `docs/superpowers/plans/2026-09-27-fastblocks-phase1.
 
 1. **Subagent-Driven (recommended)** - Fresh subagent per task; per-task multi-agent review (TDD rigor + API correctness lenses) catches scope drift before commit. Matches the audit pass pattern (10 tasks, all reviewed).
 
-2. **Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints. Faster wall-clock but less isolation.
+1. **Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints. Faster wall-clock but less isolation.
 
 Which approach?

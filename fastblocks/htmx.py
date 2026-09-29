@@ -25,7 +25,7 @@ import typing as t
 from collections.abc import Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
-from typing import Any, cast
+from typing import Any
 from urllib.parse import unquote
 
 

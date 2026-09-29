@@ -35,7 +35,8 @@ Configuration (precedence order):
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from mcp_common.tools import ALL_TOOLS, ToolProfile
 

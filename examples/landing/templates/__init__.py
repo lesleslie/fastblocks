@@ -9,6 +9,7 @@ resolver at scaffold time. Production apps should register the
 
 # req: REQ-P2-B2-001
 """
+
 from __future__ import annotations
 
 from pathlib import Path

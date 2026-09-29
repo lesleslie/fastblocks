@@ -7,6 +7,7 @@ the page renders an empty table with a clear "no data yet" message
 
 # req: REQ-P2-B2-001, REQ-P2-B2-004
 """
+
 from __future__ import annotations
 
 import json
@@ -14,7 +15,6 @@ from pathlib import Path
 
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-
 from templates import render_template
 
 _BENCH_DIR = Path(__file__).resolve().parents[3] / ".benchmarks"
@@ -29,7 +29,9 @@ def _load_latest_benchmarks() -> list[dict[str, object]]:
     """
     if not _BENCH_DIR.exists():
         return []
-    files = sorted(_BENCH_DIR.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    files = sorted(
+        _BENCH_DIR.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True
+    )
     if not files:
         return []
     try:

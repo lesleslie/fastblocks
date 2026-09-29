@@ -7,6 +7,7 @@ product operations belong in the consumer application, not here.
 
 # req: REQ-P2-B1-001
 """
+
 from __future__ import annotations
 
 import json

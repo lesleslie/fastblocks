@@ -69,10 +69,12 @@ These apply to every task in Phase 1.5:
 | `oneiric` (line 53) | `>=0.20` | `>=0.25,<0.26` | oneiric is currently at **0.25.0**. v1 spec's `<0.21` would have downgraded 5 minor versions. |
 
 **Test fixture refresh (in same commit, per dependency-manager reviewer):**
+
 - `tests/test_dep_pins.py:141` — `("httpx2~=0.28", False)` → `("httpx2~=2.13", False)` (stale fixture encodes wrong version line)
 - `tests/test_dep_pins.py:146` — `("oneiric>=0.20,<0.21", False)` → `("oneiric>=0.25,<0.26", False)` (stale fixture)
 
 **Test #12 (mcp-common substring) reconciliation:**
+
 - Test asserts: `"<0.4" in entry`
 - New pin: `mcp-common>=0.30.1,<0.31` — the substring `<0.31` does NOT contain `<0.4`, so test would still fail.
 - **Resolution:** Update `tests/pyproject/test_dependency_groups.py:33` substring check from `"<0.4"` to `"<0.31"` to match the actual pin policy intent. Document the change in commit message.
@@ -80,6 +82,7 @@ These apply to every task in Phase 1.5:
 **Why `httpx2<3` (not `<2.14`):** httpx2 has no 3.x announced. The 2.x line is the production target. Capping at `<3` allows all 2.x patches while blocking the next major bump (which would force a test re-run).
 
 **Verification (per dep reviewer):**
+
 ```bash
 uv lock                              # regenerate lockfile with new pins
 uv lock --check                      # gate that pin changes are consistent
@@ -90,19 +93,23 @@ uv run pytest tests/test_dep_pins.py tests/pyproject/test_dependency_groups.py -
 ### Fix 2: D3 — xdist flake (autoescape race) — INVESTIGATE FIRST
 
 **Files:**
+
 - `tests/adapters/templates/test_boot.py` (line 54: `test_templates_adapter_env_has_autoescape_on`)
 - `tests/security/test_autoescape_regression.py` (line 22: `test_jinja2_environment_default_autoescape_is_true`)
 
 **Investigation steps (per pytest reviewer — verify before marking):**
+
 1. `cd /Users/les/Projects/fastblocks && uv run pytest tests/adapters/templates/test_boot.py -v` (serial) — confirm passes
-2. `cd /Users/les/Projects/fastblocks && uv run pytest tests/adapters/templates/test_boot.py -n auto -v` (xdist parallel) — confirm fails
-3. `cd /Users/les/Projects/fastblocks && uv run pytest tests/adapters/templates/test_boot.py -p no:xdist -v` (no xdist at all) — confirm passes
-4. If serial+no-xdist pass AND xdist fails → `@pytest.mark.serial` is correct remedy. If all three fail, the assertion is wrong and `serial` masks a real bug — investigate the `Templates.env.autoescape` mutation hypothesis.
+1. `cd /Users/les/Projects/fastblocks && uv run pytest tests/adapters/templates/test_boot.py -n auto -v` (xdist parallel) — confirm fails
+1. `cd /Users/les/Projects/fastblocks && uv run pytest tests/adapters/templates/test_boot.py -p no:xdist -v` (no xdist at all) — confirm passes
+1. If serial+no-xdist pass AND xdist fails → `@pytest.mark.serial` is correct remedy. If all three fail, the assertion is wrong and `serial` masks a real bug — investigate the `Templates.env.autoescape` mutation hypothesis.
 
 **Why `@pytest.mark.serial` may not be enough (per pytest reviewer):** The marker is NOT registered in `pyproject.toml [tool.pytest].markers` (lines 226–234 only list `unit`, `performance`, `integration`, `websocket`, `a11y`, `property`, `slow`). pytest-xdist auto-recognizes it, but defensive practice is to add it:
+
 - Add `"serial: mark test as serial (run without xdist parallelization)"` to `[tool.pytest.ini_options].markers` in `pyproject.toml`.
 
 **Apply (after investigation confirms xdist-only flake):**
+
 ```python
 @pytest.mark.serial  # xdist flake: env mutation race; see Phase 1.5 spec Fix 2
 def test_templates_adapter_env_has_autoescape_on():
@@ -116,11 +123,13 @@ def test_templates_adapter_env_has_autoescape_on():
 **Files:** `tests/unit/test_tool_profile.py` (5 failing of 14 total), `fastblocks/...` (impl if env handling is wrong)
 
 **Investigation step (per pytest reviewer — verify before fixing):**
+
 1. Read `fastblocks/.../_apply_tool_profile` (or wherever profile handling lives) — confirm profile definitions
-2. Read `tests/unit/test_tool_profile.py` — confirm what tests assert (env var is `FASTBLOCKS_TOOL_PROFILE`, NOT `MAHAVISHNU_TOOL_PROFILE`)
-3. Reconcile: either fix the profile implementation OR update the tests to match new ground truth (with a comment explaining the ground truth change)
+1. Read `tests/unit/test_tool_profile.py` — confirm what tests assert (env var is `FASTBLOCKS_TOOL_PROFILE`, NOT `MAHAVISHNU_TOOL_PROFILE`)
+1. Reconcile: either fix the profile implementation OR update the tests to match new ground truth (with a comment explaining the ground truth change)
 
 **Verification (after fix):**
+
 ```bash
 cd /Users/les/Projects/fastblocks
 FASTBLOCKS_TOOL_PROFILE=full uv run pytest tests/unit/test_tool_profile.py -v
@@ -136,13 +145,15 @@ unset FASTBLOCKS_TOOL_PROFILE && uv run pytest tests/unit/test_tool_profile.py -
 **Files:** `tests/test_exceptions_comprehensive.py`, `fastblocks/.../safe_depends_get.py` (or wherever `safe_depends_get` function lives)
 
 **Investigation step:**
+
 1. Locate `safe_depends_get` definition (snake_case function tested by `class TestSafeDependsGet`)
-2. Read the 2 failing test bodies (lines 481–527) — understand expected behavior
-3. Decide: fix implementation to match tests (preferred) OR fix tests to match new ground truth (if intentional behavior change)
+1. Read the 2 failing test bodies (lines 481–527) — understand expected behavior
+1. Decide: fix implementation to match tests (preferred) OR fix tests to match new ground truth (if intentional behavior change)
 
 **Tests affected:** #1, #2
 
 **Verification:**
+
 ```bash
 uv run pytest tests/test_exceptions_comprehensive.py::TestSafeDependsGet -v
 ```
@@ -152,14 +163,17 @@ uv run pytest tests/test_exceptions_comprehensive.py::TestSafeDependsGet -v
 **Files:** `tests/adapters/routes/test_routes.py`, `tests/perf/test_async_rendering.py`
 
 **Per pytest + architecture reviewers, v1's hypothesis (add `__init__.py`, rename files, change `import_mode`) was WRONG:**
+
 - `tests/adapters/templates/` has NO `__init__.py` and works fine — adding `__init__.py` elsewhere is not the project pattern
 - `import_mode=prepend` is pytest's DEFAULT, not explicitly configured in `pyproject.toml`
 
 **Actual root cause hypotheses (per pytest reviewer):**
+
 - `tests/adapters/routes/test_routes.py:65-86` does collection-time `sys.modules` mocking of `acb.*` modules then imports `from acb.config import Config` at lines 79-80. This mock-then-import dance can fail under modern Python import semantics (mock-then-import race).
 - `tests/perf/test_async_rendering.py:44` imports `from jinja2_async_environment import AsyncEnvironment` — likely a missing transitive dep of `starlette-async-jinja`.
 
 **Investigation steps (mandatory before any code change):**
+
 ```bash
 cd /Users/les/Projects/fastblocks
 uv run pytest --collect-only tests/adapters/routes/test_routes.py -v 2>&1 | tail -20
@@ -168,6 +182,7 @@ python -c "import jinja2_async_environment"  # confirm if dep is missing
 ```
 
 **Then choose fix based on actual error:**
+
 - If `ImportError: jinja2_async_environment` → add dep to `pyproject.toml` [project.dependencies]
 - If `AttributeError` from acb mock → move collection-time mocking into a conftest fixture scoped at session/module level
 - If `ModuleNotFoundError` for axe_playwright_python (a11y) → already addressed by Fix 7
@@ -190,6 +205,7 @@ python -c "import jinja2_async_environment"  # confirm if dep is missing
 **Why all 4 sites:** Local `uv run pytest tests/` reads from addopts; CI reads from workflow arg; ratchet JSON is the single source of truth for the floor; coverage.report is for standalone `coverage report` calls. If any one is stale, the ratchet is silently weakened.
 
 **Verification:**
+
 ```bash
 cd /Users/les/Projects/fastblocks
 uv run pytest --cov=fastblocks --cov-report=term  # exits 0 with --cov-fail-under=67.81
@@ -202,11 +218,13 @@ grep -n "cov-fail-under\|fail_under" pyproject.toml .github/workflows/quality.ym
 **Files:** `tests/a11y/conftest.py` (NEW), `docs/known-claim-gaps.md` (UPDATE)
 
 **Per pytest reviewer, v1's `@pytest.mark.skip` was wrong:**
+
 - "Skip" leaks a static "known broken" message into the test count and obscures the real failure mode (missing runtime dep)
 - The project pattern is dependency-driven skip via `pytest.importorskip` in conftest (matches `tests/adapters/templates/conftest.py`, `tests/security/conftest.py`, `tests/observability/conftest.py`)
 - Tests are ALREADY in `tests/a11y/`; "move to `tests/a11y/`" was moot
 
 **Create `tests/a11y/conftest.py`:**
+
 ```python
 """A11y test dependency gating.
 
@@ -226,6 +244,7 @@ pytest.importorskip("playwright.async_api", reason="Playwright async API missing
 ```
 
 **Update `docs/known-claim-gaps.md` with new row:**
+
 ```
 | A11y axe-core tests (29) | tests/a11y/test_components_a11y.py | Requires @axe-core/playwright + browser binary | Phase 1.5+ environment work |
 ```
@@ -235,6 +254,7 @@ pytest.importorskip("playwright.async_api", reason="Playwright async API missing
 ### Fix 8: C3 — Investigate `register_fastblocks_ui_functions` wiring, then fix if needed
 
 **Status:** v1 spec proposed adding wiring at `FastBlocksApp.init()` — but **3 reviewers independently flagged this is wrong**. The wiring already exists at `fastblocks/adapters/templates/jinja2.py:974-978`:
+
 ```python
 with suppress(Exception):
     from fastblocks.core.style_registry import register_style_functions
@@ -247,10 +267,11 @@ with suppress(Exception):
 **Three viable hypotheses for what C3 actually is:**
 
 1. **C3 = bug is the `with suppress(Exception):` wrapper** — silently masks failures when `fastblocks-ui` deps missing or env is wrong type. Fix: un-suppress (or un-suppress one level) + add regression test asserting `ui_button`/`ui_card`/`ui_alert`/etc. appear in `env.globals` after `Templates.init()`.
-2. **C3 = wiring works but undocumented** — fix is just the smoke test, no production code change.
-3. **C3 = different bug** — needs concrete repro (e.g., "landing page `/` renders `<UndefinedError>` for `ui_button`" → run `uv run python -c "..."` showing failure → file location of broken call).
+1. **C3 = wiring works but undocumented** — fix is just the smoke test, no production code change.
+1. **C3 = different bug** — needs concrete repro (e.g., "landing page `/` renders `<UndefinedError>` for `ui_button`" → run `uv run python -c "..."` showing failure → file location of broken call).
 
 **Investigation steps (mandatory):**
+
 ```bash
 cd /Users/les/Projects/fastblocks
 # Confirm wiring path exists
@@ -264,10 +285,11 @@ print('globals:', list(templates.env.globals.keys())[:20])
 print('ui_button in globals:', 'ui_button' in templates.env.globals)
 "
 # Reproduce the landing page symptom (if available)
-# uv run python -c "from fastblocks.adapters.app.default import FastBlocksApp; app = FastBlocksApp(); ..." 
+# uv run python -c "from fastblocks.adapters.app.default import FastBlocksApp; app = FastBlocksApp(); ..."
 ```
 
 **Then choose fix:**
+
 - If hypothesis 1: un-suppress `with suppress(Exception):` in `jinja2.py:974-978`, add regression test
 - If hypothesis 2: just add the regression test
 - If hypothesis 3: file location of the actual broken call
@@ -304,13 +326,13 @@ Fixes 1-5 can be parallelized (independent files). Fix 6 must come after all of 
 When ALL of the following are true, Phase 1.5 is complete:
 
 1. `uv run pytest tests/ --no-cov -q` exits 0 (with 51 skipped + 0 failed + 0 errors; the 29 a11y are now silently skipped via `pytest.importorskip`)
-2. `uv run pytest --cov=fastblocks` exits 0 (uses addopts `--cov-fail-under=67.81`)
-3. `uv lock --check` exits 0 (dep pins tightened, lockfile consistent; resolves to httpx2==2.13.1, mcp-common==0.30.2, oneiric==0.25.0)
-4. C3 root cause identified; fix applied if needed; smoke test exists at `tests/integration/test_fastblocks_ui_wiring.py`
-5. **All 4 coverage edit sites** read `67.81`: `pyproject.toml [tool.pytest].addopts`, `pyproject.toml [tool.coverage.report].fail_under`, `.coverage-ratchet.json`, `.github/workflows/quality.yml`
-6. `docs/known-claim-gaps.md` documents the 29 axe-core tests as Phase 1.5+ scope
-7. Each fix has its own commit on `main` (Bodai pre-1.0 policy)
-8. `tests/a11y/conftest.py` exists with `pytest.importorskip` for `axe_playwright_python` and `playwright.async_api`
+1. `uv run pytest --cov=fastblocks` exits 0 (uses addopts `--cov-fail-under=67.81`)
+1. `uv lock --check` exits 0 (dep pins tightened, lockfile consistent; resolves to httpx2==2.13.1, mcp-common==0.30.2, oneiric==0.25.0)
+1. C3 root cause identified; fix applied if needed; smoke test exists at `tests/integration/test_fastblocks_ui_wiring.py`
+1. **All 4 coverage edit sites** read `67.81`: `pyproject.toml [tool.pytest].addopts`, `pyproject.toml [tool.coverage.report].fail_under`, `.coverage-ratchet.json`, `.github/workflows/quality.yml`
+1. `docs/known-claim-gaps.md` documents the 29 axe-core tests as Phase 1.5+ scope
+1. Each fix has its own commit on `main` (Bodai pre-1.0 policy)
+1. `tests/a11y/conftest.py` exists with `pytest.importorskip` for `axe_playwright_python` and `playwright.async_api`
 
 ## Out of Scope (deferred to Phase 1.5+ or Phase 2)
 
@@ -334,6 +356,7 @@ When ALL of the following are true, Phase 1.5 is complete:
 ## Self-Review (v2)
 
 **Multi-lens review coverage:**
+
 - pytest-hypothesis-specialist: 4 BLOCKERs + 4 IMPORTANTs → all addressed
 - code-architect: 3 BLOCKERs + 4 IMPORTANTs → all addressed
 - dependency-manager: 2 BLOCKERs + 2 IMPORTANTs → all addressed
@@ -342,6 +365,7 @@ When ALL of the following are true, Phase 1.5 is complete:
 **Placeholder scan:** None — every fix references concrete files and test names. C3 fix's smoke test path is now concrete (`tests/integration/test_fastblocks_ui_wiring.py::test_ui_helpers_registered_on_env`).
 
 **Internal consistency:**
+
 - Fix 1 (D8a) now has 4 edit sites (pyproject 2x + ratchet JSON + observability group)
 - Fix 6 (coverage gate) now has 4 edit sites (pyproject addopts + coverage.report + ratchet + workflow)
 - Tool profile env var: `FASTBLOCKS_TOOL_PROFILE` (NOT `MAHAVISHNU_TOOL_PROFILE`)
@@ -357,5 +381,5 @@ When ALL of the following are true, Phase 1.5 is complete:
 When this spec is approved:
 
 1. Invoke `superpowers:writing-plans` skill to produce a task-by-task implementation plan
-2. Then invoke `superpowers:subagent-driven-development` (per ledger's established pattern) to execute
-3. Multi-agent review per fix (TDD rigor + API correctness lenses); per-fix commit on `main`
+1. Then invoke `superpowers:subagent-driven-development` (per ledger's established pattern) to execute
+1. Multi-agent review per fix (TDD rigor + API correctness lenses); per-fix commit on `main`

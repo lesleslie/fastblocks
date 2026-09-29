@@ -5,6 +5,58 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.0] - 2026-09-29
+
+### Fixed
+
+- fastblocks: Add 'run' CLI subcommand for uvicorn launcher (F1.5-DELIV-T1)
+- fastblocks: Add HybridTemplatesManager.render_hybrid() API (F1.5-F-FW-1)
+- fastblocks: Add upper caps to typer, uvicorn, structlog (F1.5-D8-T2)
+- fastblocks: Cast await result to Awaitable[Iterable[T]] in sitemap
+- fastblocks: CSP nonce-based style-src, drop unsafe-inline (F1.5-D6-T1)
+- fastblocks: Declare _BaseModel fallback as Any at module level
+- fastblocks: Declare _sentry_sdk fallback as Any at module level
+- fastblocks: Declare BoundLogger fallback as Any at module level
+- fastblocks: Drop redundant cast in resolve_component_async
+- fastblocks: Drop redundant str() wraps flagged by refurb FURB123
+- fastblocks: Phase 1.5 Tier 1 — verify-measurement re-runs collapse artifacts
+- fastblocks: Resolve 7 mypy errors in 5 framework files (F1.5-D2-T1)
+- fastblocks: Resolve ruff-check failures in _advanced_manager.py
+- fastblocks: Tighten dep pins to ~=X.Y and add critical-dep upper caps (F1.5-D8-T3)
+- fastblocks: Use contextlib.suppress for pydantic import fallback (FURB107)
+- landing: Emit HX-Trigger header in /demo HTMX swap (F1.5-D4-T1)
+- landing: Enumerate spec §D3 in-scope adapters in /adapter-matrix (F1.5-D3-T1)
+
+### Documentation
+
+- fastblocks: Add test-quality sweep plan (F1.5-test-quality-sweep)
+- fastblocks: Fix frontmatter validation errors in 3 phase-1.5 plans
+- fastblocks: Phase 1.5 plan — fix self-review math line (15 → 14 tasks)
+- fastblocks: Phase 1.5 plan — fix Task 1 brief (ty/pip-audit venv selectors)
+- fastblocks: Phase 1.5 plan — review crew fix round 1
+- fastblocks: Phase 1.5 Task 2 — reclassify D2 in verify report
+- fastblocks: Phase 1.5 Task 3 — reclassify D6 in verify report
+- fastblocks: Phase 1.5 Task 6 — correct report (R1 fix, live render 0/5, both tests fail)
+- fastblocks: Phase 3 verify report — DO NOT SHIP
+- fastblocks: Phase 3 verify report — fix round 1 (frontmatter + followup table + plan)
+- fastblocks: Phase 3 verify report — fix round 2 (opus final review findings)
+- fastblocks: Phase 3 verify rerun — DO NOT SHIP
+- fastblocks: Update framework-drift-tracker.md topic field (F1.5-T12)
+- fastblocks: Verify rerun plan — review crew fix round 1
+
+### Testing
+
+- fastblocks: Add boot tests per spec §D3 in-scope adapter (F1.5-D3-T2)
+- fastblocks: Exclude docs/superpowers/ from doc-accuracy scans (historical artifacts captured state-at-time-of-writing; not subject to current-state validation)
+- fastblocks: Fix dep-name parser to match assertion expectations
+- fastblocks: Fix pollution in 3 Phase 1.5 tests (deterministic isolation)
+- landing: Rewrite adapter-matrix tests for spec §D3 matrix (F1.5-D3-T1 followup)
+- observability: Restore structlog config after cardinality-guard test (prevent xdist pollution)
+
+### Internal
+
+- fastblocks: Refresh uv.lock after D8-T2 upper caps (F1.5-D8-T1)
+
 ## [0.25.0] - 2026-09-28
 
 ### Added
@@ -28,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - C3 register_fastblocks_ui_functions wiring verified
 - fastblocks: Add URL-encoded Jinja patterns + drop regex anchors in exclude_path
 - fastblocks: B1 starter kwargs — card(header=), navbar(brand=)
-- fastblocks: D8a tighten dep pins (httpx2 2.x, mcp-common <0.31, oneiric 0.25.x)
+- fastblocks: D8a tighten dep pins (httpx2 2.x, mcp-common \<0.31, oneiric 0.25.x)
 - fastblocks: Drop backticks from historical kelp/webawesome references — F4.2 followup
 - fastblocks: Extend lychee.toml with missing exclusions + drop dead [tool.lychee]
 - fastblocks: Gate punt-horizon check actually validates
@@ -103,7 +155,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fastblocks: Drop unused ty:ignore directives
 - fastblocks: Examples/landing/ post-wave followups — F2.1-F2.5
 - fastblocks: F1.1 — test exercises CLI default for style and domain
-- fastblocks: F1.2 — drop unused style param from _scaffold_from_starter
+- fastblocks: F1.2 — drop unused style param from \_scaffold_from_starter
 - fastblocks: F1.3 — correct templates.yaml scaffold comment
 - fastblocks: Phase 2 build wave integration verification + rollback sink
 - fastblocks: Refresh uv.lock

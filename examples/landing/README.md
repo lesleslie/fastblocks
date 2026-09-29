@@ -21,16 +21,16 @@ Then visit http://127.0.0.1:8001/.
 
 ## Routes
 
-| Route              | What it proves                                                    |
+| Route | What it proves |
 | ------------------ | ----------------------------------------------------------------- |
-| `/`                | Headline claims only                                              |
-| `/features`        | Per-feature section with `ui-section` + `ui-card`                 |
-| `/adapter-matrix`  | **D3 live proof** — auto-generated from the Oneiric resolver      |
-| `/demo`            | **D4 + D5 live proof** — search-as-you-type HTMX                  |
-| `/performance`     | **D7 live proof** — latest benchmarks from `.benchmarks/`         |
-| `/security`        | **D6** — threat model + CVE status                                |
-| `/docs`            | Link to full docs                                                 |
-| `/install`         | One-command install + hello-world                                 |
+| `/` | Headline claims only |
+| `/features` | Per-feature section with `ui-section` + `ui-card` |
+| `/adapter-matrix` | **D3 live proof** — auto-generated from the Oneiric resolver |
+| `/demo` | **D4 + D5 live proof** — search-as-you-type HTMX |
+| `/performance` | **D7 live proof** — latest benchmarks from `.benchmarks/` |
+| `/security` | **D6** — threat model + CVE status |
+| `/docs` | Link to full docs |
+| `/install` | One-command install + hello-world |
 
 ## Tests
 
@@ -45,8 +45,7 @@ Expected: green.
 
 Only `--ui-*` tokens are permitted in `templates/` and `static/`. The
 CI grep gate (see `tests/test_no_claim_without_evidence.py` plus the
-manual `grep -rn -- "--fb-\|--fast-\|--brand-\|#[0-9a-fA-F]\{6\}"
-templates/ static/` check in the brief) rejects `--fb-*`, `--fast-*`,
+manual `grep -rn -- "--fb-\|--fast-\|--brand-\|#[0-9a-fA-F]\{6\}" templates/ static/` check in the brief) rejects `--fb-*`, `--fast-*`,
 `--brand-*`, and hex literals.
 
 Dark variant ships via `[data-theme="dark"]` — the documented closed

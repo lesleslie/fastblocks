@@ -7,6 +7,7 @@ in ``fastblocks.core.validators``.
 
 # req: REQ-P2-B1-001, REQ-P2-B1-002
 """
+
 from __future__ import annotations
 
 import fastblocks.adapters.style.fastblocks_ui as _fbui

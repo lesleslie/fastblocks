@@ -8,6 +8,7 @@ structure. Real CVE status would be sourced from a live advisory feed.
 
 # req: REQ-P2-B2-001
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,7 +16,6 @@ from dataclasses import dataclass
 from fastblocks_ui import alert, card
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-
 from templates import render_template
 
 
@@ -66,8 +66,6 @@ async def security_route(request: Request) -> HTMLResponse:
         )
         for c in _CVES
     )
-    cards_markup = "".join(
-        card(header=t.title, body=t.body) for t in _THREAT_LINKS
-    )
+    cards_markup = "".join(card(header=t.title, body=t.body) for t in _THREAT_LINKS)
     context = {"alerts_markup": alerts_markup, "cards_markup": cards_markup}
     return HTMLResponse(await render_template(request, "security.html", context))

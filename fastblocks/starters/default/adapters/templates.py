@@ -6,6 +6,7 @@ support. The default ``HybridTemplatesManager`` lives at
 
 # req: REQ-P2-B1-001
 """
+
 from __future__ import annotations
 
 import fastblocks.adapters.templates.hybrid as _hybrid

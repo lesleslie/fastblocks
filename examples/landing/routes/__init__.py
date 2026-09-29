@@ -2,6 +2,7 @@
 
 # req: REQ-P2-B2-001
 """
+
 from __future__ import annotations
 
 from fastblocks.applications import FastBlocks

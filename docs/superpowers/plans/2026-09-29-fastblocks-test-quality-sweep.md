@@ -20,21 +20,25 @@
 - **Git author:** `lesleslie <les@wedgwoodwebworks.com>`
 - **drift-bundling-recovery** discipline: stay in scope; do not bundle unrelated fixes
 
----
+______________________________________________________________________
 
 ## Task A: Pyproject.toml pin-shape tightening (#1, #4, #5)
 
 **Files:**
+
 - Modify: `pyproject.toml`
 - Modify: `uv.lock` (auto-generated)
 
 **Current state (per grep):**
+
 - `[project].dependencies`: 4 loose pins — `brotli-asgi>=1.6.0`, `granian[reload]>=2.8.3`, `minify-html>=0.18.1`, `starlette-async-jinja>=1.15.0`
+
 - `[dependency-groups].observability`: 5 pins using floor-only `>=X.Y.Z` — `prometheus-client>=0.26.0`, `opentelemetry-sdk>=1.44.0`, `opentelemetry-exporter-otlp-proto-http>=1.44.0`, `sentry-sdk[opentelemetry]>=3.0.0a7,<3.0.0a8`, `structlog>=26.1.0,<27`. (Test #6 explicitly asserts `~=` for opentelemetry-exporter-otlp-proto-http; Test #5 explicitly asserts `~=` for structlog.)
 
 - [ ] **Step 1: Add upper caps to the 4 critical deps**
 
 In `pyproject.toml [project].dependencies`:
+
 ```toml
 # Before
 "brotli-asgi>=1.6.0",
@@ -105,7 +109,7 @@ git commit -m "fix(fastblocks): tighten dep pins to ~=X.Y and add critical-dep u
 
 **Integration Contract:** `test_no_loose_pins_on_critical_deps`, `test_otel_sdk_pinned_in_observability_dep_group`, `test_structlog_pinned_in_observability_dep_group` all PASS. `uv lock --check` clean.
 
----
+______________________________________________________________________
 
 ## Task B: Test parser bug fix (#6)
 
@@ -116,6 +120,7 @@ git commit -m "fix(fastblocks): tighten dep pins to ~=X.Y and add critical-dep u
 - [ ] **Step 1: Fix the assertions to match the parser output**
 
 In `tests/pyproject/test_dependency_groups.py`:
+
 ```python
 # Before
 members = {
@@ -157,7 +162,7 @@ git commit -m "test(fastblocks): fix dep-name parser to match assertion expectat
 
 **Integration Contract:** `test_observability_group_present_with_correct_pins` PASSES.
 
----
+______________________________________________________________________
 
 ## Task C: Remove `FASTBLOCKS_PORT` env var doc references (#2)
 
@@ -190,13 +195,14 @@ git commit -m "docs(fastblocks): remove FASTBLOCKS_PORT env var reference (env v
 
 **Integration Contract:** `test_env_var_names_match_source` PASSES. No source code touched.
 
----
+______________________________________________________________________
 
 ## Task D: Global structlog mutation fix (test_cardinality_guard.py:141-149)
 
 **Files:** TBD based on user's architectural choice (see below).
 
 **Diagnosis:** `tests/observability/test_cardinality_guard.py:141-149` calls `structlog.configure(wrapper_class=structlog.BoundLogger)` — the GENERIC `BoundLogger` from `structlog._generic`. Its `__getattr__` wraps `_proxy_to_logger` with `partial(method_name)` that does NOT consume positional substitution args. After this test runs in an xdist worker, any subsequent `_log.exception("...%s...", x, y)` call in that worker overflows `_proxy_to_logger`'s signature and raises `TypeError`. The 3 production sites at risk:
+
 - `fastblocks/adapters/templates/_advanced_manager.py:1013`
 - `fastblocks/adapters/templates/_advanced_manager.py:1028`
 - `fastblocks/adapters/templates/_async_renderer.py:196`
@@ -219,7 +225,7 @@ The 3 Phase 1.5 tests were already isolated via `patch.object(_module, "_log")` 
 @pytest.fixture
 def reset_structlog_config():
     """Snapshot structlog.configure() state before each test, restore after.
-    
+
     test_cardinality_guard.py reconfigures structlog to the generic
     BoundLogger (wrapper_class=structlog.BoundLogger). The generic
     BoundLogger uses __getattr__ to wrap _proxy_to_logger with a
@@ -266,13 +272,13 @@ git commit -m "test(fastblocks): restore structlog config after cardinality-guar
 
 **Integration Contract:** `test_cardinality_guard.py` tests still PASS; structlog global state is restored after each test; no other tests in the same xdist worker experience the latent `BoundLogger` TypeError.
 
----
+______________________________________________________________________
 
 ## Out of scope (tracked separately)
 
 - **#3 `test_coverage_target_consistency`** (test_doc_accuracy.py:290) — historical ledger file `docs/superpowers/sdd-logs/2026-09-27-phase1.5-plus-ledger.md` claims coverage 65.0%, but `pyproject.toml` floor is 67.81%. Explicitly tied to F1.5-D1-T1 multi-week Tier 5 work (coverage ratchet 68.19% → 85%). Per user direction, this is multi-week work and not in this sweep.
 
----
+______________________________________________________________________
 
 ## Verification (final, after all 4 tasks)
 

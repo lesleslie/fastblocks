@@ -1,4 +1,4 @@
-"""Phase 1.5.1 migration: `name = Resolver()` → `name = FastblocksRegistry(get_resolver())`.
+r"""Phase 1.5.1 migration: `name = Resolver()` → `name = FastblocksRegistry(get_resolver())`.
 
 Per ruff-cleanup-script-dangers.md, the script:
 - Uses AST for detection (not bare regex on multi-line)
@@ -127,9 +127,7 @@ def strip_resolver_from_oneiric_import(source: str) -> str:
         # Preserve the original leading whitespace so indented imports
         # stay indented (e.g. inside ``try:`` blocks).
         leading = line[: len(line) - len(line.lstrip())]
-        out.append(
-            f"{leading}from oneiric.core.resolution import {joined}{trailing}"
-        )
+        out.append(f"{leading}from oneiric.core.resolution import {joined}{trailing}")
     return "".join(out)
 
 
@@ -177,7 +175,7 @@ def add_resolver_facade_import(source: str) -> str:
                 in_docstring = False
                 docstring_quote = None
             continue
-        if stripped.startswith('"""') or stripped.startswith("'''"):
+        if stripped.startswith(('"""', "'''")):
             quote = '"""' if stripped.startswith('"""') else "'''"
             if stripped.count(quote) < 2:
                 in_docstring = True
@@ -284,9 +282,7 @@ def migrate_file(path: Path) -> int:
     try:
         ast.parse(new_source)
     except SyntaxError as exc:
-        raise RuntimeError(
-            f"{path}: ast.parse failed after edit: {exc}"
-        ) from exc
+        raise RuntimeError(f"{path}: ast.parse failed after edit: {exc}") from exc
 
     path.write_text(new_source)
     return len(matches)
@@ -317,9 +313,7 @@ def main() -> int:
             total_files += 1
             total_subs += n
 
-    print(
-        f"\nTotal: {total_subs} substitution(s) across {total_files} file(s)"
-    )
+    print(f"\nTotal: {total_subs} substitution(s) across {total_files} file(s)")
     if errors:
         print("\nERRORS:")
         for e in errors:

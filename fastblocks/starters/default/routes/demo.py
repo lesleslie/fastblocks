@@ -6,13 +6,12 @@ that fastblocks-ui apps use to keep server logic simple.
 
 # req: REQ-P2-B1-001, REQ-P2-B1-005
 """
+
 from __future__ import annotations
 
+from fastblocks_ui import field, text_input
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-
-from fastblocks_ui import field, text_input
-
 from fastblocks.starters.default.templates import render_template
 
 _PARTIAL_TEMPLATE = "partials/results.html"
@@ -28,9 +27,7 @@ async def demo_route(request: Request) -> HTMLResponse:
         "results": results,
     }
     if request.headers.get("HX-Request"):
-        return HTMLResponse(
-            await render_template(request, _PARTIAL_TEMPLATE, context)
-        )
+        return HTMLResponse(await render_template(request, _PARTIAL_TEMPLATE, context))
     return HTMLResponse(await render_template(request, _PAGE_TEMPLATE, context))
 
 

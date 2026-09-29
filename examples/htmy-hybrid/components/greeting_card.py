@@ -5,6 +5,7 @@ the pure-HTMY mode and the hybrid (HTMY-in-Jinja2) mode render.
 
 # req: REQ-P2-B3-002
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

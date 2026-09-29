@@ -6,6 +6,7 @@ observer, skipped under reduced-motion via the fastblocks-ui runtime).
 
 # req: REQ-P2-B2-001
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,7 +14,6 @@ from dataclasses import dataclass
 from fastblocks_ui import card, section
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-
 from templates import render_template
 
 
@@ -38,8 +38,7 @@ _FEATURES: tuple[Feature, ...] = (
 async def features_route(request: Request) -> HTMLResponse:
     """Per-feature section + cards."""
     sections_markup = "".join(
-        section(title=f.title, body=card(title=f.title, body=f.body))
-        for f in _FEATURES
+        section(title=f.title, body=card(title=f.title, body=f.body)) for f in _FEATURES
     )
     context = {"sections_markup": sections_markup}
     return HTMLResponse(await render_template(request, "features.html", context))

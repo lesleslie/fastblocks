@@ -378,7 +378,9 @@ class AdapterDiscoveryServer:
 # NOT in ``server.list_tools()`` (gate failures skip registration
 # entirely, per mcp_common contract).
 # ---------------------------------------------------------------------------
-async def fastblocks_discovery(server: FastMCP, filter_query: str | None) -> list[dict[str, Any]]:
+async def fastblocks_discovery(
+    server: FastMCP, filter_query: str | None
+) -> list[dict[str, Any]]:
     """Emit {name, capability, description, inputSchema}.
 
     Walks the server's registered tools and looks up each name in
