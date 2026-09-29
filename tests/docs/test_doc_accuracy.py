@@ -106,9 +106,14 @@ def _iter_doc_text() -> list[tuple[Path, str]]:
     skip_substrings = (
         "/archive/",
         "/baselines/",
-        "/superpowers/notes/",
-        "/superpowers/plans/",
-        "/superpowers/specs/",
+        # docs/superpowers/ holds historical plans, reports, SDD ledgers,
+        # and specs. They capture state-at-time-of-writing and frequently
+        # reference deprecated or never-shipped symbols (e.g.
+        # ``FASTBLOCKS_PORT`` from a brief-author mistake; stale coverage
+        # measurements from before the current ratchet floor). They are
+        # an audit trail, not a current-state source of truth, so the
+        # doc-accuracy scan skips the entire subtree.
+        "/superpowers/",
         "/.git/",
         "/.superpowers/",
         # ADRs document historical decisions and explicitly deleted
