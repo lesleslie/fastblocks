@@ -382,12 +382,16 @@ class TestIsHtmx:
         """Test is_htmx with scope dict."""
         result = is_htmx(scope)
 
-        # First occurrence of hx-request header wins (HTTP single-value header)
-        first_value = next(
-            (h[1] for h in scope.get("headers", []) if h[0].lower() == b"hx-request"),
+        # Last match wins — see fastblocks/htmx.py:_get_header line 179
+        # ("last match wins (HTTP convention)") and the sibling
+        # TestHtmxDetailsProperties.test_htmx_request_detection in this
+        # file. Mirrors that test's expectation on purpose: a single
+        # boolean header must not be re-asserted two different ways.
+        last_value = next(
+            (h[1] for h in reversed(scope.get("headers", [])) if h[0].lower() == b"hx-request"),
             None,
         )
-        has_htmx_header = first_value is not None and first_value.lower() == b"true"
+        has_htmx_header = last_value is not None and last_value.lower() == b"true"
         assert result == has_htmx_header
 
     @given(
