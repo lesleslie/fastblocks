@@ -67,13 +67,17 @@ from .counters import Counter
 from .errors import SentryImportError
 from .loggers import get_logger
 
+# Fallback when sentry_sdk is unavailable (slim environments without sentry_sdk).
+# Declared as Any so the try/except below can either rebind to the real module
+# or leave it as the fallback without a type-narrowing conflict.
+_sentry_sdk: t.Any = None
+
 try:
     import sentry_sdk as _sentry_sdk
 
     _SENTRY_SDK_AVAILABLE = True
     _SENTRY_SDK_IMPORT_ERROR: Exception | None = None
 except ImportError as _e:  # pragma: no cover - exercised only in slim envs
-    _sentry_sdk = None  # type: ignore[assignment]
     _SENTRY_SDK_AVAILABLE = False
     _SENTRY_SDK_IMPORT_ERROR = _e
 
@@ -201,10 +205,9 @@ def init_sentry(
     _runtime_sentry_sdk = sentry_sdk  # public alias; tests may swap this
     try:
         # The early-return guard at line 189 ensures _sentry_sdk is not
-        # None here; ty doesn't propagate the narrowing through the
-        # module-dict lookup. The try/except catches AttributeError if
-        # a test stub omits .init().
-        _runtime_sentry_sdk.init(dsn=dsn, **kwargs)  # ty: ignore[unresolved-attribute]
+        # None here. The try/except catches AttributeError if a test
+        # stub omits .init().
+        _runtime_sentry_sdk.init(dsn=dsn, **kwargs)
     except Exception as _init_exc:
         # Per Δ39-ζ: re-raise as SentryImportError with
         # reason="init_runtime_error". The original exception is
