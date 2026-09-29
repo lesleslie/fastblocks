@@ -4,7 +4,7 @@ role: implementation
 kind: plan
 date: 2026-09-27
 last_reviewed: 2026-09-28
-topic: fastblocks-phase1.5-followups
+topic: fastblocks-phase1-5-followups
 version: 1
 ---
 

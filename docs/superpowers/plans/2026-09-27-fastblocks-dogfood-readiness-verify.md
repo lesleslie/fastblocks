@@ -1,6 +1,6 @@
 ---
 status: draft
-role: verification
+role: implementation
 kind: plan
 date: 2026-09-27
 last_reviewed: 2026-09-28
@@ -353,7 +353,7 @@ Write `docs/superpowers/reports/2026-09-27-fastblocks-dogfood-readiness-verify.m
 ```markdown
 ---
 status: <draft|shipped>
-role: verification
+role: implementation
 kind: report
 date: 2026-09-27
 last_reviewed: 2026-09-28
