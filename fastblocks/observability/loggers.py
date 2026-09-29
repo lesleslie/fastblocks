@@ -27,6 +27,11 @@ from __future__ import annotations
 
 from typing import Any, cast
 
+# Fallback when structlog is unavailable (slim environments without structlog).
+# Declared as Any so the try/except below can either rebind to the real class
+# or leave it as the fallback without a type-narrowing conflict.
+BoundLogger: Any = None
+
 try:
     import structlog
     from structlog.stdlib import BoundLogger
@@ -36,7 +41,6 @@ try:
 except ImportError as _e:  # pragma: no cover - exercised only in slim envs
     _STRUCTLOG_AVAILABLE = False
     _IMPORT_ERROR = _e
-    BoundLogger = Any  # type: ignore[assignment,misc]
 
 
 def _require_structlog() -> None:
@@ -153,4 +157,4 @@ def get_logger(name: str) -> BoundLogger:
     """
     _require_structlog()
     configure_logging()
-    return cast(BoundLogger, structlog.get_logger(name))
+    return structlog.get_logger(name)
