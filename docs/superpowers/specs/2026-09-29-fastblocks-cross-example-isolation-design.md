@@ -1,12 +1,47 @@
 # FastBlocks Cross-Example Test Isolation Design
 
 **Date:** 2026-09-29
-**Status:** Pending written-spec review
+**Status:** SUPERSEDED — diagnosis corrected 2026-09-29 11:16 (see "Diagnosis Update" below). The "Solution structure" section below was based on a wrong root-cause hypothesis and the plan based on it was paused before completion (`.superpowers/sdd/2026-09-29-fastblocks-cross-example-isolation/progress.md` records the failure). The renames from Tasks 2 and 3 are staged but NOT committed; nothing has shipped. A new spec for the actual fix (template-loader isolation) will follow.
 **Repository:** `/Users/les/Projects/fastblocks`
 **Primary target:** Local HEAD `9c739c3` on `main`
 **Predecessor work:** Commits `7a0f0f3` (conftest plugin-namespace collision) and `9c739c3` (HTMX property-test alignment) already shipped.
 
-## Context
+## Diagnosis Update — 2026-09-29 11:16
+
+The original premise of this spec — that `pytest examples/` cross-example failures were caused by **Python module-name collisions** between `examples/landing/main.py` and `examples/htmy-hybrid/main.py` (and the parallel `routes/` collision) — was a misdiagnosis. The 5-task rename plan built on this premise was executed through Tasks 2 and 3; the implementer captured pytest trace evidence at Task 3 showing the actual root cause:
+
+```
+jinja2.exceptions.TemplateNotFound: 'greeting/jinja.html' not found in search path:
+  '/Users/les/Projects/fastblocks/examples/landing/templates'
+```
+
+The pollution is **Oneiric template-loader caching**, not Python module-name collision. Specifically, Oneiric's template loader maintains a process-wide cached search path. When landing's tests run first (their conftest does `monkeypatch.chdir(_EXAMPLES_LANDING)`), the template loader caches landing's `templates/` directory as the search path. When htmy-hybrid tests then run in the same pytest process, they inherit that cached search path; their test for `greeting/jinja.html` fails because that template does not exist in landing's `templates/` directory.
+
+The name-collision hypothesis was plausible from the failure count alone (6 tests fail, all in htmy-hybrid after landing tests run), but the trace refutes it. A file rename cannot fix a cached search-path state — the implementation must reach into Oneiric's runtime to reset or invalidate the cached template loader between tests, or force per-test subprocess isolation.
+
+**What the renames DO deliver (independently):**
+
+- Eliminated the `main.py` / `routes/` name-collision class of bug between the two example apps. Real hygiene win.
+- Made `examples/landing/tests/test_adapter_matrix.py:22` work (the file the plan missed — Task 2 implementer caught it and fixed it inline per Ruling 3).
+- Future example apps added to the tree cannot inherit the same collision.
+
+The renames remain staged (not committed) pending the user's choice on what to do with them. Three options were presented to the user; the user selected Option C (pause for re-specification).
+
+**Three viable fix approaches for the actual cross-example pollution (template-loader isolation), awaiting user's choice:**
+
+| Approach | Mechanism | Pros | Cons |
+|---|---|---|---|
+| **(a) pytest-xdist `force=True`** | Each test runs in its own subprocess (no shared state possible). | Most reliable; trivially correct; matches the auth-test subprocess-isolation pattern already in this codebase (`tests/websocket/test_auth.py`). | Wall-clock cost: ~200ms × N tests. Changes invocation workflow. |
+| **(b) Oneiric config reset fixture** | Autouse fixture (like `tests/conftest.py:clean_resolver`) that calls Oneiric's reset between tests. | Fast (in-process). Mirrors the existing `clean_resolver` pattern. | Requires discovering Oneiric's reset API; the field is undocumented per `tests/conftest.py:clean_resolver` docstring. May not exist publicly. |
+| **(c) Conftest-level `sys.modules` cleanup loop** | Autouse fixture in `examples/conftest.py` that removes cached Oneiric/template-loader modules between tests. | Cheap. | Brittle (relies on internal module names). Doesn't address Oneiric state held in C extensions. |
+
+**Memory feedback:** A new entry at `~/.claude/projects/-Users-les-Projects-mahavishnu/memory/feedback-read-pytest-trace-before-planning-fix.md` captures the meta-lesson: capture the actual pytest trace during RED phase, not just the failure count.
+
+**Working tree state at diagnosis update:** 11 file renames + 4 file modifications staged (from Tasks 2 and 3); no commit; HEAD `e9d2d60`; working tree otherwise clean (no untracked files). Plan paused; awaiting user's choice on the fix approach for the new spec.
+
+---
+
+## Context (ORIGINAL — DIAGNOSIS WAS WRONG, preserved for audit trail only)
 
 Cross-example invocation `pytest examples/` fails because both example apps use the same Python module name (`main`) for their FastBlocks application factory, and both use the same package name (`routes`) for their route registrations. Each example's `tests/conftest.py` does `sys.path.insert(0, _APP_ROOT)` for its own app directory; once both conftests run, whichever conftest loaded last owns the `main` slot on `sys.path`. A test that does `from main import app` returns whichever `main` got cached first, then shadowed or overwritten by subsequent registrations.
 
@@ -47,7 +82,7 @@ This design excludes:
 - Updates to historical plan docs (`docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-*.md`). These are dated implementation records; their references to `examples/landing/main.py` are accurate at the time of writing and updating them would rewrite history. They will not be touched; readers checking current state should follow the actual files.
 - User-facing changes. Confirmed by the user on 2026-09-29 that the example apps are not user-facing templates — no deprecation or migration notes required.
 
-## Solution structure
+## Solution structure (WITHDRAWN — diagnosis was wrong; do not implement)
 
 The change is a single coordinated rename across two example apps, their tests, the dependent production test, and the cosmetic comment/README updates. Per `feedback-bodai-atomic-commit-recurring-fixes.md`, the implementation lands as **ONE atomic commit** so a single `git revert` restores the entire pre-rename state and a single diff is what the reviewer reads. Splitting into "rename file", "update imports", "update docs" would create three review surfaces, three potential rollback boundaries, and a broken-intermediate window where the renames are partially applied.
 
@@ -66,7 +101,7 @@ The change is a single coordinated rename across two example apps, their tests, 
 9. **Update `examples/landing/README.md:17`** uvicorn command from `python -m uvicorn main:app` → `python -m uvicorn landing_app:app`, and any tree diagram entries that reference `main.py` / `routes/`.
 10. **Update `examples/htmy-hybrid/README.md:26,48`** uvicorn command and tree diagram entries.
 
-## Verification and integration gates
+## Verification and integration gates (WITHDRAWN — applies to the withdrawn solution above; new spec will define new gates)
 
 The implementation runs in `/Users/les/Projects/fastblocks` on local `main` at HEAD `9c739c3`. Use the existing project venv (`/Users/les/Projects/fastblocks/.venv/bin/pytest`); no new dependencies.
 
@@ -81,7 +116,7 @@ Gates (in order):
 7. **Coverage and coverage gate**: the project's coverage gate (per `[tool.pytest] addopts`) will fail on `pytest examples/` because example code isn't covered by the production test suite. Run the verification with `--no-cov` to bypass the gate for the verification commands; the committed code must still pass the gate for production tests.
 8. **Final comment audit**: `git grep -n "examples/landing/main\|examples/landing/routes\|examples/htmy-hybrid/main\|examples/htmy-hybrid/routes" -- ':!docs/superpowers/plans/'` must return zero hits (the historical plan docs are excluded per Scope).
 
-## Failure classification and safety
+## Failure classification and safety (WITHDRAWN — applies to the withdrawn solution above)
 
 Each potential regression must be classified as one of:
 
@@ -92,13 +127,13 @@ Each potential regression must be classified as one of:
 
 The implementer must NOT "fix" failures by reverting the rename or by adding `sys.modules` mutation that papers over the underlying naming. If the rename breaks a test, the test must be updated to import from the new name — that is the entire point of the change.
 
-## Rollback
+## Rollback (WITHDRAWN — applies to the withdrawn solution above)
 
 - Single-commit rollback: revert the commit with `git revert <commit-sha>`. The renames restore the original state; no data loss.
 - If the commit's test gate fails, revert immediately and re-enter design — do not amend on top of a failing gate.
 - Do not split or amend the atomic commit after partial implementation; the change is conceptually one rename, and the commit reflects that.
 
-## Acceptance criteria
+## Acceptance criteria (WITHDRAWN — replaced by new spec's acceptance criteria)
 
 - `pytest examples/` runs to completion with **0 failures** (was 2 at HEAD `9c739c3`).
 - `pytest examples/landing/tests/` passes unchanged from HEAD `9c739c3`.
@@ -113,7 +148,7 @@ The implementer must NOT "fix" failures by reverting the rename or by adding `sy
 - No `Co-Authored-By` trailer per `feedback-no-claude-code-coauthor-attribution.md`.
 - No push per `feedback-bodai-push-is-user-controlled.md` (push is user-controlled).
 
-## Integration Contract
+## Integration Contract (WITHDRAWN — applies to the withdrawn solution above)
 
 **Triggered from:** A pre-existing cross-example test failure (`pytest examples/`) at local HEAD `9c739c3`, surfaced as the second of the two follow-up tasks from the previous session.
 
@@ -125,7 +160,7 @@ The implementer must NOT "fix" failures by reverting the rename or by adding `sy
 
 **Observability added:** Pre/post `pytest` outputs in the commit message body; explicit statement that production framework code is unchanged.
 
-## Decisions captured
+## Decisions captured (HISTORICAL — predates the diagnosis update; preserved for audit trail)
 
 - Use naming-as-isolation (rename) over subprocess isolation or importlib indirection. Reasons: simplest mechanism, eliminates the underlying class of bug (generic-name collisions), no new infrastructure, future examples that copy this pattern can't reintroduce the trap.
 - Rename both `main.py` AND `routes/` per the user's explicit choice on 2026-09-29 (Option B). Half-fixing the same class of bug is worse than fixing it once.
