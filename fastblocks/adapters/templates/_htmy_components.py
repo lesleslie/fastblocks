@@ -24,6 +24,7 @@ import inspect
 import sys
 import typing as t
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from dataclasses import dataclass, field, fields, is_dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -46,14 +47,12 @@ def debug(msg: str) -> None:
 
 
 # Fallback when pydantic is unavailable (slim environments without pydantic).
-# Declared as Any so the try/except below can either rebind to the real class
+# Declared as Any so the with-block below can either rebind to the real class
 # or leave it as the fallback without a type-narrowing conflict.
 _BaseModel: t.Any = None
 
-try:
+with suppress(ImportError):
     from pydantic import BaseModel as _BaseModel
-except ImportError:
-    pass  # _BaseModel stays as the None fallback above.
 
 # Re-export under the canonical name used throughout this module so
 # downstream references (``if BaseModel:``, ``issubclass(...)``) work
