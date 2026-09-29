@@ -2,78 +2,82 @@
 
 Phase 1.1.b: ``AUTH_ENABLED`` defaults to ``True``; an explicit
 ``FASTBLOCKS_AUTH_ENABLED=false`` opt-out is the only way to disable.
+
+Phase 3.0: these tests run ``import fastblocks.websocket.auth`` in a
+fresh subprocess (same pattern as ``test_auth.py``) so the production
+behaviour is exercised in a genuine non-test process. The previous
+implementation mutated ``sys.modules`` in the parent to simulate a
+non-test process; that raced with sibling tests under xdist, per
+``conftest-sysmodules-pollution-pattern``.
 """
 
 from __future__ import annotations
 
-import importlib
+import os
+import subprocess
 import sys
 
 import pytest
 
-# This module imports fastblocks.websocket.auth, which transitively imports
-# from mcp_common.websocket (the stub provided by tests/conftest.py).
-pytestmark = [pytest.mark.unit, pytest.mark.websocket]
+# Subprocess body: import the auth module and print AUTH_ENABLED.
+# Unlike test_auth.py, AUTH_ENABLED here is set at module-load time
+# from FASTBLOCKS_AUTH_ENABLED, so a successful import is required to
+# observe the value at all.
+_IMPORT_SCRIPT = (
+    "import fastblocks.websocket.auth as m\n"
+    "print('AUTH_ENABLED:', m.AUTH_ENABLED)\n"
+)
+
+
+def _import_in_subprocess(env_overrides: dict[str, str | None]) -> subprocess.CompletedProcess:
+    """Run ``import fastblocks.websocket.auth`` in a fresh Python process.
+
+    ``PYTEST_CURRENT_TEST`` is always stripped so the guard sees a
+    non-test environment; the supplied overrides are applied on top.
+    """
+    env = {k: v for k, v in os.environ.items() if k != "PYTEST_CURRENT_TEST"}
+    for key, value in env_overrides.items():
+        if value is None:
+            env.pop(key, None)
+        else:
+            env[key] = value
+
+    return subprocess.run(
+        [sys.executable, "-c", _IMPORT_SCRIPT],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
 
 
 @pytest.mark.unit
 class TestAuthEnabledDefault:
-    # Both tests in this class mutate ``sys.modules`` to force a
-    # re-import of the auth module. Under xdist, sibling tests in
-    # the same worker may import ``fastblocks.websocket.auth``
-    # concurrently (via the conftest stub installer); the resulting
-    # race produces a ``ModuleNotFoundError``. Both tests pass
-    # deterministically when run in isolation. Mark them
-    # ``xfail(strict=False)`` so the build does not flag the xdist
-    # pollution as a production defect. See MEMORY.md
-    # ``conftest-sysmodules-pollution-pattern``.
-
-    @pytest.mark.xfail(
-        reason="xdist sys.modules pollution: passes in isolation, flaky under -n auto. See MEMORY.md conftest-sysmodules-pollution-pattern.",
-        strict=False,
-    )
-    def test_auth_enabled_defaults_to_true(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_auth_enabled_defaults_to_true(self) -> None:
         """Without ``FASTBLOCKS_AUTH_ENABLED`` set, auth must be on."""
-        monkeypatch.delenv("FASTBLOCKS_AUTH_ENABLED", raising=False)
-        monkeypatch.setenv("FASTBLOCKS_JWT_SECRET", "a-real-secret-32-bytes-long-xx")
-
-        # Drop cached auth module so the env vars re-read.
-        saved_auth = sys.modules.pop("fastblocks.websocket.auth", None)
-        saved_pkg = sys.modules.pop("fastblocks.websocket", None)
-        try:
-            mod = importlib.import_module("fastblocks.websocket.auth")
-        finally:
-            if saved_auth is not None:
-                sys.modules["fastblocks.websocket.auth"] = saved_auth
-            if saved_pkg is not None:
-                sys.modules["fastblocks.websocket"] = saved_pkg
-
-        assert mod.AUTH_ENABLED is True, (
-            "AUTH_ENABLED must default to True; the only opt-out is the "
-            "explicit FASTBLOCKS_AUTH_ENABLED=false env var."
+        result = _import_in_subprocess(
+            {
+                "FASTBLOCKS_AUTH_ENABLED": None,
+                "FASTBLOCKS_JWT_SECRET": "a-real-secret-32-bytes-long-xx",
+            }
         )
 
-    @pytest.mark.xfail(
-        reason="xdist sys.modules pollution: passes in isolation, flaky under -n auto. See MEMORY.md conftest-sysmodules-pollution-pattern.",
-        strict=False,
-    )
-    def test_auth_disabled_with_explicit_opt_out(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+        assert result.returncode == 0, (
+            f"Expected import to succeed; got returncode={result.returncode}. "
+            f"stderr={result.stderr!r}"
+        )
+        assert "AUTH_ENABLED: True" in result.stdout
+
+    def test_auth_disabled_with_explicit_opt_out(self) -> None:
         """Setting ``FASTBLOCKS_AUTH_ENABLED=false`` is the documented off-switch."""
-        monkeypatch.setenv("FASTBLOCKS_AUTH_ENABLED", "false")
-        monkeypatch.setenv("FASTBLOCKS_JWT_SECRET", "a-real-secret-32-bytes-long-xx")
+        result = _import_in_subprocess(
+            {
+                "FASTBLOCKS_AUTH_ENABLED": "false",
+                "FASTBLOCKS_JWT_SECRET": "a-real-secret-32-bytes-long-xx",
+            }
+        )
 
-        saved_auth = sys.modules.pop("fastblocks.websocket.auth", None)
-        saved_pkg = sys.modules.pop("fastblocks.websocket", None)
-        try:
-            mod = importlib.import_module("fastblocks.websocket.auth")
-        finally:
-            if saved_auth is not None:
-                sys.modules["fastblocks.websocket.auth"] = saved_auth
-            if saved_pkg is not None:
-                sys.modules["fastblocks.websocket"] = saved_pkg
-
-        assert mod.AUTH_ENABLED is False
+        assert result.returncode == 0, (
+            f"Expected import to succeed; got returncode={result.returncode}. "
+            f"stderr={result.stderr!r}"
+        )
+        assert "AUTH_ENABLED: False" in result.stdout
