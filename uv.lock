@@ -1106,7 +1106,7 @@ wheels = [
 
 [[package]]
 name = "fastblocks"
-version = "0.24.4"
+version = "0.25.0"
 source = { editable = "." }
 dependencies = [
     { name = "aioconsole" },
@@ -1197,8 +1197,8 @@ requires-dist = [
     { name = "starlette", specifier = ">=1.7.0,<2" },
     { name = "starlette-async-jinja", specifier = ">=1.15.0" },
     { name = "starlette-csrf", specifier = ">=3.0.0,<4" },
-    { name = "typer", specifier = ">=0.27.2" },
-    { name = "uvicorn", specifier = ">=0.54.0" },
+    { name = "typer", specifier = ">=0.27.2,<1" },
+    { name = "uvicorn", specifier = ">=0.54.0,<1" },
 ]
 
 [package.metadata.requires-dev]
@@ -1225,7 +1225,7 @@ dev = [
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "refurb", specifier = ">=2.3.1" },
     { name = "sentry-sdk", extras = ["opentelemetry"], specifier = ">=3.0.0a7,<3.0.0a8" },
-    { name = "structlog", specifier = ">=26.1.0" },
+    { name = "structlog", specifier = ">=26.1.0,<27" },
 ]
 images = [
     { name = "cloudinary", specifier = ">=1.46.2" },
@@ -1238,7 +1238,7 @@ observability = [
     { name = "opentelemetry-sdk", specifier = ">=1.44.0" },
     { name = "prometheus-client", specifier = ">=0.26.0" },
     { name = "sentry-sdk", extras = ["opentelemetry"], specifier = ">=3.0.0a7,<3.0.0a8" },
-    { name = "structlog", specifier = ">=26.1.0" },
+    { name = "structlog", specifier = ">=26.1.0,<27" },
 ]
 
 [[package]]
