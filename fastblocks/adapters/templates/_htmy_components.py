@@ -45,10 +45,15 @@ def debug(msg: str) -> None:
     print(f"[DEBUG] {msg}")
 
 
+# Fallback when pydantic is unavailable (slim environments without pydantic).
+# Declared as Any so the try/except below can either rebind to the real class
+# or leave it as the fallback without a type-narrowing conflict.
+_BaseModel: t.Any = None
+
 try:
     from pydantic import BaseModel as _BaseModel
 except ImportError:
-    _BaseModel = None  # type: ignore[assignment,misc]
+    pass  # _BaseModel stays as the None fallback above.
 
 # Re-export under the canonical name used throughout this module so
 # downstream references (``if BaseModel:``, ``issubclass(...)``) work
