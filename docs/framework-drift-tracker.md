@@ -4,7 +4,7 @@ role: tracking
 kind: reference
 date: 2026-09-28
 last_reviewed: 2026-09-28
-topic: framework-api-drift
+topic: framework-drift-tracker
 source: docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-build-wave.md §Appendix A
 related:
   - bd82e6b (constraint refresh commit)
