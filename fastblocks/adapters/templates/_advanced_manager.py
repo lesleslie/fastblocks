@@ -26,6 +26,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from uuid import UUID
 
+# HTMY is the companion component renderer; only needed for render_hybrid().
+from htmy import Renderer as HtmyRenderer
 from jinja2 import (
     Environment,
     StrictUndefined,
@@ -42,10 +44,6 @@ from jinja2.sandbox import SandboxedEnvironment
 # Oneiric imports
 from oneiric.core.logging import get_logger
 from fastblocks.core.resolver import FastblocksRegistry, get_resolver
-
-# HTMY is the companion component renderer; only needed for render_hybrid().
-from htmy import Component as HtmyComponent
-from htmy import Renderer as HtmyRenderer
 
 from ..oneiric_helper import register_candidate, resolve_instance
 from .jinja2 import Templates, TemplatesSettings
@@ -1037,12 +1035,9 @@ class HybridTemplatesManager:
         merged_context[component_html_key] = component_html
 
         env = self._get_template_environment()
-        try:
-            template = env.get_template(jinja_template)
-        except TemplateNotFound as exc:
-            # Re-raise unchanged; callers expect jinja2.TemplateNotFound
-            # for missing templates.
-            raise
+        # Raises jinja2.TemplateNotFound if the template is missing; callers
+        # expect this exception for missing-template handling.
+        template = env.get_template(jinja_template)
 
         return str(template.render(merged_context))
 
