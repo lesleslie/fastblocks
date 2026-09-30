@@ -2,477 +2,632 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Fix `pytest examples/` cross-example test pollution by renaming generic-name modules (`main.py`, `routes/`) in both example apps to app-specific names so they no longer collide via `sys.path` + `sys.modules`.
+**Goal:** Eliminate cross-example test pollution (`pytest examples/` → 6 failed, all in htmy-hybrid) by extending the existing rename pattern to cover the `templates/` top-level package — the third and final collision class not yet covered by Tasks 2 and 3 of the original plan. Land as ONE atomic commit combining the already-staged renames (main.py / routes/) and the new work (templates/ + 9 import-site updates + README + comment audit).
 
-**Architecture:** Naming-as-isolation. Rename `examples/<app>/main.py` → `<app>_app.py` and `examples/<app>/routes/` → `<app>_routes/`. No new infrastructure (no subprocess orchestration, no `importlib.util.spec_from_file_location`). The single change eliminates the underlying class of bug — generic module names colliding in a shared Python search space.
+**Architecture:** Naming-as-isolation. Each example app gets app-prefixed top-level packages:
+- `landing_app`, `landing_routes`, `landing_templates`
+- `htmy_hybrid_app`, `htmy_hybrid_routes`, `htmy_hybrid_templates`
 
-**Tech Stack:** Python (pytest, Starlette TestClient), FastBlocks example apps, Oneiric resolver (untouched per ADR 0008 Rule 2).
+With all three collision classes covered, `pytest examples/` finds zero `from X import Y` statements that resolve to a sibling example's package — the cross-example pollution goes away at compile time, not at test time. No new infrastructure; pure refactor.
 
-**Spec:** `docs/superpowers/specs/2026-09-29-fastblocks-cross-example-isolation-design.md` (committed at `2c9b357`)
+**Spec:** `docs/superpowers/specs/2026-09-29-fastblocks-cross-example-isolation-design.md` (superseded and re-committed at `68faa2c` with the corrected diagnosis and the extended scope).
+
+**Tech Stack:** pytest 8.x (existing), no new dependencies.
+
+**Predecessor work (already staged, NOT yet committed):**
+- Tasks 2 and 3 of the original plan: `main.py` → `landing_app.py` / `htmy_hybrid_app.py`; `routes/` → `landing_routes/` / `htmy_hybrid_routes/`
+- The associated conftest + production-test imports updated to use the new names
+- All preserved on `main` at HEAD `68faa2c` (the spec correction commit), staged but uncommitted
+
+**BASE commit:** `68faa2c`. The single atomic commit lands at HEAD `68faa2c + 1`.
+
+**WORKSPACE:** `/Users/les/Projects/fastblocks/.superpowers/sdd/2026-09-29-fastblocks-cross-example-isolation/`
 
 ## Global Constraints
 
-- Spec calls for **ONE atomic commit** containing all renames and updates. Intermediate tasks (Tasks 1-4) verify per-piece but do NOT commit. Task 5 contains the single commit step.
-- **No `Co-Authored-By` trailer** in the commit message (per `feedback-no-claude-code-coauthor-attribution.md`).
-- **No push** — push is user-controlled (per `feedback-bodai-push-is-user-controlled.md`).
-- **Production framework code is unchanged.** `fastblocks/core/resolver.py` and all other `fastblocks/core/*.py` files must be bit-for-bit identical to HEAD `9c739c3` after the commit.
-- **Historical plan docs** (`docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-*.md`) reference the old paths. They are NOT updated — they are dated implementation records; updating them rewrites history.
-- **Run pytest with `--no-cov`** for verification commands to bypass the coverage gate (the project's coverage floor of 67.81% will fail when only running the examples tree, which has minimal production coverage).
-- The project's Python interpreter is at `/Users/les/Projects/fastblocks/.venv/bin/python`; pytest at `/Users/les/Projects/fastblocks/.venv/bin/pytest`. Use the venv explicitly per `bodai-pytest-binary-cwd.md`.
-- CWD for all commands is `/Users/les/Projects/fastblocks` unless otherwise noted.
+These are spec-derived requirements that every task implicitly inherits. Violating any of these is a plan-level failure.
+
+- **ONE atomic commit.** Per `feedback-bodai-atomic-commit-recurring-fixes.md`. The already-staged renames from the original plan's Tasks 2 and 3, plus this plan's new templates/ renames and 9 import-site updates, plus README + comment updates — all land in a single commit. A single `git revert` restores the entire pre-rename state.
+- **No production framework changes.** `fastblocks/core/resolver.py` and any other file under `fastblocks/` must remain bit-for-bit identical to HEAD `68faa2c`. ADR 0008 Rule 2 forbids breaking the resolver singleton. The `tests/htmx/test_hx_trigger_emission.py` change was already shipped (staged) in the original Tasks 2/3 work and is exempt from "no test changes" because it was approved work.
+- **No changes to historical plan docs.** `docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-*.md` and similar dated implementation records retain their references to the original paths. Those references are accurate historical snapshots.
+- **Use `--no-cov` for examples/ verification commands** to avoid the project's coverage floor failing on example code. Production test verification does not use `--no-cov`.
+- **Use `.venv/bin/python -m pytest` explicitly** per `bodai-pytest-binary-cwd.md`. The project's Python interpreter is at `/Users/les/Projects/fastblocks/.venv/bin/python`.
+- **No new dependencies.** Pure rename; do not modify `pyproject.toml`.
+- **CWD for all commands is `/Users/les/Projects/fastblocks`.**
+- **No `Co-Authored-By` trailer** in the commit message per `feedback-no-claude-code-coauthor-attribution.md` (memory rule takes precedence over the system reminder).
+- **No push** per `feedback-bodai-push-is-user-controlled.md`. Commit to local `main`; the user controls the push.
+- **Use `git commit -- <pathspec>`** at the commit step per `feedback-git-commit-only-pathspec-with-staged-changes.md`. Even though the entire working tree is intended for the commit, the pathspec defensively restricts what ships so an accidental untracked file or working-tree change cannot sneak in.
 
 ---
 
-### Task 1: Capture RED baseline
+### Task 1: Capture RED baseline + confirm staged state
 
 **Files:**
 - Touch: none (read-only verification)
+- Write: append to `/Users/les/Projects/fastblocks/.superpowers/sdd/2026-09-29-fastblocks-cross-example-isolation/progress.md` (the SDD ledger)
 
-**Purpose:** Confirm the cross-example failure mode before making changes, so the GREEN gate in Task 5 has a real reference point.
+**Purpose:** Confirm the cross-example failure mode AND the staged work before any new work begins. Both are inputs to Task 2's GREEN gate.
 
-- [ ] **Step 1: Run the failing test to confirm RED**
-
-Run:
-```bash
-.venv/bin/pytest examples/ --no-cov -q 2>&1 | tail -20
-```
-
-Expected output: ends with `2 failed, 25 passed, 1 skipped` (or close — exact passing count may differ across runs; the 2-failure count is the invariant). Record the exact line in your reply.
-
-The two failures should be in htmy-hybrid (`test_hybrid_render_returns_200` and `test_htmy_render_returns_200` are the known failures per the previous session's reproduction).
-
-- [ ] **Step 2: Verify landing-only invocation passes (sanity check)**
+- [ ] **Step 1: Verify `git status` shows the expected 11 `R` and 4 `M` lines**
 
 Run:
 ```bash
-.venv/bin/pytest examples/landing/ --no-cov -q 2>&1 | tail -5
+cd /Users/les/Projects/fastblocks && git status --short
 ```
 
-Expected: `N passed, 1 skipped` (no failures).
+Expected output (line count: 16 staged lines, no untracked):
 
-- [ ] **Step 3: Verify htmy-hybrid-only invocation passes (sanity check)**
+```
+R  examples/htmy-hybrid/main.py -> examples/htmy-hybrid/htmy_hybrid_app.py
+R  examples/htmy-hybrid/routes/__init__.py -> examples/htmy-hybrid/htmy_hybrid_routes/__init__.py
+R  examples/htmy-hybrid/routes/greeting.py -> examples/htmy-hybrid/htmy_hybrid_routes/greeting.py
+M  examples/htmy-hybrid/tests/conftest.py
+R  examples/landing/main.py -> examples/landing/landing_app.py
+R  examples/landing/routes/__init__.py -> examples/landing/landing_routes/__init__.py
+R  examples/landing/routes/adapter_matrix.py -> examples/landing/landing_routes/adapter_matrix.py
+R  examples/landing/routes/demo.py -> examples/landing/landing_routes/demo.py
+R  examples/landing/routes/docs.py -> examples/landing/landing_routes/docs.py
+R  examples/landing/routes/features.py -> examples/landing/landing_routes/features.py
+R  examples/landing/routes/home.py -> examples/landing/landing_routes/home.py
+R  examples/landing/routes/install.py -> examples/landing/landing_routes/install.py
+R  examples/landing/routes/performance.py -> examples/landing/landing_routes/performance.py
+R  examples/landing/routes/security.py -> examples/landing/landing_routes/security.py
+M  examples/landing/tests/conftest.py
+M  examples/landing/tests/test_adapter_matrix.py
+M  tests/htmx/test_hx_trigger_emission.py
+```
+
+The spec doc (`docs/superpowers/specs/2026-09-29-fastblocks-cross-example-isolation-design.md`) was committed at `68faa2c` and should NOT appear in this `git status`.
+
+- [ ] **Step 2: Confirm the cross-example failure mode (6 failures)**
 
 Run:
 ```bash
-.venv/bin/pytest examples/htmy-hybrid/ --no-cov -q 2>&1 | tail -5
+cd /Users/les/Projects/fastblocks && .venv/bin/python -m pytest examples/ --no-cov 2>&1 | tail -10
 ```
 
-Expected: `M passed, 1 skipped` (no failures).
+Expected: ends with `6 failed, 20 passed, 1 skipped, 12 warnings in 10.xxs`. The 6 failures must be in `examples/htmy-hybrid/tests/`:
 
-- [ ] **Step 4: Verify the production test that imports from the example still passes**
+```
+FAILED examples/htmy-hybrid/tests/test_render_htmy.py::test_htmy_render_returns_200
+FAILED examples/htmy-hybrid/tests/test_render_htmy.py::test_htmy_render_includes_follow_button
+FAILED examples/htmy-hybrid/tests/test_render_jinja.py::test_jinja_render_returns_200
+FAILED examples/htmy-hybrid/tests/test_render_hybrid.py::test_all_three_modes_are_200
+FAILED examples/htmy-hybrid/tests/test_render_jinja.py::test_jinja_render_includes_follow_button
+FAILED examples/htmy-hybrid/tests/test_render_hybrid.py::test_all_three_modes_semantically_equivalent
+```
+
+Capture the exact failure list. Any deviation (different failure count, failure in a different file) is a STOP signal: re-investigate before proceeding.
+
+- [ ] **Step 3: Verify per-app GREEN — both apps pass when invoked individually**
 
 Run:
 ```bash
-.venv/bin/pytest tests/htmx/test_hx_trigger_emission.py --no-cov -v 2>&1 | tail -10
+cd /Users/les/Projects/fastblocks && .venv/bin/python -m pytest examples/landing/tests/ --no-cov 2>&1 | tail -3
+.venv/bin/python -m pytest examples/htmy-hybrid/tests/ --no-cov 2>&1 | tail -3
 ```
 
-Expected: `1 passed`.
+Expected: landing tests pass (16 passed, 1 skipped — same as the original Task 1 baseline). htmy-hybrid tests pass (10 passed — same as the original Task 1 baseline). This proves the already-staged renames are clean per-app.
+
+- [ ] **Step 4: Verify the production test passes (importing from renamed `landing_app`)**
+
+Run:
+```bash
+cd /Users/les/Projects/fastblocks && .venv/bin/python -m pytest tests/htmx/test_hx_trigger_emission.py --no-cov -v 2>&1 | tail -10
+```
+
+Expected: `3 passed` (per the original session's Task 1 baseline). This proves the staged `landing_app` rename + the `sys.modules` cleanup update in `tests/htmx/test_hx_trigger_emission.py` is correct.
+
+- [ ] **Step 5: Append Ruling 7 + new Task 1 status to the SDD ledger**
+
+Append to `/Users/les/Projects/fastblocks/.superpowers/sdd/2026-09-29-fastblocks-cross-example-isolation/progress.md`:
+
+```markdown
+
+### Ruling 7 (Diagnosis correction 2026-09-29 20:08)
+
+The 2026-09-29 morning's WITHDRAWN hypothesis (Oneiric template-loader caching) was wrong. Fresh trace capture at the diagnosis-update time showed the actual root cause is Python `sys.modules` package-name pollution from the top-level `templates/` package shared by both examples — exactly the original plan's hypothesis, but with one collision class missed: `templates/` in addition to the `main.py` / `routes/` collisions already addressed by the original Tasks 2 and 3.
+
+Captured trace:
+
+```
+examples/htmy-hybrid/htmy_hybrid_routes/greeting.py:103: in greeting_route
+    body = await render_jinja(request, _JINJA_TEMPLATE, {})
+examples/landing/templates/__init__.py:41: in render_template
+    return _ENVIRONMENT.get_template(name).render(merged)
+```
+
+The frame at `examples/landing/templates/__init__.py:41` proves the `_ENVIRONMENT` is landing's. The mechanism is `sys.modules` package-name pollution from the bare name `templates`, not Oneiric (which has no template loader).
+
+The original plan's renames were correct hygiene work and remain staged. The new work adds `templates/` → `landing_templates/` / `htmy_hybrid_templates/` and updates 9 import sites (8 in landing, 1 in htmy-hybrid). All renames land as ONE atomic commit per `feedback-bodai-atomic-commit-recurring-fixes.md`.
+
+Spec doc updated at commit `68faa2c`. Plan rewritten at the same commit base.
+
+### Task 1 (rerun): Capture RED baseline + confirm staged state — COMPLETE (inline by controller)
+
+**Baseline + staged state captured at HEAD `68faa2c`:**
+
+| Check | Result |
+|---|---|
+| `git status --short` | 16 staged lines (11 `R` + 5 `M`), no untracked |
+| `pytest examples/ --no-cov` | 6 failed, 20 passed, 1 skipped (matches the original Task 1 baseline; failures all in htmy-hybrid) |
+| `pytest examples/landing/tests/ --no-cov` | 16 passed, 1 skipped (matches baseline) |
+| `pytest examples/htmy-hybrid/tests/ --no-cov` | 10 passed (matches baseline) |
+| `pytest tests/htmx/test_hx_trigger_emission.py --no-cov -v` | 3 passed (matches baseline) |
+
+Reason for inline execution (paralleling Ruling 1 from the original plan): 4 read-only pytest invocations + 2 `git status` reads, no code change, no commit, no review gate. Cost if wrong: the baseline can be re-captured from this ledger entry.
+```
 
 **No commit at this task boundary** — this is a read-only baseline capture.
 
 ---
 
-### Task 2: Rename landing example
+### Task 2: Rename landing `templates/` and update 8 import sites
 
 **Files:**
-- Rename: `examples/landing/main.py` → `examples/landing/landing_app.py`
-- Rename dir: `examples/landing/routes/` → `examples/landing/landing_routes/`
-- Modify: `examples/landing/landing_app.py` (update internal `from routes` import)
-- Modify: `examples/landing/tests/conftest.py` (update import + docstring comment)
-- Modify: `tests/htmx/test_hx_trigger_emission.py` (update import + `sys.modules` cleanup)
+- Rename: `examples/landing/templates/` → `examples/landing/landing_templates/` (1 file: `__init__.py`)
+- Modify: 8 files under `examples/landing/landing_routes/`:
+  - `install.py:11`, `security.py:19`, `docs.py:11`, `features.py:17`, `home.py:15`, `performance.py:18`, `demo.py:23`, `adapter_matrix.py:56`
 
 **Interfaces:**
-- Consumes: Task 1 baseline numbers
-- Produces: `examples/landing/landing_app.py` exporting `app` and `create_app`; `examples/landing/tests/conftest.py` doing `from landing_app import app`; `tests/htmx/test_hx_trigger_emission.py` doing `from landing_app import app` with `sys.modules` cleanup for `landing_app`
+- Consumes: Task 1 baseline (landing tests currently pass per-app).
+- Produces: `examples/landing/landing_templates/__init__.py` exporting `render_template`; 8 files under `examples/landing/landing_routes/` doing `from landing_templates import render_template`. Per-app GREEN gate stays identical to baseline (16 passed, 1 skipped).
 
-- [ ] **Step 1: Rename `main.py` using git mv**
-
-Run:
-```bash
-git mv examples/landing/main.py examples/landing/landing_app.py
-```
-
-This preserves git rename detection. Verify with `git status` — should show `renamed: examples/landing/main.py -> examples/landing/landing_app.py`.
-
-- [ ] **Step 2: Update internal import in `landing_app.py`**
-
-Read `examples/landing/landing_app.py`. Find the line `from routes import register_routes` (around line 13). Replace with:
-```python
-from landing_routes import register_routes
-```
-
-Verify by reading the file: it should now import from `landing_routes`, not `routes`.
-
-- [ ] **Step 3: Rename `routes/` directory using git mv**
+- [ ] **Step 1: Rename `examples/landing/templates/` via `git mv`**
 
 Run:
 ```bash
-git mv examples/landing/routes examples/landing/landing_routes
+cd /Users/les/Projects/fastblocks && git mv examples/landing/templates examples/landing/landing_templates
+git status --short | grep -E "landing.*templates"
 ```
 
-Verify with `git status` — the directory rename is tracked as a series of file renames (`routes/__init__.py` → `landing_routes/__init__.py`, etc.).
+Expected: a new `R  examples/landing/templates -> examples/landing/landing_templates` line, plus `R  examples/landing/templates/__init__.py -> examples/landing/landing_templates/__init__.py`.
 
-- [ ] **Step 4: Update `examples/landing/tests/conftest.py`**
+- [ ] **Step 2: Update 8 import sites in `examples/landing/landing_routes/`**
 
-Edit `examples/landing/tests/conftest.py`:
-
-Change the line `from main import app as fastblocks_app` (line 25) to:
+For each of the 8 files below, change:
 ```python
-from landing_app import app as fastblocks_app
-```
-
-Also update the leading docstring comment (line 16) from:
-```python
-# Make ``main`` importable regardless of pytest's rootdir discovery —
-# the landing app lives at ``examples/landing/main.py`` and the tests
-# need to import it via ``from main import app``.
+from templates import render_template
 ```
 to:
 ```python
-# Make ``landing_app`` importable regardless of pytest's rootdir discovery —
-# the landing app lives at ``examples/landing/landing_app.py`` and the tests
-# need to import it via ``from landing_app import app``.
+from landing_templates import render_template
 ```
 
-- [ ] **Step 5: Update `tests/htmx/test_hx_trigger_emission.py`**
+| File | Line |
+|---|---|
+| `examples/landing/landing_routes/install.py` | 11 |
+| `examples/landing/landing_routes/security.py` | 19 |
+| `examples/landing/landing_routes/docs.py` | 11 |
+| `examples/landing/landing_routes/features.py` | 17 |
+| `examples/landing/landing_routes/home.py` | 15 |
+| `examples/landing/landing_routes/performance.py` | 18 |
+| `examples/landing/landing_routes/demo.py` | 23 |
+| `examples/landing/landing_routes/adapter_matrix.py` | 56 |
 
-Edit `tests/htmx/test_hx_trigger_emission.py`:
+Use the Edit tool for each file. After each Edit, run `git diff <file> | head -10` to verify only the import line changed.
 
-Change the line `from main import app` (line 42) to:
-```python
-from landing_app import app
-```
-
-Change the `sys.modules` cleanup block at lines 39-41 from:
-```python
-    for name in list(sys.modules):
-        if name == "main" or name.startswith("main."):
-            monkeypatch.delitem(sys.modules, name)
-```
-to:
-```python
-    for name in list(sys.modules):
-        if name == "landing_app" or name.startswith("landing_app."):
-            monkeypatch.delitem(sys.modules, name)
-```
-
-Also update the docstring at line 9 from:
-```
-The app is bootstrapped from ``examples/landing/main.py`` so the test
-```
-to:
-```
-The app is bootstrapped from ``examples/landing/landing_app.py`` so the test
-```
-
-- [ ] **Step 6: Verify landing-only tests pass after rename**
+- [ ] **Step 3: Verify the per-directory GREEN gate for landing**
 
 Run:
 ```bash
-.venv/bin/pytest examples/landing/ --no-cov -q 2>&1 | tail -5
+cd /Users/les/Projects/fastblocks && .venv/bin/python -m pytest examples/landing/tests/ --no-cov 2>&1 | tail -3
 ```
 
-Expected: `N passed, 1 skipped` (same N as Task 1 Step 2). If failures appear, the rename broke something — STOP and re-read the changed files; do not proceed.
+Expected: same count as baseline (16 passed, 1 skipped). Any deviation is a regression — STOP and investigate before proceeding.
 
-- [ ] **Step 7: Verify the production test still passes**
+- [ ] **Step 4: Confirm the new import resolves to the renamed package, not to anything else**
 
 Run:
 ```bash
-.venv/bin/pytest tests/htmx/test_hx_trigger_emission.py --no-cov -v 2>&1 | tail -5
+cd /Users/les/Projects/fastblocks && PYTHONPATH=examples/landing .venv/bin/python -c "
+import sys
+sys.path.insert(0, 'examples/landing')
+from landing_templates import render_template
+print('render_template from:', render_template.__code__.co_filename)
+"
 ```
 
-Expected: `1 passed`. If failure, the `sys.modules` cleanup change is wrong — re-read Step 5 and verify the prefix match handles `landing_app` and `landing_app.<submodules>`.
+Expected: `render_template from: /Users/les/Projects/fastblocks/examples/landing/landing_templates/__init__.py`. If the import resolves to a different file, STOP — the rename did not take effect.
 
-- [ ] **Step 8: Verify cross-example invocation still shows the SAME failures (no regression from this task alone)**
-
-Run:
-```bash
-.venv/bin/pytest examples/ --no-cov -q 2>&1 | tail -5
-```
-
-Expected: still `2 failed` (or similar). Landing rename alone does NOT fix cross-example — that's Task 3's job. This step confirms Task 2's changes did not regress beyond the original baseline.
-
-**No commit at this task boundary** — the rename is half done (htmy-hybrid not yet renamed). Intermediate commits would leave a broken state.
+**No commit at this task boundary** — Task 3 must complete first to enable the cross-example GREEN gate.
 
 ---
 
-### Task 3: Rename htmy-hybrid example
+### Task 3: Rename htmy-hybrid `templates/` and update 1 import site
 
 **Files:**
-- Rename: `examples/htmy-hybrid/main.py` → `examples/htmy-hybrid/htmy_hybrid_app.py`
-- Rename dir: `examples/htmy-hybrid/routes/` → `examples/htmy-hybrid/htmy_hybrid_routes/`
-- Modify: `examples/htmy-hybrid/htmy_hybrid_app.py` (update internal `from routes` import)
-- Modify: `examples/htmy-hybrid/tests/conftest.py` (update import + docstring comment)
+- Rename: `examples/htmy-hybrid/templates/` → `examples/htmy-hybrid/htmy_hybrid_templates/` (1 file: `__init__.py`)
+- Modify: 1 file `examples/htmy-hybrid/htmy_hybrid_routes/greeting.py:28`
 
 **Interfaces:**
-- Consumes: Task 2 completed state (landing renamed, verified)
-- Produces: `examples/htmy-hybrid/htmy_hybrid_app.py` exporting `app` and `create_app`; `examples/htmy-hybrid/tests/conftest.py` doing `from htmy_hybrid_app import app`
+- Consumes: Task 2 completed state (landing `templates/` renamed + 8 import sites updated).
+- Produces: `examples/htmy-hybrid/htmy_hybrid_templates/__init__.py` exporting `render_template`; `examples/htmy-hybrid/htmy_hybrid_routes/greeting.py` doing `from htmy_hybrid_templates import render_template as render_jinja`. Per-app GREEN gate stays identical to baseline (10 passed).
 
-- [ ] **Step 1: Rename `main.py` using git mv**
-
-Run:
-```bash
-git mv examples/htmy-hybrid/main.py examples/htmy-hybrid/htmy_hybrid_app.py
-```
-
-Verify with `git status`.
-
-- [ ] **Step 2: Update internal import in `htmy_hybrid_app.py`**
-
-Read `examples/htmy-hybrid/htmy_hybrid_app.py`. Find `from routes import register_routes` (around line 13). Replace with:
-```python
-from htmy_hybrid_routes import register_routes
-```
-
-- [ ] **Step 3: Rename `routes/` directory using git mv**
+- [ ] **Step 1: Rename `examples/htmy-hybrid/templates/` via `git mv`**
 
 Run:
 ```bash
-git mv examples/htmy-hybrid/routes examples/htmy-hybrid/htmy_hybrid_routes
+cd /Users/les/Projects/fastblocks && git mv examples/htmy-hybrid/templates examples/htmy-hybrid/htmy_hybrid_templates
+git status --short | grep -E "htmy-hybrid.*templates"
 ```
 
-Verify with `git status`.
+Expected: a new `R  examples/htmy-hybrid/templates -> examples/htmy-hybrid/htmy_hybrid_templates` line, plus `R  examples/htmy-hybrid/templates/__init__.py -> examples/htmy-hybrid/htmy_hybrid_templates/__init__.py`.
 
-- [ ] **Step 4: Update `examples/htmy-hybrid/tests/conftest.py`**
+- [ ] **Step 2: Update the 1 import site — `greeting.py:28`**
 
-Edit `examples/htmy-hybrid/tests/conftest.py`:
+Use the Edit tool on `examples/htmy-hybrid/htmy_hybrid_routes/greeting.py` to change:
 
-Change `from main import app as fastblocks_app` (line 25) to:
 ```python
-from htmy_hybrid_app import app as fastblocks_app
+from templates import render_template as render_jinja
 ```
 
-Update the leading docstring comment (line 16) from:
-```python
-# Make ``main`` importable regardless of pytest's rootdir discovery —
-# the htmy-hybrid app lives at ``examples/htmy-hybrid/main.py`` and the
-# tests need to import it via ``from main import app``.
-```
 to:
+
 ```python
-# Make ``htmy_hybrid_app`` importable regardless of pytest's rootdir discovery —
-# the htmy-hybrid app lives at ``examples/htmy-hybrid/htmy_hybrid_app.py`` and
-# the tests need to import it via ``from htmy_hybrid_app import app``.
+from htmy_hybrid_templates import render_template as render_jinja
 ```
 
-- [ ] **Step 5: Verify htmy-hybrid-only tests pass after rename**
+Verify with `git diff examples/htmy-hybrid/htmy_hybrid_routes/greeting.py | head -10`. Expected: a single line change.
+
+- [ ] **Step 3: Verify the per-directory GREEN gate for htmy-hybrid**
 
 Run:
 ```bash
-.venv/bin/pytest examples/htmy-hybrid/ --no-cov -q 2>&1 | tail -5
+cd /Users/les/Projects/fastblocks && .venv/bin/python -m pytest examples/htmy-hybrid/tests/ --no-cov 2>&1 | tail -3
 ```
 
-Expected: `M passed, 1 skipped` (same M as Task 1 Step 3). If failures appear, the rename broke something — STOP and re-read.
+Expected: same count as baseline (10 passed). Any deviation is a regression — STOP and investigate.
 
-- [ ] **Step 6: Verify cross-example invocation now passes (GREEN)**
+- [ ] **Step 4: Confirm the new import resolves to the renamed package AND the bare `templates` name no longer resolves**
 
 Run:
 ```bash
-.venv/bin/pytest examples/ --no-cov -q 2>&1 | tail -5
+cd /Users/les/Projects/fastblocks && PYTHONPATH=examples/htmy-hybrid .venv/bin/python -c "
+import sys
+sys.path.insert(0, 'examples/htmy-hybrid')
+from htmy_hybrid_templates import render_template
+print('render_template from:', render_template.__code__.co_filename)
+"
 ```
 
-Expected: `0 failed` (the GREEN gate — both apps now coexist cleanly). If failures remain, the renames did not fully resolve the pollution — STOP and re-investigate before proceeding to Task 4.
+Expected: `render_template from: /Users/les/Projects/fastblocks/examples/htmy-hybrid/htmy_hybrid_templates/__init__.py`.
 
-**No commit at this task boundary** — Task 4 has comment/doc updates that must land in the same commit for atomicity.
+Then verify the bare name `templates` no longer resolves (this is what was causing the original pollution):
+
+```bash
+cd /Users/les/Projects/fastblocks && PYTHONPATH=examples/htmy-hybrid .venv/bin/python -c "
+import sys
+sys.path.insert(0, 'examples/htmy-hybrid')
+try:
+    from templates import render_template
+    print('POLLUTION: still resolved to', render_template.__code__.co_filename)
+except ImportError as e:
+    print('CLEAN: ImportError raised:', e)
+"
+```
+
+Expected: `CLEAN: ImportError raised: ...` with a message indicating no module named `templates`. This confirms the rename eliminated the bare-name collision.
+
+**No commit at this task boundary** — Task 4 (cross-example verification) + Task 5 (README audit) must complete first to enable the atomic commit.
 
 ---
 
-### Task 4: Update README commands and test docstring references
+### Task 4: Cross-example GREEN gate
 
-**Files:**
-- Modify: `examples/landing/README.md` (uvicorn command line 17 + tree diagram if applicable)
-- Modify: `examples/htmy-hybrid/README.md` (uvicorn command line 26 + tree diagram entry line 48)
-- Modify: `tests/adapters/middleware/test_security_headers_boot.py` (docstring line 5)
-- Modify: `tests/adapters/middleware/test_brotli_boot.py` (docstring line 5)
-- Modify: `tests/adapters/middleware/test_csrf_boot.py` (docstring line 5)
-- Modify: `tests/adapters/templates/test_fastblocks_ui_boot.py` (docstring line 10)
+**Files:** None (verification only).
 
-**Interfaces:**
-- Consumes: Tasks 2 and 3 renames complete
-- Produces: All path references in these files use the new names; `git grep` audit returns zero stale references (excluding historical plan docs)
+**Purpose:** Verify that the cross-example pollution is now fixed. With all three collision classes addressed, `pytest examples/` should go from 6 failed → 0 failed.
 
-- [ ] **Step 1: Update `examples/landing/README.md`**
-
-Read `examples/landing/README.md` line 17. Find:
-```
-  python -m uvicorn main:app --host 127.0.0.1 --port 8001
-```
-Replace with:
-```
-  python -m uvicorn landing_app:app --host 127.0.0.1 --port 8001
-```
-
-Also update any tree-diagram entries that reference `main.py` or `routes/` (use `grep -n "main\|routes" examples/landing/README.md` to find them). The expected replacements:
-- `main.py` → `landing_app.py`
-- `routes/` → `landing_routes/` (only if the tree diagram lists it)
-
-- [ ] **Step 2: Update `examples/htmy-hybrid/README.md`**
-
-Read `examples/htmy-hybrid/README.md` lines 26 and 48. Find:
-```
-  python -m uvicorn main:app --host 127.0.0.1 --port 8002
-```
-Replace with:
-```
-  python -m uvicorn htmy_hybrid_app:app --host 127.0.0.1 --port 8002
-```
-
-Update the tree diagram entry at line 48 from `├── main.py` → `├── htmy_hybrid_app.py` and `├── routes/` → `├── htmy_hybrid_routes/`.
-
-- [ ] **Step 3: Update `tests/adapters/middleware/test_security_headers_boot.py` docstring**
-
-Read line 5. Find the docstring reference to `examples/landing/routes/adapter_matrix.py`. Update to `examples/landing/landing_routes/adapter_matrix.py`.
-
-- [ ] **Step 4: Update `tests/adapters/middleware/test_brotli_boot.py` docstring**
-
-Read line 5. Update the reference from `examples/landing/routes/adapter_matrix.py` to `examples/landing/landing_routes/adapter_matrix.py`.
-
-- [ ] **Step 5: Update `tests/adapters/middleware/test_csrf_boot.py` docstring**
-
-Read line 5. Update the reference from `examples/landing/routes/adapter_matrix.py` to `examples/landing/landing_routes/adapter_matrix.py`.
-
-- [ ] **Step 6: Update `tests/adapters/templates/test_fastblocks_ui_boot.py` docstring**
-
-Read line 10. Update the reference from `examples/landing/routes/adapter_matrix.py` to `examples/landing/landing_routes/adapter_matrix.py`.
-
-- [ ] **Step 7: Run the git grep audit**
+- [ ] **Step 1: Run `pytest examples/` and confirm 0 failures**
 
 Run:
 ```bash
-git grep -n "examples/landing/main\|examples/landing/routes\|examples/htmy-hybrid/main\|examples/htmy-hybrid/routes" -- ':!docs/superpowers/plans/'
+cd /Users/les/Projects/fastblocks && .venv/bin/python -m pytest examples/ --no-cov 2>&1 | tail -10
 ```
 
-Expected: **zero output** (no stale path references outside the excluded historical plan docs). If any line prints, STOP and fix the offending reference before proceeding to Task 5.
+Expected: ends with `26 passed, 1 skipped, 0 failures in 10.xxs` (or similar — the 6 failures must be 0). Capture the exact numbers for the commit body.
 
-- [ ] **Step 8: Run the full test suite for regression check**
+Any failure is a regression — STOP and investigate the trace before proceeding.
+
+- [ ] **Step 2: Confirm the production test still passes**
 
 Run:
 ```bash
-.venv/bin/pytest tests/ --no-cov -q 2>&1 | tail -10
+cd /Users/les/Projects/fastblocks && .venv/bin/python -m pytest tests/htmx/test_hx_trigger_emission.py --no-cov -v 2>&1 | tail -10
 ```
 
-Expected: no NEW failures vs the pre-rename baseline. The previous passing count must not decrease. If failures appear that did not exist at Task 1 baseline, STOP and re-investigate — Task 4's doc updates should not change runtime behavior, but verify before committing.
+Expected: `3 passed`. Any failure is a regression.
 
-**No commit at this task boundary** — Task 5 contains the single atomic commit step.
+- [ ] **Step 3: Confirm full-suite regression — no NEW failures**
+
+Run:
+```bash
+cd /Users/les/Projects/fastblocks && .venv/bin/python -m pytest tests/ --no-cov -m "not slow" 2>&1 | tail -10
+```
+
+Expected: passing test count is unchanged from the baseline; no NEW failures attributable to this rename. A pre-existing failure that was in the baseline is acceptable; a new failure attributable to the renames is not.
+
+**No commit at this task boundary** — Task 5 (audit + cleanup) is required before the atomic commit.
 
 ---
 
-### Task 5: Final verification + atomic commit
+### Task 5: README + comment audit + clean up stale paths
 
 **Files:**
-- Touch: `git` only — no file content changes; verify state is clean and commit.
+- Possibly `examples/landing/README.md`, `examples/htmy-hybrid/README.md` (only if they reference renamed paths).
+- Possibly `tests/adapters/middleware/test_security_headers_boot.py`, `test_brotli_boot.py`, `test_csrf_boot.py`, `tests/adapters/templates/test_fastblocks_ui_boot.py` (only if their docstrings reference renamed paths).
 
-**Interfaces:**
-- Consumes: Tasks 1-4 all complete
-- Produces: One atomic commit at HEAD on `main`; no push.
+**Purpose:** Per the original plan's Task 4, audit and update any stale references. Since the original plan's Task 4 was paused, this task combines the audit + the new plan's audit for the templates/ renames.
 
-- [ ] **Step 1: Verify git status reflects only the renames and edits**
+- [ ] **Step 1: Audit for stale path references**
 
 Run:
 ```bash
+cd /Users/les/Projects/fastblocks && git grep -nE "examples/landing/(main|routes|templates)/|examples/htmy-hybrid/(main|routes|templates)/" \
+  -- ':!docs/superpowers/plans/' \
+  ':!examples/landing/README.md' \
+  ':!examples/htmy-hybrid/README.md'
+```
+
+Expected: zero hits. Any hit is a stale reference in a non-excluded file — fix it before the commit.
+
+- [ ] **Step 2: Audit for stale import-style references**
+
+Run:
+```bash
+cd /Users/les/Projects/fastblocks && git grep -nE "from (templates|routes|main)( |\$| import)" \
+  examples/landing/ \
+  examples/htmy-hybrid/ \
+  tests/ \
+  -- ':!docs/superpowers/plans/' \
+  ':!examples/landing/README.md' \
+  ':!examples/htmy-hybrid/README.md' \
+  ':!examples/landing/landing_templates/' \
+  ':!examples/htmy-hybrid/htmy_hybrid_templates/' \
+  ':!examples/landing/landing_routes/' \
+  ':!examples/htmy-hybrid/htmy_hybrid_routes/'
+```
+
+Expected: zero hits. Any hit means a file still imports from a generic name — fix it.
+
+- [ ] **Step 3: Update READMEs (only if they reference the renamed paths)**
+
+Check each README:
+
+```bash
+cd /Users/les/Projects/fastblocks && git grep -nE "(main\.py|routes/|templates/)" \
+  examples/landing/README.md examples/htmy-hybrid/README.md
+```
+
+If the READMEs contain `from templates import`, `python -m uvicorn main:app`, or tree diagrams that show `routes/` / `templates/` / `main.py` at the top level, update them to use the new names:
+- `main.py` → `landing_app.py` (or `htmy_hybrid_app.py`)
+- `routes/` → `landing_routes/` (or `htmy_hybrid_routes/`)
+- `templates/` → `landing_templates/` (or `htmy_hybrid_templates/`)
+
+If the READMEs contain no such references (the audit returns empty), no README changes required.
+
+- [ ] **Step 4: Update docstrings in production tests (only if they reference renamed paths)**
+
+Run:
+```bash
+cd /Users/les/Projects/fastblocks && git grep -nE "examples/landing/(main|routes|templates)/" \
+  tests/adapters/middleware/test_security_headers_boot.py \
+  tests/adapters/middleware/test_brotli_boot.py \
+  tests/adapters/middleware/test_csrf_boot.py \
+  tests/adapters/templates/test_fastblocks_ui_boot.py
+```
+
+If hits appear, update the references:
+- `examples/landing/main.py` → `examples/landing/landing_app.py`
+- `examples/landing/routes/adapter_matrix.py` → `examples/landing/landing_routes/adapter_matrix.py`
+
+(No `templates/` references are expected in these test docstrings, but audit defensively.)
+
+If the audit returns empty, no docstring changes required.
+
+- [ ] **Step 5: Verify the production framework code is unchanged**
+
+Run:
+```bash
+cd /Users/les/Projects/fastblocks && git diff 68faa2c HEAD -- fastblocks/ 2>&1 | head -5
+```
+
+Expected: empty output (no production framework changes since `68faa2c`).
+
+**No commit at this task boundary** — Task 6 contains the single atomic commit step.
+
+---
+
+### Task 6: Atomic commit
+
+**Files:** All staged renames + import-site updates + README + docstring updates, combined into one commit.
+
+**Purpose:** Land the entire renames as a single atomic commit per `feedback-bodai-atomic-commit-recurring-fixes.md`.
+
+- [ ] **Step 1: Stage all unstaged changes**
+
+Run:
+```bash
+cd /Users/les/Projects/fastblocks && git add -A
 git status --short
 ```
 
-Expected: every line is either `R` (rename), `M` (modification), or empty (already staged). There should be NO `??` (untracked) lines — every file was either renamed or edited. There should be NO `D` (deletion) followed by `??` (untracked add of the same content) — `git mv` preserves rename detection.
+Expected: only `R` and `M` lines, no `??` (untracked) lines, no ` M` (working-tree-only) lines. The commit should be ready.
 
-- [ ] **Step 2: Verify production framework code is unchanged**
-
-Run:
-```bash
-git diff HEAD fastblocks/core/ | head -5
-```
-
-Expected: **empty output** (no changes in `fastblocks/core/`). This confirms ADR 0008 Rule 2 was respected.
-
-- [ ] **Step 3: Final cross-example verification**
+- [ ] **Step 2: Confirm the staged file set matches the plan**
 
 Run:
 ```bash
-.venv/bin/pytest examples/ --no-cov -q 2>&1 | tail -5
+cd /Users/les/Projects/fastblocks && git status --short
 ```
 
-Expected: `0 failed`. If any failure appears, STOP — the GREEN gate has not been achieved. Do not commit a known-broken state.
+Expected file set (count varies with README/docstring audit results):
+- 2 fresh `R` lines for the new `templates/` renames (landing + htmy-hybrid)
+- 8 `M` lines for the 8 import-site updates in landing_routes/
+- 1 `M` line for the 1 import-site update in htmy_hybrid_routes/greeting.py
+- Plus the already-staged: 8 `R` lines (original main.py + routes/ renames), 5 `M` lines (original conftests + production test + adapter_matrix test)
+- Plus any `M` lines for README / docstring updates from Task 5
 
-- [ ] **Step 4: Final full-suite regression check**
+Total: ~24 staged file changes. Exact count depends on Task 5's audit results.
+
+- [ ] **Step 3: Commit atomically with pathspec**
+
+Per `feedback-git-commit-only-pathspec-with-staged-changes.md`, the safe pattern when the index holds the working tree is to pass an explicit pathspec. The pathspec restricts the commit to the example renames + import updates + (possibly) README/docstring updates.
 
 Run:
 ```bash
-.venv/bin/pytest tests/ --no-cov -q 2>&1 | tail -10
+cd /Users/les/Projects/fastblocks && git commit \
+  -m "refactor(fastblocks): rename example top-level packages to app-specific names
+
+The cross-example pytest failure (6 failures in pytest examples/, all in
+htmy-hybrid) was caused by Python sys.modules package-name pollution
+from three shared top-level names: main.py, routes/, templates/. Two
+example apps inserting their own directory to sys.path caused whichever
+package got cached first to shadow later resolutions — most visibly
+when htmy-hybrid's greeting.py did 'from templates import
+render_template' and resolved to landing's templates/, which had its
+searchpath pointed at examples/landing/templates/ instead of
+examples/htmy-hybrid/templates/.
+
+This commit eliminates the entire collision class by app-prefixing every
+shared top-level name:
+
+  examples/landing/main.py         -> examples/landing/landing_app.py
+  examples/landing/routes/         -> examples/landing/landing_routes/
+  examples/landing/templates/      -> examples/landing/landing_templates/
+  examples/htmy-hybrid/main.py     -> examples/htmy-hybrid/htmy_hybrid_app.py
+  examples/htmy-hybrid/routes/     -> examples/htmy-hybrid/htmy_hybrid_routes/
+  examples/htmy-hybrid/templates/  -> examples/htmy-hybrid/htmy_hybrid_templates/
+
+Eight import sites in landing_routes/ and one in htmy_hybrid_routes/
+that read 'from templates import render_template' are updated to point
+at the app-prefixed packages. The conftest sys.path inserts in both
+examples remain unchanged — the renames make the bare names unique.
+
+Pre-rename  baseline: pytest examples/                  = 6 failed, 20 passed, 1 skipped
+Post-rename verified: pytest examples/                  = 0 failed
+                      pytest examples/landing/tests/   = 16 passed, 1 skipped (unchanged)
+                      pytest examples/htmy-hybrid/...  = 10 passed (unchanged)
+                      pytest tests/htmx/test_hx_trigger_emission.py = 3 passed
+                      pytest tests/ -m 'not slow'      = no NEW failures
+
+Production framework code (fastblocks/) is bit-for-bit unchanged
+(verified git diff against 68faa2c). Historical plan docs
+(docs/superpowers/plans/2026-09-27-*) are unchanged on purpose: they
+are dated implementation records.
+
+Single atomic commit per feedback-bodai-atomic-commit-recurring-fixes.md.
+No push per feedback-bodai-push-is-user-controlled.md." \
+  -- examples/ tests/htmx/ tests/adapters/middleware/ tests/adapters/templates/ examples/landing/README.md examples/htmy-hybrid/README.md
 ```
 
-Expected: no NEW failures vs Task 1 Step 4 baseline. The `test_hx_trigger_emission.py` test must still pass; the 4 docstring-updated test files must still pass; the 25-passing `tests/test_htmx_property.py` must still pass.
+The pathspec `-- examples/ tests/htmx/ tests/adapters/middleware/ tests/adapters/templates/ examples/landing/README.md examples/htmy-hybrid/README.md` captures every staged change. If Task 5 found additional files needing updates, extend the pathspec accordingly.
 
-- [ ] **Step 5: Atomic commit**
-
-Stage everything and commit in one shot:
-```bash
-git add -A
-git commit -m "$(cat <<'EOF'
-refactor(fastblocks): rename example main.py/routes/ to app-specific names
-
-Fixes cross-example test pollution (``pytest examples/`` failed with 2 of
-27 tests) by renaming generic-name modules that collided via sys.path +
-sys.modules cache.
-
-Both example apps used ``main.py`` for their FastBlocks app factory and
-``routes/`` for route registrations. Each example's conftest did
-``sys.path.insert(0, _APP_ROOT)``; whichever conftest loaded last owned
-the ``main`` slot, and ``from main import app`` returned whichever cached
-instance was first (or got shadowed).
-
-Per ADR 0008 Rule 2 the resolver singleton stays as-is. The fix is
-naming-as-isolation: rename ``main.py`` -> ``<app>_app.py`` and
-``routes/`` -> ``<app>_routes/`` in each example app. The failure mode
-for a future example that forgets the convention becomes a clear
-ImportError at import time instead of silent state pollution.
-
-Files changed:
-- examples/landing/main.py -> landing_app.py
-- examples/landing/routes/ -> landing_routes/
-- examples/htmy-hybrid/main.py -> htmy_hybrid_app.py
-- examples/htmy-hybrid/routes/ -> htmy_hybrid_routes/
-- examples/{landing,htmy-hybrid}/tests/conftest.py (imports + docstring)
-- tests/htmx/test_hx_trigger_emission.py (import + sys.modules cleanup)
-- tests/adapters/middleware/{test_security_headers_boot,
-  test_brotli_boot,test_csrf_boot}.py (docstring references)
-- tests/adapters/templates/test_fastblocks_ui_boot.py (docstring ref)
-- examples/{landing,htmy-hybrid}/README.md (uvicorn commands + tree)
-
-Production framework code (fastblocks/core/) is bit-for-bit unchanged.
-Historical plan docs (docs/superpowers/plans/2026-09-27-*) are unchanged
-on purpose: they are dated implementation records.
-
-Pre-rename baseline: pytest examples/ = 2 failed, 25 passed.
-Post-rename:        pytest examples/ = 0 failed, 25 passed.
-EOF
-)"
+Expected:
+```
+[main <new-sha>] refactor(fastblocks): rename example top-level packages to app-specific names
+ N files changed, M insertions(+), K deletions(-)
 ```
 
-The commit body uses heredoc so multi-line content is preserved. Do NOT add a `Co-Authored-By` trailer.
-
-- [ ] **Step 6: Verify commit landed and tree is clean**
+- [ ] **Step 4: Verify the commit is atomic — only intended files**
 
 Run:
 ```bash
-git log --oneline -5
-git status
+cd /Users/les/Projects/fastblocks && git log -1 --stat | head -50
+git status --short
 ```
 
 Expected:
-- The new commit is HEAD with the subject `refactor(fastblocks): rename example main.py/routes/ to app-specific names`.
-- `git status` shows `nothing to commit, working tree clean`.
-- The new commit sits on top of `2c9b357` (the spec doc commit) on `main`.
+- `git log -1 --stat` shows the new commit with exactly the renamed + modified files for the example apps + (potentially) the production tests + READMEs. No production framework files.
+- `git status --short` is empty (clean) — no uncommitted changes.
 
-- [ ] **Step 7: Final gate — confirm GREEN one more time after commit**
+---
+
+### Task 7: Final verification + SDD ledger closure
+
+**Files:**
+- Append to `/Users/les/Projects/fastblocks/.superpowers/sdd/2026-09-29-fastblocks-cross-example-isolation/progress.md`
+
+**Purpose:** Re-verify the GREEN gate post-commit and close the SDD ledger.
+
+- [ ] **Step 1: Re-run the cross-example GREEN gate post-commit**
 
 Run:
 ```bash
-.venv/bin/pytest examples/ --no-cov -q 2>&1 | tail -5
+cd /Users/les/Projects/fastblocks && .venv/bin/python -m pytest examples/ --no-cov 2>&1 | tail -5
 ```
 
-Expected: `0 failed` (post-commit state still green).
+Expected: 0 failures. Confirms the post-commit state matches Task 4's GREEN gate.
 
-**STOP here. Do not push.** Push is user-controlled per `feedback-bodai-push-is-user-controlled.md`. Report the commit SHA and verification results to the user; they will push when ready.
+- [ ] **Step 2: Verify the commit is reachable and atomic**
+
+Run:
+```bash
+cd /Users/les/Projects/fastblocks && git log --oneline -5
+git show --stat HEAD | head -20
+```
+
+Expected:
+- `git log --oneline -5` shows the new atomic commit at HEAD, sitting on top of `68faa2c`.
+- `git show --stat HEAD` shows all renames + import updates + (potentially) README/docstring updates in one commit. No `fastblocks/` files.
+
+- [ ] **Step 3: Append completion entries to the SDD ledger**
+
+Append to `/Users/les/Projects/fastblocks/.superpowers/sdd/2026-09-29-fastblocks-cross-example-isolation/progress.md`:
+
+```markdown
+
+### Task 2 (extended): Rename landing templates/ + 8 import-site updates — IMPLEMENTER DONE
+### Task 3 (extended): Rename htmy-hybrid templates/ + 1 import-site update — IMPLEMENTER DONE
+### Task 4: Cross-example GREEN gate — VERIFIED (0 failed)
+### Task 5: README + comment audit — VERIFIED (see report)
+### Task 6: Atomic commit — VERIFIED (commit at <new-sha>)
+### Task 7: Final verification — VERIFIED
+
+PLAN COMPLETE. Acceptance criteria met:
+- pytest examples/                          = 0 failed (was 6 failed)
+- pytest examples/landing/tests/            = 16 passed, 1 skipped (unchanged)
+- pytest examples/htmy-hybrid/tests/        = 10 passed (unchanged)
+- pytest tests/htmx/test_hx_trigger_emission.py = 3 passed (unchanged)
+- pytest tests/ -m 'not slow'               = no NEW failures
+- git grep audit                            = no stale references
+- production framework code                 = unchanged
+- single atomic commit                      = yes (per feedback-bodai-atomic-commit-recurring-fixes.md)
+```
+
+---
+
+## Pre-flight scan
+
+| Pair / item | What one produces | What the other consumes | Verdict |
+|---|---|---|---|
+| Task 2 ↔ Task 3 | Task 2 renames `examples/landing/templates/` + 8 imports | Task 3 renames `examples/htmy-hybrid/templates/` + 1 import | Clean — disjoint file sets |
+| Task 2 ↔ Task 4 | Task 2 updates 8 landing imports | Task 4 verifies `pytest examples/` GREEN | Clean — Task 4's verification depends on Task 2's renames being correct |
+| Task 3 ↔ Task 4 | Task 3 updates 1 htmy-hybrid import | Task 4 verifies `pytest examples/` GREEN | Clean |
+| Task 4 ↔ Task 5 | Task 4 confirms GREEN gate | Task 5 audits and updates stale references | Clean — Task 5 is post-GREEN cleanup, no functional change |
+| Task 5 ↔ Task 6 | Task 5 may update README or docstring files | Task 6 commits atomically | Clean — pathspec defensively restricts commit |
+| Task 6 ↔ Global Constraints "production framework unchanged" | Task 6 commit must not include `fastblocks/` | Conflict if implementer accidentally adds `fastblocks/` files | Clean — pathspec excludes `fastblocks/` (not in the pathspec list) |
+| Task 6 ↔ Global Constraints "single atomic commit" | Already-staged renames from original Tasks 2/3 + new templates/ work | Combined commit | Clean — single commit per plan |
+| Task 1 ↔ Global Constraints "no commit at task boundary" | Task 1 is read-only baseline capture | Conflict if implementer accidentally commits | Clean — Task 1 explicitly states no commit |
+| Task 6 Step 3 pathspec ↔ feedback-git-commit-only-pathspec-with-staged-changes | The `//- <pathspec>` form limits commit to intended scope | The commit must capture all intended files | Clean — pathspec includes all expected directories |
+| Task 7 ↔ Task 6 | Task 7 re-verifies GREEN post-commit | Task 6 commits | Clean — re-verification after commit confirms stability |
+| Pre-flight cross-cutting: the original Tasks 2/3 work | main.py + routes/ renames + conftest + production test updates | The new tasks extend with templates/ renames + 9 import-site updates | Clean — same naming pattern, same atomicity |
+
+Scan: clean. No rulings needed before execution.
+
+---
+
+## Decisions captured (binding for execution)
+
+- **Extend the original rename plan, not replace it.** Tasks 2 and 3 of the original plan already shipped (staged) two collision classes. This plan adds the third (`templates/`) and atomically with the staged set.
+- **One atomic commit** combining already-staged renames + new templates/ renames + 9 import-site updates + (potentially) README/docstring updates. Per `feedback-bodai-atomic-commit-recurring-fixes.md`.
+- **`git commit -- <pathspec>`** at the commit step per `feedback-git-commit-only-pathspec-with-staged-changes.md`. The pathspec defensively restricts what ships.
+- **No production framework changes** (verified by `git diff 68faa2c HEAD -- fastblocks/` post-commit). ADR 0008 Rule 2.
+- **No README rewrites** unless the READMEs contain stale references (Task 5 audit determines).
+- **No push.** User controls the push per `feedback-bodai-push-is-user-controlled.md`.
+- **No `Co-Authored-By` trailer** per `feedback-no-claude-code-coauthor-attribution.md`.
+- **Inline Task 1** (baseline capture) per Ruling 1 from the original plan: 4 read-only pytest invocations + git status reads, no code change, no commit, no review gate.
 
 ---
 
@@ -482,25 +637,19 @@ Expected: `0 failed` (post-commit state still green).
 
 | Spec requirement | Plan task |
 |---|---|
-| Rename `examples/landing/main.py` → `landing_app.py` | Task 2 Step 1 |
-| Update internal `routes` import | Task 2 Step 2 |
-| Rename `examples/landing/routes/` → `landing_routes/` | Task 2 Step 3 |
-| Update landing conftest import + docstring | Task 2 Step 4 |
-| Update `test_hx_trigger_emission.py` import + `sys.modules` | Task 2 Step 5 |
-| Rename `examples/htmy-hybrid/main.py` → `htmy_hybrid_app.py` | Task 3 Step 1 |
-| Update internal `routes` import | Task 3 Step 2 |
-| Rename `examples/htmy-hybrid/routes/` → `htmy_hybrid_routes/` | Task 3 Step 3 |
-| Update htmy-hybrid conftest import + docstring | Task 3 Step 4 |
-| Update landing README | Task 4 Step 1 |
-| Update htmy-hybrid README | Task 4 Step 2 |
-| Update 4 production test docstrings | Task 4 Steps 3-6 |
-| `git grep` audit gate | Task 4 Step 7 |
-| Full suite regression check | Task 4 Step 8 + Task 5 Step 4 |
-| Production framework unchanged gate | Task 5 Step 2 |
-| Single atomic commit | Task 5 Step 5 |
-| No `Co-Authored-By` trailer | Task 5 Step 5 (explicit in commit body) |
-| No push | Task 5 Step 7 (explicit STOP) |
-| Skip historical plan docs | Global Constraints + each task's exclude |
+| Rename `examples/landing/templates/` → `landing_templates/` | Task 2 Step 1 |
+| Update 8 landing import sites | Task 2 Step 2 |
+| Rename `examples/htmy-hybrid/templates/` → `htmy_hybrid_templates/` | Task 3 Step 1 |
+| Update 1 htmy-hybrid import site | Task 3 Step 2 |
+| Cross-example GREEN gate (0 failed) | Task 4 Step 1 |
+| Production test still passes | Task 4 Step 2 |
+| Full suite regression check | Task 4 Step 3 |
+| README + comment audit | Task 5 Steps 1-4 |
+| Production framework unchanged gate | Task 5 Step 5 |
+| Single atomic commit (already-staged + new) | Task 6 |
+| No `Co-Authored-By` trailer | Task 6 Step 3 (explicit in commit body) |
+| No push | Task 7 (explicit STOP) |
+| Skip historical plan docs | Global Constraints + every task's exclude |
 | Coverage gate workaround (`--no-cov`) | Global Constraints + every verification command |
 
 All spec requirements covered.
@@ -508,12 +657,11 @@ All spec requirements covered.
 **Placeholder scan:** No "TBD", "TODO", "implement later", or "add appropriate" patterns. Each step has explicit commands or code blocks.
 
 **Type / name consistency:**
-- `landing_app` used consistently across Task 2 (steps 1, 2, 4, 5) and Task 5 commit body.
-- `landing_routes` used consistently in Task 2 (steps 2, 3).
-- `htmy_hybrid_app` used consistently in Task 3 (steps 1, 2, 4) and Task 5 commit body.
-- `htmy_hybrid_routes` used consistently in Task 3 (steps 2, 3).
-- `sys.modules` cleanup pattern consistent: `name == "X" or name.startswith("X.")`.
+- `landing_templates` used consistently across Task 2 (Steps 1, 2, 4).
+- `htmy_hybrid_templates` used consistently across Task 3 (Steps 1, 2, 4).
+- `landing_app`, `htmy_hybrid_app`, `landing_routes`, `htmy_hybrid_routes` (from the original Tasks 2/3 work) used consistently throughout.
+- Pathspec `examples/landing/templates/` → `examples/landing/landing_templates/` mapping is exact and matches the import-site updates.
 
-**Interface contract clarity:** Each task's "Interfaces" block names the exact symbol the next task expects (e.g. Task 2 produces `landing_app.py` exporting `app` and `create_app`; Task 3 doesn't depend on those symbols but on Task 2 being complete).
+**Interface contract clarity:** Each task's "Interfaces" block names the exact symbol the next task expects (e.g. Task 2 produces `landing_templates/__init__.py` exporting `render_template`; Task 3 doesn't depend on those symbols but on Task 2 being complete).
 
 No inconsistencies found. Plan is ready for execution.
