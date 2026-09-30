@@ -1,177 +1,178 @@
 # FastBlocks Cross-Example Test Isolation Design
 
 **Date:** 2026-09-29
-**Status:** SUPERSEDED — diagnosis corrected 2026-09-29 11:16 (see "Diagnosis Update" below). The "Solution structure" section below was based on a wrong root-cause hypothesis and the plan based on it was paused before completion (`.superpowers/sdd/2026-09-29-fastblocks-cross-example-isolation/progress.md` records the failure). The renames from Tasks 2 and 3 are staged but NOT committed; nothing has shipped. A new spec for the actual fix (template-loader isolation) will follow.
+**Status:** ACTIVE — diagnosis verified 2026-09-29 20:08, design scope extended to include `templates/` renames. Tasks 2 and 3 of the original plan (`main.py` / `routes/` renames) are already staged but uncommitted; the new work extends the staged set. Single atomic commit per `feedback-bodai-atomic-commit-recurring-fixes.md`.
 **Repository:** `/Users/les/Projects/fastblocks`
-**Primary target:** Local HEAD `9c739c3` on `main`
-**Predecessor work:** Commits `7a0f0f3` (conftest plugin-namespace collision) and `9c739c3` (HTMX property-test alignment) already shipped.
+**Primary target:** Local `main` (HEAD `db5db9e` after the diagnosis-update commit; final commit lands at HEAD `db5db9e + 1`)
 
-## Diagnosis Update — 2026-09-29 11:16
+## Diagnosis (verified 2026-09-29 20:08)
 
-The original premise of this spec — that `pytest examples/` cross-example failures were caused by **Python module-name collisions** between `examples/landing/main.py` and `examples/htmy-hybrid/main.py` (and the parallel `routes/` collision) — was a misdiagnosis. The 5-task rename plan built on this premise was executed through Tasks 2 and 3; the implementer captured pytest trace evidence at Task 3 showing the actual root cause:
+`pytest examples/` produces 6 failures, all in `examples/htmy-hybrid/tests/`. The pollution source is **Python `sys.modules` package-name collisions** between the two example apps. Both apps share top-level module names that pytest's `sys.path.insert(0, _APP_ROOT)` in each `conftest.py` puts on `sys.path`. When pytest collects both apps in one session:
+
+1. landing's `conftest.py` inserts `examples/landing/` to `sys.path` and the test bodies import landing's app
+2. htmy-hybrid's `conftest.py` inserts `examples/htmy-hybrid/` to `sys.path` and the test bodies import htmy-hybrid's app
+3. Python's import cache (`sys.modules`) does not get cleared between tests — once a bare name like `templates` is resolved, it stays resolved
+4. When htmy-hybrid's `greeting.py` runs `from templates import render_template as render_jinja`, Python returns whichever `templates` module was cached FIRST — landing's — even though htmy-hybrid is the calling app
+
+Captured trace from the live failure:
 
 ```
-jinja2.exceptions.TemplateNotFound: 'greeting/jinja.html' not found in search path:
-  '/Users/les/Projects/fastblocks/examples/landing/templates'
+examples/htmy-hybrid/htmy_hybrid_routes/greeting.py:103: in greeting_route
+    body = await render_jinja(request, _JINJA_TEMPLATE, {})
+examples/landing/templates/__init__.py:41: in render_template
+    return _ENVIRONMENT.get_template(name).render(merged)
 ```
 
-The pollution is **Oneiric template-loader caching**, not Python module-name collision. Specifically, Oneiric's template loader maintains a process-wide cached search path. When landing's tests run first (their conftest does `monkeypatch.chdir(_EXAMPLES_LANDING)`), the template loader caches landing's `templates/` directory as the search path. When htmy-hybrid tests then run in the same pytest process, they inherit that cached search path; their test for `greeting/jinja.html` fails because that template does not exist in landing's `templates/` directory.
+The frame `examples/landing/templates/__init__.py:41` proves that the `_ENVIRONMENT` being used is landing's. The HTMY-hybrid test is rendering through landing's Jinja2 Environment, which is pointed at `examples/landing/templates/` and therefore cannot find `greeting/jinja.html` (which lives in `examples/htmy-hybrid/templates/`).
 
-The name-collision hypothesis was plausible from the failure count alone (6 tests fail, all in htmy-hybrid after landing tests run), but the trace refutes it. A file rename cannot fix a cached search-path state — the implementation must reach into Oneiric's runtime to reset or invalidate the cached template loader between tests, or force per-test subprocess isolation.
+Three collision classes exist in the examples directory:
 
-**What the renames DO deliver (independently):**
+| Top-level name | Status before fix | Fix |
+|---|---|---|
+| `main.py` / `app.py` | Already renamed to `landing_app.py` / `htmy_hybrid_app.py` (staged in Tasks 2/3 of the original plan). | Already staged. |
+| `routes/` | Already renamed to `landing_routes/` / `htmy_hybrid_routes/` (staged in Tasks 2/3 of the original plan). | Already staged. |
+| **`templates/`** | **NOT YET renamed** — the active pollution source. | This design. |
 
-- Eliminated the `main.py` / `routes/` name-collision class of bug between the two example apps. Real hygiene win.
-- Made `examples/landing/tests/test_adapter_matrix.py:22` work (the file the plan missed — Task 2 implementer caught it and fixed it inline per Ruling 3).
-- Future example apps added to the tree cannot inherit the same collision.
+The original 5-task plan was correct in approach and 90% complete in execution (Tasks 2 and 3 already shipped the renames that fixed two collision classes; only `templates/` remained). The plan was paused before Tasks 4 and 5 because the implementer misread a trace frame and concluded the pollution was Oneiric template-loader caching. That conclusion was wrong: Oneiric has no template loader, and the actual cause was always `sys.modules` package-name collision. The 9-file rename plan is extended to include `templates/`, and the work lands as one atomic commit alongside the already-staged renames.
 
-The renames remain staged (not committed) pending the user's choice on what to do with them. Three options were presented to the user; the user selected Option C (pause for re-specification).
-
-**Three viable fix approaches for the actual cross-example pollution (template-loader isolation), awaiting user's choice:**
-
-| Approach | Mechanism | Pros | Cons |
-|---|---|---|---|
-| **(a) pytest-xdist `force=True`** | Each test runs in its own subprocess (no shared state possible). | Most reliable; trivially correct; matches the auth-test subprocess-isolation pattern already in this codebase (`tests/websocket/test_auth.py`). | Wall-clock cost: ~200ms × N tests. Changes invocation workflow. |
-| **(b) Oneiric config reset fixture** | Autouse fixture (like `tests/conftest.py:clean_resolver`) that calls Oneiric's reset between tests. | Fast (in-process). Mirrors the existing `clean_resolver` pattern. | Requires discovering Oneiric's reset API; the field is undocumented per `tests/conftest.py:clean_resolver` docstring. May not exist publicly. |
-| **(c) Conftest-level `sys.modules` cleanup loop** | Autouse fixture in `examples/conftest.py` that removes cached Oneiric/template-loader modules between tests. | Cheap. | Brittle (relies on internal module names). Doesn't address Oneiric state held in C extensions. |
-
-**Memory feedback:** A new entry at `~/.claude/projects/-Users-les-Projects-mahavishnu/memory/feedback-read-pytest-trace-before-planning-fix.md` captures the meta-lesson: capture the actual pytest trace during RED phase, not just the failure count.
-
-**Working tree state at diagnosis update:** 11 file renames + 4 file modifications staged (from Tasks 2 and 3); no commit; HEAD `e9d2d60`; working tree otherwise clean (no untracked files). Plan paused; awaiting user's choice on the fix approach for the new spec.
-
----
-
-## Context (ORIGINAL — DIAGNOSIS WAS WRONG, preserved for audit trail only)
-
-Cross-example invocation `pytest examples/` fails because both example apps use the same Python module name (`main`) for their FastBlocks application factory, and both use the same package name (`routes`) for their route registrations. Each example's `tests/conftest.py` does `sys.path.insert(0, _APP_ROOT)` for its own app directory; once both conftests run, whichever conftest loaded last owns the `main` slot on `sys.path`. A test that does `from main import app` returns whichever `main` got cached first, then shadowed or overwritten by subsequent registrations.
-
-The current failure mode at local HEAD `9c739c3`:
-
-- `pytest examples/landing/` — **passes** (no second example present to collide with).
-- `pytest examples/htmy-hybrid/` — **passes** (same, in isolation).
-- `pytest examples/` — **fails**: 2 of 27 tests fail; the htmy-hybrid render tests fail because the resolver state accumulated by the landing tests pollutes the htmy-hybrid app's lookup, and the `main` module-cache shadowing means htmy-hybrid's `app` may resolve to landing's instance.
-
-The previous session (commits `7a0f0f3` and the reclassified work) addressed the *plugin-namespace* collision (two `conftest.py` files with the same Python module name) by dropping `examples/htmy-hybrid/tests/__init__.py`. That fix preserved `pytest -p no:cacheprovider examples/*/tests/ --collect-only` but did not address the deeper module-name collision that surfaces only when both apps are loaded into the same process.
-
-A function-scope `clean_resolver` autouse fixture (the pattern in `tests/conftest.py:451-488`) was tried first as a faster fix. It regressed the suite to **7 failures** instead of 2: landing tests register routes via `FastBlocks()` at app-construction time, and a per-test resolver reset wipes those registrations before the test can dispatch. The main test suite works under the same `clean_resolver` pattern because its unit tests do not depend on route registrations surviving across tests — example apps are integration-style and do. **Lesson**: per-test reset is the wrong granularity for these tests.
-
-This design uses naming-as-isolation: rename the colliding source files to non-colliding, app-specific names. No new infrastructure (no subprocess orchestration, no `importlib.util.spec_from_file_location` indirection), no FastBlocks framework change, and the failure mode becomes "I get a clear ImportError" if a future example forgets the convention.
+`★ Insight ─────────────────────────────────────`
+- **Naming-as-isolation works at any scale**: the same fix that eliminated the `main.py` / `routes/` collision class works for `templates/`. The pattern is generic — any pair of apps that puts generic top-level packages on `sys.path` will collide. Naming that ends with the app-name eliminates the collision at compile time, not at test time.
+- **The `templates` collision is special**: it surfaces only in tests that render templates through a `from templates import` statement. Pure-import handlers and pure-FastBlocks handlers are immune. That's why landing's tests pass (landing's routes use `from templates import render_template` but landing IS the first-loaded app, so its `templates` resolves correctly) while htmy-hybrid's tests fail (htmy-hybrid's `from templates import` resolves to landing's `templates`, which has the wrong searchpath).
+- **Renames are atomic with the imports they break**: a rename without the corresponding import-site update produces `ImportError` at test collection. The renames and the 9 import-site updates must ship together. The new work extends the already-staged atomic set.
+`─────────────────────────────────────────────────`
 
 ## Scope
 
-This design renames four module names in two example apps and updates the references those renames break. It includes:
+This design extends the original rename plan to include `templates/` directories and the import statements that depend on them. The complete file set (combined with already-staged renames from Tasks 2 and 3 of the original plan):
 
-- Renaming `examples/landing/main.py` → `examples/landing/landing_app.py`.
-- Renaming `examples/landing/routes/` → `examples/landing/landing_routes/` (the package directory and its `__init__.py`).
-- Renaming `examples/htmy-hybrid/main.py` → `examples/htmy-hybrid/htmy_hybrid_app.py`.
-- Renaming `examples/htmy-hybrid/routes/` → `examples/htmy-hybrid/htmy_hybrid_routes/`.
-- Updating the in-example import in each `*_app.py` (`from routes import register_routes` → `from landing_routes import register_routes` / `from htmy_hybrid_routes import register_routes`).
-- Updating `examples/landing/tests/conftest.py` (`from main import app` → `from landing_app import app`).
-- Updating `examples/htmy-hybrid/tests/conftest.py` (`from main import app` → `from htmy_hybrid_app import app`).
-- Updating `tests/htmx/test_hx_trigger_emission.py:42` (production test that imports from the example): `from main import app` → `from landing_app import app`, plus the matching `sys.modules` cleanup at line 40 (currently `if name == "main" or name.startswith("main.")` → handle `landing_app` instead).
-- Updating path references in docstrings/comments of 4 production tests (`tests/adapters/middleware/test_security_headers_boot.py:5`, `test_brotli_boot.py:5`, `test_csrf_boot.py:5`, `tests/adapters/templates/test_fastblocks_ui_boot.py:10`). These reference `examples/landing/routes/adapter_matrix.py` in comments only; updates are cosmetic.
-- Updating `examples/landing/README.md:17` and `examples/htmy-hybrid/README.md:26,48` (uvicorn commands and tree diagrams).
+### Already staged (Tasks 2 and 3 of the original plan)
+
+1. `examples/landing/main.py` → `examples/landing/landing_app.py` (already staged)
+2. `examples/landing/routes/` → `examples/landing/landing_routes/` (already staged)
+3. `examples/htmy-hybrid/main.py` → `examples/htmy-hybrid/htmy_hybrid_app.py` (already staged)
+4. `examples/htmy-hybrid/routes/` → `examples/htmy-hybrid/htmy_hybrid_routes/` (already staged)
+6. `examples/landing/tests/conftest.py` already updated to import from `landing_app` (already staged)
+7. `examples/htmy-hybrid/tests/conftest.py` already updated to import from `htmy_hybrid_app` (already staged)
+8. `tests/htmx/test_hx_trigger_emission.py` already updated for the `landing_app` import (already staged)
+
+### New work in this design
+
+9. **Rename `examples/landing/templates/` → `examples/landing/landing_templates/`** (directory rename; git tracks the contents).
+10. **Rename `examples/htmy-hybrid/templates/` → `examples/htmy-hybrid/htmy_hybrid_templates/`** (directory rename).
+11. **Update 8 import sites in `examples/landing/landing_routes/`** that read `from templates import render_template`:
+    - `landing_routes/install.py:11`
+    - `landing_routes/security.py:19`
+    - `landing_routes/docs.py:11`
+    - `landing_routes/features.py:17`
+    - `landing_routes/home.py:15`
+    - `landing_routes/performance.py:18`
+    - `landing_routes/demo.py:23`
+    - `landing_routes/adapter_matrix.py:56`
+    Each becomes `from landing_templates import render_template`.
+12. **Update 1 import site in `examples/htmy-hybrid/htmy_hybrid_routes/`** that reads `from templates import render_template as render_jinja`:
+    - `htmy_hybrid_routes/greeting.py:28`
+    Becomes `from htmy_hybrid_templates import render_template as render_jinja`.
+13. **Update `examples/landing/README.md`** if it references `templates/` paths or `from templates` in code blocks (audit during execution).
+15. **Update `examples/htmy-hybrid/README.md`** similarly.
 
 This design excludes:
 
-- A `examples/conftest.py` with `clean_resolver` autouse fixture. Tried and rejected (regression to 7 failures; see Context).
-- A `pytest-xdist`-based subprocess-per-example workflow. Adds ~200 ms × N orchestration cost; the issue is naming, not isolation topology.
-- An `importlib.util.spec_from_file_location` indirection in each conftest. Adds indirection that hides the underlying problem (generic names should be eliminated, not papered over).
-- Changes to `fastblocks/core/resolver.py` or any other production framework code. ADR 0008 Rule 2 forbids breaking the resolver singleton, and the framework is not the problem — the example names are.
-- Renaming other generic module names that may exist elsewhere in the examples tree (none found in scope).
-- Updates to historical plan docs (`docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-*.md`). These are dated implementation records; their references to `examples/landing/main.py` are accurate at the time of writing and updating them would rewrite history. They will not be touched; readers checking current state should follow the actual files.
-- User-facing changes. Confirmed by the user on 2026-09-29 that the example apps are not user-facing templates — no deprecation or migration notes required.
+- Re-execution of Tasks 2 and 3 of the original plan. Already staged, already reviewed, just need to land atomically with the new work.
+- Any change to `fastblocks/core/resolver.py` or other production framework code.
+- Renaming `adapters/`, `components/`, `settings/`, `tests/` — these names do not currently cause `from x import y` collisions in the example apps' code paths (audit found 0 such imports).
+- A `examples/conftest.py` with autouse fixture for `sys.modules` cleanup. Brittle and unnecessary: the renames eliminate the entire collision class, so cleanup is not needed.
+- `pytest-xdist --force=True` subprocess isolation. Adds ~200ms × N wall-clock cost for a problem that is now solved at the design level.
+- Updates to historical plan docs.
 
-## Solution structure (WITHDRAWN — diagnosis was wrong; do not implement)
+## Solution structure
 
-The change is a single coordinated rename across two example apps, their tests, the dependent production test, and the cosmetic comment/README updates. Per `feedback-bodai-atomic-commit-recurring-fixes.md`, the implementation lands as **ONE atomic commit** so a single `git revert` restores the entire pre-rename state and a single diff is what the reviewer reads. Splitting into "rename file", "update imports", "update docs" would create three review surfaces, three potential rollback boundaries, and a broken-intermediate window where the renames are partially applied.
+The change is a single coordinated rename across the two example apps, the import sites that depend on the renamed packages, and the README references that demonstrate the new structure. Per `feedback-bodai-atomic-commit-recurring-fixes.md`, the implementation lands as **ONE atomic commit** combining the already-staged renames (main.py / routes/) and the new work (templates/). A single `git revert` restores the entire pre-rename state.
 
-**Commit message subject:** `refactor(fastblocks): rename example main.py/routes/ to app-specific names`
+**Commit message subject:** `refactor(fastblocks): rename example top-level packages to app-specific names`
 
-**The commit contains the following file changes, applied as a single coordinated edit:**
+**The commit combines:**
 
-1. **Rename `examples/landing/main.py` → `examples/landing/landing_app.py`.** Update its internal `from routes import register_routes` → `from landing_routes import register_routes`.
-2. **Rename `examples/landing/routes/` → `examples/landing/landing_routes/`** (directory rename; git tracks the contents).
-3. **Rename `examples/htmy-hybrid/main.py` → `examples/htmy-hybrid/htmy_hybrid_app.py`.** Update its internal `from routes import register_routes` → `from htmy_hybrid_routes import register_routes`.
-4. **Rename `examples/htmy-hybrid/routes/` → `examples/htmy-hybrid/htmy_hybrid_routes/`** (directory rename).
-5. **Update `examples/landing/tests/conftest.py`:** `from main import app` → `from landing_app import app`; update the leading docstring comment that says "the tests need to import it via `from main import app`."
-6. **Update `examples/htmy-hybrid/tests/conftest.py`:** `from main import app` → `from htmy_hybrid_app import app`; update the leading docstring comment.
-7. **Update `tests/htmx/test_hx_trigger_emission.py:42`** (production test): `from main import app` → `from landing_app import app`; update the `sys.modules` cleanup at lines 39-41 from `name == "main"` to `name == "landing_app"` (and equivalent prefix check).
-8. **Update path references in docstring comments** of `tests/adapters/middleware/test_security_headers_boot.py:5`, `test_brotli_boot.py:5`, `test_csrf_boot.py:5`, `tests/adapters/templates/test_fastblocks_ui_boot.py:10`. These reference `examples/landing/routes/adapter_matrix.py` in comments; updates are cosmetic but required for the audit gate.
-9. **Update `examples/landing/README.md:17`** uvicorn command from `python -m uvicorn main:app` → `python -m uvicorn landing_app:app`, and any tree diagram entries that reference `main.py` / `routes/`.
-10. **Update `examples/htmy-hybrid/README.md:26,48`** uvicorn command and tree diagram entries.
+- 4 renames from the already-staged set (main.py / routes/ in both examples)
+- 4 already-staged import-site updates (conftests + production test)
+- 2 new directory renames (`templates/` → `*_templates/` in both examples)
+- 9 new import-site updates (8 in landing_routes/, 1 in htmy_hybrid_routes/)
+- README updates (per audit)
+- Docstring comment updates if any references the renamed paths (per audit)
 
-## Verification and integration gates (WITHDRAWN — applies to the withdrawn solution above; new spec will define new gates)
+## Verification and integration gates
 
-The implementation runs in `/Users/les/Projects/fastblocks` on local `main` at HEAD `9c739c3`. Use the existing project venv (`/Users/les/Projects/fastblocks/.venv/bin/pytest`); no new dependencies.
+The implementation runs in `/Users/les/Projects/fastblocks` on local `main`. Use the existing project venv (`/Users/les/Projects/fastblocks/.venv/bin/pytest`); no new dependencies.
 
 Gates (in order):
 
-1. **Pre-rename baseline**: run `pytest examples/` and confirm the current 2-failure state. Run `pytest tests/htmx/test_hx_trigger_emission.py -v` and confirm the test passes (it loads the example's `main` as part of its setup).
-2. **Per-file rename check**: after each file rename, run `pytest examples/<app>/tests/ --collect-only` for that app to confirm collection succeeds with the new module name.
-3. **Per-file import check**: after each example's `tests/conftest.py` update, run `pytest examples/<app>/tests/ -x` to confirm the test body can `from landing_app import app` / `from htmy_hybrid_app import app` and the TestClient can dispatch.
-4. **Production test check**: after the `test_hx_trigger_emission.py` update, run `pytest tests/htmx/test_hx_trigger_emission.py -v` to confirm the monkeypatched `sys.modules` cleanup correctly handles the new module name.
-5. **Cross-example verification**: run `pytest examples/` and confirm **0 failures** (was 2). Both example apps must coexist and dispatch correctly in a single pytest process.
-6. **Full suite regression check**: run `pytest tests/` (skipping slow/marked exclusions already configured in the project) and confirm no NEW failures appear. The previous passing test count must not decrease.
-7. **Coverage and coverage gate**: the project's coverage gate (per `[tool.pytest] addopts`) will fail on `pytest examples/` because example code isn't covered by the production test suite. Run the verification with `--no-cov` to bypass the gate for the verification commands; the committed code must still pass the gate for production tests.
-8. **Final comment audit**: `git grep -n "examples/landing/main\|examples/landing/routes\|examples/htmy-hybrid/main\|examples/htmy-hybrid/routes" -- ':!docs/superpowers/plans/'` must return zero hits (the historical plan docs are excluded per Scope).
+1. **Pre-rename baseline**: run `pytest examples/ --no-cov` and confirm 6 failures, all in htmy-hybrid (per the original session's Task 1 capture). Run `pytest tests/htmx/test_hx_trigger_emission.py -v` and confirm 3 passed.
+2. **Per-directory rename check**: after each `templates/` rename, run `pytest examples/<app>/tests/ --collect-only --no-cov` for that app to confirm collection succeeds with the new package name.
+3. **Per-directory import check**: after each example's import-site updates, run `pytest examples/<app>/tests/ --no-cov -x` to confirm the test body can `from <app>_templates import render_template` and the TestClient can dispatch.
+4. **Cross-example verification**: run `pytest examples/ --no-cov` and confirm **0 failures** (was 6).
+5. **Full suite regression check**: run `pytest tests/ --no-cov -m "not slow"` and confirm no NEW failures appear relative to the pre-rename baseline. The previous passing test count must not decrease.
+6. **Final import audit**: `git grep -nE "from (templates|routes|main)( |\$| import)" examples/landing/ examples/htmy-hybrid/ -- ':!docs/superpowers/plans/' ':!examples/landing/README.md' ':!examples/htmy-hybrid/README.md'` must return zero hits.
+7. **Final path audit**: `git grep -nE "examples/landing/(main|routes|templates)/|examples/htmy-hybrid/(main|routes|templates)/" -- ':!docs/superpowers/plans/' ':!examples/landing/README.md' ':!examples/htmy-hybrid/README.md'` must return zero hits outside of the README tree diagrams (which are updated to reflect the new layout).
 
-## Failure classification and safety (WITHDRAWN — applies to the withdrawn solution above)
+## Acceptance criteria
+
+- `pytest examples/ --no-cov` runs to completion with **0 failures** (was 6).
+- `pytest examples/landing/tests/ --no-cov` passes unchanged from pre-rename baseline (16 passed + 1 skipped).
+- `pytest examples/htmy-hybrid/tests/ --no-cov` passes unchanged from pre-rename baseline (10 passed).
+- `pytest tests/htmx/test_hx_trigger_emission.py --no-cov` passes (3 tests).
+- `pytest tests/ --no-cov -m "not slow"` shows no NEW failures vs the pre-rename baseline.
+- `git grep` audit returns no stale `from templates` / `from routes` / `from main` / `examples/landing/templates/` / `examples/htmy-hybrid/templates/` references in the example apps' code paths (READMEs may keep tree diagrams).
+- The production framework code (`fastblocks/core/resolver.py` and friends) is unchanged.
+- The historical plan docs (`docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-*.md`) are unchanged.
+- Atomic single commit per `feedback-bodai-atomic-commit-recurring-fixes.md`.
+- No `Co-Authored-By` trailer per `feedback-no-claude-code-coauthor-attribution.md`.
+- No push per `feedback-bodai-push-is-user-controlled.md`.
+
+## Failure classification and safety
 
 Each potential regression must be classified as one of:
 
-- **Production defect**: a renamed import is wrong, a test's `sys.modules` cleanup is incomplete, or a route module's internal references still point at the old name.
+- **Production defect**: a renamed import is wrong, a test's `sys.modules` cleanup is incomplete (none in this design — the production test at `tests/htmx/test_hx_trigger_emission.py` was already updated by Tasks 2 and 3 of the original plan and only required the application-landing-app rename).
 - **Stale test expectation**: a test was passing only by accident because of module shadowing; after the rename, the test fails with a clear import error that needs a deliberate update.
-- **Setup issue**: the project's venv lacks a dependency the rename introduced (no new dependencies are introduced by this design; this should not occur).
-- **Needs evidence**: any failure after the rename must be reproduced in isolation (`pytest examples/landing/tests/` or `pytest tests/htmx/test_hx_trigger_emission.py`) before any "fix" is attempted.
+- **Setup issue**: the project's venv lacks a dependency the rename introduced (no new dependencies are introduced by this design; should not occur).
+- **Needs evidence**: any failure after the rename must be reproduced in isolation (`pytest examples/<app>/tests/`) before any "fix" is attempted.
 
-The implementer must NOT "fix" failures by reverting the rename or by adding `sys.modules` mutation that papers over the underlying naming. If the rename breaks a test, the test must be updated to import from the new name — that is the entire point of the change.
+The implementer must NOT "fix" failures by reverting the renames or by adding `sys.modules` mutation that papers over the underlying naming. If the rename breaks a test, the test must be updated to import from the new name — that is the entire point of the change.
 
-## Rollback (WITHDRAWN — applies to the withdrawn solution above)
+## Rollback
 
 - Single-commit rollback: revert the commit with `git revert <commit-sha>`. The renames restore the original state; no data loss.
 - If the commit's test gate fails, revert immediately and re-enter design — do not amend on top of a failing gate.
-- Do not split or amend the atomic commit after partial implementation; the change is conceptually one rename, and the commit reflects that.
+- Do not split or amend the atomic commit after partial implementation; the change is conceptually one rename class, and the commit reflects that.
 
-## Acceptance criteria (WITHDRAWN — replaced by new spec's acceptance criteria)
+## Integration Contract
 
-- `pytest examples/` runs to completion with **0 failures** (was 2 at HEAD `9c739c3`).
-- `pytest examples/landing/tests/` passes unchanged from HEAD `9c739c3`.
-- `pytest examples/htmy-hybrid/tests/` passes unchanged from HEAD `9c739c3`.
-- `pytest tests/htmx/test_hx_trigger_emission.py` passes (1 test).
-- `pytest tests/` shows no NEW failures vs the pre-rename baseline.
-- `git grep -n "examples/landing/main\|examples/landing/routes\|examples/htmy-hybrid/main\|examples/htmy-hybrid/routes" -- ':!docs/superpowers/plans/'` returns no hits.
-- Both `examples/landing/README.md` and `examples/htmy-hybrid/README.md` reference the renamed uvicorn target.
-- The production framework code (`fastblocks/core/resolver.py` and friends) is unchanged.
-- The historical plan docs (`docs/superpowers/plans/2026-09-27-fastblocks-dogfood-readiness-*.md`) are unchanged (their references to the old paths are accurate historical snapshots).
-- Atomic single commit per `feedback-bodai-atomic-commit-recurring-fixes.md`.
-- No `Co-Authored-By` trailer per `feedback-no-claude-code-coauthor-attribution.md`.
-- No push per `feedback-bodai-push-is-user-controlled.md` (push is user-controlled).
+**Triggered from:** The 6-unit cross-example test failure (`pytest examples/` → 6 failed, all in htmy-hybrid) at local HEAD `db5db9e`, surfaced as the original session's Task 1 RED baseline and reconfirmed at the diagnosis-update time.
 
-## Integration Contract (WITHDRAWN — applies to the withdrawn solution above)
+**Returns to / updates:** Local `main` branch with one atomic commit combining the already-staged renames (main.py / routes/) and the new work (templates/); no remote push.
 
-**Triggered from:** A pre-existing cross-example test failure (`pytest examples/`) at local HEAD `9c739c3`, surfaced as the second of the two follow-up tasks from the previous session.
+**Demonstrable by:** Pre-commit `pytest examples/ --no-cov` shows 6 failures; post-commit shows 0. `pytest tests/htmx/test_hx_trigger_emission.py --no-cov` passes. `git grep` audit returns no stale `templates` / `routes` / `main` references in the example apps' code paths.
 
-**Returns to / updates:** Local `main` branch with one atomic commit; no remote push.
-
-**Demonstrable by:** Pre-rename `pytest examples/` shows 2 failures; post-rename shows 0. `pytest tests/htmx/test_hx_trigger_emission.py` passes. `git grep` audit returns no stale path references outside the historical plan docs.
-
-**Rollback signal:** Any post-rename test count regression, or any production framework code change (must remain bit-for-bit identical to HEAD `9c739c3`).
+**Rollback signal:** Any post-commit test count regression, or any production framework code change (must remain bit-for-bit identical to HEAD `db5db9e`).
 
 **Observability added:** Pre/post `pytest` outputs in the commit message body; explicit statement that production framework code is unchanged.
 
-## Decisions captured (HISTORICAL — predates the diagnosis update; preserved for audit trail)
+## Decisions captured
 
-- Use naming-as-isolation (rename) over subprocess isolation or importlib indirection. Reasons: simplest mechanism, eliminates the underlying class of bug (generic-name collisions), no new infrastructure, future examples that copy this pattern can't reintroduce the trap.
-- Rename both `main.py` AND `routes/` per the user's explicit choice on 2026-09-29 (Option B). Half-fixing the same class of bug is worse than fixing it once.
-- One atomic commit, not three. The renames, import updates, README updates, and comment updates are part of a single conceptual change. Splitting creates broken-intermediate states.
-- No examples-level `conftest.py` with `clean_resolver` autouse fixture. Tried and rejected (regressed to 7 failures). The integration-style tests in the examples tree depend on per-test resolver state that the function-scope reset destroys.
-- No changes to `fastblocks/core/resolver.py` or any other production framework code. The framework is not the problem.
-- Do not update historical plan docs. They are dated implementation records; their references are accurate at the time of writing.
+- **Extend the original rename plan, not replace it**: the original plan's renames (main.py / routes/) were correct hygiene work and are already staged. Adding `templates/` finishes the job. Reverting them would re-introduce 6 of the original 6 failures.
+- **One atomic commit, combining staged and new work**: per `feedback-bodai-atomic-commit-recurring-fixes.md`, all renames + import updates + README updates land as a single commit. The already-staged renames stay staged until this single commit absorbs them.
+- **No `clean_resolver`-style autouse fixture in `examples/conftest.py`**: tried in the previous session, regressed to 7 failures because landing tests depend on resolver state surviving across tests. The renames eliminate the collision class entirely, so no fixture is needed.
+- **No `pytest-xdist --force=True`**: brute-force subprocess isolation would work but adds ~200ms × N wall-clock cost for a problem that is now solved at the design level.
+- **No changes to `fastblocks/core/resolver.py`**: ADR 0008 Rule 2 forbids breaking the resolver singleton, and the framework is not the problem.
+- **Do not update historical plan docs**: they are dated implementation records; their references are accurate at the time of writing.
+- **Examples are not user-facing** (per user's explicit confirmation 2026-09-29): no deprecation or migration notes required.
+
+## Memory feedback
+
+- `~/.claude/projects/-Users-les-Projects-mahavishnu/memory/feedback-read-pytest-trace-before-planning-fix.md` — capture the actual pytest trace during RED phase, not just the failure count.
+- `~/.claude/projects/-Users-les-Projects-mahavishnu/memory/feedback-git-commit-only-pathspec-with-staged-changes.md` — when staging a single file with other things staged, use `git commit --only <pathspec>`.
 
 `★ Insight ─────────────────────────────────────`
-
-- **Naming-as-design**: generic module names like `main` and `routes` describe a role (`the main entry`, `the routes module`), not a specific thing. When two files in the same Python search space share a generic name, the collision is a symptom of the generic naming. Fix the name, fix the symptom — at compile time, not at test time.
-- **Test-time fixes hide naming bugs**: the previous session's attempts at per-test resolver reset made the cross-example pollution appear to be a test-infrastructure problem, hiding the actual naming collision. When a fix makes a failure mode go away without addressing its cause, the cause will reappear in a different form. Naming collisions do not get less collision-y with more indirection — they only get harder to spot.
-- **Atomicity is about rollback and review**: combining all the rename updates into one commit means a single `git revert` restores the entire pre-rename state, and a single diff is what the reviewer reads. Splitting into "rename file", "update imports", "update docs" would create three review surfaces, three potential rollback boundaries, and a window where the renames are partially applied.
-  `─────────────────────────────────────────────────`
+- **Same fix, different scale**: extending the rename pattern from `main.py` / `routes/` to `templates/` is mechanical, not architectural. The architectural decision (naming-as-isolation) was made in the original spec; this design only enlarges the surface to which it applies.
+- **Atomic commit absorbs both sets**: combining the already-staged renames and the new work in one commit preserves the rollback-and-review properties that drove the original design's atomicity choice. Splitting would re-introduce the broken-intermediate window the original design specifically avoided.
+- **The misdiagnosis was correctable in-place**: rather than retracting the original plan wholesale, this design extends it. The original plan's evidence (Tasks 2 and 3) was valid — both renames are clean — only the GREEN gate was unreachable from those renames alone. Adding `templates/` makes the GREEN gate reachable without changing what already shipped.
+`─────────────────────────────────────────────────`
