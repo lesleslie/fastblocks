@@ -8,7 +8,7 @@ Visit `/?render=<jinja|htmy|hybrid>` to compare all three render modes.
 
 from __future__ import annotations
 
-from htmy_hybrid_routes import register_routes
+from routes import register_routes
 from fastblocks.applications import FastBlocks
 
 

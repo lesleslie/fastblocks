@@ -7,7 +7,7 @@ Spec §D3 row ``style/fastblocks_ui`` -> resolver pair
 NOTE on path: the brief places this file under
 ``tests/adapters/templates/`` because the spec label begins with
 ``templates/``-prefix convention; the production-side matrix at
-``examples/landing/landing_routes/adapter_matrix.py`` and the existing
+``examples/landing/routes/adapter_matrix.py`` and the existing
 comprehensive test live at ``tests/adapters/style/test_fastblocks_ui_boot.py``.
 This file is the brief-specified minimal boot test (one-off, doesn't
 duplicate the comprehensive coverage).

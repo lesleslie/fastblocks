@@ -43,9 +43,9 @@ Expected: green.
 
 ## Theme discipline
 
-Only `--ui-*` tokens are permitted in `landing_templates/` and `static/`. The
+Only `--ui-*` tokens are permitted in `templates/` and `static/`. The
 CI grep gate (see `tests/test_no_claim_without_evidence.py` plus the
-manual `grep -rn -- "--fb-\|--fast-\|--brand-\|#[0-9a-fA-F]\{6\}" landing_templates/ static/` check in the brief) rejects `--fb-*`, `--fast-*`,
+manual `grep -rn -- "--fb-\|--fast-\|--brand-\|#[0-9a-fA-F]\{6\}" templates/ static/` check in the brief) rejects `--fb-*`, `--fast-*`,
 `--brand-*`, and hex literals.
 
 Dark variant ships via `[data-theme="dark"]` — the documented closed

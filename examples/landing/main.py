@@ -10,7 +10,7 @@ and the integration contract.
 
 from __future__ import annotations
 
-from landing_routes import register_routes
+from routes import register_routes
 from fastblocks.applications import FastBlocks
 
 

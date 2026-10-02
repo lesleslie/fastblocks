@@ -11,9 +11,9 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-# Make ``landing_app`` importable regardless of pytest's rootdir discovery —
-# the landing app lives at ``examples/landing/landing_app.py`` and the tests
-# need to import it via ``from landing_app import app``.
+# Make ``main`` importable regardless of pytest's rootdir discovery —
+# the landing app lives at ``examples/landing/main.py`` and the tests
+# need to import it via ``from main import app``.
 _APP_ROOT = Path(__file__).resolve().parent.parent
 if str(_APP_ROOT) not in sys.path:
     sys.path.insert(0, str(_APP_ROOT))
@@ -22,7 +22,7 @@ if str(_APP_ROOT) not in sys.path:
 @pytest.fixture
 def app():
     """Import the ASGI app from main."""
-    from landing_app import app as fastblocks_app
+    from main import app as fastblocks_app
 
     return fastblocks_app
 
