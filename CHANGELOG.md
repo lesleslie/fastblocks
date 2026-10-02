@@ -12,16 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fastblocks: Add 'run' CLI subcommand for uvicorn launcher (F1.5-DELIV-T1)
 - fastblocks: Add HybridTemplatesManager.render_hybrid() API (F1.5-F-FW-1)
 - fastblocks: Add upper caps to typer, uvicorn, structlog (F1.5-D8-T2)
-- fastblocks: Cast await result to Awaitable[Iterable[T]] in sitemap
+- fastblocks: Cast await result to Awaitable\[Iterable[T]\] in sitemap
 - fastblocks: CSP nonce-based style-src, drop unsafe-inline (F1.5-D6-T1)
-- fastblocks: Declare _BaseModel fallback as Any at module level
-- fastblocks: Declare _sentry_sdk fallback as Any at module level
+- fastblocks: Declare \_BaseModel fallback as Any at module level
+- fastblocks: Declare \_sentry_sdk fallback as Any at module level
 - fastblocks: Declare BoundLogger fallback as Any at module level
 - fastblocks: Drop redundant cast in resolve_component_async
 - fastblocks: Drop redundant str() wraps flagged by refurb FURB123
 - fastblocks: Phase 1.5 Tier 1 — verify-measurement re-runs collapse artifacts
 - fastblocks: Resolve 7 mypy errors in 5 framework files (F1.5-D2-T1)
-- fastblocks: Resolve ruff-check failures in _advanced_manager.py
+- fastblocks: Resolve ruff-check failures in \_advanced_manager.py
 - fastblocks: Tighten dep pins to ~=X.Y and add critical-dep upper caps (F1.5-D8-T3)
 - fastblocks: Use contextlib.suppress for pydantic import fallback (FURB107)
 - landing: Emit HX-Trigger header in /demo HTMX swap (F1.5-D4-T1)

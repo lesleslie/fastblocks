@@ -18,9 +18,9 @@ from __future__ import annotations
 import json
 
 from fastblocks_ui import field, text_input
+from landing_templates import render_template
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from landing_templates import render_template
 
 _PARTIAL_TEMPLATE = "partials/results.html"
 _PAGE_TEMPLATE = "demo.html"

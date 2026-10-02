@@ -13,9 +13,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from landing_templates import render_template
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from landing_templates import render_template
 
 _BENCH_DIR = Path(__file__).resolve().parents[3] / ".benchmarks"
 

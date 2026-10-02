@@ -1,6 +1,6 @@
 # Plan Index
 
-_Regenerated 2026-09-29 by `crackerjack.tools.plan_index_sync` (fast-hook)._
+_Regenerated 2026-10-02 by `crackerjack.tools.plan_index_sync` (fast-hook)._
 
 ### Docs: adr
 
@@ -43,7 +43,7 @@ _Regenerated 2026-09-29 by `crackerjack.tools.plan_index_sync` (fast-hook)._
 
 ## Lifecycle × Role Distribution
 
-| Role \ Lifecycle | draft | active | partial | shipped | complete | Total |
+| Role \\ Lifecycle | draft | active | partial | shipped | complete | Total |
 |---|---|---|---|---|---|---|
 | `canonical` | · | · | · | · | · | **0** |
 | `implementation` | 3 | · | · | 1 | · | **4** |
@@ -51,4 +51,3 @@ _Regenerated 2026-09-29 by `crackerjack.tools.plan_index_sync` (fast-hook)._
 | `historical` | · | · | · | · | · | **0** |
 | `superseded` | · | · | · | · | · | **0** |
 | **Total** | **3** | **·** | **·** | **1** | **·** | **4** |
-

@@ -22,10 +22,10 @@ from components.greeting_card import (
     greeting_card_from_context,
 )
 from htmy import Renderer
+from htmy_hybrid_templates import render_template as render_jinja
 from jinja2 import Environment, FileSystemLoader
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from htmy_hybrid_templates import render_template as render_jinja
 
 _PROPS = GreetingCardProps(
     name="Ada Lovelace",

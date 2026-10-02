@@ -51,9 +51,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Final
 
+from landing_templates import render_template
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from landing_templates import render_template
 from fastblocks.core.resolver import get_resolver
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]

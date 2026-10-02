@@ -10,9 +10,9 @@ Uses the fastblocks-ui helpers (``shell``, ``navbar``, ``hero``, ``card``,
 from __future__ import annotations
 
 from fastblocks_ui import button, card, hero, navbar, shell
+from landing_templates import render_template
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from landing_templates import render_template
 
 
 async def home_route(request: Request) -> HTMLResponse:

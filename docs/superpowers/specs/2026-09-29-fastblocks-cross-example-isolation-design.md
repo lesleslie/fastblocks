@@ -10,9 +10,9 @@
 `pytest examples/` produces 6 failures, all in `examples/htmy-hybrid/tests/`. The pollution source is **Python `sys.modules` package-name collisions** between the two example apps. Both apps share top-level module names that pytest's `sys.path.insert(0, _APP_ROOT)` in each `conftest.py` puts on `sys.path`. When pytest collects both apps in one session:
 
 1. landing's `conftest.py` inserts `examples/landing/` to `sys.path` and the test bodies import landing's app
-2. htmy-hybrid's `conftest.py` inserts `examples/htmy-hybrid/` to `sys.path` and the test bodies import htmy-hybrid's app
-3. Python's import cache (`sys.modules`) does not get cleared between tests — once a bare name like `templates` is resolved, it stays resolved
-4. When htmy-hybrid's `greeting.py` runs `from templates import render_template as render_jinja`, Python returns whichever `templates` module was cached FIRST — landing's — even though htmy-hybrid is the calling app
+1. htmy-hybrid's `conftest.py` inserts `examples/htmy-hybrid/` to `sys.path` and the test bodies import htmy-hybrid's app
+1. Python's import cache (`sys.modules`) does not get cleared between tests — once a bare name like `templates` is resolved, it stays resolved
+1. When htmy-hybrid's `greeting.py` runs `from templates import render_template as render_jinja`, Python returns whichever `templates` module was cached FIRST — landing's — even though htmy-hybrid is the calling app
 
 Captured trace from the live failure:
 
@@ -36,10 +36,11 @@ Three collision classes exist in the examples directory:
 The original 5-task plan was correct in approach and 90% complete in execution (Tasks 2 and 3 already shipped the renames that fixed two collision classes; only `templates/` remained). The plan was paused before Tasks 4 and 5 because the implementer misread a trace frame and concluded the pollution was Oneiric template-loader caching. That conclusion was wrong: Oneiric has no template loader, and the actual cause was always `sys.modules` package-name collision. The 9-file rename plan is extended to include `templates/`, and the work lands as one atomic commit alongside the already-staged renames.
 
 `★ Insight ─────────────────────────────────────`
+
 - **Naming-as-isolation works at any scale**: the same fix that eliminated the `main.py` / `routes/` collision class works for `templates/`. The pattern is generic — any pair of apps that puts generic top-level packages on `sys.path` will collide. Naming that ends with the app-name eliminates the collision at compile time, not at test time.
 - **The `templates` collision is special**: it surfaces only in tests that render templates through a `from templates import` statement. Pure-import handlers and pure-FastBlocks handlers are immune. That's why landing's tests pass (landing's routes use `from templates import render_template` but landing IS the first-loaded app, so its `templates` resolves correctly) while htmy-hybrid's tests fail (htmy-hybrid's `from templates import` resolves to landing's `templates`, which has the wrong searchpath).
 - **Renames are atomic with the imports they break**: a rename without the corresponding import-site update produces `ImportError` at test collection. The renames and the 9 import-site updates must ship together. The new work extends the already-staged atomic set.
-`─────────────────────────────────────────────────`
+  `─────────────────────────────────────────────────`
 
 ## Scope
 
@@ -48,32 +49,32 @@ This design extends the original rename plan to include `templates/` directories
 ### Already staged (Tasks 2 and 3 of the original plan)
 
 1. `examples/landing/main.py` → `examples/landing/landing_app.py` (already staged)
-2. `examples/landing/routes/` → `examples/landing/landing_routes/` (already staged)
-3. `examples/htmy-hybrid/main.py` → `examples/htmy-hybrid/htmy_hybrid_app.py` (already staged)
-4. `examples/htmy-hybrid/routes/` → `examples/htmy-hybrid/htmy_hybrid_routes/` (already staged)
-6. `examples/landing/tests/conftest.py` already updated to import from `landing_app` (already staged)
-7. `examples/htmy-hybrid/tests/conftest.py` already updated to import from `htmy_hybrid_app` (already staged)
-8. `tests/htmx/test_hx_trigger_emission.py` already updated for the `landing_app` import (already staged)
+1. `examples/landing/routes/` → `examples/landing/landing_routes/` (already staged)
+1. `examples/htmy-hybrid/main.py` → `examples/htmy-hybrid/htmy_hybrid_app.py` (already staged)
+1. `examples/htmy-hybrid/routes/` → `examples/htmy-hybrid/htmy_hybrid_routes/` (already staged)
+1. `examples/landing/tests/conftest.py` already updated to import from `landing_app` (already staged)
+1. `examples/htmy-hybrid/tests/conftest.py` already updated to import from `htmy_hybrid_app` (already staged)
+1. `tests/htmx/test_hx_trigger_emission.py` already updated for the `landing_app` import (already staged)
 
 ### New work in this design
 
 9. **Rename `examples/landing/templates/` → `examples/landing/landing_templates/`** (directory rename; git tracks the contents).
-10. **Rename `examples/htmy-hybrid/templates/` → `examples/htmy-hybrid/htmy_hybrid_templates/`** (directory rename).
-11. **Update 8 import sites in `examples/landing/landing_routes/`** that read `from templates import render_template`:
-    - `landing_routes/install.py:11`
-    - `landing_routes/security.py:19`
-    - `landing_routes/docs.py:11`
-    - `landing_routes/features.py:17`
-    - `landing_routes/home.py:15`
-    - `landing_routes/performance.py:18`
-    - `landing_routes/demo.py:23`
-    - `landing_routes/adapter_matrix.py:56`
-    Each becomes `from landing_templates import render_template`.
-12. **Update 1 import site in `examples/htmy-hybrid/htmy_hybrid_routes/`** that reads `from templates import render_template as render_jinja`:
-    - `htmy_hybrid_routes/greeting.py:28`
-    Becomes `from htmy_hybrid_templates import render_template as render_jinja`.
-13. **Update `examples/landing/README.md`** if it references `templates/` paths or `from templates` in code blocks (audit during execution).
-15. **Update `examples/htmy-hybrid/README.md`** similarly.
+1. **Rename `examples/htmy-hybrid/templates/` → `examples/htmy-hybrid/htmy_hybrid_templates/`** (directory rename).
+1. **Update 8 import sites in `examples/landing/landing_routes/`** that read `from templates import render_template`:
+   - `landing_routes/install.py:11`
+   - `landing_routes/security.py:19`
+   - `landing_routes/docs.py:11`
+   - `landing_routes/features.py:17`
+   - `landing_routes/home.py:15`
+   - `landing_routes/performance.py:18`
+   - `landing_routes/demo.py:23`
+   - `landing_routes/adapter_matrix.py:56`
+     Each becomes `from landing_templates import render_template`.
+1. **Update 1 import site in `examples/htmy-hybrid/htmy_hybrid_routes/`** that reads `from templates import render_template as render_jinja`:
+   - `htmy_hybrid_routes/greeting.py:28`
+     Becomes `from htmy_hybrid_templates import render_template as render_jinja`.
+1. **Update `examples/landing/README.md`** if it references `templates/` paths or `from templates` in code blocks (audit during execution).
+1. **Update `examples/htmy-hybrid/README.md`** similarly.
 
 This design excludes:
 
@@ -106,12 +107,12 @@ The implementation runs in `/Users/les/Projects/fastblocks` on local `main`. Use
 Gates (in order):
 
 1. **Pre-rename baseline**: run `pytest examples/ --no-cov` and confirm 6 failures, all in htmy-hybrid (per the original session's Task 1 capture). Run `pytest tests/htmx/test_hx_trigger_emission.py -v` and confirm 3 passed.
-2. **Per-directory rename check**: after each `templates/` rename, run `pytest examples/<app>/tests/ --collect-only --no-cov` for that app to confirm collection succeeds with the new package name.
-3. **Per-directory import check**: after each example's import-site updates, run `pytest examples/<app>/tests/ --no-cov -x` to confirm the test body can `from <app>_templates import render_template` and the TestClient can dispatch.
-4. **Cross-example verification**: run `pytest examples/ --no-cov` and confirm **0 failures** (was 6).
-5. **Full suite regression check**: run `pytest tests/ --no-cov -m "not slow"` and confirm no NEW failures appear relative to the pre-rename baseline. The previous passing test count must not decrease.
-6. **Final import audit**: `git grep -nE "from (templates|routes|main)( |\$| import)" examples/landing/ examples/htmy-hybrid/ -- ':!docs/superpowers/plans/' ':!examples/landing/README.md' ':!examples/htmy-hybrid/README.md'` must return zero hits.
-7. **Final path audit**: `git grep -nE "examples/landing/(main|routes|templates)/|examples/htmy-hybrid/(main|routes|templates)/" -- ':!docs/superpowers/plans/' ':!examples/landing/README.md' ':!examples/htmy-hybrid/README.md'` must return zero hits outside of the README tree diagrams (which are updated to reflect the new layout).
+1. **Per-directory rename check**: after each `templates/` rename, run `pytest examples/<app>/tests/ --collect-only --no-cov` for that app to confirm collection succeeds with the new package name.
+1. **Per-directory import check**: after each example's import-site updates, run `pytest examples/<app>/tests/ --no-cov -x` to confirm the test body can `from <app>_templates import render_template` and the TestClient can dispatch.
+1. **Cross-example verification**: run `pytest examples/ --no-cov` and confirm **0 failures** (was 6).
+1. **Full suite regression check**: run `pytest tests/ --no-cov -m "not slow"` and confirm no NEW failures appear relative to the pre-rename baseline. The previous passing test count must not decrease.
+1. **Final import audit**: `git grep -nE "from (templates|routes|main)( |\$| import)" examples/landing/ examples/htmy-hybrid/ -- ':!docs/superpowers/plans/' ':!examples/landing/README.md' ':!examples/htmy-hybrid/README.md'` must return zero hits.
+1. **Final path audit**: `git grep -nE "examples/landing/(main|routes|templates)/|examples/htmy-hybrid/(main|routes|templates)/" -- ':!docs/superpowers/plans/' ':!examples/landing/README.md' ':!examples/htmy-hybrid/README.md'` must return zero hits outside of the README tree diagrams (which are updated to reflect the new layout).
 
 ## Acceptance criteria
 
@@ -172,7 +173,8 @@ The implementer must NOT "fix" failures by reverting the renames or by adding `s
 - `~/.claude/projects/-Users-les-Projects-mahavishnu/memory/feedback-git-commit-only-pathspec-with-staged-changes.md` — when staging a single file with other things staged, use `git commit --only <pathspec>`.
 
 `★ Insight ─────────────────────────────────────`
+
 - **Same fix, different scale**: extending the rename pattern from `main.py` / `routes/` to `templates/` is mechanical, not architectural. The architectural decision (naming-as-isolation) was made in the original spec; this design only enlarges the surface to which it applies.
 - **Atomic commit absorbs both sets**: combining the already-staged renames and the new work in one commit preserves the rollback-and-review properties that drove the original design's atomicity choice. Splitting would re-introduce the broken-intermediate window the original design specifically avoided.
 - **The misdiagnosis was correctable in-place**: rather than retracting the original plan wholesale, this design extends it. The original plan's evidence (Tasks 2 and 3) was valid — both renames are clean — only the GREEN gate was unreachable from those renames alone. Adding `templates/` makes the GREEN gate reachable without changing what already shipped.
-`─────────────────────────────────────────────────`
+  `─────────────────────────────────────────────────`
