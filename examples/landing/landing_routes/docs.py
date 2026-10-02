@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastblocks_ui import button
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from templates import render_template
+from landing_templates import render_template
 
 
 async def docs_route(request: Request) -> HTMLResponse:

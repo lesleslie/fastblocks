@@ -45,20 +45,20 @@ Expected: 8 tests, all green.
 
 ```
 examples/htmy-hybrid/
-├── main.py                       # FastBlocks app factory, port 8002
+├── htmy_hybrid_app.py            # FastBlocks app factory, port 8002
 ├── pyproject.toml
 ├── adapters/
 │   └── templates.py              # Registers HybridTemplatesManager via Oneiric
 ├── components/
 │   └── greeting_card.py          # HTMY Component + GreetingCardProps dataclass
-├── routes/
+├── htmy_hybrid_routes/
 │   ├── __init__.py
 │   └── greeting.py               # ?render=<jinja|htmy|hybrid> dispatch
 ├── settings/
 │   ├── app.yaml
 │   └── adapters/
 │       └── templates.yaml        # declares hybrid as default
-├── templates/
+├── htmy_hybrid_templates/
 │   ├── __init__.py               # Jinja2 wrapper
 │   ├── base.html
 │   └── greeting/

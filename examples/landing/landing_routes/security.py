@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from fastblocks_ui import alert, card
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from templates import render_template
+from landing_templates import render_template
 
 
 @dataclass(frozen=True)

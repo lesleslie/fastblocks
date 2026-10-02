@@ -2,7 +2,7 @@
 
 Spec §D3 row ``middleware/csrf`` -> middleware-resident (NOT a
 Oneiric resolver adapter; verified at
-``examples/landing/routes/adapter_matrix.py:95``).
+``examples/landing/landing_routes/adapter_matrix.py:95``).
 
 This file is the brief-specified minimal boot test for middleware:
 verify the middleware class is importable and instantiable, per the

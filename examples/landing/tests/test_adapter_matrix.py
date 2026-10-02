@@ -19,7 +19,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from routes import adapter_matrix as _adapter_matrix_route
+from landing_routes import adapter_matrix as _adapter_matrix_route
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _IN_SCOPE_ADAPTERS = _adapter_matrix_route._IN_SCOPE_ADAPTERS

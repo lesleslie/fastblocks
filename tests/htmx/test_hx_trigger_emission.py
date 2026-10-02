@@ -6,7 +6,7 @@ emit an ``HX-Trigger`` response header so client-side listeners can
 fire on ``demo-search-completed`` with the query payload. This test
 pins that contract end-to-end through a real Starlette ``TestClient``.
 
-The app is bootstrapped from ``examples/landing/main.py`` so the test
+The app is bootstrapped from ``examples/landing/landing_app.py`` so the test
 exercises the actual route handler, not a synthetic stand-in. To keep
 the test independent of pytest's working directory, we ``chdir`` into
 the example's root before importing the app — Oneiric's settings
@@ -37,9 +37,9 @@ def landing_app(monkeypatch: pytest.MonkeyPatch):
     # Reload the module fresh so any prior import (e.g. from a sibling
     # test) does not leak cached adapter state into this test.
     for name in list(sys.modules):
-        if name == "main" or name.startswith("main."):
+        if name == "landing_app" or name.startswith("landing_app."):
             monkeypatch.delitem(sys.modules, name)
-    from main import app
+    from landing_app import app
 
     return app
 

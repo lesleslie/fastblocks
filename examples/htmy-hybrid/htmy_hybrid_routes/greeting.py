@@ -25,7 +25,7 @@ from htmy import Renderer
 from jinja2 import Environment, FileSystemLoader
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
-from templates import render_template as render_jinja
+from htmy_hybrid_templates import render_template as render_jinja
 
 _PROPS = GreetingCardProps(
     name="Ada Lovelace",
@@ -62,7 +62,7 @@ def _get_hybrid_manager() -> HybridTemplatesManager:
         # The manager's own ``base_templates`` field stays None — the
         # demo bypasses the full FastBlocks template stack — but
         # ``_get_template_environment`` falls back to the env we set.
-        templates_dir = Path(__file__).resolve().parent.parent / "templates"
+        templates_dir = Path(__file__).resolve().parent.parent / "htmy_hybrid_templates"
         env = Environment(
             loader=FileSystemLoader(str(templates_dir)),
             autoescape=True,

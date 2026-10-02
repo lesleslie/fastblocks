@@ -2,7 +2,7 @@
 
 Spec §D3 row ``middleware/brotli`` -> middleware-resident (NOT a
 Oneiric resolver adapter; verified at
-``examples/landing/routes/adapter_matrix.py:94``). The matrix source
+``examples/landing/landing_routes/adapter_matrix.py:94``). The matrix source
 of truth documents: "Brotli has no dedicated test yet — surfaces as
 ``?`` honestly."
 
