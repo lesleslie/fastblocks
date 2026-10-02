@@ -5,6 +5,34 @@ All notable changes to FastBlocks will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.26.1] - 2026-10-02
+
+### Changed
+
+- fastblocks: Rename example top-level packages to app-specific names
+- Revert example top-level renames — restore uniform FastBlocks app layout
+
+### Fixed
+
+- fastblocks: Drop examples/htmy-hybrid/tests/__init__.py to fix conftest plugin-namespace collision
+
+### Documentation
+
+- fastblocks: Correct cross-example isolation spec — templates/ is the active pollution source
+- fastblocks: Cross-example isolation implementation plan
+- fastblocks: Cross-example test isolation design spec
+- fastblocks: Mark cross-example spec WITHDRAWN — diagnosis was wrong
+- fastblocks: Rewrite cross-example isolation plan — templates/ + new GREEN gate
+
+### Testing
+
+- fastblocks: Align test_is_htmx_with_scope with documented last-wins semantics
+- fastblocks: Convert 4 auth XPASS tests to subprocess isolation
+
+### Internal
+
+- Pre-9f1a012-revert housekeeping
+
 ## [0.26.0] - 2026-09-29
 
 ### Fixed
