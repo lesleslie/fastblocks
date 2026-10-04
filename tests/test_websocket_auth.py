@@ -22,10 +22,16 @@ pytestmark = [pytest.mark.unit, pytest.mark.websocket]
 class TestFastBlocksWebSocketAuth:
     """Test FastBlocks WebSocket authentication configuration."""
 
-    def test_get_authenticator_dev_mode(self):
+    def test_get_authenticator_dev_mode(self, monkeypatch: pytest.MonkeyPatch):
         """Test getting authenticator in development mode."""
-        # Ensure auth is disabled
-        os.environ["FASTBLOCKS_AUTH_ENABLED"] = "false"
+        # Use ``monkeypatch.setenv`` so the parent process's env is
+        # restored after this test runs. Leaving
+        # ``FASTBLOCKS_AUTH_ENABLED=false`` in the parent env leaks
+        # into subprocess-imported test fixtures downstream — see
+        # ``tests/websocket/test_auth.py::test_passes_when_secret_is_set``
+        # which would otherwise fail with ``AUTH_ENABLED: False``
+        # because the subprocess inherits the polluted env.
+        monkeypatch.setenv("FASTBLOCKS_AUTH_ENABLED", "false")
 
         authenticator = get_authenticator()
         assert authenticator is None

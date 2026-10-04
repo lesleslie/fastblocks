@@ -37,12 +37,21 @@ def _import_in_subprocess(env_overrides: dict[str, str | None]) -> subprocess.Co
     Args:
         env_overrides: dict mapping env-var name to its desired value
             (``str`` to set, ``None`` to unset). The subprocess inherits
-            the parent's environment with two changes:
+            the parent's environment with three changes:
             ``PYTEST_CURRENT_TEST`` is always stripped (so the guard's
             "is this a test process?" predicate sees a non-test
-            environment), and the overrides are applied.
+            environment), the overrides are applied, and any parent-set
+            ``FASTBLOCKS_AUTH_ENABLED`` is stripped. The latter matters
+            because ``tests/test_websocket_auth.py`` and
+            ``tests/unit/test_websocket_auth.py`` mutate
+            ``os.environ["FASTBLOCKS_AUTH_ENABLED"]`` directly (no
+            ``monkeypatch``), which leaks into the subprocess and makes
+            ``auth.AUTH_ENABLED`` resolve to whatever the most recent
+            sibling test set. Stripping here keeps these tests
+            order-independent even under xdist.
     """
-    env = {k: v for k, v in os.environ.items() if k != "PYTEST_CURRENT_TEST"}
+    strip = {"PYTEST_CURRENT_TEST", "FASTBLOCKS_AUTH_ENABLED"}
+    env = {k: v for k, v in os.environ.items() if k not in strip}
     for key, value in env_overrides.items():
         if value is None:
             env.pop(key, None)
