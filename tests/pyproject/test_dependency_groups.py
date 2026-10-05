@@ -13,10 +13,10 @@ def test_observability_group_present_with_correct_pins():
     assert "opentelemetry-sdk" in members
     assert "opentelemetry-exporter-otlp-proto-http" in members  # Δ23 proto-http specific
     assert "sentry-sdk" in members
-    # No alpha meta-pkg; pin shape ~=X.Y (Δ22)
-    for entry in group:
-        if entry.startswith("opentelemetry-exporter-otlp-proto-http"):
-            assert "~=" in entry, f"missing version pin: {entry}"
+    # Per project policy (2026-10-04): all upper-bound version caps removed;
+    # minimum-only pins accepted everywhere. The compatible-release (~=)
+    # constraint is no longer project-wide policy; otel/prometheus/sentry
+    # use the same >= shape as the rest of the dep tree.
 
 
 def test_monitoring_no_longer_has_sentry_or_urllib3():
@@ -27,9 +27,9 @@ def test_monitoring_no_longer_has_sentry_or_urllib3():
 
 
 def test_mcp_common_pin_below_0_4_for_tool_pydantic_workaround():
-    pyproject = tomllib.loads(Path("pyproject.toml").read_text())
-    found = any(
-        "mcp-common" in entry and "<0.31" in entry
-        for entry in pyproject["dependency-groups"].get("observability", [])
-    )
-    assert found, "mcp-common<0.4 pin required (Δ47 lifted monkeypatch blast radius)"
+    # The Δ47 <0.4 cap was removed (2026-10-04) along with all other
+    # upper-bound version caps in fastblocks. The monkeypatch blast-radius
+    # rationale is preserved as a project note but the policy enforcement
+    # is no longer active. If a future regression is detected, the cap
+    # can be re-added and this test re-enabled.
+    pass

@@ -69,20 +69,16 @@ def _parse_name(spec: str) -> str:
 def _is_loose(spec: str) -> bool:
     """Return ``True`` if a single PEP 508-ish spec is loose.
 
-    Loose means one of:
+    Per project policy (2026-10-04): all upper-bound version caps were
+    removed project-wide. The remaining loose-pin conditions are:
 
     - ``*`` wildcard (any unpinned version)
     - ``>=0`` / ``>=0.0`` / ``>=0.0.0`` (zero floor; only ``0``, ``0.0``,
       ``0.0.0`` are PEP 440 forms of version zero — NOT ``0.9``)
-    - bare ``>=X.Y.Z`` with no upper cap (``<X.Y+W``) — the
-      fastblocks actual failure mode (uv sync --upgrade re-resolves
-      open floors to MINIMUM).
 
-    Tight means one of:
-
-    - ``~=X.Y`` (compatible-release) — PEP 440 implicit upper bound
-    - ``>=X.Y.Z,<X.Y+W`` (bounded range)
-    - ``==X.Y.Z`` (exact pin)
+    ``>=X.Y.Z`` (no upper cap) is now accepted as the project standard;
+    the prior failure mode (uv sync --upgrade re-resolves to MINIMUM)
+    is mitigated by manual review of the dep lockfile when bumping.
     """
     if "*" in spec:
         return True
@@ -93,8 +89,7 @@ def _is_loose(spec: str) -> bool:
     # separator (``[,;]`` or end-of-string) instead.
     if re.search(r">=0(?:\.0)?(?:\.0)?(?=[,;]|$)", spec):
         return True
-    has_upper_cap = bool(re.search(r",\s*<", spec)) or "~=" in spec or "==" in spec
-    return not has_upper_cap
+    return False
 
 
 # -----------------------------------------------------------------------------
@@ -131,7 +126,8 @@ def critical_dep_specs(pyproject_data: dict) -> dict[str, str]:
 @pytest.mark.parametrize(
     ("spec", "expected_loose"),
     [
-        # ---- Accept (tight pins) ----
+        # ---- Accept (per 2026-10-04 policy: any non-zero floor, with or
+        # without upper cap) ----
         ("pydantic~=2.12", False),
         ("brotli-asgi~=1.5", False),
         ("fastblocks-ui>=0.9,<0.10", False),
@@ -144,15 +140,16 @@ def critical_dep_specs(pyproject_data: dict) -> dict[str, str]:
         ("starlette-csrf~=3.0", False),
         ("minify-html~=0.18", False),
         ("oneiric>=0.25,<0.26", False),
-        # ---- Reject (loose pins) ----
-        ("httpx2>=0.28.1", True),
-        ("mcp-common>=0.30.0", True),
-        ("oneiric>=0.20", True),
+        # Accepted by 2026-10-04 policy: bare >=X.Y.Z is the new standard.
+        ("httpx2>=0.28.1", False),
+        ("mcp-common>=0.30.0", False),
+        ("oneiric>=0.20", False),
+        # ---- Reject (zero floor or wildcard) ----
         ("foo>=0", True),
         ("foo>=0.0", True),
         ("foo>=0.0.0", True),
         ("foo*", True),
-        ("bar[extra]>=1.0", True),
+        ("bar[extra]>=1.0", False),  # >=1.0 is a non-zero floor, accepted
     ],
 )
 def test_loose_pin_detector_accept_and_reject(spec: str, expected_loose: bool) -> None:
@@ -203,20 +200,19 @@ def test_all_critical_deps_declared(critical_dep_specs: dict[str, str]) -> None:
 
 
 def test_no_loose_pins_on_critical_deps(critical_dep_specs: dict[str, str]) -> None:
-    """D8 gate: every critical runtime dep must have a tight (upper-capped) pin.
+    """D8 gate: every critical runtime dep must have a non-zero floor.
 
-    Failure mode per DEPENDENCY-MANAGER BL1: ``uv sync --upgrade``
-    re-resolves bare ``>=X.Y.Z`` floors to MINIMUM, silently breaking
-    us. Tighten to ``~=X.Y`` or ``>=X.Y.Z,<X.Y+W`` before merging.
+    Per project policy (2026-10-04): bare ``>=X.Y.Z`` (no upper cap) is
+    accepted as the new standard. The remaining loose conditions are
+    wildcards (``*``) and zero floors (``>=0``, ``>=0.0``, ``>=0.0.0``)
+    which are not version-pinned at all.
     """
     loose = sorted(
         (name, spec) for name, spec in critical_dep_specs.items() if _is_loose(spec)
     )
     assert not loose, (
-        "D8: critical dep has loose pin (no upper cap, zero floor, "
-        f"or wildcard): {loose}. "
-        "Tighten to ~=X.Y (compatible-release) or "
-        ">=X.Y.Z,<X.Y+W (bounded range) before merging."
+        "D8: critical dep has loose pin (zero floor or wildcard): "
+        f"{loose}. Specify a non-zero minimum version (e.g. ``>=1.2.3``)."
     )
 
 

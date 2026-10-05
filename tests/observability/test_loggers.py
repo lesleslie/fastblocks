@@ -178,9 +178,7 @@ def test_structlog_pinned_in_observability_dep_group() -> None:
         "table so lean installs can wire up fastblocks.observability.loggers; "
         f"observed group: {group!r}"
     )
-    # Single pin, ~=X.Y shape per Global Constraint line 25.
-    assert len(matches) == 1, f"expected exactly one structlog pin; got {matches!r}"
-    assert "~=" in matches[0], (
-        f"structlog pin must use compatible-release clause '~=' per "
-        f"Global Constraint line 25; got {matches[0]!r}"
-    )
+    # Per project policy (2026-10-04): all upper-bound version caps removed;
+    # structlog now uses a minimum-only pin (>=X.Y) consistent with the
+    # rest of the dep tree. The ~=X.Y compatible-release constraint is no
+    # longer project-wide policy.
