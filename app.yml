@@ -1,6 +1,10 @@
 # FastBlocks application configuration.
-# Observability block per Phase 6 v6 spec defaults (Commit 0b).
-observability:
+# v6 observability behavior spec (Δ9/Δ11/Δ18/Δ20/Δ41). The field name is
+# `v6_observability` (not `observability`) because oneiric 0.26.4 already
+# uses `observability` for OTel storage settings (OTelStorageSettings
+# with extra="forbid"), so the v6 behavior spec must use a distinct
+# field to coexist.
+v6_observability:
   cardinality_mode: enforce
   metrics:
     accept_dispatch: true

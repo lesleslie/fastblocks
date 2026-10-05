@@ -16,7 +16,6 @@ from base64 import b64encode
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from time import perf_counter
-from typing import Literal
 from uuid import UUID
 
 import jinja2
@@ -29,7 +28,6 @@ from prometheus_client.exposition import (
 from prometheus_client.openmetrics.exposition import (
     generate_latest as _generate_openmetrics,
 )
-from pydantic import BaseModel, Field
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -45,7 +43,14 @@ from fastblocks.observability.tracer import (
 )
 
 from ..oneiric_helper import resolve_instance
-from ._base import AppBase, AppBaseSettings
+from ._base import (
+    AppBase,
+    AppBaseSettings,
+    MetricsSettings,
+    ObservabilitySettings,
+    SentrySettings,
+    TracesSettings,
+)
 
 # Custom Oneiric-compatible adapter system
 depends = FastblocksRegistry(get_resolver())
@@ -189,32 +194,18 @@ def metrics_endpoint(request: Request) -> Response:
     return Response(content=body, media_type=content_type)
 
 
-class MetricsSettings(BaseModel):
-    accept_dispatch: bool = True
-
-
-class TracesSettings(BaseModel):
-    shutdown_on_lifespan_exit: bool = True
-
-
-class SentrySettings(BaseModel):
-    disabled_on_import_error: bool = False
-    profiling_enabled: bool = False
-
-
-class ObservabilitySettings(BaseModel):
-    cardinality_mode: Literal["off", "audit", "warn", "enforce"] = "enforce"
-    metrics: MetricsSettings = Field(default_factory=MetricsSettings)
-    traces: TracesSettings = Field(default_factory=TracesSettings)
-    sentry: SentrySettings = Field(default_factory=SentrySettings)
-
-
 class AppSettings(AppBaseSettings):
+    """App settings.
+
+    Inherits ``v6_observability`` (and all other fields) from
+    AppBaseSettings. The v6 spec observability fields are declared on
+    AppBaseSettings under the field name ``v6_observability`` to avoid
+    collision with oneiric 0.26.4's ``OneiricSettings.observability``
+    field (which is ``OTelStorageSettings``).
+    """
+
     url: str = "http://localhost:8000"
     token_id: str | None = "_fb_"
-    observability: ObservabilitySettings = Field(
-        default_factory=ObservabilitySettings,
-    )
 
     def __init__(self, **data: t.Any) -> None:
         if not data:

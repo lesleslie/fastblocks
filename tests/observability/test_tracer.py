@@ -186,16 +186,6 @@ async def test_fastblocks_app_lifespan_calls_provider_shutdown(monkeypatch) -> N
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(
-    reason=(
-        "Skipped (2026-10-04): App() constructor fails because the v6 "
-        "observability spec fields (cardinality_mode, metrics.accept_dispatch, "
-        "etc.) are not in the installed oneiric 0.26.4 OneiricSettings schema. "
-        "The test is about App.lifespan behavior, not config. Re-enable when "
-        "fastblocks adapts AppBaseSettings to the new oneiric config schema "
-        "or pins a oneiric version that still includes the v6 fields."
-    )
-)
 async def test_app_lifespan_calls_provider_shutdown(monkeypatch) -> None:
     """App.lifespan must also call provider.shutdown() after yield.
 
